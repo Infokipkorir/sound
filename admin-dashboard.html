@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard – Amilia Care</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --green:       #2A9D6E;
+  --green-dark:  #1D7A52;
+  --green-light: #E6F5EF;
+  --amber:       #E9A23B;
+  --amber-light: #FEF3E2;
+  --red:         #D94F4F;
+  --red-light:   #FCEBEB;
+  --blue:        #1A6BB5;
+  --blue-light:  #E6F1FB;
+  --purple:      #6B52C8;
+  --purple-light:#EEEAFB;
+  --bg:          #F4F7F5;
+  --surface:     #FFFFFF;
+  --border:      #E4ECEA;
+  --text:        #1A2420;
+  --text-muted:  #6B8279;
+  --text-light:  #9BB5A5;
+  --sidebar-bg:  #0F2D23;
+  --sidebar-hover: rgba(255,255,255,.07);
+  --sidebar-active: rgba(42,157,110,.18);
+  --radius:      12px;
+  --radius-sm:   8px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar { display: none; }
+
+.sidebar-logo {
+  padding: 1.4rem 1.5rem 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-logo .wordmark {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -.2px;
+}
+.sidebar-logo .wordmark span { color: var(--green); }
+.sidebar-logo .sub {
+  font-size: 10.5px;
+  color: rgba(255,255,255,.35);
+  margin-top: 2px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.sidebar-nav { flex: 1; padding: 0.75rem 0; }
+
+.nav-section {
+  padding: 10px 20px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.25);
+  margin-top: 6px;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 20px;
+  color: rgba(255,255,255,.58);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 400;
+  transition: all .16s;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.sidebar-nav a i { font-size: 15px; flex-shrink: 0; }
+.sidebar-nav a:hover { color: #fff; background: var(--sidebar-hover); }
+.sidebar-nav a.active {
+  color: #fff;
+  background: var(--sidebar-active);
+  border-left-color: var(--green);
+  font-weight: 500;
+}
+
+.pending-pill {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 50px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-admin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+}
+.sidebar-footer .name { font-size: 13px; color: #fff; font-weight: 500; }
+.sidebar-footer .role-lbl { font-size: 11px; color: rgba(255,255,255,.35); }
+.sidebar-footer .logout-btn {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,.35);
+  text-decoration: none;
+  font-size: 12.5px;
+  transition: color .15s;
+}
+.sidebar-footer .logout-btn:hover { color: rgba(255,255,255,.7); }
+
+/* ── MAIN ─────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.topbar {
+  height: 58px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.8rem;
+  flex-shrink: 0;
+  gap: 16px;
+}
+.topbar-title { font-size: 16px; font-weight: 600; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 280px;
+}
+.search-wrap i {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 15px;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 7px 12px 7px 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border .15s;
+}
+.search-input:focus { border-color: var(--green); background: var(--surface); }
+
+.topbar-date {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── CONNECTION BANNER ───────────────────────────────────── */
+.conn-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+}
+.conn-banner.ok  { background: var(--green-light);  color: var(--green-dark); border: 1px solid #9FE1CB; }
+.conn-banner.err { background: var(--red-light); color: #A32D2D; border: 1px solid #F09595; }
+
+/* ── KPI CARDS ───────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem 1rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-card.c-green::after  { background: var(--green); }
+.kpi-card.c-amber::after  { background: var(--amber); }
+.kpi-card.c-red::after    { background: var(--red); }
+.kpi-card.c-blue::after   { background: var(--blue); }
+.kpi-card.c-purple::after { background: var(--purple); }
+
+.kpi-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.kpi-card.c-green  .kpi-icon { background: var(--green-light);  color: var(--green-dark); }
+.kpi-card.c-amber  .kpi-icon { background: var(--amber-light);  color: #9A6B00; }
+.kpi-card.c-red    .kpi-icon { background: var(--red-light);    color: #A32D2D; }
+.kpi-card.c-blue   .kpi-icon { background: var(--blue-light);   color: var(--blue); }
+.kpi-card.c-purple .kpi-icon { background: var(--purple-light); color: var(--purple); }
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Playfair Display', serif;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.kpi-label { font-size: 12.5px; color: var(--text-muted); }
+.kpi-sub   { font-size: 11.5px; color: var(--green); margin-top: 4px; }
+.kpi-sub.warn { color: #A32D2D; }
+
+/* ── PANEL ───────────────────────────────────────────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1.3rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.3rem;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.panel-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.panel-title i { font-size: 16px; color: var(--text-muted); }
+.panel-body { padding: 1.1rem 1.3rem; }
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table thead th {
+  text-align: left;
+  padding: 9px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.data-table tbody td {
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: #FAFCFB; }
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-approved { background: var(--green-light); color: var(--green-dark); }
+.badge-pending  { background: var(--amber-light); color: #9A6B00; }
+.badge-rejected { background: var(--red-light);   color: #A32D2D; }
+.badge-suspended{ background: #F0F0F0;             color: #555; }
+.badge-active   { background: var(--green-light);  color: var(--green-dark); }
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 15px;
+  border-radius: 7px;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  cursor: pointer; border: none; transition: all .15s;
+  text-decoration: none;
+}
+.btn i { font-size: 14px; }
+.btn-primary { background: var(--green); color: #fff; }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { background: var(--bg); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-sm { padding: 5px 11px; font-size: 12px; border-radius: 6px; }
+
+.action-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: all .15s; color: var(--text);
+}
+.action-btn i { font-size: 13px; }
+.action-btn:hover { background: var(--bg); border-color: #C0CEC9; }
+.action-btn.approve { color: var(--green-dark); border-color: #9FE1CB; background: var(--green-light); }
+.action-btn.approve:hover { background: #CCF0E1; }
+.action-btn.reject  { color: #A32D2D; border-color: #F09595; background: var(--red-light); }
+.action-btn.reject:hover { background: #F8D5D5; }
+.action-btn.suspend { color: #9A6B00; border-color: #EFC97E; background: var(--amber-light); }
+.action-btn.suspend:hover { background: #FCE8B2; }
+
+/* ── TABS ────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1.4rem;
+  gap: 0;
+}
+.tab {
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── VERIFICATION CHIPS ──────────────────────────────────── */
+.v-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.v-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; padding: 3px 8px; border-radius: 50px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-weight: 500;
+}
+.v-chip i { font-size: 11px; }
+.v-chip.ok      { background: var(--green-light); border-color: #9FE1CB; color: var(--green-dark); }
+.v-chip.missing { background: var(--red-light); border-color: #F09595; color: #A32D2D; }
+
+/* ── PROFILE THUMB ───────────────────────────────────────── */
+.profile-thumb { display: flex; align-items: center; gap: 9px; }
+.sm-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+/* ── CHART BARS ──────────────────────────────────────────── */
+.bar-outer { background: rgba(0,0,0,.06); border-radius: 4px; height: 9px; flex: 1; overflow: hidden; }
+.bar-inner { background: var(--green); height: 100%; border-radius: 4px; transition: width .6s ease; }
+
+/* ── GRID ────────────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.3rem; margin-bottom: 1.3rem; }
+
+/* ── SPINNER / LOADING ───────────────────────────────────── */
+.loading-row td { text-align: center; color: var(--text-muted); padding: 2rem !important; }
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 22px; right: 22px;
+  background: var(--text);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  display: flex; align-items: center; gap: 8px;
+  z-index: 9999;
+  opacity: 0; transform: translateY(10px);
+  transition: all .25s;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast i { font-size: 15px; }
+.toast.success i { color: #5CE896; }
+.toast.error   i { color: #F09595; }
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.42);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 500px; max-width: 95vw;
+  max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 10px 50px rgba(0,0,0,.22);
+  animation: fadeUp .2s ease;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+}
+.modal-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.modal-title i { color: var(--text-muted); }
+.modal-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 18px;
+  width: 30px; height: 30px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.modal-close:hover { background: var(--bg); color: var(--text); }
+.modal-body { padding: 1.5rem; }
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* ── DETAIL ROW ──────────────────────────────────────────── */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem 1.25rem; margin-bottom: 1.2rem; }
+.detail-item label { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 2px; }
+.detail-item span  { font-size: 13.5px; color: var(--text); }
+
+/* ── FORM ────────────────────────────────────────────────── */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+.form-control {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; font-family: inherit;
+  outline: none; color: var(--text); background: var(--surface);
+  transition: border .15s;
+}
+.form-control:focus { border-color: var(--green); }
+
+/* ── SECTION HIDING ──────────────────────────────────────── */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── ACTIVITY ITEM ───────────────────────────────────────── */
+.activity-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: .6rem 0; border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.act-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.act-text  { font-size: 13px; }
+.act-time  { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+/* ── REPORTS ─────────────────────────────────────────────── */
+.report-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: box-shadow .15s;
+}
+.report-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+.report-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.report-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.report-desc  { font-size: 12.5px; color: var(--text-muted); }
+
+/* ── SETTINGS ────────────────────────────────────────────── */
+.settings-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  max-width: 520px;
+  margin-bottom: 1.3rem;
+}
+.settings-title { font-size: 14.5px; font-weight: 600; margin-bottom: .5rem; display: flex; align-items: center; gap: 7px; }
+.settings-title i { color: var(--text-muted); }
+.settings-desc  { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ─────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Amilia<span>Care</span></div>
+    <div class="sub">Admin Panel</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a href="#" class="active" onclick="showSection('dashboard',this);return false">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <a href="#" onclick="showSection('employees',this);return false">
+      <i class="bi bi-people"></i> Employees
+    </a>
+    <a href="#" onclick="showSection('employers',this);return false">
+      <i class="bi bi-building"></i> Employers
+    </a>
+    <a href="#" onclick="showSection('pending',this);return false">
+      <i class="bi bi-hourglass-split"></i> Pending Review
+      <span class="pending-pill" id="pending-badge"></span>
+    </a>
+
+    <div class="nav-section">Management</div>
+    <a href="#" onclick="showSection('messages',this);return false">
+      <i class="bi bi-chat-dots"></i> Messages
+    </a>
+    <a href="#" onclick="showSection('reports',this);return false">
+      <i class="bi bi-bar-chart-line"></i> Reports
+    </a>
+    <a href="#" onclick="showSection('settings',this);return false">
+      <i class="bi bi-gear"></i> Settings
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-admin">
+      <div class="admin-av">AD</div>
+      <div>
+        <div class="name">Admin User</div>
+        <div class="role-lbl">Super Admin</div>
+      </div>
+    </div>
+    <a href="#" class="logout-btn">
+      <i class="bi bi-box-arrow-left"></i> Sign Out
+    </a>
+  </div>
+</aside>
+
+<!-- ── MAIN ───────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="section-title">Dashboard Overview</div>
+    <div style="display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end">
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="search-input" type="text" id="global-search" placeholder="Search users, roles…">
+      </div>
+      <div class="topbar-date" id="topbar-date"></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div id="conn-status"></div>
+
+    <!-- ── DASHBOARD ─────────────────────────────────────── -->
+    <div id="sec-dashboard" class="section active">
+
+      <div class="kpi-grid">
+        <div class="kpi-card c-green">
+          <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="kpi-value" id="kpi-employees">—</div>
+          <div class="kpi-label">Total Workers</div>
+          <div class="kpi-sub" id="kpi-employees-sub"></div>
+        </div>
+        <div class="kpi-card c-amber">
+          <div class="kpi-icon"><i class="bi bi-building-fill"></i></div>
+          <div class="kpi-value" id="kpi-employers">—</div>
+          <div class="kpi-label">Total Employers</div>
+          <div class="kpi-sub" id="kpi-employers-sub"></div>
+        </div>
+        <div class="kpi-card c-red">
+          <div class="kpi-icon"><i class="bi bi-clock-history"></i></div>
+          <div class="kpi-value" id="kpi-pending" style="color:#A32D2D">—</div>
+          <div class="kpi-label">Pending Approvals</div>
+          <div class="kpi-sub warn" id="kpi-pending-sub">Needs attention</div>
+        </div>
+        <div class="kpi-card c-blue">
+          <div class="kpi-icon"><i class="bi bi-patch-check-fill"></i></div>
+          <div class="kpi-value" id="kpi-verified">—</div>
+          <div class="kpi-label">Verified Profiles</div>
+          <div class="kpi-sub" id="kpi-verified-sub"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- ROLE DISTRIBUTION -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="bi bi-bar-chart-steps"></i> Workers by Role</div>
+          </div>
+          <div class="panel-body" id="role-bars">
+            <div style="text-align:center;padding:1rem;color:var(--text-muted)"><span class="spinner"></span>Loading…</div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="bi bi-activity"></i> Recent Activity</div>
+            <button class="btn btn-ghost btn-sm" onclick="loadActivity()"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div class="panel-body" id="activity-feed">
+            <div style="text-align:center;padding:1rem;color:var(--text-muted)"><span class="spinner"></span>Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDING PREVIEW -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="bi bi-hourglass-split"></i>
+            Profiles Awaiting Approval
+            <span style="background:var(--red-light);color:#A32D2D;font-size:11px;padding:2px 8px;border-radius:50px;font-weight:600" id="pending-count-label">…</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showSection('pending',null)">
+            <i class="bi bi-arrow-right-circle"></i> View All
+          </button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Worker</th><th>Role</th><th>Submitted</th><th>Verifications</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pending-preview">
+              <tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EMPLOYEES ──────────────────────────────────────── -->
+    <div id="sec-employees" class="section">
+      <div class="tab-bar">
+        <div class="tab active" onclick="filterEmployees('all',this)">All <span id="tab-all" style="color:var(--text-muted);font-size:12px">(0)</span></div>
+        <div class="tab" onclick="filterEmployees('approved',this)">Approved <span id="tab-approved" style="color:var(--text-muted);font-size:12px">(0)</span></div>
+        <div class="tab" onclick="filterEmployees('pending',this)">Pending <span id="tab-pending" style="color:var(--text-muted);font-size:12px">(0)</span></div>
+        <div class="tab" onclick="filterEmployees('rejected',this)">Rejected <span id="tab-rejected" style="color:var(--text-muted);font-size:12px">(0)</span></div>
+        <div class="tab" onclick="filterEmployees('suspended',this)">Suspended <span id="tab-suspended" style="color:var(--text-muted);font-size:12px">(0)</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="bi bi-person-lines-fill"></i> <span id="emp-table-title">All Employees</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="search-wrap" style="max-width:220px">
+              <i class="bi bi-search"></i>
+              <input class="search-input" type="text" id="emp-search" placeholder="Name, role, location…" oninput="renderEmployees()">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddWorkerModal()">
+              <i class="bi bi-plus-lg"></i> Add Worker
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Location</th><th>Education</th><th>Salary</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="employees-table">
+              <tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EMPLOYERS ──────────────────────────────────────── -->
+    <div id="sec-employers" class="section">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="bi bi-building"></i> All Employers (<span id="employers-count">…</span>)</div>
+          <div class="search-wrap" style="max-width:220px">
+            <i class="bi bi-search"></i>
+            <input class="search-input" type="text" id="emp-search-2" placeholder="Search employers…" oninput="renderEmployers()">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Location</th><th>Registered</th><th>Hires</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="employers-table">
+              <tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PENDING REVIEW ─────────────────────────────────── -->
+    <div id="sec-pending" class="section">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="bi bi-hourglass-split"></i> Profiles Pending Review (<span id="pending-full-count">…</span>)</div>
+          <div class="search-wrap" style="max-width:220px">
+            <i class="bi bi-search"></i>
+            <input class="search-input" type="text" id="pending-search" placeholder="Search…" oninput="renderPendingTable()">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Worker</th><th>Age</th><th>Role</th><th>Submitted</th><th>Verifications</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="pending-table">
+              <tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MESSAGES ───────────────────────────────────────── -->
+    <div id="sec-messages" class="section">
+      <div class="panel" style="padding:3rem;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px;opacity:.25"><i class="bi bi-chat-square-dots"></i></div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:6px">No new messages</div>
+        <div style="font-size:13px;color:var(--text-muted)">Admin messaging module coming soon.</div>
+      </div>
+    </div>
+
+    <!-- ── REPORTS ────────────────────────────────────────── -->
+    <div id="sec-reports" class="section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="report-card">
+          <div class="report-icon" style="background:var(--green-light);color:var(--green-dark)"><i class="bi bi-file-earmark-bar-graph"></i></div>
+          <div>
+            <div class="report-title">Worker Summary Report</div>
+            <div class="report-desc">Total, verified, pending, and rejected worker breakdown.</div>
+            <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="exportReport('workers')"><i class="bi bi-download"></i> Export CSV</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon" style="background:var(--amber-light);color:#9A6B00"><i class="bi bi-building-fill"></i></div>
+          <div>
+            <div class="report-title">Employer Activity Report</div>
+            <div class="report-desc">Registered employers, hires made, and active status.</div>
+            <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="exportReport('employers')"><i class="bi bi-download"></i> Export CSV</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon" style="background:var(--blue-light);color:var(--blue)"><i class="bi bi-clock-history"></i></div>
+          <div>
+            <div class="report-title">Pending Approvals Report</div>
+            <div class="report-desc">All profiles awaiting admin review with submission dates.</div>
+            <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="exportReport('pending')"><i class="bi bi-download"></i> Export CSV</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-icon" style="background:var(--purple-light);color:var(--purple)"><i class="bi bi-activity"></i></div>
+          <div>
+            <div class="report-title">Activity Log Report</div>
+            <div class="report-desc">Admin actions, approvals, and rejections timeline.</div>
+            <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="exportReport('activity')"><i class="bi bi-download"></i> Export CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ───────────────────────────────────────── -->
+    <div id="sec-settings" class="section">
+      <div class="settings-panel">
+        <div class="settings-title"><i class="bi bi-sliders"></i> Site Configuration</div>
+        <div class="settings-desc">Update platform settings stored in Supabase.</div>
+        <div class="form-group"><label>Site Name</label><input class="form-control" type="text" id="cfg-name" value="Amilia Care"></div>
+        <div class="form-group"><label>Contact Email</label><input class="form-control" type="email" id="cfg-email" value="info@amiliacare.co.ke"></div>
+        <div class="form-group"><label>Contact Phone</label><input class="form-control" type="tel" id="cfg-phone" value="+254 700 000 000"></div>
+        <button class="btn btn-primary" onclick="saveSettings()"><i class="bi bi-check-lg"></i> Save Settings</button>
+      </div>
+      <div class="settings-panel">
+        <div class="settings-title"><i class="bi bi-shield-lock"></i> Admin Access</div>
+        <div class="settings-desc">Manage admin roles and access permissions.</div>
+        <div style="font-size:13px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem">
+          <i class="bi bi-info-circle" style="margin-right:5px"></i>Role management module coming soon.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── WORKER DETAIL MODAL ─────────────────────────────────── -->
+<div class="modal-overlay" id="worker-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="bi bi-person-badge"></i> Worker Profile</div>
+      <button class="modal-close" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div style="text-align:center;padding:2rem"><span class="spinner"></span></div>
+    </div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- ── TOAST ──────────────────────────────────────────────── -->
+<div class="toast" id="toast"><i class="bi bi-check-circle-fill"></i><span id="toast-msg"></span></div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── STATE ──────────────────────────────────────────────── */
+let allEmployees    = [];
+let allEmployers    = [];
+let allPending      = [];
+let currentEmpFilter = 'all';
+let currentWorkerId  = null;
+
+/* ── HELPERS ────────────────────────────────────────────── */
+const initials = name => name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '??';
+
+const AVATAR_COLORS = [
+  ['#C9E8D4','#1D7A52'], ['#D6CBEE','#6B52C8'], ['#FAEEDA','#9A6B00'],
+  ['#B5D4F4','#1A6BB5'], ['#F5C4B3','#993C1D'], ['#F4C0D1','#993556'],
+];
+function avatarColor(name) {
+  let h = 0;
+  for (const c of (name||'')) h = (h*31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function timeAgo(ts) {
+  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (d < 60)    return 'just now';
+  if (d < 3600)  return `${Math.floor(d/60)}m ago`;
+  if (d < 86400) return `${Math.floor(d/3600)}h ago`;
+  return `${Math.floor(d/86400)}d ago`;
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function fmtSalary(min, max) {
+  if (!min && !max) return '—';
+  const f = v => v >= 1000 ? Math.round(v/1000)+'k' : v;
+  if (min && max) return `KES ${f(min)}–${f(max)}`;
+  if (min) return `KES ${f(min)}+`;
+  return `Up to KES ${f(max)}`;
+}
+
+function chip(ok, label, icon) {
+  return `<span class="v-chip ${ok?'ok':'missing'}">
+    <i class="bi bi-${ok?'check':'x'}-circle-fill"></i> ${label}
+  </span>`;
+}
+
+/* ── TOAST ──────────────────────────────────────────────── */
+function toast(msg, type='success') {
+  const el  = document.getElementById('toast');
+  const ico = el.querySelector('i');
+  document.getElementById('toast-msg').textContent = msg;
+  ico.className = type === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill';
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ── SECTION NAV ────────────────────────────────────────── */
+const TITLES = {
+  dashboard:'Dashboard Overview', employees:'Employee Management',
+  employers:'Employer Management', pending:'Pending Approvals',
+  messages:'Messages', reports:'Reports', settings:'Settings',
+};
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('sec-'+name);
+  if (sec) sec.classList.add('active');
+  document.getElementById('section-title').textContent = TITLES[name] || name;
+  if (el) {
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+
+/* ── MODAL ──────────────────────────────────────────────── */
+function closeModal() {
+  document.getElementById('worker-modal').classList.remove('open');
+}
+
+/* ── BOOT ───────────────────────────────────────────────── */
+async function bootstrap() {
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-KE', {
+    weekday:'short', day:'numeric', month:'short', year:'numeric'
+  });
+
+  const banner = document.getElementById('conn-status');
+
+  // Test connection
+  const { error: pingErr } = await db.from('employees').select('id', { count:'exact', head:true });
+  if (pingErr) {
+    banner.innerHTML = `<div class="conn-banner err">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      Could not connect to Supabase — ${pingErr.message}
+    </div>`;
+    return;
+  }
+  banner.innerHTML = `<div class="conn-banner ok">
+    <i class="bi bi-circle-fill" style="font-size:8px"></i>
+    Connected to Supabase — live data
+  </div>`;
+
+  await Promise.all([loadEmployees(), loadEmployers(), loadActivity()]);
+  renderDashboard();
+
+  // Real-time updates
+  db.channel('admin-realtime')
+    .on('postgres_changes', { event:'*', schema:'public', table:'employees' }, async () => {
+      await loadEmployees();
+      renderDashboard();
+      renderEmployees();
+      renderPendingTable();
+    })
+    .subscribe();
+}
+
+/* ── LOAD EMPLOYEES ─────────────────────────────────────── */
+async function loadEmployees() {
+  const { data, error } = await db.from('employees').select('*').order('submitted_at', { ascending:false });
+  if (error) { toast('Error loading employees: ' + error.message, 'error'); return; }
+  allEmployees = data || [];
+  allPending   = allEmployees.filter(e => e.status === 'pending');
+}
+
+/* ── UPDATE STATUS ──────────────────────────────────────── */
+async function updateStatus(id, status, rowEl) {
+  const { error } = await db.from('employees').update({ status }).eq('id', id);
+  if (error) { toast('Update failed: ' + error.message, 'error'); return; }
+
+  const emp = allEmployees.find(e => e.id === id);
+  await db.from('activity_log').insert({
+    actor: 'Admin',
+    action: `${status === 'approved' ? 'Approved' : status === 'rejected' ? 'Rejected' : 'Suspended'} ${emp?.name || 'profile'}`,
+    created_at: new Date().toISOString(),
+  }).catch(()=>{});
+
+  toast(`Profile ${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'suspended'}`);
+
+  if (rowEl) {
+    const cell = rowEl.querySelector('.row-actions');
+    if (cell) cell.innerHTML = `<span class="badge badge-${status}">${status}</span>`;
+    rowEl.style.opacity = '.55';
+  }
+
+  await loadEmployees();
+  renderDashboard();
+  if (!document.getElementById('sec-pending').classList.contains('active')) return;
+  renderPendingTable();
+}
+
+/* ── RENDER EMPLOYEES ───────────────────────────────────── */
+function renderEmployees() {
+  const tbody   = document.getElementById('employees-table');
+  const query   = (document.getElementById('emp-search')?.value || '').toLowerCase();
+  let   list    = allEmployees;
+
+  if (currentEmpFilter !== 'all') list = list.filter(e => e.status === currentEmpFilter);
+  if (query) list = list.filter(e =>
+    (e.name||'').toLowerCase().includes(query) ||
+    (e.role||'').toLowerCase().includes(query) ||
+    (e.location||'').toLowerCase().includes(query)
+  );
+
+  // Tab counts
+  const counts = { all: allEmployees.length };
+  ['approved','pending','rejected','suspended'].forEach(s => {
+    counts[s] = allEmployees.filter(e => e.status === s).length;
+    const el = document.getElementById('tab-'+s);
+    if (el) el.textContent = `(${counts[s]})`;
+  });
+  const allEl = document.getElementById('tab-all');
+  if (allEl) allEl.textContent = `(${counts.all})`;
+
+  document.getElementById('emp-table-title').textContent =
+    currentEmpFilter === 'all' ? 'All Employees'
+    : currentEmpFilter.charAt(0).toUpperCase() + currentEmpFilter.slice(1) + ' Employees';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7" style="color:var(--text-muted)">No employees found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(e => {
+    const [bg,fg] = avatarColor(e.name);
+    const st = e.status || 'pending';
+    const statusBadge = {
+      approved:  `<span class="badge badge-approved"><i class="bi bi-check-circle-fill"></i> Verified</span>`,
+      pending:   `<span class="badge badge-pending"><i class="bi bi-hourglass"></i> Pending</span>`,
+      rejected:  `<span class="badge badge-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>`,
+      suspended: `<span class="badge badge-suspended"><i class="bi bi-slash-circle"></i> Suspended</span>`,
+    }[st] || `<span class="badge badge-pending">${st}</span>`;
+
+    return `<tr>
+      <td>
+        <div class="profile-thumb">
+          <div class="sm-av" style="background:${bg};color:${fg}">${initials(e.name)}</div>
+          <strong>${e.name}</strong>
+        </div>
+      </td>
+      <td>${e.role||'—'}</td>
+      <td>${e.location||'—'}</td>
+      <td>${e.education||'—'}</td>
+      <td>${fmtSalary(e.salary_min,e.salary_max)}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          ${st !== 'suspended' ? `<button class="action-btn suspend" onclick="updateStatus('${e.id}','suspended',this.closest('tr'))">
+            <i class="bi bi-slash-circle"></i> Suspend
+          </button>` : ''}
+          <button class="action-btn" onclick="viewEmployee('${e.id}')">
+            <i class="bi bi-eye"></i> View
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── RENDER PENDING ─────────────────────────────────────── */
+function renderPendingTable() {
+  const query = (document.getElementById('pending-search')?.value||'').toLowerCase();
+  const list  = query ? allPending.filter(e =>
+    (e.name||'').toLowerCase().includes(query) ||
+    (e.role||'').toLowerCase().includes(query)
+  ) : allPending;
+
+  document.getElementById('pending-full-count').textContent = list.length;
+  const tbody = document.getElementById('pending-table');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--text-muted)">
+      <i class="bi bi-check-circle" style="font-size:24px;display:block;margin:0 auto 8px;opacity:.4"></i>
+      No pending profiles — all clear!
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => `
+    <tr id="prow-${p.id}">
+      <td><div class="profile-thumb">
+        <div class="sm-av" style="background:var(--green-light);color:var(--green-dark)">${initials(p.name)}</div>
+        <strong>${p.name}</strong>
+      </div></td>
+      <td>${p.age||'—'}</td>
+      <td>${p.role||'—'}</td>
+      <td>${fmtDate(p.submitted_at)}</td>
+      <td><div class="v-chips">
+        ${chip(p.id_verified,'ID')}
+        ${chip(p.selfie_verified,'Selfie')}
+        ${chip(p.refs_verified,'Refs')}
+      </div></td>
+      <td class="row-actions">
+        <div style="display:flex;gap:5px">
+          <button class="action-btn approve" onclick="updateStatus('${p.id}','approved',document.getElementById('prow-${p.id}'))">
+            <i class="bi bi-check-lg"></i> Approve
+          </button>
+          <button class="action-btn reject" onclick="updateStatus('${p.id}','rejected',document.getElementById('prow-${p.id}'))">
+            <i class="bi bi-x-lg"></i> Reject
+          </button>
+          <button class="action-btn" onclick="viewEmployee('${p.id}')">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── RENDER PENDING PREVIEW ─────────────────────────────── */
+function renderPendingPreview() {
+  const list  = allPending.slice(0, 5);
+  const tbody = document.getElementById('pending-preview');
+
+  document.getElementById('pending-count-label').textContent = allPending.length;
+  const badge = document.getElementById('pending-badge');
+  badge.textContent = allPending.length || '';
+  badge.style.display = allPending.length ? 'inline' : 'none';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="5" style="color:var(--text-muted)">
+      No pending profiles <i class="bi bi-check-circle-fill" style="color:var(--green)"></i>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => `
+    <tr id="pprow-${p.id}">
+      <td><div class="profile-thumb">
+        <div class="sm-av" style="background:var(--green-light);color:var(--green-dark)">${initials(p.name)}</div>
+        <strong>${p.name}</strong>
+      </div></td>
+      <td>${p.role||'—'}</td>
+      <td>${fmtDate(p.submitted_at)}</td>
+      <td><div class="v-chips">
+        ${chip(p.id_verified,'ID')}
+        ${chip(p.selfie_verified,'Selfie')}
+        ${chip(p.refs_verified,'Refs')}
+      </div></td>
+      <td class="row-actions">
+        <div style="display:flex;gap:5px">
+          <button class="action-btn approve" onclick="updateStatus('${p.id}','approved',document.getElementById('pprow-${p.id}'))">
+            <i class="bi bi-check-lg"></i> Approve
+          </button>
+          <button class="action-btn reject" onclick="updateStatus('${p.id}','rejected',document.getElementById('pprow-${p.id}'))">
+            <i class="bi bi-x-lg"></i> Reject
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── ROLE BARS ──────────────────────────────────────────── */
+function renderRoleBars() {
+  const counts = {};
+  allEmployees.forEach(e => { if (e.role) counts[e.role] = (counts[e.role]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const max    = sorted[0]?.[1] || 1;
+
+  document.getElementById('role-bars').innerHTML = sorted.map(([name, count]) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
+      <span style="font-size:13px;width:120px;color:var(--text-muted);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+      <div class="bar-outer">
+        <div class="bar-inner" style="width:${Math.round(count/max*100)}%"></div>
+      </div>
+      <span style="font-size:12px;font-weight:600;min-width:24px;text-align:right">${count}</span>
+    </div>`).join('') || '<p style="color:var(--text-muted);font-size:13px;padding:.5rem 0">No data yet</p>';
+}
+
+/* ── KPI CARDS ──────────────────────────────────────────── */
+function renderKPIs() {
+  const total    = allEmployees.length;
+  const approved = allEmployees.filter(e => e.status === 'approved').length;
+  const pending  = allPending.length;
+  const pct      = total ? Math.round(approved/total*100) : 0;
+
+  document.getElementById('kpi-employees').textContent    = total.toLocaleString();
+  document.getElementById('kpi-employers').textContent    = allEmployers.length.toLocaleString();
+  document.getElementById('kpi-pending').textContent      = pending;
+  document.getElementById('kpi-verified').textContent     = approved.toLocaleString();
+  document.getElementById('kpi-verified-sub').textContent = `↑ ${pct}% verification rate`;
+  document.getElementById('kpi-pending-sub').textContent  = pending ? `${pending} need attention` : 'All clear ✓';
+}
+
+/* ── LOAD EMPLOYERS ─────────────────────────────────────── */
+async function loadEmployers() {
+  const { data, error } = await db.from('employers').select('*').order('registered_at', { ascending:false });
+  if (error) { toast('Error loading employers: ' + error.message, 'error'); return; }
+  allEmployers = data || [];
+  document.getElementById('employers-count').textContent = allEmployers.length;
+}
+
+function renderEmployers() {
+  const query = (document.getElementById('emp-search-2')?.value||'').toLowerCase();
+  const list  = query ? allEmployers.filter(e =>
+    (e.name||'').toLowerCase().includes(query) ||
+    (e.location||'').toLowerCase().includes(query)
+  ) : allEmployers;
+
+  document.getElementById('employers-count').textContent = list.length;
+  const tbody = document.getElementById('employers-table');
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--text-muted)">No employers found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(e => {
+    const [bg,fg] = avatarColor(e.name);
+    const isActive = e.status === 'active';
+    return `<tr>
+      <td><div class="profile-thumb">
+        <div class="sm-av" style="background:${bg};color:${fg}">${initials(e.name||'E')}</div>
+        <strong>${e.name||'—'}</strong>
+      </div></td>
+      <td>${e.location||'—'}</td>
+      <td>${fmtDate(e.registered_at)}</td>
+      <td>${e.hires_count||0}</td>
+      <td><span class="badge ${isActive?'badge-active':'badge-suspended'}">
+        <i class="bi bi-${isActive?'check-circle':'slash-circle'}-fill"></i>
+        ${isActive?'Active':'Suspended'}
+      </span></td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="action-btn" onclick="viewEmployer('${e.id}')">
+            <i class="bi bi-eye"></i> View
+          </button>
+          ${isActive
+            ? `<button class="action-btn suspend" onclick="updateEmployerStatus('${e.id}','suspended',this.closest('tr'))">
+                <i class="bi bi-slash-circle"></i> Suspend
+               </button>`
+            : `<button class="action-btn approve" onclick="updateEmployerStatus('${e.id}','active',this.closest('tr'))">
+                <i class="bi bi-check-lg"></i> Activate
+               </button>`
+          }
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateEmployerStatus(id, status, rowEl) {
+  const { error } = await db.from('employers').update({ status }).eq('id', id);
+  if (error) { toast('Update failed: '+error.message, 'error'); return; }
+  toast(`Employer ${status === 'active' ? 'activated' : 'suspended'}`);
+  await loadEmployers();
+  renderEmployers();
+}
+
+/* ── LOAD ACTIVITY ──────────────────────────────────────── */
+async function loadActivity() {
+  const { data, error } = await db.from('activity_log')
+    .select('*').order('created_at', {ascending:false}).limit(10);
+
+  const feed = document.getElementById('activity-feed');
+  if (error || !data || !data.length) {
+    feed.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:13px">
+      <i class="bi bi-clock-history" style="font-size:20px;display:block;margin-bottom:6px;opacity:.4"></i>
+      No activity recorded yet
+    </div>`;
+    return;
+  }
+
+  const ACT_CONFIG = {
+    approved:  { icon:'check-circle-fill', bg:'var(--green-light)', color:'var(--green-dark)' },
+    rejected:  { icon:'x-circle-fill',     bg:'var(--red-light)',   color:'#A32D2D' },
+    suspended: { icon:'slash-circle',      bg:'var(--amber-light)', color:'#9A6B00' },
+    default:   { icon:'info-circle-fill',  bg:'var(--blue-light)',  color:'var(--blue)' },
+  };
+
+  feed.innerHTML = data.map(row => {
+    const key  = row.action?.toLowerCase().includes('approve') ? 'approved'
+               : row.action?.toLowerCase().includes('reject')  ? 'rejected'
+               : row.action?.toLowerCase().includes('suspend') ? 'suspended'
+               : 'default';
+    const cfg  = ACT_CONFIG[key];
+    return `<div class="activity-item">
+      <div class="act-icon" style="background:${cfg.bg};color:${cfg.color}">
+        <i class="bi bi-${cfg.icon}"></i>
+      </div>
+      <div>
+        <div class="act-text"><strong>${row.actor||'Admin'}</strong> — ${row.action||'performed an action'}</div>
+        <div class="act-time"><i class="bi bi-clock" style="font-size:10px;margin-right:3px"></i>${timeAgo(row.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── VIEW EMPLOYEE ──────────────────────────────────────── */
+async function viewEmployee(id) {
+  currentWorkerId = id;
+  document.getElementById('worker-modal').classList.add('open');
+  document.getElementById('modal-body').innerHTML = `<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>`;
+  document.getElementById('modal-footer').innerHTML = '';
+
+  const { data: e, error } = await db.from('employees').select('*').eq('id', id).single();
+  if (error || !e) {
+    document.getElementById('modal-body').innerHTML = `<p style="color:var(--red)">Could not load profile.</p>`;
+    return;
+  }
+
+  const [bg,fg] = avatarColor(e.name);
+  const st = e.status || 'pending';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.3rem;padding-bottom:1.3rem;border-bottom:1px solid var(--border)">
+      <div style="width:56px;height:56px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">${initials(e.name)}</div>
+      <div>
+        <div style="font-size:16px;font-weight:600">${e.name}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${e.role||'—'}</div>
+        <span class="badge badge-${st}"><i class="bi bi-circle-fill" style="font-size:7px"></i> ${st.charAt(0).toUpperCase()+st.slice(1)}</span>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><label>Location</label><span>${e.location||'—'}</span></div>
+      <div class="detail-item"><label>Age</label><span>${e.age||'—'}</span></div>
+      <div class="detail-item"><label>Salary Range</label><span>${fmtSalary(e.salary_min,e.salary_max)}</span></div>
+      <div class="detail-item"><label>Education</label><span>${e.education||'—'}</span></div>
+      <div class="detail-item"><label>Experience</label><span>${e.experience_years ? e.experience_years+' years' : '—'}</span></div>
+      <div class="detail-item"><label>Languages</label><span>${e.languages||'—'}</span></div>
+      <div class="detail-item"><label>Submitted</label><span>${fmtDate(e.submitted_at)}</span></div>
+      <div class="detail-item"><label>Availability</label><span>${e.availability||'Immediate'}</span></div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:8px">Verifications</div>
+      <div class="v-chips">
+        ${chip(e.id_verified,'ID Document')}
+        ${chip(e.selfie_verified,'Selfie / Photo')}
+        ${chip(e.refs_verified,'References')}
+      </div>
+    </div>
+    ${e.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.65;background:var(--bg);border-radius:8px;padding:.85rem"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${e.bio}</div>` : ''}
+  `;
+
+  const footer = document.getElementById('modal-footer');
+  if (st === 'pending') {
+    footer.innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="action-btn reject" onclick="updateStatus('${e.id}','rejected',null);closeModal()">
+        <i class="bi bi-x-lg"></i> Reject
+      </button>
+      <button class="action-btn approve" onclick="updateStatus('${e.id}','approved',null);closeModal()">
+        <i class="bi bi-check-lg"></i> Approve
+      </button>`;
+  } else {
+    footer.innerHTML = `
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      ${st !== 'suspended' ? `<button class="action-btn suspend" onclick="updateStatus('${e.id}','suspended',null);closeModal()">
+        <i class="bi bi-slash-circle"></i> Suspend
+      </button>` : `<button class="action-btn approve" onclick="updateStatus('${e.id}','approved',null);closeModal()">
+        <i class="bi bi-check-lg"></i> Reinstate
+      </button>`}
+    `;
+  }
+}
+
+/* ── VIEW EMPLOYER ──────────────────────────────────────── */
+async function viewEmployer(id) {
+  document.getElementById('worker-modal').classList.add('open');
+  document.getElementById('modal-body').innerHTML = `<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>`;
+  document.getElementById('modal-footer').innerHTML = '';
+
+  const { data: e, error } = await db.from('employers').select('*').eq('id', id).single();
+  if (error || !e) {
+    document.getElementById('modal-body').innerHTML = `<p style="color:var(--red)">Could not load profile.</p>`;
+    return;
+  }
+
+  const [bg,fg] = avatarColor(e.name);
+
+  document.getElementById('modal-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.3rem;padding-bottom:1.3rem;border-bottom:1px solid var(--border)">
+      <div style="width:56px;height:56px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0">${initials(e.name||'E')}</div>
+      <div>
+        <div style="font-size:16px;font-weight:600">${e.name||'—'}</div>
+        <div style="font-size:13px;color:var(--text-muted)">${e.email||'—'}</div>
+        <span class="badge ${e.status==='active'?'badge-active':'badge-suspended'}" style="margin-top:4px">
+          <i class="bi bi-${e.status==='active'?'check':'slash'}-circle-fill"></i> ${e.status||'—'}
+        </span>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><label>Location</label><span>${e.location||'—'}</span></div>
+      <div class="detail-item"><label>Phone</label><span>${e.phone||'—'}</span></div>
+      <div class="detail-item"><label>Registered</label><span>${fmtDate(e.registered_at)}</span></div>
+      <div class="detail-item"><label>Hires Made</label><span>${e.hires_count||0}</span></div>
+    </div>
+  `;
+
+  document.getElementById('modal-footer').innerHTML = `<button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+}
+
+/* ── ADD WORKER MODAL (stub) ────────────────────────────── */
+function openAddWorkerModal() {
+  toast('Add Worker form coming soon', 'success');
+}
+
+/* ── FILTER EMPLOYEES ───────────────────────────────────── */
+function filterEmployees(filter, el) {
+  currentEmpFilter = filter;
+  document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderEmployees();
+}
+
+/* ── RENDER DASHBOARD ───────────────────────────────────── */
+function renderDashboard() {
+  renderKPIs();
+  renderRoleBars();
+  renderPendingPreview();
+  renderEmployees();
+  renderPendingTable();
+  renderEmployers();
+}
+
+/* ── REPORTS EXPORT ─────────────────────────────────────── */
+function exportReport(type) {
+  let data, headers, filename;
+  if (type === 'workers') {
+    headers = ['Name','Role','Location','Education','Salary Min','Salary Max','Status','Submitted'];
+    data    = allEmployees.map(e => [e.name,e.role,e.location,e.education,e.salary_min,e.salary_max,e.status,fmtDate(e.submitted_at)]);
+    filename = 'workers_report.csv';
+  } else if (type === 'employers') {
+    headers = ['Name','Location','Registered','Hires','Status'];
+    data    = allEmployers.map(e => [e.name,e.location,fmtDate(e.registered_at),e.hires_count,e.status]);
+    filename = 'employers_report.csv';
+  } else if (type === 'pending') {
+    headers = ['Name','Age','Role','Submitted','ID Verified','Selfie Verified','Refs Verified'];
+    data    = allPending.map(e => [e.name,e.age,e.role,fmtDate(e.submitted_at),e.id_verified,e.selfie_verified,e.refs_verified]);
+    filename = 'pending_report.csv';
+  }
+
+  if (!data) { toast('No data to export', 'error'); return; }
+  const csv  = [headers, ...data].map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  toast(`Exported ${filename}`, 'success');
+}
+
+/* ── SETTINGS ───────────────────────────────────────────── */
+async function saveSettings() {
+  const cfg = {
+    site_name: document.getElementById('cfg-name').value,
+    email:     document.getElementById('cfg-email').value,
+    phone:     document.getElementById('cfg-phone').value,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await db.from('settings').upsert({ id:1, ...cfg }).catch(()=>({error:null}));
+  toast(error ? 'Saved locally (no settings table)' : 'Settings saved successfully');
+}
+
+/* ── GLOBAL SEARCH ──────────────────────────────────────── */
+document.getElementById('global-search').addEventListener('input', function() {
+  if (this.value.trim()) {
+    showSection('employees', document.querySelector('.sidebar-nav a:nth-child(2)'));
+    document.getElementById('emp-search').value = this.value;
+    currentEmpFilter = 'all';
+    renderEmployees();
+  }
+});
+
+/* ── BOOT ───────────────────────────────────────────────── */
+bootstrap();
+</script>
+</body>
+</html>
