@@ -3,35 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Post Your Profile – Amilia Care</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<title>Post Your Profile – Sounds Care</title>
+
+<!-- Favicon (from index.html branding) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231A7A5E'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia%2Cserif' font-size='34' font-weight='700' fill='%23ffffff'%3ESC%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#1A7A5E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
 <style>
-body { background: var(--surface); }
-.top-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; }
-.top-nav .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; }
-.top-nav .logo span { color: var(--green); }
-.char-count { font-size: 11.5px; color: var(--text-muted); text-align: right; margin-top: 4px; }
-.char-count.error { color: #A32D2D; }
-.required { color: #E24B4A; }
-.info-note { background: #E1F5EE; border: 1px solid #9FE1CB; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--green-dark); margin-bottom: 1rem; }
-.age-warning { display: none; background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #A32D2D; margin-top: 6px; }
-.exp-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; align-items: end; }
-.exp-row label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-.exp-row input, .exp-row select { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13.5px; font-family: inherit; outline: none; width: 100%; }
-.exp-row input:focus, .exp-row select:focus { border-color: var(--green); }
-.add-exp-btn { background: none; border: 1.5px dashed var(--green); color: var(--green); padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; transition: background .2s; }
-.add-exp-btn:hover { background: var(--green-light); }
-.remove-exp { background: none; border: none; color: #E24B4A; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
-.section-num { width: 28px; height: 28px; background: var(--green); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
-.form-section h3 { display: flex; align-items: center; }
+:root {
+  --green:       #1A7A5E;
+  --green-dark:  #145c47;
+  --green-light: #e8f5f0;
+  --blue:        #3B8ED4;
+  --blue-dark:   #2574b8;
+  --blue-light:  #EBF4FC;
+  --surface:     #f7f9f8;
+  --border:      #d8e3de;
+  --text:        #1a2e27;
+  --text-muted:  #6b7c75;
+  --red:         #E24B4A;
+  --amber:       #E9A23B;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--surface);font-family:'DM Sans',sans-serif;color:var(--text);font-size:14px;}
+a{text-decoration:none;color:inherit;}
+
+/* ── Nav ── */
+.top-nav{background:#fff;border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.top-nav .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+.top-nav .logo span{color:var(--green);}
+.nav-user{font-size:13.5px;color:var(--text-muted);}
+
+/* ── Page container ── */
+.page-container{max-width:780px;margin:0 auto;padding:2rem 1.2rem 4rem;}
+.page-header{margin-bottom:1.8rem;}
+.page-header h1{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;margin-bottom:.4rem;}
+.page-header p{color:var(--text-muted);font-size:14px;line-height:1.7;}
+
+/* ── Progress steps ── */
+.progress-steps{display:flex;gap:0;margin-bottom:2rem;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.progress-step{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:.2s;border-right:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.progress-step:last-child{border-right:none;}
+.progress-step.done{background:var(--green-light);color:var(--green);}
+.progress-step.active{background:var(--green);color:#fff;}
+
+/* ── Form section ── */
+.form-section{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem;}
+.form-section h3{font-size:1rem;font-weight:700;margin-bottom:1.2rem;display:flex;align-items:center;}
+.section-num{width:28px;height:28px;background:var(--green);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-right:8px;flex-shrink:0;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr;}}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;transition:border .2s;color:var(--text);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green);}
+.form-group input[readonly]{background:var(--surface);color:var(--text-muted);}
+.hint{font-size:11.5px;color:var(--text-muted);}
+.required{color:var(--red);}
+
+/* ── Upload zone ── */
+.upload-zone{border:1.5px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface);}
+.upload-zone:hover{border-color:var(--green);background:var(--green-light);}
+.upload-zone span{font-size:24px;display:block;margin-bottom:6px;}
+.upload-zone p{font-size:12.5px;color:var(--text-muted);margin:0;}
+
+/* ── Disclaimer box ── */
+.disclaimer-box{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--green-dark);margin-bottom:1.2rem;line-height:1.6;}
+
+/* ── Buttons ── */
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--green);color:#fff;border:none;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s;}
+.btn-primary:hover{background:var(--green-dark);}
+.btn-primary:disabled{background:var(--border);color:#999;cursor:not-allowed;}
+.btn-outline{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--text-muted);border:1.5px solid var(--border);border-radius:50px;padding:9px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:.2s;}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.step-nav{display:flex;gap:10px;justify-content:flex-end;margin-top:1.2rem;}
+
+/* ── Alerts ── */
+.alert-error{background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-bottom:1rem;}
+.alert-info{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green-dark);margin-bottom:1rem;}
+.age-warning{display:none;background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-top:6px;}
+.char-count{font-size:11.5px;color:var(--text-muted);text-align:right;margin-top:4px;}
+.char-count.error{color:#A32D2D;}
+
+/* ── Referee block ── */
+.referee-block{border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;}
+.referee-block h4{font-size:14px;font-weight:700;margin-bottom:.8rem;display:flex;align-items:center;justify-content:space-between;}
+.optional-tag{font-size:11px;font-weight:400;color:var(--text-muted);background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:1px 8px;}
+
+/* ── Experience ── */
+.exp-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:end;}
+@media(max-width:500px){.exp-row{grid-template-columns:1fr;}}
+.exp-row label{font-size:12px;color:var(--text-muted);font-weight:600;}
+.exp-row input,.exp-row select{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;width:100%;}
+.exp-row input:focus,.exp-row select:focus{border-color:var(--green);}
+.add-exp-btn{background:none;border:1.5px dashed var(--green);color:var(--green);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:.2s;}
+.add-exp-btn:hover{background:var(--green-light);}
+.remove-exp{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;}
+.info-note{background:var(--green-light);border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green-dark);margin-bottom:1rem;}
+
+/* ── Checkbox ── */
+.checkbox-group{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.6;}
+.checkbox-group input[type=checkbox]{margin-top:3px;flex-shrink:0;accent-color:var(--green);}
+
+/* ── Email check status ── */
+.email-status{display:none;font-size:12px;margin-top:4px;padding:4px 10px;border-radius:6px;}
+.email-status.checking{background:#f5f5f5;color:#666;}
+.email-status.exists{background:#FCEBEB;color:#A32D2D;}
+.email-status.clear{background:var(--green-light);color:var(--green-dark);}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Success ── */
+#form-success{text-align:center;padding:4rem 2rem;background:#fff;border:1px solid var(--border);border-radius:12px;}
+
+@media(max-width:600px){
+  .top-nav{padding:0 1rem;}
+  .page-container{padding:1.2rem .8rem 3rem;}
+  .progress-step{font-size:10px;padding:8px 2px;}
+  .form-section{padding:1rem;}
+}
 </style>
 </head>
 <body>
 
 <div class="top-nav">
-  <a href="index.html" class="logo">Amilia<span>Care</span></a>
-  <span style="font-size:13.5px;color:var(--text-muted);">Posting your profile as <strong id="user-name">Jane W.</strong></span>
+  <a href="index.html" class="logo">Sounds<span>Care</span></a>
+  <span class="nav-user">Posting as <strong id="user-name">Loading…</strong></span>
 </div>
 
 <div class="page-container">
@@ -40,9 +148,14 @@ body { background: var(--surface); }
     <p>Complete all sections carefully. Your profile will be reviewed by our admin team before going live. <strong>ID details will never be shared publicly.</strong></p>
   </div>
 
+  <div id="email-exists-banner" class="alert-error" style="display:none">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <strong>Profile already submitted.</strong> A worker profile with your email already exists. <a href="employee-dashboard.html" style="color:#A32D2D;text-decoration:underline">Go to your dashboard →</a>
+  </div>
+
   <div class="progress-steps">
-    <div class="progress-step done" id="step-tab-1">Personal</div>
-    <div class="progress-step active" id="step-tab-2">Identity</div>
+    <div class="progress-step active" id="step-tab-1">Personal</div>
+    <div class="progress-step" id="step-tab-2">Identity</div>
     <div class="progress-step" id="step-tab-3">Education</div>
     <div class="progress-step" id="step-tab-4">Experience</div>
     <div class="progress-step" id="step-tab-5">Location</div>
@@ -51,8 +164,8 @@ body { background: var(--surface); }
     <div class="progress-step" id="step-tab-8">Declaration</div>
   </div>
 
+  <!-- ══════════════════════ STEP 1: PERSONAL ══════════════════════ -->
   <div id="form-step-1" class="step-content">
-    <!-- PERSONAL INFO -->
     <div class="form-section">
       <h3><span class="section-num">1</span> Personal Information</h3>
       <div class="form-grid">
@@ -61,22 +174,23 @@ body { background: var(--surface); }
           <input type="text" id="fullname" placeholder="As it appears on your ID">
         </div>
         <div class="form-group">
-          <label>Phone Number <span class="required">*</span> <span style="font-size:11px;color:var(--text-muted)">(must be active)</span></label>
+          <label>Phone Number <span class="required">*</span></label>
           <input type="tel" id="phone" placeholder="+254 7XX XXX XXX">
         </div>
         <div class="form-group">
           <label>Email Address <span class="required">*</span></label>
-          <input type="email" id="email" placeholder="Pre-filled from account" value="jane@example.com">
+          <input type="email" id="email" placeholder="Your email address">
           <div class="hint">Auto-filled from your account</div>
+          <div class="email-status" id="email-status"></div>
         </div>
         <div class="form-group">
           <label>Date of Birth <span class="required">*</span> <span style="font-size:11px;color:var(--text-muted)">(must be 19+)</span></label>
-          <input type="date" id="dob" onchange="checkAge()" max="">
-          <div class="age-warning" id="age-warning">⚠ You must be at least 19 years old to register on Amilia Care.</div>
+          <input type="date" id="dob" onchange="checkAge()">
+          <div class="age-warning" id="age-warning">⚠ You must be at least 19 years old to register on Sounds Care.</div>
         </div>
         <div class="form-group">
           <label>Gender <span class="required">*</span></label>
-          <select>
+          <select id="gender">
             <option value="">Select gender</option>
             <option>Female</option>
             <option>Male</option>
@@ -84,7 +198,7 @@ body { background: var(--surface); }
         </div>
         <div class="form-group">
           <label>Preferred Role <span class="required">*</span></label>
-          <select>
+          <select id="preferred-role">
             <option value="">Select your role</option>
             <option>House Manager</option>
             <option>Nanny / Childcare</option>
@@ -99,7 +213,7 @@ body { background: var(--surface); }
         </div>
         <div class="form-group">
           <label>Expected Salary (KES/month) <span class="required">*</span></label>
-          <select>
+          <select id="salary-range">
             <option value="">Select range</option>
             <option>5,000 – 10,000</option>
             <option>10,000 – 20,000</option>
@@ -110,7 +224,7 @@ body { background: var(--surface); }
         </div>
         <div class="form-group">
           <label>Availability <span class="required">*</span></label>
-          <select>
+          <select id="availability">
             <option>Live-in</option>
             <option>Day Work</option>
             <option>Part Time</option>
@@ -127,28 +241,29 @@ body { background: var(--surface); }
         </div>
       </div>
     </div>
-    <div style="text-align:right;margin-top:1rem">
-      <button class="btn-primary" onclick="goStep(2)">Next: Identity Verification →</button>
+    <div id="step1-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-primary" onclick="nextStep1()">Next: Identity Verification <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 2: IDENTITY ══════════════════════ -->
   <div id="form-step-2" class="step-content" style="display:none">
-    <!-- IDENTITY -->
     <div class="form-section">
       <h3><span class="section-num">2</span> Identity Verification</h3>
       <div class="disclaimer-box">
-        <strong>🔒 Privacy Disclaimer</strong>
-        Your ID number and uploaded documents are strictly confidential and will <em>never</em> be shared with employers or the public. They are used solely for age and identity verification by the Amilia Care admin team.
+        <strong>🔒 Privacy Disclaimer</strong><br>
+        Your ID number and uploaded documents are strictly confidential and will <em>never</em> be shared with employers or the public. They are used solely for age and identity verification by the Sounds Care admin team.
       </div>
       <div class="form-grid">
         <div class="form-group">
           <label>National ID Number <span class="required">*</span></label>
-          <input type="text" placeholder="Enter your ID number" maxlength="8">
+          <input type="text" id="id-number" placeholder="Enter your ID number" maxlength="8">
           <div class="hint">Strictly confidential – not visible to employers</div>
         </div>
         <div class="form-group">
           <label>ID Type <span class="required">*</span></label>
-          <select>
+          <select id="id-type">
             <option>National ID</option>
             <option>Passport</option>
             <option>Alien ID</option>
@@ -159,46 +274,44 @@ body { background: var(--surface); }
         <div class="form-group">
           <label>Upload ID (Front) <span class="required">*</span></label>
           <div class="upload-zone" onclick="this.querySelector('input').click()">
-            <span>📄</span>
-            <p>Click to upload front of ID</p>
+            <span>📄</span><p>Click to upload front of ID</p>
             <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-            <input type="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="showFileName(this)">
+            <input type="file" id="id-front" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="showFileName(this)">
           </div>
         </div>
         <div class="form-group">
           <label>Upload ID (Back) <span class="required">*</span></label>
           <div class="upload-zone" onclick="this.querySelector('input').click()">
-            <span>📄</span>
-            <p>Click to upload back of ID</p>
+            <span>📄</span><p>Click to upload back of ID</p>
             <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-            <input type="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="showFileName(this)">
+            <input type="file" id="id-back" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="showFileName(this)">
           </div>
         </div>
         <div class="form-group">
           <label>Upload Selfie <span class="required">*</span> <span style="font-size:11px;color:var(--text-muted)">(holding your ID)</span></label>
           <div class="upload-zone" onclick="this.querySelector('input').click()">
-            <span>🤳</span>
-            <p>Clear selfie holding your ID</p>
+            <span>🤳</span><p>Clear selfie holding your ID</p>
             <p style="font-size:11px;margin-top:4px">JPG or PNG – max 5MB</p>
-            <input type="file" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
+            <input type="file" id="id-selfie" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
           </div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(1)">← Back</button>
-      <button class="btn-primary" onclick="goStep(3)">Next: Education →</button>
+    <div id="step2-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(1)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="nextStep2()">Next: Education <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 3: EDUCATION ══════════════════════ -->
   <div id="form-step-3" class="step-content" style="display:none">
-    <!-- EDUCATION -->
     <div class="form-section">
       <h3><span class="section-num">3</span> Education</h3>
       <div class="form-grid">
         <div class="form-group">
           <label>Highest Education Level <span class="required">*</span></label>
-          <select>
+          <select id="edu-level">
             <option value="">Select level</option>
             <option>No formal education</option>
             <option>Primary (KCPE)</option>
@@ -211,35 +324,35 @@ body { background: var(--surface); }
         </div>
         <div class="form-group">
           <label>Year Completed <span class="required">*</span></label>
-          <input type="number" placeholder="e.g. 2018" min="1990" max="2025">
+          <input type="number" id="edu-year" placeholder="e.g. 2018" min="1990" max="2025">
         </div>
         <div class="form-group">
           <label>Name of Institution</label>
-          <input type="text" placeholder="School/College name">
+          <input type="text" id="edu-institution" placeholder="School/College name">
         </div>
         <div class="form-group">
           <label>Certificate/Field of Study</label>
-          <input type="text" placeholder="e.g. Home Management, Culinary Arts">
+          <input type="text" id="edu-field" placeholder="e.g. Home Management, Culinary Arts">
         </div>
       </div>
       <div class="form-group" style="margin-top:1rem">
         <label>Upload Education Certificate (optional)</label>
         <div class="upload-zone" onclick="this.querySelector('input').click()">
-          <span>📜</span>
-          <p>Click to upload your certificate</p>
+          <span>📜</span><p>Click to upload your certificate</p>
           <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-          <input type="file" style="display:none" onchange="showFileName(this)">
+          <input type="file" id="edu-cert" style="display:none" onchange="showFileName(this)">
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(2)">← Back</button>
-      <button class="btn-primary" onclick="goStep(4)">Next: Experience →</button>
+    <div id="step3-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(2)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="nextStep3()">Next: Experience <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 4: EXPERIENCE ══════════════════════ -->
   <div id="form-step-4" class="step-content" style="display:none">
-    <!-- EXPERIENCE -->
     <div class="form-section">
       <h3><span class="section-num">4</span> Work Experience</h3>
       <div class="info-note">List your previous employment. You can add up to 5 entries. Employer contact details are optional.</div>
@@ -247,52 +360,37 @@ body { background: var(--surface); }
         <div class="referee-block" id="exp-1">
           <h4>Experience 1</h4>
           <div class="exp-row">
-            <div>
-              <label>Role Held <span class="required">*</span></label>
-              <input type="text" placeholder="e.g. House Manager">
-            </div>
-            <div>
-              <label>Duration (years) <span class="required">*</span></label>
-              <input type="number" placeholder="e.g. 2" min="0" max="50">
-            </div>
-            <div>
-              <label>Employer Contact (optional)</label>
-              <input type="tel" placeholder="+254 7XX XXX XXX">
-            </div>
+            <div><label>Role Held <span class="required">*</span></label><input type="text" placeholder="e.g. House Manager"></div>
+            <div><label>Duration (years) <span class="required">*</span></label><input type="number" placeholder="e.g. 2" min="0" max="50"></div>
+            <div><label>Employer Contact (optional)</label><input type="tel" placeholder="+254 7XX XXX XXX"></div>
           </div>
           <div class="exp-row">
-            <div>
-              <label>Employer Name (optional)</label>
-              <input type="text" placeholder="Employer or company name">
-            </div>
-            <div>
-              <label>Location</label>
-              <input type="text" placeholder="e.g. Kilimani, Nairobi">
-            </div>
+            <div><label>Employer Name (optional)</label><input type="text" placeholder="Employer or company name"></div>
+            <div><label>Location</label><input type="text" placeholder="e.g. Kilimani, Nairobi"></div>
           </div>
         </div>
       </div>
       <button class="add-exp-btn" onclick="addExperience()">+ Add Another Experience</button>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(3)">← Back</button>
-      <button class="btn-primary" onclick="goStep(5)">Next: Location →</button>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(3)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="goStep(5)">Next: Location <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 5: LOCATION ══════════════════════ -->
   <div id="form-step-5" class="step-content" style="display:none">
-    <!-- LOCATION -->
     <div class="form-section">
       <h3><span class="section-num">5</span> Location Details</h3>
       <div class="form-grid">
         <div class="form-group">
           <label>Current Town/Estate <span class="required">*</span></label>
-          <input type="text" placeholder="e.g. Kasarani, Nairobi">
+          <input type="text" id="location-town" placeholder="e.g. Kasarani, Nairobi">
           <div class="hint">Where you currently live</div>
         </div>
         <div class="form-group">
           <label>County <span class="required">*</span></label>
-          <select>
+          <select id="location-county">
             <option value="">Select County</option>
             <option>Nairobi</option><option>Kiambu</option><option>Machakos</option>
             <option>Kajiado</option><option>Nakuru</option><option>Mombasa</option>
@@ -302,19 +400,19 @@ body { background: var(--surface); }
         </div>
         <div class="form-group full">
           <label>Home / Physical Address <span class="required">*</span></label>
-          <input type="text" placeholder="House number, road, estate">
+          <input type="text" id="location-address" placeholder="House number, road, estate">
         </div>
         <div class="form-group">
           <label>Home Village <span class="required">*</span></label>
-          <input type="text" placeholder="Your upcountry village">
+          <input type="text" id="location-village" placeholder="Your upcountry village">
         </div>
         <div class="form-group">
           <label>Home County</label>
-          <input type="text" placeholder="e.g. Nyeri, Murang'a">
+          <input type="text" id="location-home-county" placeholder="e.g. Nyeri, Murang'a">
         </div>
         <div class="form-group">
           <label>Willing to Relocate?</label>
-          <select>
+          <select id="relocate">
             <option>Yes – anywhere in Kenya</option>
             <option>Yes – within my county</option>
             <option>No – prefer current location</option>
@@ -322,21 +420,22 @@ body { background: var(--surface); }
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(4)">← Back</button>
-      <button class="btn-primary" onclick="goStep(6)">Next: Referees →</button>
+    <div id="step5-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(4)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="nextStep5()">Next: Referees <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 6: REFEREES ══════════════════════ -->
   <div id="form-step-6" class="step-content" style="display:none">
-    <!-- REFEREES -->
     <div class="form-section">
       <h3><span class="section-num">6</span> Referees <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(3 required)</span></h3>
       <div class="disclaimer-box">
-        <strong>📋 Referee Requirements</strong>
-        You must provide exactly <strong>3 adult referees</strong>. At least one must be a <strong>family member</strong>. All phone numbers must be <strong>active and working</strong>. Each referee must upload their National ID.
+        <strong>📋 Referee Requirements</strong><br>
+        You must provide exactly <strong>3 adult referees</strong>. At least one must be a <strong>family member</strong>. All phone numbers must be <strong>active and working</strong>. Uploading the referee's National ID is <strong>optional</strong> but helps speed up verification.
       </div>
-      
+
       <div id="referee-list">
         <!-- Referee 1 -->
         <div class="referee-block">
@@ -344,29 +443,30 @@ body { background: var(--surface); }
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's full name">
+              <input type="text" class="ref-name" placeholder="Referee's full name">
             </div>
             <div class="form-group">
               <label>Relationship <span class="required">*</span></label>
-              <select>
+              <select class="ref-rel">
                 <option>Parent</option><option>Sibling</option><option>Aunt/Uncle</option>
                 <option>Grandparent</option><option>Other family</option>
               </select>
             </div>
             <div class="form-group">
               <label>Active Phone Number <span class="required">*</span></label>
-              <input type="tel" placeholder="+254 7XX XXX XXX">
+              <input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX">
             </div>
             <div class="form-group">
               <label>National ID Number <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's ID number">
+              <input type="text" class="ref-id-num" placeholder="Referee's ID number">
             </div>
           </div>
-          <div class="form-group">
-            <label>Upload Referee ID <span class="required">*</span></label>
+          <div class="form-group" style="margin-top:.6rem">
+            <label>Upload Referee ID <span class="optional-tag">optional</span></label>
             <div class="upload-zone" onclick="this.querySelector('input').click()">
-              <span>📄</span><p>Click to upload referee's ID</p>
-              <input type="file" style="display:none" onchange="showFileName(this)">
+              <span>📄</span><p>Click to upload referee's ID (optional)</p>
+              <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
+              <input type="file" class="ref-id-file" style="display:none" onchange="showFileName(this)">
             </div>
           </div>
         </div>
@@ -377,29 +477,30 @@ body { background: var(--surface); }
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's full name">
+              <input type="text" class="ref-name" placeholder="Referee's full name">
             </div>
             <div class="form-group">
               <label>Relationship <span class="required">*</span></label>
-              <select>
+              <select class="ref-rel">
                 <option>Parent</option><option>Sibling</option><option>Friend</option>
                 <option>Former Employer</option><option>Community Leader</option><option>Other</option>
               </select>
             </div>
             <div class="form-group">
               <label>Active Phone Number <span class="required">*</span></label>
-              <input type="tel" placeholder="+254 7XX XXX XXX">
+              <input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX">
             </div>
             <div class="form-group">
               <label>National ID Number <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's ID number">
+              <input type="text" class="ref-id-num" placeholder="Referee's ID number">
             </div>
           </div>
-          <div class="form-group">
-            <label>Upload Referee ID <span class="required">*</span></label>
+          <div class="form-group" style="margin-top:.6rem">
+            <label>Upload Referee ID <span class="optional-tag">optional</span></label>
             <div class="upload-zone" onclick="this.querySelector('input').click()">
-              <span>📄</span><p>Click to upload referee's ID</p>
-              <input type="file" style="display:none" onchange="showFileName(this)">
+              <span>📄</span><p>Click to upload referee's ID (optional)</p>
+              <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
+              <input type="file" class="ref-id-file" style="display:none" onchange="showFileName(this)">
             </div>
           </div>
         </div>
@@ -410,42 +511,44 @@ body { background: var(--surface); }
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's full name">
+              <input type="text" class="ref-name" placeholder="Referee's full name">
             </div>
             <div class="form-group">
               <label>Relationship <span class="required">*</span></label>
-              <select>
+              <select class="ref-rel">
                 <option>Parent</option><option>Sibling</option><option>Friend</option>
                 <option>Former Employer</option><option>Community Leader</option><option>Other</option>
               </select>
             </div>
             <div class="form-group">
               <label>Active Phone Number <span class="required">*</span></label>
-              <input type="tel" placeholder="+254 7XX XXX XXX">
+              <input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX">
             </div>
             <div class="form-group">
               <label>National ID Number <span class="required">*</span></label>
-              <input type="text" placeholder="Referee's ID number">
+              <input type="text" class="ref-id-num" placeholder="Referee's ID number">
             </div>
           </div>
-          <div class="form-group">
-            <label>Upload Referee ID <span class="required">*</span></label>
+          <div class="form-group" style="margin-top:.6rem">
+            <label>Upload Referee ID <span class="optional-tag">optional</span></label>
             <div class="upload-zone" onclick="this.querySelector('input').click()">
-              <span>📄</span><p>Click to upload referee's ID</p>
-              <input type="file" style="display:none" onchange="showFileName(this)">
+              <span>📄</span><p>Click to upload referee's ID (optional)</p>
+              <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
+              <input type="file" class="ref-id-file" style="display:none" onchange="showFileName(this)">
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(5)">← Back</button>
-      <button class="btn-primary" onclick="goStep(7)">Next: About You →</button>
+    <div id="step6-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(5)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="nextStep6()">Next: About You <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 7: ABOUT ══════════════════════ -->
   <div id="form-step-7" class="step-content" style="display:none">
-    <!-- ABOUT -->
     <div class="form-section">
       <h3><span class="section-num">7</span> About Yourself</h3>
       <div class="form-group">
@@ -456,11 +559,11 @@ body { background: var(--surface); }
       <div class="form-grid" style="margin-top:1rem">
         <div class="form-group">
           <label>Languages Spoken</label>
-          <input type="text" placeholder="e.g. English, Swahili, Kikuyu">
+          <input type="text" id="languages" placeholder="e.g. English, Swahili, Kikuyu">
         </div>
         <div class="form-group">
           <label>Key Skills</label>
-          <input type="text" placeholder="e.g. Cooking, Childcare, Driving">
+          <input type="text" id="key-skills" placeholder="e.g. Cooking, Childcare, Driving">
         </div>
       </div>
       <div class="form-group" style="margin-top:1rem">
@@ -469,25 +572,25 @@ body { background: var(--surface); }
           <span>📸</span>
           <p>A clear, professional-looking photo</p>
           <p style="font-size:11px;margin-top:4px">JPG or PNG – max 3MB. Will be shown on your public profile.</p>
-          <input type="file" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
+          <input type="file" id="profile-photo" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(6)">← Back</button>
-      <button class="btn-primary" onclick="goStep(8)">Next: Declaration →</button>
+    <div id="step7-error" class="alert-error" style="display:none"></div>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(6)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" onclick="nextStep7()">Next: Declaration <i class="bi bi-arrow-right"></i></button>
     </div>
   </div>
 
+  <!-- ══════════════════════ STEP 8: DECLARATION ══════════════════════ -->
   <div id="form-step-8" class="step-content" style="display:none">
-    <!-- DECLARATION -->
     <div class="form-section">
       <h3><span class="section-num">8</span> Declaration & Submission</h3>
       <div class="disclaimer-box" style="margin-bottom:1.5rem">
-        <strong>⚠ Please read carefully before submitting</strong>
-        Your profile will be reviewed by the Amilia Care admin team. Once approved, it will be visible to employers. Submitting false information may lead to permanent suspension.
+        <strong>⚠ Please read carefully before submitting</strong><br>
+        Your profile will be reviewed by the Sounds Care admin team. Once approved, it will be visible to employers. Submitting false information may lead to permanent suspension.
       </div>
-
       <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:1.5rem">
         <div class="checkbox-group">
           <input type="checkbox" id="decl-adult">
@@ -499,54 +602,243 @@ body { background: var(--surface); }
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="decl-privacy">
-          <label for="decl-privacy">I have read and understood Amilia Care's <a href="#" style="color:var(--green)">Privacy Policy</a>. I consent to my information being stored securely and used to match me with employers.</label>
+          <label for="decl-privacy">I have read and understood Sounds Care's <a href="#" style="color:var(--green)">Privacy Policy</a>. I consent to my information being stored securely and used to match me with employers.</label>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="decl-refs">
           <label for="decl-refs">I confirm that all referees I have listed are real adults who have agreed to be listed as my referees and whose phone numbers are working.</label>
         </div>
       </div>
-
-      <div id="submit-error" style="display:none;background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-bottom:1rem;"></div>
+      <div id="submit-error" class="alert-error" style="display:none"></div>
     </div>
-    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn-outline" style="padding:9px 20px;border-radius:50px;cursor:pointer;font-size:14px" onclick="goStep(7)">← Back</button>
-      <button class="btn-primary" style="padding:12px 32px;font-size:15px" onclick="submitProfile()">Submit Profile for Review ✓</button>
+    <div class="step-nav">
+      <button class="btn-outline" onclick="goStep(7)"><i class="bi bi-arrow-left"></i> Back</button>
+      <button class="btn-primary" id="submit-btn" onclick="submitProfile()" style="padding:12px 32px;font-size:15px">
+        Submit Profile for Review ✓
+      </button>
     </div>
   </div>
 
-  <!-- SUCCESS -->
-  <div id="form-success" style="display:none;text-align:center;padding:4rem 2rem;background:#fff;border:1px solid var(--border);border-radius:12px">
+  <!-- ══════════════════════ SUCCESS ══════════════════════ -->
+  <div id="form-success" style="display:none">
     <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
     <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:.8rem">Profile Submitted!</h2>
     <p style="color:var(--text-muted);max-width:420px;margin:0 auto 2rem;font-size:15px">Your profile has been submitted for review by our admin team. You will receive an SMS and email within 1–3 business days.</p>
     <a href="employee-dashboard.html" class="btn-primary" style="padding:12px 32px;font-size:15px">Go to My Dashboard →</a>
   </div>
 
-</div>
+</div><!-- /page-container -->
 
 <script>
-let expCount = 1;
+// ── Supabase config (from index.html) ────────────────────────────────────────
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let expCount = 1;
+let currentUserData = null;
+let emailCheckTimer = null;
+
+// ── On load: prefill from register page data & check auth ────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. Check Supabase session first
+  const { data: { session } } = await sb.auth.getSession();
+
+  // 2. Also check localStorage for register-page prefill data
+  //    Keys: soundscare_reg_name, soundscare_reg_email, soundscare_reg_phone,
+  //          soundscare_reg_gender, soundscare_reg_role, soundscare_reg_dob
+  const regData = {
+    fullname: localStorage.getItem('soundscare_reg_name') || localStorage.getItem('reg_fullname') || '',
+    email:    localStorage.getItem('soundscare_reg_email') || localStorage.getItem('reg_email') || '',
+    phone:    localStorage.getItem('soundscare_reg_phone') || localStorage.getItem('reg_phone') || '',
+    gender:   localStorage.getItem('soundscare_reg_gender') || localStorage.getItem('reg_gender') || '',
+    role:     localStorage.getItem('soundscare_reg_role') || localStorage.getItem('reg_preferred_role') || '',
+    dob:      localStorage.getItem('soundscare_reg_dob') || localStorage.getItem('reg_dob') || '',
+  };
+
+  // 3. Session user overrides localStorage for email
+  if (session?.user?.email) {
+    regData.email = session.user.email;
+    // Also try to get name from user metadata
+    if (session.user.user_metadata?.full_name && !regData.fullname) {
+      regData.fullname = session.user.user_metadata.full_name;
+    }
+  }
+
+  // 4. Prefill form fields
+  if (regData.fullname) document.getElementById('fullname').value = regData.fullname;
+  if (regData.email)    { document.getElementById('email').value = regData.email; document.getElementById('email').readOnly = !!session; }
+  if (regData.phone)    document.getElementById('phone').value = regData.phone;
+  if (regData.dob)      document.getElementById('dob').value = regData.dob;
+  if (regData.gender) {
+    const gSel = document.getElementById('gender');
+    for (let o of gSel.options) if (o.text === regData.gender || o.value === regData.gender) { gSel.value = o.value; break; }
+  }
+  if (regData.role) {
+    const rSel = document.getElementById('preferred-role');
+    for (let o of rSel.options) if (o.text === regData.role || o.value === regData.role) { rSel.value = o.value; break; }
+  }
+
+  // 5. Update nav display name
+  const displayName = regData.fullname
+    ? regData.fullname.split(' ').slice(0,2).map((p,i) => i===1 ? p[0]+'.' : p).join(' ')
+    : (regData.email || 'Guest');
+  document.getElementById('user-name').textContent = displayName;
+
+  // 6. If email populated, check if profile already exists
+  if (regData.email) {
+    checkEmailInDB(regData.email);
+  }
+
+  // 7. Attach live email check on blur
+  document.getElementById('email').addEventListener('blur', e => {
+    if (e.target.value.trim()) checkEmailInDB(e.target.value.trim());
+  });
+
+  goStep(1);
+});
+
+// ── Check email in database ───────────────────────────────────────────────────
+async function checkEmailInDB(email) {
+  if (!email || !email.includes('@')) return;
+  const statusEl = document.getElementById('email-status');
+  statusEl.className = 'email-status checking';
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Checking email…';
+
+  try {
+    const { data, error } = await sb
+      .from('worker_profiles')
+      .select('id, email')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+      statusEl.style.display = 'none';
+      return;
+    }
+
+    if (data) {
+      // Email already in database
+      statusEl.className = 'email-status exists';
+      statusEl.innerHTML = '⚠ A profile already exists with this email. <a href="employee-dashboard.html" style="color:#A32D2D;font-weight:600">Go to dashboard →</a>';
+      document.getElementById('email-exists-banner').style.display = 'block';
+    } else {
+      statusEl.className = 'email-status clear';
+      statusEl.textContent = '✓ Email is available';
+      document.getElementById('email-exists-banner').style.display = 'none';
+    }
+  } catch(e) {
+    statusEl.style.display = 'none';
+  }
+}
+
+// ── Step navigation ───────────────────────────────────────────────────────────
 function goStep(step) {
   document.querySelectorAll('.step-content').forEach(s => s.style.display = 'none');
   const el = document.getElementById('form-step-' + step);
   if (el) el.style.display = 'block';
   document.querySelectorAll('.progress-step').forEach((t, i) => {
-    t.classList.remove('active', 'done');
+    t.classList.remove('active','done');
     if (i + 1 < step) t.classList.add('done');
     else if (i + 1 === step) t.classList.add('active');
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Step validators ───────────────────────────────────────────────────────────
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearErr(id) { document.getElementById(id).style.display = 'none'; }
+
+function nextStep1() {
+  clearErr('step1-error');
+  const fullname = document.getElementById('fullname').value.trim();
+  const phone    = document.getElementById('phone').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const dob      = document.getElementById('dob').value;
+  const gender   = document.getElementById('gender').value;
+  const role     = document.getElementById('preferred-role').value;
+  const salary   = document.getElementById('salary-range').value;
+  const disability = document.getElementById('disability').value;
+
+  if (!fullname) return showErr('step1-error', 'Please enter your full name.');
+  if (!phone)    return showErr('step1-error', 'Please enter your phone number.');
+  if (!email)    return showErr('step1-error', 'Please enter your email address.');
+  if (!dob)      return showErr('step1-error', 'Please enter your date of birth.');
+  if (!gender)   return showErr('step1-error', 'Please select your gender.');
+  if (!role)     return showErr('step1-error', 'Please select your preferred role.');
+  if (!salary)   return showErr('step1-error', 'Please select your expected salary range.');
+  if (!disability) return showErr('step1-error', 'Please answer the disability field.');
+
+  // Age check
+  const age = Math.floor((Date.now() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 1000));
+  if (age < 19) return showErr('step1-error', 'You must be at least 19 years old to register.');
+
+  // Check if email is already taken (status element)
+  const statusEl = document.getElementById('email-status');
+  if (statusEl.classList.contains('exists')) {
+    return showErr('step1-error', 'A profile already exists with this email address. Please log in instead.');
+  }
+
+  goStep(2);
+}
+
+function nextStep2() {
+  clearErr('step2-error');
+  const idNum = document.getElementById('id-number').value.trim();
+  if (!idNum) return showErr('step2-error', 'Please enter your National ID number.');
+  goStep(3);
+}
+
+function nextStep3() {
+  clearErr('step3-error');
+  const level = document.getElementById('edu-level').value;
+  if (!level) return showErr('step3-error', 'Please select your highest education level.');
+  goStep(4);
+}
+
+function nextStep5() {
+  clearErr('step5-error');
+  const town    = document.getElementById('location-town').value.trim();
+  const county  = document.getElementById('location-county').value;
+  const address = document.getElementById('location-address').value.trim();
+  const village = document.getElementById('location-village').value.trim();
+  if (!town)    return showErr('step5-error', 'Please enter your current town/estate.');
+  if (!county)  return showErr('step5-error', 'Please select your county.');
+  if (!address) return showErr('step5-error', 'Please enter your home/physical address.');
+  if (!village) return showErr('step5-error', 'Please enter your home village.');
+  goStep(6);
+}
+
+function nextStep6() {
+  clearErr('step6-error');
+  const names  = document.querySelectorAll('#referee-list .ref-name');
+  const phones = document.querySelectorAll('#referee-list .ref-phone');
+  const idNums = document.querySelectorAll('#referee-list .ref-id-num');
+  for (let i = 0; i < names.length; i++) {
+    if (!names[i].value.trim())  return showErr('step6-error', `Please enter the full name for Referee ${i+1}.`);
+    if (!phones[i].value.trim()) return showErr('step6-error', `Please enter the phone number for Referee ${i+1}.`);
+    if (!idNums[i].value.trim()) return showErr('step6-error', `Please enter the ID number for Referee ${i+1}.`);
+  }
+  goStep(7);
+}
+
+function nextStep7() {
+  clearErr('step7-error');
+  const text = document.getElementById('about-text').value.trim();
+  if (text.length < 200) return showErr('step7-error', `Your description is too short (${text.length}/200 characters). Please write at least 200 characters.`);
+  goStep(8);
+}
+
+// ── Age check ─────────────────────────────────────────────────────────────────
 function checkAge() {
   const dob = new Date(document.getElementById('dob').value);
-  const today = new Date();
-  const age = Math.floor((today - dob) / (365.25 * 24 * 60 * 60 * 1000));
-  const warn = document.getElementById('age-warning');
-  if (age < 19) { warn.style.display = 'block'; }
-  else { warn.style.display = 'none'; }
+  const age = Math.floor((Date.now() - dob) / (365.25 * 24 * 60 * 60 * 1000));
+  document.getElementById('age-warning').style.display = age < 19 ? 'block' : 'none';
 }
 
 function countChars() {
@@ -566,12 +858,13 @@ function showFileName(input) {
   }
 }
 
+let expCountNum = 1;
 function addExperience() {
-  if (expCount >= 5) return;
-  expCount++;
+  if (expCountNum >= 5) return;
+  expCountNum++;
   const div = document.createElement('div');
   div.className = 'referee-block';
-  div.innerHTML = `<h4>Experience ${expCount} <button class="remove-exp" onclick="this.closest('.referee-block').remove()">×</button></h4>
+  div.innerHTML = `<h4>Experience ${expCountNum} <button class="remove-exp" onclick="this.closest('.referee-block').remove()">×</button></h4>
   <div class="exp-row">
     <div><label>Role Held *</label><input type="text" placeholder="e.g. Cook"></div>
     <div><label>Duration (years) *</label><input type="number" placeholder="e.g. 1" min="0" max="50"></div>
@@ -580,23 +873,186 @@ function addExperience() {
   document.getElementById('exp-list').appendChild(div);
 }
 
-function submitProfile() {
+// ── Collect referees ──────────────────────────────────────────────────────────
+function collectReferees() {
+  const blocks = document.querySelectorAll('#referee-list .referee-block');
+  const refs = [];
+  blocks.forEach((b, i) => {
+    refs.push({
+      name:         b.querySelector('.ref-name')?.value.trim() || '',
+      relationship: b.querySelector('.ref-rel')?.value || '',
+      phone:        b.querySelector('.ref-phone')?.value.trim() || '',
+      id_number:    b.querySelector('.ref-id-num')?.value.trim() || '',
+    });
+  });
+  return refs;
+}
+
+// ── Collect experiences ───────────────────────────────────────────────────────
+function collectExperiences() {
+  const blocks = document.querySelectorAll('#exp-list .referee-block');
+  const exps = [];
+  blocks.forEach(b => {
+    const inputs = b.querySelectorAll('input');
+    exps.push({
+      role:     inputs[0]?.value.trim() || '',
+      duration: inputs[1]?.value || '',
+      contact:  inputs[2]?.value.trim() || '',
+      employer: inputs[3]?.value.trim() || '',
+      location: inputs[4]?.value.trim() || '',
+    });
+  });
+  return exps;
+}
+
+// ── Upload file to Supabase Storage ──────────────────────────────────────────
+async function uploadFile(fileInput, folder) {
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+  const file = fileInput.files[0];
+  const ext = file.name.split('.').pop();
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data, error } = await sb.storage.from('worker-documents').upload(path, file, { upsert: false });
+  if (error) { console.warn('Upload error:', error.message); return null; }
+  const { data: urlData } = sb.storage.from('worker-documents').getPublicUrl(path);
+  return urlData?.publicUrl || null;
+}
+
+// ── Parse salary range to min/max ─────────────────────────────────────────────
+function parseSalary(rangeStr) {
+  if (!rangeStr) return { min: null, max: null };
+  const clean = rangeStr.replace(/,/g, '').replace(/\s/g, '');
+  const match = clean.match(/(\d+)[–\-](\d+)/);
+  if (match) return { min: parseInt(match[1]), max: parseInt(match[2]) };
+  if (clean.includes('50000+')) return { min: 50000, max: null };
+  return { min: null, max: null };
+}
+
+// ── Main submit ───────────────────────────────────────────────────────────────
+async function submitProfile() {
   const checks = ['decl-adult','decl-correct','decl-privacy','decl-refs'];
   const allChecked = checks.every(id => document.getElementById(id).checked);
-  const err = document.getElementById('submit-error');
+  const errEl = document.getElementById('submit-error');
+
   if (!allChecked) {
-    err.style.display = 'block'; err.textContent = 'Please check all declaration boxes before submitting.';
+    errEl.style.display = 'block';
+    errEl.textContent = 'Please check all declaration boxes before submitting.';
     return;
   }
-  err.style.display = 'none';
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  const email = document.getElementById('email').value.trim().toLowerCase();
+
+  // ── Re-check email in DB before submit ────────────────────────────────────
+  try {
+    const { data: existing } = await sb
+      .from('worker_profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existing) {
+      errEl.style.display = 'block';
+      errEl.innerHTML = 'A profile with this email already exists. <a href="employee-dashboard.html" style="color:#A32D2D;font-weight:600">Go to your dashboard →</a>';
+      btn.disabled = false;
+      btn.innerHTML = 'Submit Profile for Review ✓';
+      return;
+    }
+  } catch(e) { /* proceed */ }
+
+  // ── Upload files ──────────────────────────────────────────────────────────
+  const idFrontUrl  = await uploadFile(document.getElementById('id-front'),  'identity');
+  const idBackUrl   = await uploadFile(document.getElementById('id-back'),   'identity');
+  const selfieUrl   = await uploadFile(document.getElementById('id-selfie'), 'identity');
+  const eduCertUrl  = await uploadFile(document.getElementById('edu-cert'),  'education');
+  const photoUrl    = await uploadFile(document.getElementById('profile-photo'), 'photos');
+
+  // ── Collect all form data ─────────────────────────────────────────────────
+  const salary = parseSalary(document.getElementById('salary-range').value);
+  const profileData = {
+    full_name:         document.getElementById('fullname').value.trim(),
+    email:             email,
+    phone:             document.getElementById('phone').value.trim(),
+    date_of_birth:     document.getElementById('dob').value || null,
+    gender:            document.getElementById('gender').value,
+    preferred_role:    document.getElementById('preferred-role').value,
+    salary_range:      document.getElementById('salary-range').value,
+    salary_min:        salary.min,
+    salary_max:        salary.max,
+    availability:      document.getElementById('availability').value,
+    disability:        document.getElementById('disability').value,
+
+    // Identity
+    id_number:         document.getElementById('id-number').value.trim(),
+    id_type:           document.getElementById('id-type').value,
+    id_front_url:      idFrontUrl,
+    id_back_url:       idBackUrl,
+    selfie_url:        selfieUrl,
+
+    // Education
+    edu_level:         document.getElementById('edu-level').value,
+    edu_year:          document.getElementById('edu-year').value || null,
+    edu_institution:   document.getElementById('edu-institution').value.trim() || null,
+    edu_field:         document.getElementById('edu-field').value.trim() || null,
+    edu_cert_url:      eduCertUrl,
+
+    // Experience (JSON)
+    work_experience:   collectExperiences(),
+
+    // Location
+    current_town:      document.getElementById('location-town').value.trim(),
+    county:            document.getElementById('location-county').value,
+    address:           document.getElementById('location-address').value.trim(),
+    home_village:      document.getElementById('location-village').value.trim(),
+    home_county:       document.getElementById('location-home-county').value.trim() || null,
+    willing_to_relocate: document.getElementById('relocate').value,
+
+    // Referees (JSON)
+    referees:          collectReferees(),
+
+    // About
+    about_text:        document.getElementById('about-text').value.trim(),
+    languages:         document.getElementById('languages').value.trim() || null,
+    key_skills:        document.getElementById('key-skills').value.trim() || null,
+    profile_photo_url: photoUrl,
+
+    // Meta
+    status:            'pending',
+    created_at:        new Date().toISOString(),
+    is_verified:       false,
+  };
+
+  // ── Insert into Supabase ──────────────────────────────────────────────────
+  const { data, error } = await sb.from('worker_profiles').insert(profileData).select().single();
+
+  if (error) {
+    console.error('Insert error:', error);
+    errEl.style.display = 'block';
+    errEl.textContent = 'Submission failed: ' + error.message + '. Please try again or contact support.';
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Profile for Review ✓';
+    return;
+  }
+
+  // ── Success ───────────────────────────────────────────────────────────────
+  // Save profile ID to localStorage for dashboard reference
+  localStorage.setItem('soundscare_worker_id', data.id);
+  localStorage.setItem('soundscare_worker_email', email);
+
+  // Clear register page prefill data
+  ['soundscare_reg_name','soundscare_reg_email','soundscare_reg_phone',
+   'soundscare_reg_gender','soundscare_reg_role','soundscare_reg_dob',
+   'reg_fullname','reg_email','reg_phone','reg_gender','reg_preferred_role','reg_dob']
+  .forEach(k => localStorage.removeItem(k));
+
   document.getElementById('form-step-8').style.display = 'none';
   document.querySelector('.progress-steps').style.display = 'none';
   document.getElementById('form-success').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// Init on step 1
-goStep(1);
 </script>
 </body>
 </html>
