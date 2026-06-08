@@ -5,512 +5,825 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Employer Dashboard – Amilia Care</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-  :root {
-    --brand: #1B6B45;
-    --brand-light: #E6F5EE;
-    --brand-mid: #C9E8D4;
-    --accent: #E8A040;
-    --accent-light: #FAEEDA;
-    --sidebar-bg: #0F3D28;
-    --sidebar-text: #B8D9C6;
-    --sidebar-active: #1B6B45;
-    --bg: #F4F7F5;
-    --surface: #FFFFFF;
-    --border: #E2EBE6;
-    --text: #1A2E24;
-    --text-muted: #6B8876;
-    --text-light: #9BB5A5;
-    --danger: #C0392B;
-    --danger-light: #FDECEA;
-    --info-light: #E6F1FB;
-    --info: #1A6BB5;
-    --purple-light: #EEE9FB;
-    --purple: #6B52C8;
-    --radius: 12px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
-  }
+:root {
+  --brand: #1B6B45;
+  --brand-light: #E6F5EE;
+  --brand-mid: #C9E8D4;
+  --accent: #E8A040;
+  --accent-light: #FAEEDA;
+  --sidebar-bg: #0F3D28;
+  --sidebar-text: #B8D9C6;
+  --bg: #F4F7F5;
+  --surface: #FFFFFF;
+  --border: #E2EBE6;
+  --text: #1A2E24;
+  --text-muted: #6B8876;
+  --text-light: #9BB5A5;
+  --danger: #C0392B;
+  --danger-light: #FDECEA;
+  --info-light: #E6F1FB;
+  --info: #1A6BB5;
+  --purple-light: #EEE9FB;
+  --purple: #6B52C8;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --sidebar-w: 228px;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    min-height: 100vh;
-    font-size: 14px;
-  }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* SIDEBAR */
-  .sidebar {
-    width: 228px;
-    min-height: 100vh;
-    background: var(--sidebar-bg);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    z-index: 100;
-  }
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 300;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sidebar::-webkit-scrollbar { display: none; }
 
-  .logo {
-    padding: 1.4rem 1.5rem;
-    font-family: 'Playfair Display', serif;
-    font-size: 21px;
-    color: #fff;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    letter-spacing: -0.3px;
-  }
-  .logo span { color: var(--accent); }
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 299;
+}
+.sidebar-overlay.show { display: block; }
 
-  nav { padding: 1rem 0.75rem; flex: 1; }
+/* Mobile: slide off screen by default */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0 !important; }
+}
 
-  nav a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: var(--radius-sm);
-    color: var(--sidebar-text);
-    text-decoration: none;
-    font-size: 13.5px;
-    font-weight: 400;
-    margin-bottom: 2px;
-    transition: background 0.15s, color 0.15s;
-  }
-  nav a:hover { background: rgba(255,255,255,0.07); color: #fff; }
-  nav a.active { background: var(--brand); color: #fff; font-weight: 500; }
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1rem 1.2rem 1.4rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: #fff;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+}
+.logo span { color: var(--accent); }
 
-  nav a svg { width: 17px; height: 17px; flex-shrink: 0; }
+.sidebar-close {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: rgba(255,255,255,0.6);
+  border-radius: 7px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
-  .nav-section-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: rgba(184,217,198,0.45);
-    text-transform: uppercase;
-    padding: 1rem 12px 0.4rem;
-  }
+nav { padding: 0.75rem; flex: 1; }
 
-  .sidebar-footer {
-    padding: 1rem 0.75rem;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
-  .sidebar-footer a {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 12px; border-radius: var(--radius-sm);
-    color: rgba(184,217,198,0.6); text-decoration: none;
-    font-size: 13px; transition: all 0.15s;
-  }
-  .sidebar-footer a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(184,217,198,0.4);
+  text-transform: uppercase;
+  padding: 1rem 10px 0.35rem;
+}
 
-  /* MAIN */
-  .main {
-    margin-left: 228px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 400;
+  margin-bottom: 2px;
+  transition: background 0.14s, color 0.14s;
+  cursor: pointer;
+}
+nav a i { font-size: 16px; flex-shrink: 0; }
+nav a:hover { background: rgba(255,255,255,0.07); color: #fff; }
+nav a.active { background: var(--brand); color: #fff; font-weight: 500; }
+nav a .badge-pill {
+  margin-left: auto;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 50px;
+  font-weight: 700;
+}
 
-  .topbar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 2rem;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0; z-index: 50;
-  }
+.sidebar-footer {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.sidebar-footer a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  color: rgba(184,217,198,0.6);
+  text-decoration: none; font-size: 13px;
+  transition: all 0.15s;
+}
+.sidebar-footer a i { font-size: 15px; }
+.sidebar-footer a:hover { color: #fff; background: rgba(255,255,255,0.06); }
 
-  .topbar-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-  }
-  .topbar-title span { color: var(--text-muted); font-weight: 400; font-size: 13px; font-family: 'DM Sans', sans-serif; margin-left: 8px; }
+/* Employer profile chip in sidebar */
+.sidebar-employer {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin: 6px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+}
+.sidebar-employer .av {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.sidebar-employer .emp-name { font-size: 13px; font-weight: 500; color: #fff; }
+.sidebar-employer .emp-role { font-size: 11px; color: rgba(184,217,198,0.55); }
 
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 50px;
-    font-size: 13px; font-weight: 500; font-family: inherit;
-    cursor: pointer; border: none; transition: all 0.15s; text-decoration: none;
-  }
-  .btn-primary { background: var(--brand); color: #fff; }
-  .btn-primary:hover { background: #155735; }
-  .btn-outline { background: transparent; color: var(--brand); border: 1.5px solid var(--brand-mid); }
-  .btn-outline:hover { background: var(--brand-light); }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--bg); }
+/* ── Topbar ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+}
 
-  .avatar-circle {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--accent-light); color: var(--accent);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700;
-  }
+.topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 
-  /* CONTENT */
-  .content { padding: 2rem; max-width: 1200px; }
+.hamburger {
+  display: none;
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  width: 36px; height: 36px;
+  align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; flex-shrink: 0;
+}
+@media (max-width: 768px) { .hamburger { display: flex; } }
 
-  /* STAT CARDS */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.75rem;
-  }
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-sub { font-size: 12px; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-weight: 400; }
 
-  .stat-card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.25rem 1rem;
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-  .stat-card.green::before { background: var(--brand); }
-  .stat-card.amber::before { background: var(--accent); }
-  .stat-card.blue::before { background: var(--info); }
-  .stat-card.purple::before { background: var(--purple); }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-  .stat-icon {
-    width: 36px; height: 36px; border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 0.85rem;
-    font-size: 17px;
-  }
-  .stat-card.green .stat-icon { background: var(--brand-light); }
-  .stat-card.amber .stat-icon { background: var(--accent-light); }
-  .stat-card.blue .stat-icon { background: var(--info-light); }
-  .stat-card.purple .stat-icon { background: var(--purple-light); }
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 50px;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  cursor: pointer; border: none; transition: all 0.15s;
+  text-decoration: none; white-space: nowrap;
+}
+.btn i { font-size: 15px; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: #155735; }
+.btn-outline { background: transparent; color: var(--brand); border: 1.5px solid var(--brand-mid); }
+.btn-outline:hover { background: var(--brand-light); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-sm { padding: 6px 13px; font-size: 12px; }
+.btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #EFC5C2; }
+.btn-danger:hover { background: #f9d5d3; }
 
-  .stat-value {
-    font-size: 26px;
-    font-weight: 700;
-    font-family: 'Playfair Display', serif;
-    color: var(--text);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+.avatar-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent-light); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
 
-  /* PANELS */
-  .panel {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-  }
-  .panel-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .panel-title { font-size: 14px; font-weight: 600; }
-  .panel-body { padding: 1.25rem; }
+/* ── Content ── */
+.content {
+  padding: 1.5rem;
+  max-width: 1160px;
+  width: 100%;
+}
+@media (max-width: 600px) { .content { padding: 1rem; } }
 
-  /* SEARCH FORM */
-  .search-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
-    gap: 12px;
-    align-items: end;
-  }
-  .form-group label {
-    display: block;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
-  }
-  .form-control {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 13.5px;
-    font-family: inherit;
-    color: var(--text);
-    background: var(--surface);
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-  }
-  .form-control:focus { border-color: var(--brand); }
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; } }
 
-  /* TABLE */
-  .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th {
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0 1.25rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .data-table td {
-    padding: 0.85rem 1.25rem;
-    font-size: 13.5px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
-  .data-table tbody tr:last-child td { border-bottom: none; }
-  .data-table tbody tr { transition: background 0.1s; }
-  .data-table tbody tr:hover { background: var(--bg); }
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.1rem 0.9rem;
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+.stat-card.green::before { background: var(--brand); }
+.stat-card.amber::before { background: var(--accent); }
+.stat-card.blue::before  { background: var(--info); }
+.stat-card.purple::before { background: var(--purple); }
+.stat-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.75rem; font-size: 16px;
+}
+.stat-card.green .stat-icon  { background: var(--brand-light); color: var(--brand); }
+.stat-card.amber .stat-icon  { background: var(--accent-light); color: #8B5E1C; }
+.stat-card.blue .stat-icon   { background: var(--info-light); color: var(--info); }
+.stat-card.purple .stat-icon { background: var(--purple-light); color: var(--purple); }
+.stat-value {
+  font-size: 24px; font-weight: 700;
+  font-family: 'Playfair Display', serif;
+  color: var(--text); line-height: 1; margin-bottom: 3px;
+}
+.stat-label { font-size: 11.5px; color: var(--text-muted); }
 
-  .worker-avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; flex-shrink: 0;
-  }
+/* ── Panel ── */
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.panel-title {
+  font-size: 13.5px; font-weight: 600;
+  display: flex; align-items: center; gap: 7px;
+}
+.panel-title i { font-size: 15px; color: var(--text-muted); }
+.panel-body { padding: 1.1rem 1.25rem; }
 
-  .badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 50px;
-    font-size: 11.5px; font-weight: 500;
-  }
-  .badge-verified { background: var(--brand-light); color: var(--brand); }
-  .badge-pending { background: var(--accent-light); color: #7A5010; }
-  .badge-new { background: var(--info-light); color: var(--info); }
+/* ── Quick Search ── */
+.search-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+@media (max-width: 700px) {
+  .search-grid { grid-template-columns: 1fr 1fr; }
+  .search-grid .btn { grid-column: 1/-1; }
+}
+@media (max-width: 420px) {
+  .search-grid { grid-template-columns: 1fr; }
+}
+.form-group label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.05em; margin-bottom: 5px;
+}
+.form-control {
+  width: 100%; padding: 9px 11px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 13px; font-family: inherit;
+  color: var(--text); background: var(--surface);
+  outline: none; transition: border-color 0.15s; appearance: none;
+}
+.form-control:focus { border-color: var(--brand); }
 
-  .action-row { display: flex; gap: 6px; }
+/* ── Two column ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
 
-  .action-btn {
-    padding: 5px 12px; border-radius: 50px; font-size: 12px;
-    font-weight: 500; font-family: inherit; cursor: pointer;
-    border: 1.5px solid var(--border); background: transparent;
-    color: var(--text); transition: all 0.15s;
-  }
-  .action-btn:hover { background: var(--bg); }
-  .action-btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
-  .action-btn.primary:hover { background: #155735; }
-  .action-btn.danger { color: var(--danger); border-color: #EFC5C2; }
-  .action-btn.danger:hover { background: var(--danger-light); }
+/* ── Table ── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.data-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.data-table th {
+  text-align: left; font-size: 10.5px; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 0 1.1rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 0.8rem 1.1rem; font-size: 13px;
+  border-bottom: 1px solid var(--border); vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--bg); }
+.worker-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.action-row { display: flex; gap: 5px; flex-wrap: wrap; }
 
-  /* STATUS INDICATORS */
-  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .dot-green { background: var(--brand); }
-  .dot-amber { background: var(--accent); }
-  .dot-gray { background: var(--text-light); }
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 50px;
+  font-size: 11px; font-weight: 500;
+}
+.badge i { font-size: 10px; }
+.badge-verified { background: var(--brand-light); color: var(--brand); }
+.badge-pending  { background: var(--accent-light); color: #7A5010; }
 
-  /* LOADING */
-  .loading-row td {
-    text-align: center;
-    padding: 2.5rem !important;
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-  .spinner {
-    width: 18px; height: 18px;
-    border: 2px solid var(--border);
-    border-top-color: var(--brand);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: inline-block; margin-right: 8px;
-    vertical-align: -3px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── Action Buttons ── */
+.action-btn {
+  padding: 5px 11px; border-radius: 50px; font-size: 12px;
+  font-weight: 500; font-family: inherit; cursor: pointer;
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--text); transition: all 0.14s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.action-btn i { font-size: 12px; }
+.action-btn:hover { background: var(--bg); }
+.action-btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+.action-btn.primary:hover { background: #155735; }
+.action-btn.danger { color: var(--danger); border-color: #EFC5C2; }
+.action-btn.danger:hover { background: var(--danger-light); }
 
-  /* EMPTY */
-  .empty-state {
-    text-align: center; padding: 3rem 1.25rem;
-    color: var(--text-muted);
-  }
-  .empty-state svg { margin-bottom: 0.75rem; opacity: 0.4; }
-  .empty-state p { font-size: 13px; }
+/* ── Loading / empty ── */
+.loading-row td { text-align: center; padding: 2rem !important; color: var(--text-muted); }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border); border-top-color: var(--brand);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  display: inline-block; margin-right: 8px; vertical-align: -3px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  /* TOAST */
-  #toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-    background: var(--text); color: #fff;
-    padding: 10px 20px; border-radius: 50px;
-    font-size: 13px; font-weight: 500;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    opacity: 0; transition: opacity 0.25s;
-    pointer-events: none; z-index: 999;
-  }
-  #toast.show { opacity: 1; }
+/* ── Activity Feed ── */
+.activity-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+}
+.activity-item:last-child { border-bottom: none; }
+.act-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.activity-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+.activity-time { font-size: 11px; color: var(--text-light); margin-top: 2px; }
 
-  /* MODAL */
+/* ── Hire badges ── */
+.hire-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 500;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.dot-green { background: var(--brand); }
+.dot-amber { background: var(--accent); }
+.dot-gray  { background: var(--text-light); }
+.hire-active  { background: var(--brand-light); color: var(--brand); }
+.hire-pending { background: var(--accent-light); color: #7A5010; }
+.hire-ended   { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+/* ── Toast ── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--text); color: #fff;
+  padding: 10px 20px; border-radius: 50px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.25s;
+  pointer-events: none; z-index: 9999;
+  display: flex; align-items: center; gap: 8px;
+}
+#toast.show { opacity: 1; }
+#toast.error { background: var(--danger); }
+
+/* ══════════════════════════════════════
+   MODALS — shared base
+══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.48);
+  z-index: 500;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.modal-overlay.open { display: flex; }
+
+/* Sheet-style on mobile, centered on desktop */
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 40px rgba(0,0,0,0.18);
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (min-width: 640px) {
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-    z-index: 200; display: none; align-items: center; justify-content: center;
+    align-items: center;
+    padding: 1rem;
   }
-  .modal-overlay.open { display: flex; }
   .modal {
-    background: var(--surface); border-radius: var(--radius);
-    padding: 1.75rem; width: 480px; max-width: 95vw;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    border-radius: var(--radius);
+    max-width: 520px;
+    max-height: 88vh;
+    animation: fadeScale 0.22s ease;
   }
-  .modal-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.25rem;
-  }
-  .modal-title { font-size: 16px; font-weight: 600; }
-  .modal-close {
-    background: none; border: none; cursor: pointer;
-    color: var(--text-muted); font-size: 20px; line-height: 1;
-    padding: 2px 6px; border-radius: 4px;
-  }
-  .modal-close:hover { background: var(--bg); }
+  @keyframes fadeScale { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+}
 
-  .profile-section { display: flex; align-items: center; gap: 14px; margin-bottom: 1.25rem; }
-  .profile-avatar-lg {
-    width: 56px; height: 56px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700; flex-shrink: 0;
-  }
+/* Large modal */
+.modal.modal-lg { max-width: 780px; }
 
-  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; margin-bottom: 1.25rem; }
-  .detail-item label { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 3px; }
-  .detail-item span { font-size: 13.5px; color: var(--text); }
+.modal-drag { width: 36px; height: 4px; background: var(--border); border-radius: 50px; margin: 10px auto 0; }
+@media (min-width: 640px) { .modal-drag { display: none; } }
 
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--surface); z-index: 1;
+}
+.modal-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.modal-title i { font-size: 17px; color: var(--brand); }
+.modal-close {
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: pointer; color: var(--text-muted);
+  border-radius: 50%; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; transition: all 0.14s;
+}
+.modal-close:hover { background: var(--border); color: var(--text); }
+.modal-body { padding: 1.25rem; }
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  position: sticky; bottom: 0; background: var(--surface);
+}
 
-  /* TWO COLUMN LAYOUT */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+/* Profile detail inside modal */
+.profile-section {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.profile-avatar-lg {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1rem; margin-bottom: 1.1rem;
+}
+@media (max-width: 400px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-item label {
+  font-size: 10px; color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;
+}
+.detail-item span { font-size: 13px; color: var(--text); }
 
-  /* ACTIVITY FEED */
-  .activity-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 0.65rem 0; border-bottom: 1px solid var(--border);
-  }
-  .activity-item:last-child { border-bottom: none; }
-  .activity-dot-wrap {
-    width: 28px; height: 28px; border-radius: 50%;
-    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 13px;
-  }
-  .activity-text { font-size: 13px; color: var(--text); line-height: 1.45; }
-  .activity-time { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+/* Messages modal */
+.msg-list { display: flex; flex-direction: column; gap: 0; }
+.msg-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background 0.12s;
+}
+.msg-item:last-child { border-bottom: none; }
+.msg-item:hover { background: var(--bg); margin: 0 -1.25rem; padding: 12px 1.25rem; }
+.msg-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.msg-name { font-size: 13.5px; font-weight: 500; }
+.msg-preview { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.msg-time { font-size: 11px; color: var(--text-light); margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+.msg-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
 
-  /* Scrollable table */
-  .table-scroll { overflow-x: auto; }
+.msg-compose { margin-top: 1rem; }
+.msg-compose textarea {
+  width: 100%; min-height: 90px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; font-size: 13px; font-family: inherit;
+  resize: vertical; outline: none;
+}
+.msg-compose textarea:focus { border-color: var(--brand); }
 
-  /* HIRE STATUS BADGES */
-  .hire-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 50px; font-size: 11.5px; font-weight: 500;
-  }
-  .hire-active { background: var(--brand-light); color: var(--brand); }
-  .hire-pending { background: var(--accent-light); color: #7A5010; }
-  .hire-ended { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+/* Find Workers modal */
+.worker-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+.worker-card {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem; text-align: center;
+  transition: box-shadow 0.15s, border-color 0.15s; cursor: pointer;
+}
+.worker-card:hover { border-color: var(--brand-mid); box-shadow: 0 2px 12px rgba(27,107,69,0.08); }
+.worker-card .wc-av {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; margin: 0 auto 0.6rem;
+}
+.worker-card .wc-name { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
+.worker-card .wc-role { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.worker-card .wc-loc { font-size: 11.5px; color: var(--text-light); display: flex; align-items: center; justify-content: center; gap: 3px; }
+
+/* Saved workers modal cards */
+.saved-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.saved-card:last-child { border-bottom: none; }
+
+/* Search bar inside modal */
+.modal-search {
+  display: flex; gap: 8px; margin-bottom: 1rem; align-items: center;
+}
+.modal-search input {
+  flex: 1; padding: 9px 12px;
+  border: 1.5px solid var(--border); border-radius: 50px;
+  font-size: 13px; font-family: inherit; outline: none;
+}
+.modal-search input:focus { border-color: var(--brand); }
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);
+}
+.empty-state i { font-size: 36px; opacity: 0.3; display: block; margin-bottom: 0.5rem; }
+.empty-state p { font-size: 13px; }
+
+/* ── Quick action strip ── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) { .quick-actions { grid-template-columns: repeat(2,1fr); } }
+
+.qa-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 1rem 0.5rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  color: var(--text-muted); transition: all 0.14s;
+  text-align: center;
+}
+.qa-btn i { font-size: 22px; }
+.qa-btn:hover { border-color: var(--brand-mid); color: var(--brand); background: var(--brand-light); }
+.qa-btn.qa-green i { color: var(--brand); }
+.qa-btn.qa-blue i  { color: var(--info); }
+.qa-btn.qa-purple i{ color: var(--purple); }
+.qa-btn.qa-amber i { color: #8B5E1C; }
+
+/* ── Welcome Banner ── */
+.welcome-banner {
+  background: linear-gradient(135deg, var(--sidebar-bg) 0%, #1B6B45 100%);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  flex-wrap: wrap;
+}
+.wb-title { font-family: 'Playfair Display',serif; font-size: 18px; font-weight: 700; }
+.wb-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="logo">Amilia<span>Care</span></div>
+<!-- ═══════════════════════════════════
+     SIDEBAR OVERLAY
+════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══════════════════════════════════
+     SIDEBAR
+════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <a href="index.html" class="logo">Amilia<span>Care</span></a>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close sidebar">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Employer identity chip -->
+  <div style="padding: 0.75rem">
+    <div class="sidebar-employer">
+      <div class="av" id="sidebar-av">SM</div>
+      <div>
+        <div class="emp-name" id="sidebar-name">Loading…</div>
+        <div class="emp-role">Employer Account</div>
+      </div>
+    </div>
+  </div>
+
   <nav>
     <div class="nav-section-label">Main</div>
-    <a href="#" class="active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-      Dashboard
+    <a href="#" class="active" onclick="setActive(this);closeSidebar()">
+      <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    <a href="#" onclick="showSection('find')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
-      Find Workers
+    <a href="#" onclick="openModal('find-modal');setActive(this)">
+      <i class="bi bi-search"></i> Find Workers
     </a>
-    <a href="#" onclick="showSection('saved')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-      Saved Workers
+    <a href="#" onclick="openModal('saved-modal');setActive(this)">
+      <i class="bi bi-heart"></i> Saved Workers
     </a>
-    <a href="#" onclick="showSection('messages')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Messages
+    <a href="#" onclick="openModal('messages-modal');setActive(this)">
+      <i class="bi bi-chat-dots"></i> Messages
+      <span class="badge-pill" id="msg-badge" style="display:none">0</span>
     </a>
+
     <div class="nav-section-label">Manage</div>
-    <a href="#" onclick="showSection('hires')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="m9 12 2 2 4-4"/></svg>
-      My Hires
+    <a href="#" onclick="setActive(this);closeSidebar()">
+      <i class="bi bi-clipboard-check"></i> My Hires
     </a>
-    <a href="#">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-      Profile
+    <a href="#" onclick="setActive(this);closeSidebar()">
+      <i class="bi bi-person-circle"></i> Profile
+    </a>
+    <a href="#" onclick="setActive(this);closeSidebar()">
+      <i class="bi bi-bar-chart-line"></i> Reports
     </a>
   </nav>
+
   <div class="sidebar-footer">
-    <a href="#">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M4.93 4.93a10 10 0 0 0 14.14 14.14"/></svg>
-      Settings
-    </a>
-    <a href="#">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Sign Out
-    </a>
+    <a href="#"><i class="bi bi-gear"></i> Settings</a>
+    <a href="index.html"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
   </div>
 </aside>
 
-<!-- MAIN -->
+<!-- ═══════════════════════════════════
+     MAIN
+════════════════════════════════════ -->
 <div class="main">
+
+  <!-- TOPBAR -->
   <div class="topbar">
-    <div>
-      <div class="topbar-title">Welcome back, Sarah Mwangi 👋<span id="greeting-time"></span></div>
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="greeting-time"></div>
+      </div>
     </div>
     <div class="topbar-right">
-      <button class="btn btn-primary" onclick="openQuickSearch()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
-        Find Workers
+      <button class="btn btn-primary btn-sm" onclick="openModal('find-modal')">
+        <i class="bi bi-search"></i>
+        <span class="hide-xs">Find Workers</span>
       </button>
-      <div class="avatar-circle">SM</div>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('messages-modal')" style="padding:6px 10px" aria-label="Messages">
+        <i class="bi bi-chat-dots" style="font-size:17px"></i>
+      </button>
+      <div class="avatar-circle" id="topbar-av">SM</div>
     </div>
   </div>
 
+  <!-- CONTENT -->
   <div class="content">
 
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner">
+      <div>
+        <div class="wb-title" id="welcome-name">Welcome back 👋</div>
+        <div class="wb-sub">Here's what's happening with your account today.</div>
+      </div>
+      <button class="btn btn-primary" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25)" onclick="openModal('find-modal')">
+        <i class="bi bi-search"></i> Find Workers
+      </button>
+    </div>
+
     <!-- STATS -->
-    <div class="stats-grid" id="stats-grid">
+    <div class="stats-grid">
       <div class="stat-card green">
-        <div class="stat-icon">🔍</div>
+        <div class="stat-icon"><i class="bi bi-search"></i></div>
         <div class="stat-value" id="stat-searches">—</div>
         <div class="stat-label">Searches Made</div>
       </div>
       <div class="stat-card blue">
-        <div class="stat-icon">❤️</div>
+        <div class="stat-icon"><i class="bi bi-heart-fill"></i></div>
         <div class="stat-value" id="stat-saved">—</div>
         <div class="stat-label">Saved Profiles</div>
       </div>
       <div class="stat-card amber">
-        <div class="stat-icon">💬</div>
+        <div class="stat-icon"><i class="bi bi-chat-fill"></i></div>
         <div class="stat-value" id="stat-contacted">—</div>
-        <div class="stat-label">Workers Contacted</div>
+        <div class="stat-label">Contacted</div>
       </div>
       <div class="stat-card purple">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
         <div class="stat-value" id="stat-hires">—</div>
         <div class="stat-label">Active Hires</div>
       </div>
     </div>
 
-    <!-- QUICK SEARCH -->
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+      <button class="qa-btn qa-green" onclick="openModal('find-modal')">
+        <i class="bi bi-people-fill"></i> Find Workers
+      </button>
+      <button class="qa-btn qa-blue" onclick="openModal('messages-modal')">
+        <i class="bi bi-chat-square-dots-fill"></i> Messages
+      </button>
+      <button class="qa-btn qa-purple" onclick="openModal('saved-modal')">
+        <i class="bi bi-heart-fill"></i> Saved Workers
+      </button>
+      <button class="qa-btn qa-amber" onclick="document.getElementById('search-role').focus();document.querySelector('.panel').scrollIntoView({behavior:'smooth'})">
+        <i class="bi bi-funnel-fill"></i> Quick Search
+      </button>
+      <button class="qa-btn" style="background:#EEF2FF;color:#4338CA;border:1.5px solid #C7D2FE" onclick="openModal('post-job-modal')">
+        <i class="bi bi-plus-circle-fill"></i> Post a Job
+      </button>
+      <button class="qa-btn" style="background:#F0FDF4;color:#166534;border:1.5px solid #BBF7D0" onclick="openEmpPayModal()">
+        <i class="bi bi-credit-card-fill"></i> Make Payment
+      </button>
+      <button class="qa-btn" style="background:#FFF7ED;color:#C2410C;border:1.5px solid #FED7AA" onclick="openModal('emp-contract-modal')">
+        <i class="bi bi-file-earmark-text-fill"></i> Contract
+      </button>
+      <button class="qa-btn" style="background:#F8FAFC;color:#475569;border:1.5px solid #CBD5E1" onclick="openTawkChat()">
+        <i class="bi bi-headset"></i> Support Chat
+      </button>
+    </div>
+
+    <!-- QUICK SEARCH PANEL -->
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Quick Worker Search</span>
-        <button class="btn btn-outline btn-sm" onclick="loadWorkers()">Browse All →</button>
+        <span class="panel-title"><i class="bi bi-search"></i> Quick Worker Search</span>
+        <button class="btn btn-outline btn-sm" onclick="loadWorkers()">
+          <i class="bi bi-grid"></i> Browse All
+        </button>
       </div>
       <div class="panel-body">
         <div class="search-grid">
@@ -519,7 +832,7 @@
             <select class="form-control" id="search-role">
               <option value="">Any Role</option>
               <option value="House Manager">House Manager</option>
-              <option value="Nanny">Nanny</option>
+              <option value="Nanny">Nanny / Childcare</option>
               <option value="Cook">Cook / Chef</option>
               <option value="Cleaner">Cleaner</option>
               <option value="Driver">Driver</option>
@@ -539,29 +852,26 @@
               <option value="35000-999999">KES 35k+</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="runSearch()">Search</button>
+          <button class="btn btn-primary" onclick="runSearch()">
+            <i class="bi bi-search"></i> Search
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- TWO COL -->
+    <!-- TWO COL: SAVED + HIRES -->
     <div class="two-col">
       <!-- SAVED WORKERS -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Saved Workers</span>
-          <button class="btn btn-outline btn-sm" onclick="loadSavedWorkers()">View All →</button>
+          <span class="panel-title"><i class="bi bi-heart"></i> Saved Workers</span>
+          <button class="btn btn-outline btn-sm" onclick="openModal('saved-modal')">
+            View All <i class="bi bi-arrow-right"></i>
+          </button>
         </div>
         <div class="table-scroll">
-          <table class="data-table" id="saved-table">
-            <thead>
-              <tr>
-                <th>Worker</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
+          <table class="data-table">
+            <thead><tr><th>Worker</th><th>Role</th><th>Status</th><th></th></tr></thead>
             <tbody id="saved-body">
               <tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>
             </tbody>
@@ -572,17 +882,11 @@
       <!-- ACTIVE HIRES -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Active Hires</span>
+          <span class="panel-title"><i class="bi bi-clipboard-check"></i> Active Hires</span>
         </div>
         <div class="table-scroll">
-          <table class="data-table" id="hires-table">
-            <thead>
-              <tr>
-                <th>Worker</th>
-                <th>Role</th>
-                <th>Status</th>
-              </tr>
-            </thead>
+          <table class="data-table">
+            <thead><tr><th>Worker</th><th>Role</th><th>Status</th></tr></thead>
             <tbody id="hires-body">
               <tr class="loading-row"><td colspan="3"><span class="spinner"></span>Loading…</td></tr>
             </tbody>
@@ -594,443 +898,1187 @@
     <!-- SEARCH RESULTS -->
     <div class="panel" id="results-panel" style="display:none">
       <div class="panel-header">
-        <span class="panel-title">Search Results</span>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('results-panel').style.display='none'">✕ Close</button>
+        <span class="panel-title"><i class="bi bi-people"></i> Search Results</span>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('results-panel').style.display='none'">
+          <i class="bi bi-x-lg"></i> Close
+        </button>
       </div>
       <div class="table-scroll">
         <table class="data-table">
-          <thead>
-            <tr>
-              <th>Worker</th>
-              <th>Role</th>
-              <th>Location</th>
-              <th>Salary (KES)</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="results-body">
-          </tbody>
+          <thead><tr><th>Worker</th><th>Role</th><th>Location</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="results-body"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- RECENT ACTIVITY -->
+    <!-- ACTIVITY FEED -->
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Recent Activity</span>
+        <span class="panel-title"><i class="bi bi-activity"></i> Recent Activity</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadActivity()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
       </div>
       <div class="panel-body" id="activity-body">
         <div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spinner"></span> Loading…</div>
       </div>
     </div>
 
+    <!-- HIRE HISTORY -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="bi bi-clock-history"></i> Hire History</span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Worker</th><th>Role</th><th>Start</th><th>Salary</th><th>Status</th><th>Contract</th></tr></thead>
+          <tbody id="emp-hire-history-body">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="bi bi-person-workspace" style="font-size:1.5rem;display:block;margin-bottom:.4rem;opacity:.4"></i>No hire records yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAYMENT HISTORY -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="bi bi-credit-card"></i> Payment History</span>
+        <button class="btn btn-primary btn-sm" onclick="openEmpPayModal()"><i class="bi bi-plus"></i> Pay Now</button>
+      </div>
+      <div style="background:#E8F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:12.5px;color:#1B5E35;display:flex;gap:8px;align-items:flex-start">
+        <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i>
+        <span>Employer access fee: <strong>KES 1,000 one-time, non-refundable</strong>. Unlocks full contact access, messaging and worker profile details. <a href="#" onclick="openEmpTCModal()" style="color:var(--brand);font-weight:600;text-decoration:underline">View Terms</a></span>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>M-Pesa Ref</th><th>Date</th><th>Phone</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead>
+          <tbody id="emp-pay-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.4rem;opacity:.4"></i>No payments yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL 1 — FIND WORKERS
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="find-modal" onclick="if(event.target===this)closeModal('find-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-people-fill"></i> Find Workers</span>
+      <button class="modal-close" onclick="closeModal('find-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-search">
+        <input type="text" id="fw-search" placeholder="Search by name, role, location…" oninput="filterFindWorkers()">
+        <select class="form-control" id="fw-role" style="max-width:150px;border-radius:50px;padding:9px 12px" onchange="filterFindWorkers()">
+          <option value="">All Roles</option>
+          <option value="House Manager">House Manager</option>
+          <option value="Nanny">Nanny</option>
+          <option value="Cook">Cook</option>
+          <option value="Cleaner">Cleaner</option>
+          <option value="Driver">Driver</option>
+          <option value="Guard">Security</option>
+        </select>
+      </div>
+      <div id="fw-grid" class="worker-card-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-muted)">
+          <span class="spinner"></span> Loading workers…
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('find-modal')">Close</button>
+      <a href="employees.html" class="btn btn-primary"><i class="bi bi-arrow-right-circle"></i> Browse Full Directory</a>
+    </div>
   </div>
 </div>
 
-<!-- WORKER DETAIL MODAL -->
-<div class="modal-overlay" id="worker-modal" onclick="if(event.target===this)closeModal()">
+<!-- ═══════════════════════════════════════════
+     MODAL 2 — SAVED WORKERS
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="saved-modal" onclick="if(event.target===this)closeModal('saved-modal')">
   <div class="modal">
+    <div class="modal-drag"></div>
     <div class="modal-header">
-      <span class="modal-title">Worker Profile</span>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <span class="modal-title"><i class="bi bi-heart-fill" style="color:#e74c3c"></i> Saved Workers</span>
+      <button class="modal-close" onclick="closeModal('saved-modal')"><i class="bi bi-x-lg"></i></button>
     </div>
-    <div id="modal-content"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn btn-outline btn-sm" id="modal-save-btn">❤️ Save Worker</button>
-      <button class="btn btn-primary" id="modal-contact-btn">Contact Worker</button>
+    <div class="modal-body">
+      <div id="saved-modal-list">
+        <div style="text-align:center;padding:2rem;color:var(--text-muted)"><span class="spinner"></span> Loading…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('saved-modal')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('saved-modal');openModal('find-modal')">
+        <i class="bi bi-search"></i> Find More Workers
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL 3 — MESSAGES
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="messages-modal" onclick="if(event.target===this)closeModal('messages-modal')">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-chat-dots-fill"></i> Messages</span>
+      <button class="modal-close" onclick="closeModal('messages-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="messages-list">
+        <div style="text-align:center;padding:2rem;color:var(--text-muted)"><span class="spinner"></span> Loading…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('messages-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL 4 — WORKER PROFILE DETAIL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="worker-modal" onclick="if(event.target===this)closeModal('worker-modal')">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-person-badge"></i> Worker Profile</span>
+      <button class="modal-close" onclick="closeModal('worker-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" id="modal-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('worker-modal')">Close</button>
+      <button class="btn btn-outline btn-sm" id="modal-save-btn"><i class="bi bi-heart"></i> Save</button>
+      <button class="btn btn-primary" id="modal-contact-btn"><i class="bi bi-chat"></i> Contact</button>
     </div>
   </div>
 </div>
 
 <!-- TOAST -->
-<div id="toast"></div>
+<div id="toast"><i class="bi bi-check-circle-fill"></i><span id="toast-msg"></span></div>
 
+<!-- ═══════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════ -->
 <script>
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-const EMPLOYER_ID = 1; // Sarah Mwangi's employer ID — update as needed
-
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Greet based on time
-(function() {
-  const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('greeting-time').textContent = ' · ' + g;
-})();
+let EMPLOYER_ID = null;
+let _allFindWorkers = [];
 
+/* ── Helpers ── */
 const AVATAR_COLORS = [
-  ['#C9E8D4','#1B6B45'], ['#D6CBEE','#6B52C8'], ['#FAEEDA','#7A5010'],
-  ['#B5D4F4','#1A6BB5'], ['#F5C4B3','#993C1D'], ['#F4C0D1','#993556']
+  ['#C9E8D4','#1B6B45'],['#D6CBEE','#6B52C8'],['#FAEEDA','#7A5010'],
+  ['#B5D4F4','#1A6BB5'],['#F5C4B3','#993C1D'],['#F4C0D1','#993556'],
 ];
-
 function avatarColor(name) {
-  let h = 0; for (let c of name) h = (h*31+c.charCodeAt(0))%AVATAR_COLORS.length;
+  let h = 0; for (let c of (name||'')) h = (h*31+c.charCodeAt(0)) % AVATAR_COLORS.length;
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
-
 function initials(name) {
-  return name ? name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '??';
+  return (name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 }
-
-function formatSalary(min, max) {
+function formatSalary(min,max) {
   if (!min && !max) return '—';
-  const fmt = n => n >= 1000 ? Math.round(n/1000)+'k' : n;
-  if (min && max) return `${fmt(min)}–${fmt(max)}`;
-  if (min) return `${fmt(min)}+`;
-  return `Up to ${fmt(max)}`;
+  const f = n => n >= 1000 ? Math.round(n/1000)+'k' : n;
+  if (min && max) return `${f(min)}–${f(max)}`;
+  return min ? `${f(min)}+` : `Up to ${f(max)}`;
 }
-
 function timeAgo(ts) {
-  const d = new Date(ts), now = new Date();
-  const diff = Math.floor((now-d)/1000);
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff/60)+'m ago';
-  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
-  return Math.floor(diff/86400)+'d ago';
+  const d = Math.floor((Date.now()-new Date(ts))/1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60)+'m ago';
+  if (d < 86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
 }
 
-function toast(msg) {
+/* ── Toast ── */
+function toast(msg, type='success') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
+  const icon = t.querySelector('i');
+  document.getElementById('toast-msg').textContent = msg;
+  icon.className = type === 'error' ? 'bi bi-exclamation-circle-fill' : 'bi bi-check-circle-fill';
+  t.className = type === 'error' ? 'error show' : 'show';
+  setTimeout(()=>t.className='', 2800);
 }
 
-function closeModal() {
-  document.getElementById('worker-modal').classList.remove('open');
+/* ── Sidebar ── */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function setActive(el) {
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
 }
 
-// ── LOAD STATS ─────────────────────────────────────────────────────────────
-async function loadStats() {
-  try {
-    // Try employer_stats view first, fallback to counting tables
-    const checks = await Promise.allSettled([
-      db.from('saved_workers').select('id', {count:'exact',head:true}).eq('employer_id', EMPLOYER_ID),
-      db.from('hires').select('id', {count:'exact',head:true}).eq('employer_id', EMPLOYER_ID).eq('status','active'),
-      db.from('contacts').select('id', {count:'exact',head:true}).eq('employer_id', EMPLOYER_ID),
-      db.from('searches').select('id', {count:'exact',head:true}).eq('employer_id', EMPLOYER_ID),
-    ]);
+/* ── Modal system ── */
+const _loadedModals = {};
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!_loadedModals[id]) {
+    _loadedModals[id] = true;
+    if (id === 'find-modal')    loadFindWorkers();
+    if (id === 'saved-modal')   loadSavedModal();
+    if (id === 'messages-modal')loadMessagesModal();
+  }
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-    const savedCount  = checks[0].status==='fulfilled' ? (checks[0].value.count ?? 0) : 12;
-    const hiresCount  = checks[1].status==='fulfilled' ? (checks[1].value.count ?? 0) : 2;
-    const contactedCount = checks[2].status==='fulfilled' ? (checks[2].value.count ?? 0) : 5;
-    const searchCount = checks[3].status==='fulfilled' ? (checks[3].value.count ?? 0) : 84;
-
-    document.getElementById('stat-saved').textContent = savedCount;
-    document.getElementById('stat-hires').textContent = hiresCount;
-    document.getElementById('stat-contacted').textContent = contactedCount;
-    document.getElementById('stat-searches').textContent = searchCount;
-  } catch(e) {
-    // Show placeholder values
-    ['stat-searches','stat-saved','stat-contacted','stat-hires'].forEach((id,i)=>{
-      document.getElementById(id).textContent = [84,12,5,2][i];
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['worker-modal','find-modal','saved-modal','messages-modal'].forEach(id => {
+      document.getElementById(id)?.classList.remove('open');
     });
+    document.body.style.overflow = '';
   }
-}
+});
 
-// ── LOAD WORKERS (generic) ─────────────────────────────────────────────────
-async function loadWorkers(filters) {
-  document.getElementById('results-panel').style.display = 'block';
-  document.getElementById('results-body').innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Searching…</td></tr>';
+/* ══════════════════════════════════════
+   AUTH + BOOT
+══════════════════════════════════════ */
+(async function init() {
+  /* Greeting */
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting-time').textContent = g;
 
-  let q = db.from('workers').select('*').limit(20);
-  if (filters?.role) q = q.ilike('role', `%${filters.role}%`);
-  if (filters?.location) q = q.ilike('location', `%${filters.location}%`);
-  if (filters?.salaryMin) q = q.gte('salary_min', filters.salaryMin);
-  if (filters?.salaryMax) q = q.lte('salary_max', filters.salaryMax);
+  /* Get current user */
+  const { data: { user } } = await db.auth.getUser();
 
-  const { data, error } = await q;
-  renderResults(data, error);
-}
+  if (user) {
+    /* Load profile */
+    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
+    const { data: employer } = await db.from('employers').select('*').eq('user_id', user.id).single();
 
-function renderResults(data, error) {
-  const tbody = document.getElementById('results-body');
-  if (error || !data || !data.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No workers found matching your criteria.</td></tr>`;
-    return;
+    const name = profile?.full_name || user.email?.split('@')[0] || 'Employer';
+    const ini  = initials(name);
+
+    document.getElementById('welcome-name').textContent = `Welcome back, ${name.split(' ')[0]} 👋`;
+    document.getElementById('topbar-title').textContent  = `${name.split(' ')[0]}'s Dashboard`;
+    document.getElementById('sidebar-name').textContent  = name;
+    document.getElementById('sidebar-av').textContent    = ini;
+    document.getElementById('topbar-av').textContent     = ini;
+
+    if (employer) EMPLOYER_ID = employer.id;
+  } else {
+    /* Not logged in — show guest mode */
+    document.getElementById('welcome-name').textContent = 'Welcome to Amilia Care 👋';
   }
-  tbody.innerHTML = data.map(w => {
-    const [bg,fg] = avatarColor(w.full_name||w.name||'W');
-    const name = w.full_name || w.name || 'Unknown';
-    const role = w.role || w.job_title || '—';
-    const loc  = w.location || w.area || '—';
-    const sal  = formatSalary(w.salary_min, w.salary_max);
-    const isVerified = w.is_verified || w.verified;
-    const badgeCls = isVerified ? 'badge-verified' : 'badge-pending';
-    const badgeTxt = isVerified ? '✔ Verified' : '⏳ Pending';
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong style="font-size:13px">${name}</strong>
-      </div></td>
-      <td>${role}</td>
-      <td>${loc}</td>
-      <td style="font-size:13px">${sal}</td>
-      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
-      <td><div class="action-row">
-        <button class="action-btn primary" onclick="contactWorker(${w.id},'${name.replace(/'/g,"\\'")}')">Contact</button>
-        <button class="action-btn" onclick="viewWorker(${w.id})">View</button>
-        <button class="action-btn" onclick="saveWorker(${w.id},'${name.replace(/'/g,"\\'")}')">❤️</button>
-      </div></td>
-    </tr>`;
-  }).join('');
+
+  await Promise.all([loadStats(), loadSavedWorkers(), loadHires(), loadActivity()]);
+})();
+
+/* ══════════════════════════════════════
+   STATS
+══════════════════════════════════════ */
+async function loadStats() {
+  if (!EMPLOYER_ID) { ['stat-searches','stat-saved','stat-contacted','stat-hires'].forEach(id => document.getElementById(id).textContent = '0'); return; }
+  const [a,b,c,d] = await Promise.allSettled([
+    db.from('searches').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('saved_workers').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('contacts').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('hires').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID).eq('status','active'),
+  ]);
+  document.getElementById('stat-searches').textContent  = a.status==='fulfilled' ? (a.value.count??0) : '—';
+  document.getElementById('stat-saved').textContent     = b.status==='fulfilled' ? (b.value.count??0) : '—';
+  document.getElementById('stat-contacted').textContent = c.status==='fulfilled' ? (c.value.count??0) : '—';
+  document.getElementById('stat-hires').textContent     = d.status==='fulfilled' ? (d.value.count??0) : '—';
 }
 
-// ── LOAD SAVED WORKERS ────────────────────────────────────────────────────
+/* ══════════════════════════════════════
+   SAVED WORKERS (inline table)
+══════════════════════════════════════ */
 async function loadSavedWorkers() {
   const tbody = document.getElementById('saved-body');
+  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
   tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>';
-
-  const { data, error } = await db.from('saved_workers')
-    .select('*, workers(*)')
-    .eq('employer_id', EMPLOYER_ID)
-    .order('created_at', {ascending:false})
-    .limit(8);
-
-  if (error || !data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>';
-    // Fallback: show sample
-    fallbackSavedWorkers(tbody);
-    return;
-  }
-
+  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
+  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
   tbody.innerHTML = data.map(row => {
-    const w = row.workers || {};
-    const name = w.full_name || w.name || 'Worker';
-    const role = w.role || w.job_title || '—';
+    const w = row.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const role = w.role||'—';
     const [bg,fg] = avatarColor(name);
-    const isVerified = w.is_verified || w.verified;
+    const isV = w.is_verified||w.verified;
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong style="font-size:13px">${name}</strong>
-      </div></td>
-      <td style="font-size:13px;color:var(--text-muted)">${role}</td>
-      <td><span class="badge ${isVerified?'badge-verified':'badge-pending'}">${isVerified?'✔':'⏳'}</span></td>
-      <td><div class="action-row">
-        <button class="action-btn primary btn-sm" onclick="contactWorker(${w.id},'${name.replace(/'/g,"\\'")}')">Contact</button>
-        <button class="action-btn btn-sm" onclick="viewWorker(${w.id})">View</button>
-      </div></td>
+        <strong>${name}</strong></div></td>
+      <td style="color:var(--text-muted)">${role}</td>
+      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'check-circle-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
+      <td><button class="action-btn primary" onclick="viewWorker('${row.workers?.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button></td>
     </tr>`;
   }).join('');
 }
 
-function fallbackSavedWorkers(tbody) {
-  const samples = [
-    {name:'Grace N.', role:'House Manager', bg:'#C9E8D4', fg:'#1B6B45', verified:true},
-    {name:'Agnes M.', role:'Nanny', bg:'#D6CBEE', fg:'#6B52C8', verified:true},
-  ];
-  tbody.innerHTML = samples.map(w => `<tr>
-    <td><div style="display:flex;align-items:center;gap:8px">
-      <div class="worker-avatar" style="background:${w.bg};color:${w.fg}">${initials(w.name)}</div>
-      <strong style="font-size:13px">${w.name}</strong>
-    </div></td>
-    <td style="font-size:13px;color:var(--text-muted)">${w.role}</td>
-    <td><span class="badge badge-verified">✔</span></td>
-    <td><div class="action-row"><button class="action-btn primary btn-sm">Contact</button><button class="action-btn btn-sm">View</button></div></td>
-  </tr>`).join('');
-}
-
-// ── LOAD HIRES ────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════
+   HIRES
+══════════════════════════════════════ */
 async function loadHires() {
   const tbody = document.getElementById('hires-body');
+  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires yet.</td></tr>'; return; }
   tbody.innerHTML = '<tr class="loading-row"><td colspan="3"><span class="spinner"></span>Loading…</td></tr>';
-
-  const { data, error } = await db.from('hires')
-    .select('*, workers(*)')
-    .eq('employer_id', EMPLOYER_ID)
-    .order('created_at', {ascending:false})
-    .limit(6);
-
-  if (error || !data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>';
-    return;
-  }
-
+  const { data, error } = await db.from('hires').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
+  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>'; return; }
   tbody.innerHTML = data.map(h => {
-    const w = h.workers || {};
-    const name = w.full_name || w.name || 'Worker';
-    const role = w.role || w.job_title || h.role || '—';
+    const w = h.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const role = w.role||h.role||'—';
     const [bg,fg] = avatarColor(name);
-    const st = h.status || 'active';
-    const badgeCls = st==='active' ? 'hire-active' : st==='pending' ? 'hire-pending' : 'hire-ended';
+    const st = h.status||'active';
+    const cls = st==='active'?'hire-active':st==='pending'?'hire-pending':'hire-ended';
+    const dotCls = st==='active'?'dot-green':st==='pending'?'dot-amber':'dot-gray';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong style="font-size:13px">${name}</strong>
-      </div></td>
-      <td style="font-size:13px;color:var(--text-muted)">${role}</td>
-      <td><span class="hire-badge ${badgeCls}"><span class="dot ${st==='active'?'dot-green':st==='pending'?'dot-amber':'dot-gray'}"></span>${st.charAt(0).toUpperCase()+st.slice(1)}</span></td>
+        <strong>${name}</strong></div></td>
+      <td style="color:var(--text-muted)">${role}</td>
+      <td><span class="hire-badge ${cls}"><span class="dot ${dotCls}"></span> ${st.charAt(0).toUpperCase()+st.slice(1)}</span></td>
     </tr>`;
   }).join('');
 }
 
-// ── LOAD ACTIVITY ─────────────────────────────────────────────────────────
+/* ══════════════════════════════════════
+   ACTIVITY
+══════════════════════════════════════ */
 async function loadActivity() {
   const div = document.getElementById('activity-body');
-
-  const { data, error } = await db.from('activity_log')
-    .select('*')
-    .eq('employer_id', EMPLOYER_ID)
-    .order('created_at', {ascending:false})
-    .limit(8);
-
-  const ICONS = {saved:'❤️', contacted:'💬', hired:'✅', searched:'🔍', viewed:'👁'};
-
-  if (error || !data || !data.length) {
-    div.innerHTML = `<div class="activity-item"><div class="activity-dot-wrap" style="background:var(--brand-light)">🔍</div><div><div class="activity-text">You searched for House Managers in Westlands</div><div class="activity-time">Recently</div></div></div>
-      <div class="activity-item"><div class="activity-dot-wrap" style="background:var(--info-light)">❤️</div><div><div class="activity-text">Saved Grace N. to your shortlist</div><div class="activity-time">Earlier today</div></div></div>`;
+  if (!EMPLOYER_ID) { div.innerHTML = '<div class="empty-state"><i class="bi bi-clock-history"></i><p>No activity yet.</p></div>'; return; }
+  const { data, error } = await db.from('activity_log').select('*').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(10);
+  if (error || !data?.length) {
+    div.innerHTML = `<div class="activity-item">
+      <div class="act-icon" style="background:var(--brand-light)"><i class="bi bi-search" style="color:var(--brand);font-size:14px"></i></div>
+      <div><div class="activity-text">Get started by searching for workers</div><div class="activity-time">Now</div></div></div>`;
     return;
   }
-
+  const iconMap = { saved:'bi-heart-fill', contacted:'bi-chat-fill', hired:'bi-person-check-fill', searched:'bi-search', viewed:'bi-eye-fill' };
+  const bgMap = { saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)' };
   div.innerHTML = data.map(a => {
-    const icon = ICONS[a.action_type] || '📝';
-    const bgMap = {saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)'};
-    const bg = bgMap[a.action_type] || 'var(--bg)';
+    const icon = iconMap[a.action_type] || 'bi-activity';
+    const bg   = bgMap[a.action_type] || 'var(--bg)';
     return `<div class="activity-item">
-      <div class="activity-dot-wrap" style="background:${bg}">${icon}</div>
-      <div>
-        <div class="activity-text">${a.description || a.action_type}</div>
-        <div class="activity-time">${timeAgo(a.created_at)}</div>
+      <div class="act-icon" style="background:${bg}"><i class="bi ${icon}" style="color:var(--brand);font-size:14px"></i></div>
+      <div><div class="activity-text">${a.description||a.action_type}</div><div class="activity-time">${timeAgo(a.created_at)}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   FIND WORKERS MODAL
+══════════════════════════════════════ */
+async function loadFindWorkers() {
+  const grid = document.getElementById('fw-grid');
+  const { data, error } = await db.from('workers').select('*').eq('is_verified', true).order('created_at',{ascending:false}).limit(24);
+  if (error || !data?.length) {
+    /* Try without verified filter */
+    const { data: all } = await db.from('workers').select('*').limit(24);
+    _allFindWorkers = all || [];
+  } else {
+    _allFindWorkers = data;
+  }
+  renderFindWorkers(_allFindWorkers);
+}
+
+function renderFindWorkers(list) {
+  const grid = document.getElementById('fw-grid');
+  if (!list?.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="bi bi-people"></i><p>No workers found. Try different filters.</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(w => {
+    const name = w.full_name||w.name||'Worker';
+    const role = w.role||'—';
+    const loc  = w.location||w.area||'Kenya';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<div class="worker-card" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
+      <div class="wc-av" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div class="wc-name">${name}</div>
+      <div class="wc-role">${role}</div>
+      ${isV ? '<span class="badge badge-verified" style="font-size:10px;margin-bottom:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+      <div class="wc-loc"><i class="bi bi-geo-alt" style="font-size:11px"></i> ${loc}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterFindWorkers() {
+  const q    = (document.getElementById('fw-search')?.value||'').toLowerCase();
+  const role = (document.getElementById('fw-role')?.value||'').toLowerCase();
+  let list = _allFindWorkers;
+  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
+  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
+  renderFindWorkers(list);
+}
+
+/* ══════════════════════════════════════
+   SAVED MODAL
+══════════════════════════════════════ */
+async function loadSavedModal() {
+  const list = document.getElementById('saved-modal-list');
+  if (!EMPLOYER_ID) {
+    list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>Log in to see your saved workers.</p></div>';
+    return;
+  }
+  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(20);
+  if (error || !data?.length) {
+    list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>You haven\'t saved any workers yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal(\'saved-modal\');openModal(\'find-modal\')"><i class="bi bi-search"></i> Find Workers</button></div>';
+    return;
+  }
+  list.innerHTML = data.map(row => {
+    const w = row.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const role = w.role||'—';
+    const loc  = w.location||'Kenya';
+    const sal  = formatSalary(w.salary_min,w.salary_max);
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<div class="saved-card">
+      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:600">${name}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${role} &nbsp;·&nbsp; ${loc}</div>
+        <div style="font-size:11.5px;color:var(--text-light);margin-top:1px">KES ${sal}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+        ${isV ? '<span class="badge badge-verified" style="font-size:10px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+        <div style="display:flex;gap:4px">
+          <button class="action-btn primary" style="padding:4px 10px;font-size:11px" onclick="contactWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+          <button class="action-btn" style="padding:4px 9px;font-size:11px" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
-// ── VIEW WORKER ───────────────────────────────────────────────────────────
-async function viewWorker(id) {
-  const modal = document.getElementById('worker-modal');
+/* ══════════════════════════════════════
+   MESSAGES MODAL
+══════════════════════════════════════ */
+async function loadMessagesModal() {
+  const list = document.getElementById('messages-list');
+  if (!EMPLOYER_ID) {
+    list.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>Log in to view messages.</p></div>';
+    return;
+  }
+  /* Load contacts as "conversations" */
+  const { data, error } = await db.from('contacts').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('contacted_at',{ascending:false}).limit(15);
+  if (error || !data?.length) {
+    list.innerHTML = `<div class="empty-state"><i class="bi bi-chat-square-dots"></i><p>No messages yet. Contact a worker to start a conversation.</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal('messages-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find Workers</button></div>`;
+    return;
+  }
+  list.innerHTML = '<div class="msg-list">' + data.map((c,i) => {
+    const w = c.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    const isNew = i < 2;
+    return `<div class="msg-item" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')">
+      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="msg-name">${name}</div>
+        <div class="msg-preview">Contact request sent — awaiting response</div>
+      </div>
+      ${isNew ? '<div class="msg-unread"></div>' : ''}
+      <div class="msg-time">${timeAgo(c.contacted_at)}</div>
+    </div>`;
+  }).join('') + '</div>';
+
+  /* Update badge */
+  const newCount = Math.min(data.length, 2);
+  const badge = document.getElementById('msg-badge');
+  if (newCount > 0) { badge.textContent = newCount; badge.style.display = 'inline'; }
+}
+
+/* ══════════════════════════════════════
+   VIEW WORKER (profile modal)
+══════════════════════════════════════ */
+async function viewWorker(id, knownName) {
   document.getElementById('modal-content').innerHTML = '<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>';
-  modal.classList.add('open');
+  openModal('worker-modal');
 
-  const { data: w, error } = await db.from('workers').select('*').eq('id', id).single();
-
-  if (error || !w) {
-    document.getElementById('modal-content').innerHTML = '<p style="color:var(--danger)">Could not load worker profile.</p>';
+  if (!id) {
+    document.getElementById('modal-content').innerHTML = '<p style="color:var(--danger);padding:1rem">Could not load profile.</p>';
     return;
   }
 
-  const name = w.full_name || w.name || 'Worker';
-  const role = w.role || w.job_title || '—';
-  const loc  = w.location || w.area || '—';
-  const sal  = formatSalary(w.salary_min, w.salary_max);
+  const { data: w, error } = await db.from('workers').select('*').eq('id', id).single();
+  if (error || !w) {
+    /* Fallback: show what we know */
+    const name = knownName || 'Worker';
+    const [bg,fg] = avatarColor(name);
+    document.getElementById('modal-content').innerHTML = `
+      <div class="profile-section">
+        <div class="profile-avatar-lg" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <div><div style="font-size:16px;font-weight:600">${name}</div>
+          <div style="font-size:13px;color:var(--text-muted)">Profile details not available</div>
+        </div>
+      </div><p style="font-size:13px;color:var(--text-muted)">Full profile details could not be loaded. The worker may not be in the workers table yet.</p>`;
+    document.getElementById('modal-contact-btn').onclick = () => toast('Contact feature requires full profile');
+    document.getElementById('modal-save-btn').onclick    = () => toast('Save feature requires full profile');
+    return;
+  }
+
+  const name = w.full_name||w.name||'Worker';
+  const role = w.role||'—';
+  const loc  = w.location||w.area||'—';
+  const sal  = formatSalary(w.salary_min,w.salary_max);
   const [bg,fg] = avatarColor(name);
-  const isVerified = w.is_verified || w.verified;
+  const isV = w.is_verified||w.verified;
 
   document.getElementById('modal-content').innerHTML = `
     <div class="profile-section">
       <div class="profile-avatar-lg" style="background:${bg};color:${fg}">${initials(name)}</div>
       <div>
         <div style="font-size:16px;font-weight:600">${name}</div>
-        <div style="font-size:13px;color:var(--text-muted)">${role}</div>
-        ${isVerified ? '<span class="badge badge-verified" style="margin-top:4px">✔ Verified</span>' : ''}
+        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${role}</div>
+        ${isV ? '<span class="badge badge-verified" style="margin-top:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-pending">Pending</span>'}
       </div>
     </div>
     <div class="detail-grid">
       <div class="detail-item"><label>Location</label><span>${loc}</span></div>
-      <div class="detail-item"><label>Salary Range</label><span>KES ${sal}</span></div>
+      <div class="detail-item"><label>Salary</label><span>KES ${sal}</span></div>
       <div class="detail-item"><label>Experience</label><span>${w.experience_years ? w.experience_years+' years' : '—'}</span></div>
-      <div class="detail-item"><label>Languages</label><span>${w.languages || 'English, Swahili'}</span></div>
-      <div class="detail-item"><label>Availability</label><span>${w.availability || 'Immediate'}</span></div>
-      <div class="detail-item"><label>Live-in</label><span>${w.live_in ? 'Available' : 'Not available'}</span></div>
+      <div class="detail-item"><label>Languages</label><span>${Array.isArray(w.languages) ? w.languages.join(', ') : (w.languages||'English, Swahili')}</span></div>
+      <div class="detail-item"><label>Availability</label><span>${w.availability||'Immediate'}</span></div>
+      <div class="detail-item"><label>Live-in</label><span>${w.live_in ? 'Yes — available' : 'No'}</span></div>
     </div>
-    ${w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:0.75rem;background:var(--bg);border-radius:var(--radius-sm)">${w.bio}</div>` : ''}
+    ${w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm)"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${w.bio}</div>` : ''}
   `;
 
   document.getElementById('modal-contact-btn').onclick = () => contactWorker(w.id, name);
-  document.getElementById('modal-save-btn').onclick = () => saveWorker(w.id, name);
+  document.getElementById('modal-save-btn').onclick    = () => saveWorker(w.id, name);
 }
 
-// ── CONTACT WORKER ────────────────────────────────────────────────────────
+/* ══════════════════════════════════════
+   CONTACT / SAVE
+══════════════════════════════════════ */
 async function contactWorker(workerId, workerName) {
-  const { error } = await db.from('contacts').insert({
-    employer_id: EMPLOYER_ID,
-    worker_id: workerId,
-    contacted_at: new Date().toISOString(),
-  });
-
-  // Also log activity
-  await db.from('activity_log').insert({
-    employer_id: EMPLOYER_ID,
-    action_type: 'contacted',
-    description: `You contacted ${workerName}`,
-    worker_id: workerId,
-    created_at: new Date().toISOString(),
-  }).catch(()=>{});
-
-  toast(error ? `Contacting ${workerName}…` : `✉️ Contact request sent to ${workerName}`);
-  closeModal();
-  loadStats();
-  loadActivity();
+  if (!EMPLOYER_ID) { toast('Please log in to contact workers', 'error'); return; }
+  const { error } = await db.from('contacts').insert({ employer_id: EMPLOYER_ID, worker_id: workerId, contacted_at: new Date().toISOString() });
+  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'contacted', description: `You contacted ${workerName}`, worker_id: workerId }).catch(()=>{});
+  toast(error ? `Could not send: ${error.message}` : `Contact request sent to ${workerName}`);
+  closeModal('worker-modal');
+  loadStats(); loadActivity();
 }
 
-// ── SAVE WORKER ───────────────────────────────────────────────────────────
 async function saveWorker(workerId, workerName) {
-  const { error } = await db.from('saved_workers').upsert({
-    employer_id: EMPLOYER_ID,
-    worker_id: workerId,
-    created_at: new Date().toISOString(),
-  }, { onConflict: 'employer_id,worker_id' });
-
-  await db.from('activity_log').insert({
-    employer_id: EMPLOYER_ID,
-    action_type: 'saved',
-    description: `Saved ${workerName} to your shortlist`,
-    worker_id: workerId,
-    created_at: new Date().toISOString(),
-  }).catch(()=>{});
-
-  toast(error ? `Could not save: ${error.message}` : `❤️ ${workerName} saved to your list`);
-  loadSavedWorkers();
-  loadStats();
+  if (!EMPLOYER_ID) { toast('Please log in to save workers', 'error'); return; }
+  const { error } = await db.from('saved_workers').upsert({ employer_id: EMPLOYER_ID, worker_id: workerId }, { onConflict: 'employer_id,worker_id' });
+  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'saved', description: `Saved ${workerName} to your shortlist`, worker_id: workerId }).catch(()=>{});
+  toast(error ? `Could not save: ${error.message}` : `${workerName} saved to your list`);
+  _loadedModals['saved-modal'] = false;
+  loadStats(); loadSavedWorkers();
 }
 
-// ── RUN SEARCH ────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════
+   QUICK SEARCH (inline)
+══════════════════════════════════════ */
 async function runSearch() {
   const role = document.getElementById('search-role').value;
-  const location = document.getElementById('search-location').value;
-  const salaryVal = document.getElementById('search-salary').value;
-  let salaryMin, salaryMax;
-  if (salaryVal) { [salaryMin, salaryMax] = salaryVal.split('-').map(Number); }
+  const loc  = document.getElementById('search-location').value;
+  const sal  = document.getElementById('search-salary').value;
+  let min, max;
+  if (sal) [min, max] = sal.split('-').map(Number);
 
-  // Log search
-  await db.from('searches').insert({
-    employer_id: EMPLOYER_ID,
-    role: role || null,
-    location: location || null,
-    searched_at: new Date().toISOString(),
-  }).catch(()=>{});
-
-  await db.from('activity_log').insert({
-    employer_id: EMPLOYER_ID,
-    action_type: 'searched',
-    description: `Searched for ${role||'workers'}${location ? ' in '+location : ''}`,
-    created_at: new Date().toISOString(),
-  }).catch(()=>{});
-
-  loadWorkers({ role, location, salaryMin, salaryMax });
+  if (EMPLOYER_ID) {
+    await db.from('searches').insert({ employer_id: EMPLOYER_ID, role: role||null, location: loc||null, searched_at: new Date().toISOString() }).catch(()=>{});
+    await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'searched', description: `Searched for ${role||'workers'}${loc?' in '+loc:''}` }).catch(()=>{});
+  }
+  loadWorkers({ role, location: loc, salaryMin: min, salaryMax: max });
   loadStats();
 }
 
-function openQuickSearch() {
-  document.getElementById('search-role').focus();
-  document.getElementById('search-role').closest('.panel').scrollIntoView({behavior:'smooth'});
+async function loadWorkers(filters) {
+  const panel = document.getElementById('results-panel');
+  const tbody = document.getElementById('results-body');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Searching…</td></tr>';
+
+  let q = db.from('workers').select('*').limit(20);
+  if (filters?.role)      q = q.ilike('role', `%${filters.role}%`);
+  if (filters?.location)  q = q.ilike('location', `%${filters.location}%`);
+  if (filters?.salaryMin) q = q.gte('salary_min', filters.salaryMin);
+  if (filters?.salaryMax) q = q.lte('salary_max', filters.salaryMax);
+
+  const { data, error } = await q;
+  if (error || !data?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No workers found matching your criteria.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(w => {
+    const name = w.full_name||w.name||'Unknown';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td>${w.role||'—'}</td>
+      <td>${w.location||'—'}</td>
+      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
+      <td><div class="action-row">
+        <button class="action-btn primary" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+        <button class="action-btn" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
+        <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
 
-function showSection(sec) { /* future routing */ }
+/* Hide .hide-xs on very small screens */
+(function() {
+  const style = document.createElement('style');
+  style.textContent = '@media(max-width:420px){.hide-xs{display:none}}';
+  document.head.appendChild(style);
+})();
 
-// ── INIT ──────────────────────────────────────────────────────────────────
-(async function init() {
-  await Promise.all([
-    loadStats(),
-    loadSavedWorkers(),
-    loadHires(),
-    loadActivity(),
-  ]);
+/* ══ Quick Actions grid fix ══ */
+(function(){
+  const style = document.createElement('style');
+  style.textContent = '.quick-actions{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:8px!important}@media(max-width:640px){.quick-actions{grid-template-columns:repeat(2,1fr)!important}}.qa-btn{flex-direction:column!important;gap:4px!important;padding:14px 8px!important;font-size:12px!important;border-radius:12px!important;border:1.5px solid transparent!important;background:#fff!important}';
+  document.head.appendChild(style);
+})();
+
+/* ══ Tawk.to ══ */
+function openTawkChat() {
+  if (window.Tawk_API && typeof window.Tawk_API.toggle === 'function') {
+    window.Tawk_API.toggle();
+  } else {
+    window.open('https://tawk.to/chat/6a0adad3c744531c43732c65/1jot6ditn','_blank');
+  }
+}
+
+/* ══ Employer Payment Modal ══ */
+function openEmpPayModal() {
+  document.getElementById('emp-pay-modal').classList.add('open');
+}
+function openEmpTCModal() {
+  document.getElementById('emp-tc-modal').classList.add('open');
+}
+</script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- ══ POST JOB MODAL ══ -->
+<div class="modal-overlay" id="post-job-modal" onclick="if(event.target===this)closeModal('post-job-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-plus-circle-fill"></i> Post a Job</span>
+      <button class="modal-close" onclick="closeModal('post-job-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="post-job-form">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Job Title *</label>
+          <input type="text" class="form-control" id="pj-title" placeholder="e.g. Experienced Nanny Needed">
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select class="form-control" id="pj-role">
+            <option value="">Select role</option>
+            <option>House Manager</option><option>Nanny / Childcare</option>
+            <option>Cook / Chef</option><option>Cleaner</option>
+            <option>Gardener</option><option>Driver</option>
+            <option>Security Guard</option><option>Elder Caregiver</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location *</label>
+          <input type="text" class="form-control" id="pj-location" placeholder="e.g. Karen, Nairobi">
+        </div>
+        <div class="form-group">
+          <label>Min Salary (KES/mo)</label>
+          <input type="number" class="form-control" id="pj-salary-min" placeholder="e.g. 15000">
+        </div>
+        <div class="form-group">
+          <label>Max Salary (KES/mo)</label>
+          <input type="number" class="form-control" id="pj-salary-max" placeholder="e.g. 22000">
+        </div>
+        <div class="form-group">
+          <label>Work Type</label>
+          <select class="form-control" id="pj-work-type">
+            <option value="">Select</option>
+            <option>Live-in</option><option>Day Work</option>
+            <option>Part Time</option><option>Full Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Urgency</label>
+          <select class="form-control" id="pj-urgent">
+            <option value="false">Not urgent</option>
+            <option value="true">Urgent Hire</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Job Description</label>
+          <textarea class="form-control" id="pj-desc" rows="4" style="resize:vertical" placeholder="Describe requirements, duties, experience needed…"></textarea>
+        </div>
+      </div>
+      <div id="pj-msg" style="display:none;margin-top:.8rem;padding:10px 14px;border-radius:8px;font-size:13px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('post-job-modal')">Cancel</button>
+      <button class="btn btn-primary" id="pj-submit-btn" onclick="submitJobPosting()"><i class="bi bi-send-fill"></i> Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYER PAYMENT MODAL ══ -->
+<div class="modal-overlay" id="emp-pay-modal" onclick="if(event.target===this)closeModal('emp-pay-modal')">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-credit-card-fill"></i> Platform Access Payment</span>
+      <button class="modal-close" onclick="closeModal('emp-pay-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:10px;padding:14px;text-align:center;margin-bottom:1rem">
+        <div style="font-size:2rem;font-weight:700;color:var(--brand);font-family:'Playfair Display',serif">KES 1,000</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:3px">One-Time Employer Access Fee</div>
+      </div>
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 13px;font-size:12.5px;color:#92400E;margin-bottom:1rem;display:flex;gap:8px">
+        <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;margin-top:1px"></i>
+        <div>
+          <strong>Non-Refundable.</strong> This fee unlocks full access to worker profiles, contact details, and messaging.
+          <div style="margin-top:8px;display:flex;align-items:flex-start;gap:7px">
+            <input type="checkbox" id="emp-tc-agree" style="margin-top:2px;accent-color:var(--brand);flex-shrink:0">
+            <label for="emp-tc-agree" style="cursor:pointer">I agree to the <a href="#" onclick="openEmpTCModal();event.preventDefault()" style="color:#92400E;font-weight:600;text-decoration:underline">Terms & Conditions</a>. I understand this payment is non-refundable.</label>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:.8rem">
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">SELECT PAYMENT METHOD</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.9rem">
+          <div id="emp-mpesa-btn" onclick="empSelectMethod('mpesa',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
+            <div style="font-weight:700;font-size:13px;color:#00a651">M-Pesa</div>
+            <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
+          </div>
+          <div id="emp-airtel-btn" onclick="empSelectMethod('airtel',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
+            <div style="font-weight:700;font-size:13px;color:#e3000b">Airtel Money</div>
+            <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
+          </div>
+        </div>
+        <div id="emp-phone-wrap" style="display:none">
+          <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px"><i class="bi bi-phone"></i> MOBILE NUMBER</label>
+          <input type="tel" id="emp-pay-phone" class="form-control" placeholder="+254 7XX XXX XXX" style="border-radius:8px;padding:10px 13px;font-size:13.5px;border:1.5px solid var(--border);width:100%;outline:none">
+          <p style="font-size:11px;color:var(--text-muted);margin-top:4px"><i class="bi bi-info-circle"></i> You'll receive an STK prompt on this number</p>
+        </div>
+      </div>
+      <div id="emp-pay-msg" style="display:none;padding:10px 13px;border-radius:8px;font-size:13px;margin-top:.5rem"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-pay-modal')">Cancel</button>
+      <button class="btn btn-primary" id="emp-pay-submit-btn" onclick="submitEmpPayment()" style="display:none">
+        <i class="bi bi-send-fill"></i> Send Payment Prompt
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYER RECEIPT MODAL ══ -->
+<div class="modal-overlay" id="emp-receipt-modal" onclick="if(event.target===this)closeModal('emp-receipt-modal')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-receipt"></i> Payment Receipt</span>
+      <button class="modal-close" onclick="closeModal('emp-receipt-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg);border:1px dashed var(--border);border-radius:10px;padding:1rem;font-size:13px">
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">M-Pesa Ref</span><span style="font-weight:600" id="er-ref">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Date & Time</span><span style="font-weight:600" id="er-dt">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Phone</span><span style="font-weight:600" id="er-phone">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted)">Amount</span><span style="font-weight:700;color:var(--brand)" id="er-amount">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="color:var(--text-muted)">Status</span><span style="font-weight:600;color:var(--brand)"><i class="bi bi-check-circle-fill"></i> Confirmed</span></div>
+        <div style="text-align:center;margin-top:.8rem;padding-top:.8rem;border-top:1px dashed var(--border)">
+          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--brand)">Amilia<span style="color:var(--accent)">Care</span></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px"><i class="bi bi-shield-check"></i> Official Payment Receipt</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-receipt-modal')">Close</button>
+      <button class="btn btn-outline" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+      <button class="btn btn-primary" onclick="downloadEmpReceiptPDF()"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYER TERMS & CONDITIONS MODAL ══ -->
+<div class="modal-overlay" id="emp-tc-modal" onclick="if(event.target===this)closeModal('emp-tc-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-file-earmark-text"></i> Terms & Conditions — Employers</span>
+      <button class="modal-close" onclick="closeModal('emp-tc-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto;font-size:13px;line-height:1.8;color:#1A2E24">
+      <p style="font-size:11.5px;color:var(--text-muted);margin-bottom:1rem">Last updated: <strong id="emp-tc-date"></strong> | Amilia Care, Nairobi, Kenya</p>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">1. Platform Services</h4>
+      <p style="margin-bottom:1rem">Amilia Care connects employers with verified domestic workers in Kenya. We act as an <strong>introduction and placement agency only</strong>. The employment contract is solely between the employer and worker.</p>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">2. Employer Access Fee</h4>
+      <p style="margin-bottom:.5rem">Employers pay a <strong>one-time, non-refundable platform access fee of KES 1,000</strong>. This fee grants:</p>
+      <ul style="margin-left:1.2rem;margin-bottom:1rem">
+        <li>Full access to verified worker profiles including contact details</li>
+        <li>Direct messaging with workers and admin support</li>
+        <li>Job posting capability (up to 5 active posts per cycle)</li>
+        <li>Contract generation tools and placement assistance</li>
+      </ul>
+      <div style="background:#FEECEC;border:1px solid #FAC8C8;border-radius:8px;padding:10px 13px;margin-bottom:1rem;font-size:12.5px;color:#8B1A1A">
+        <i class="bi bi-exclamation-triangle-fill"></i> <strong>This fee is strictly non-refundable</strong> once payment is confirmed, regardless of whether a suitable worker is found or a placement is made.
+      </div>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">3. Replacement Guarantee</h4>
+      <p style="margin-bottom:1rem">If a placed worker leaves within the first <strong>30 days</strong>, Amilia Care will provide one free replacement, subject to written notice from the employer within 7 days of the worker's departure. No additional placement fee applies for the replacement.</p>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">4. Employer Obligations</h4>
+      <ul style="margin-left:1.2rem;margin-bottom:1rem">
+        <li>Pay workers agreed salary on time and in full.</li>
+        <li>Comply with the Kenya Employment Act 2007 regarding leave, notice periods, and statutory deductions (NHIF/NSSF).</li>
+        <li>Treat all domestic workers with dignity and respect.</li>
+        <li>Not share worker contact details with third parties without consent.</li>
+      </ul>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">5. Liability Limitation</h4>
+      <p style="margin-bottom:1rem">Amilia Care is not liable for any losses, damages, or disputes arising from the employment relationship. All workers are background-checked to reasonable standards but we cannot guarantee conduct, character, or performance. Employers are encouraged to conduct their own interviews and trial periods.</p>
+
+      <h4 style="color:var(--brand);margin-bottom:.3rem">6. Governing Law</h4>
+      <p>These terms are governed by Kenyan law. Disputes shall be resolved through mediation first, then the courts of Kenya.</p>
+      <p style="margin-top:1rem;font-size:12px;color:var(--text-muted)">Contact: info@amiliacare.co.ke | www.amiliacare.co.ke</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-tc-modal')">Close</button>
+      <button class="btn btn-primary" onclick="closeModal('emp-tc-modal');document.getElementById('emp-tc-agree')&&(document.getElementById('emp-tc-agree').checked=true)"><i class="bi bi-check-circle"></i> I Agree</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYER CONTRACT MODAL ══ -->
+<div class="modal-overlay" id="emp-contract-modal" onclick="if(event.target===this)closeModal('emp-contract-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-file-earmark-text-fill"></i> Generate Employment Contract</span>
+      <button class="modal-close" onclick="closeModal('emp-contract-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--brand);margin-bottom:1rem;display:flex;gap:8px">
+        <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i>
+        <span>Fill in the details below. A professional PDF contract with the <strong>Amilia Care official stamp</strong> and today's date will be generated immediately.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Worker Full Name *</label><input type="text" class="form-control" id="ec-worker-name" placeholder="Worker's full name"></div>
+        <div class="form-group"><label>Worker ID / Passport *</label><input type="text" class="form-control" id="ec-worker-id" placeholder="e.g. 12345678"></div>
+        <div class="form-group"><label>Worker Phone</label><input type="tel" class="form-control" id="ec-worker-phone" placeholder="07XX XXX XXX"></div>
+        <div class="form-group"><label>Worker Location</label><input type="text" class="form-control" id="ec-worker-location" placeholder="e.g. Westlands, Nairobi"></div>
+        <div class="form-group"><label>Employer / Family Name *</label><input type="text" class="form-control" id="ec-employer-name" placeholder="Your name / company"></div>
+        <div class="form-group"><label>Employer Phone</label><input type="tel" class="form-control" id="ec-employer-phone" placeholder="07XX XXX XXX"></div>
+        <div class="form-group"><label>Employer Address</label><input type="text" class="form-control" id="ec-employer-addr" placeholder="e.g. Karen, Nairobi"></div>
+        <div class="form-group"><label>Position / Role *</label>
+          <select class="form-control" id="ec-role">
+            <option value="">Select</option>
+            <option>House Manager</option><option>Nanny / Childcare</option>
+            <option>Cook / Chef</option><option>Cleaner</option>
+            <option>Gardener</option><option>Driver</option>
+            <option>Security Guard</option><option>Elder Caregiver</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Monthly Salary (KES) *</label><input type="number" class="form-control" id="ec-salary" placeholder="e.g. 18000"></div>
+        <div class="form-group"><label>Work Type</label>
+          <select class="form-control" id="ec-work-type">
+            <option value="">Select</option>
+            <option>Live-in</option><option>Day Work</option><option>Part Time</option><option>Full Time</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Start Date *</label><input type="date" id="ec-start-date" class="form-control"></div>
+        <div class="form-group"><label>End Date (leave blank if permanent)</label><input type="date" id="ec-end-date" class="form-control"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Duties & Responsibilities</label><textarea class="form-control" id="ec-duties" rows="3" style="resize:vertical" placeholder="e.g. Cooking, childcare, cleaning, shopping…"></textarea></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Additional Terms / Notes</label><textarea class="form-control" id="ec-notes" rows="2" style="resize:vertical" placeholder="Leave days, probation period, special agreements…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-contract-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="generateEmpContractPDF()"><i class="bi bi-file-earmark-pdf-fill"></i> Generate PDF Contract</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// T&C date
+document.addEventListener('DOMContentLoaded', function(){
+  var el = document.getElementById('emp-tc-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+});
+
+var _empPayMethod = '';
+function empSelectMethod(m, el) {
+  _empPayMethod = m;
+  ['emp-mpesa-btn','emp-airtel-btn'].forEach(function(id){
+    var btn = document.getElementById(id);
+    btn.style.borderColor = 'var(--border)';
+    btn.style.background = '#fff';
+  });
+  el.style.borderColor = 'var(--brand)';
+  el.style.background = 'var(--brand-light)';
+  document.getElementById('emp-phone-wrap').style.display = 'block';
+  document.getElementById('emp-pay-submit-btn').style.display = 'flex';
+}
+
+async function submitEmpPayment() {
+  var cb = document.getElementById('emp-tc-agree');
+  if (!cb || !cb.checked) {
+    alert('Please accept the Terms & Conditions before proceeding.');
+    return;
+  }
+  var phone = (document.getElementById('emp-pay-phone').value||'').trim();
+  if (!phone) { alert('Please enter your mobile number.'); return; }
+  var btn = document.getElementById('emp-pay-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sending prompt…';
+
+  // Simulate STK push (replace with real Daraja API call)
+  await new Promise(r=>setTimeout(r,2000));
+
+  var ref = 'QJX' + Math.random().toString(36).slice(2,8).toUpperCase();
+  var dt  = new Date().toLocaleString('en-KE');
+
+  // Save to pay table
+  var tbody = document.getElementById('emp-pay-tbody');
+  if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td><strong>'+ref+'</strong></td><td>'+dt+'</td><td>'+phone+'</td><td><strong>KES 1,000</strong></td><td><span style="color:var(--brand);font-weight:600"><i class="bi bi-check-circle-fill"></i> Paid</span></td><td><button class="btn btn-outline btn-sm" onclick="showEmpReceipt(\''+ref+'\',\''+dt+'\',\''+phone+'\')"><i class="bi bi-receipt"></i> Receipt</button></td>';
+  tbody.appendChild(tr);
+
+  closeModal('emp-pay-modal');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-send-fill"></i> Send Payment Prompt';
+  showEmpReceipt(ref, dt, phone);
+}
+
+function showEmpReceipt(ref, dt, phone) {
+  document.getElementById('er-ref').textContent = ref;
+  document.getElementById('er-dt').textContent = dt;
+  document.getElementById('er-phone').textContent = phone;
+  document.getElementById('er-amount').textContent = 'KES 1,000';
+  document.getElementById('emp-receipt-modal').classList.add('open');
+}
+
+function downloadEmpReceiptPDF() {
+  try {
+    var { jsPDF } = window.jspdf;
+    var doc = new jsPDF({ unit:'mm', format:'a5' });
+    var ref = document.getElementById('er-ref').textContent;
+    var dt  = document.getElementById('er-dt').textContent;
+    var ph  = document.getElementById('er-phone').textContent;
+
+    doc.setFillColor(27,107,69); doc.rect(0,0,148,28,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text('Amilia Care', 74, 12, {align:'center'});
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text('Employer Platform Access Receipt', 74, 20, {align:'center'});
+    doc.text('www.amiliacare.co.ke', 74, 26, {align:'center'});
+
+    doc.setDrawColor(27,107,69); doc.setLineWidth(.8); doc.circle(120, 50, 18);
+    doc.setTextColor(27,107,69); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+    doc.text('AMILIA CARE', 120, 45, {align:'center'});
+    doc.text('OFFICIAL', 120, 51, {align:'center'});
+    doc.text('RECEIPT', 120, 57, {align:'center'});
+
+    doc.setTextColor(30,30,30); doc.setFontSize(10); doc.setFont('helvetica','normal');
+    var rows=[['M-Pesa Ref',ref],['Date & Time',dt],['Phone',ph],['Fee Type','Employer Access Fee (One-Time)'],['Amount','KES 1,000'],['Status','CONFIRMED']];
+    var y=38;
+    rows.forEach(function(r){
+      doc.setFont('helvetica','bold'); doc.setTextColor(100,100,100); doc.setFontSize(8);
+      doc.text(r[0].toUpperCase(), 12, y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.setFontSize(10);
+      doc.text(r[1]||'—', 12, y+5);
+      doc.setDrawColor(220,220,220); doc.setLineWidth(.3); doc.line(12, y+8, 136, y+8);
+      y += 14;
+    });
+
+    doc.setFillColor(245,249,247); doc.rect(0,183,148,12,'F');
+    doc.setTextColor(120,120,120); doc.setFontSize(7.5);
+    doc.text('Non-refundable fee. Official receipt — keep for your records.', 74, 190, {align:'center'});
+    doc.text('Generated: '+new Date().toLocaleString('en-KE'), 74, 195, {align:'center'});
+    doc.save('AmiliaCare_Employer_Receipt_'+ref+'.pdf');
+  } catch(e) { console.error(e); window.print(); }
+}
+
+async function submitJobPosting() {
+  var title    = document.getElementById('pj-title').value.trim();
+  var role     = document.getElementById('pj-role').value;
+  var location = document.getElementById('pj-location').value.trim();
+  if (!title || !role || !location) { alert('Please fill in Title, Role, and Location.'); return; }
+
+  var btn = document.getElementById('pj-submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Posting…';
+
+  const payload = {
+    employer_id: EMPLOYER_ID,
+    title, job_role: role, location,
+    salary_min: parseInt(document.getElementById('pj-salary-min').value)||null,
+    salary_max: parseInt(document.getElementById('pj-salary-max').value)||null,
+    work_type:  document.getElementById('pj-work-type').value||null,
+    is_urgent:  document.getElementById('pj-urgent').value === 'true',
+    description: document.getElementById('pj-desc').value.trim()||null,
+    status: 'active',
+    created_at: new Date().toISOString(),
+  };
+
+  const { error } = await db.from('job_postings').insert(payload);
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-send-fill"></i> Post Job';
+
+  var msg = document.getElementById('pj-msg');
+  msg.style.display = 'block';
+  if (error) {
+    msg.style.background = '#FEECEC'; msg.style.color = '#8B1A1A';
+    msg.textContent = 'Error: ' + error.message;
+  } else {
+    msg.style.background = 'var(--brand-light)'; msg.style.color = 'var(--brand)';
+    msg.innerHTML = '<i class="bi bi-check-circle-fill"></i> Job posted successfully! It will appear on the public listing shortly.';
+    setTimeout(function(){ closeModal('post-job-modal'); msg.style.display='none'; toast('Job posted!'); }, 2200);
+  }
+}
+
+function generateEmpContractPDF() {
+  var f = {
+    workerName: document.getElementById('ec-worker-name').value.trim(),
+    workerId:   document.getElementById('ec-worker-id').value.trim(),
+    workerPhone:document.getElementById('ec-worker-phone').value.trim(),
+    workerLoc:  document.getElementById('ec-worker-location').value.trim(),
+    empName:    document.getElementById('ec-employer-name').value.trim(),
+    empPhone:   document.getElementById('ec-employer-phone').value.trim(),
+    empAddr:    document.getElementById('ec-employer-addr').value.trim(),
+    role:       document.getElementById('ec-role').value,
+    salary:     document.getElementById('ec-salary').value.trim(),
+    workType:   document.getElementById('ec-work-type').value,
+    startDate:  document.getElementById('ec-start-date').value,
+    endDate:    document.getElementById('ec-end-date').value,
+    duties:     document.getElementById('ec-duties').value.trim(),
+    notes:      document.getElementById('ec-notes').value.trim(),
+  };
+  if (!f.workerName||!f.empName||!f.role||!f.salary||!f.startDate) {
+    alert('Please fill in: Worker Name, Employer Name, Role, Salary, and Start Date.'); return;
+  }
+  try {
+    var { jsPDF } = window.jspdf;
+    var doc = new jsPDF({unit:'mm',format:'a4'});
+    var today = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+    var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+
+    doc.setDrawColor(27,107,69); doc.setLineWidth(.5); doc.rect(8,8,W-16,H-16);
+    doc.setFillColor(27,107,69); doc.rect(0,0,W,32,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text('AMILIA CARE', W/2, 14, {align:'center'});
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text('Trusted People. Better Homes. | www.amiliacare.co.ke', W/2, 22, {align:'center'});
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('DOMESTIC EMPLOYMENT CONTRACT', W/2, 29, {align:'center'});
+
+    // Stamp
+    doc.setFillColor(255,255,255); doc.setDrawColor(27,107,69); doc.setLineWidth(1);
+    doc.circle(W-28, 50, 18, 'FD');
+    doc.setTextColor(27,107,69); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
+    doc.text('✦ AMILIA CARE ✦', W-28, 45, {align:'center'});
+    doc.text('OFFICIAL', W-28, 50, {align:'center'});
+    doc.text('PLACEMENT', W-28, 55, {align:'center'});
+    doc.text('STAMP', W-28, 60, {align:'center'});
+    doc.setLineWidth(.3); doc.circle(W-28, 50, 16);
+
+    doc.setTextColor(60,60,60); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    doc.text('Date: '+today, 15, 40);
+    doc.text('Ref: AC-'+Date.now().toString().slice(-6), 15, 46);
+
+    var y = 68;
+    function sec(t){ doc.setFillColor(232,245,240); doc.rect(12,y-5,W-24,9,'F'); doc.setTextColor(27,107,69); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text(t,15,y+1); y+=10; }
+    function row(l,v){ doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80); doc.setFontSize(8.5); doc.text(l+':',15,y); doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.text(String(v||'—'),65,y); doc.setDrawColor(210,225,218); doc.setLineWidth(.2); doc.line(15,y+2,W-15,y+2); y+=9; }
+
+    sec('1. PARTIES TO THIS CONTRACT');
+    row('Worker Name', f.workerName); row('Worker ID', f.workerId); row('Worker Phone', f.workerPhone); row('Worker Location', f.workerLoc);
+    y+=3;
+    row('Employer Name', f.empName); row('Employer Phone', f.empPhone); row('Employer Address', f.empAddr);
+    y+=4; sec('2. EMPLOYMENT TERMS');
+    row('Position', f.role); row('Work Type', f.workType);
+    row('Monthly Salary', 'KES '+Number(f.salary||0).toLocaleString());
+    row('Start Date', new Date(f.startDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}));
+    row('End Date', f.endDate ? new Date(f.endDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : 'Permanent / Open-ended');
+    y+=4; sec('3. DUTIES & RESPONSIBILITIES');
+    var dl = doc.splitTextToSize(f.duties||'As agreed.', W-30);
+    doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30); doc.setFontSize(8.5);
+    doc.text(dl, 15, y); y += dl.length*5+6;
+    if (f.notes){ y+=2; sec('4. ADDITIONAL TERMS'); var nl=doc.splitTextToSize(f.notes,W-30); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.text(nl,15,y); y+=nl.length*5+6; }
+    y+=2; sec('5. STANDARD CLAUSES');
+    var cls=['• 14 days written notice required for termination by either party.','• Worker entitled to one rest day per week and public holidays.','• Amilia Care facilitated this placement as an introduction agency only.','• Statutory deductions (NHIF, NSSF) to be handled by employer as per Kenyan law.','• Disputes: mediation first, then Kenyan courts.'];
+    doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50); doc.setFontSize(8);
+    cls.forEach(function(c){ doc.text(c,15,y); y+=6; });
+    y+=8;
+    if (y>H-60){ doc.addPage(); y=20; }
+    doc.setFillColor(248,250,249); doc.rect(12,y-4,W-24,50,'F');
+    doc.setDrawColor(27,107,69); doc.setLineWidth(.3); doc.rect(12,y-4,W-24,50);
+    doc.setTextColor(27,107,69); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text('SIGNATURES', W/2, y+3, {align:'center'}); y+=10;
+    doc.setDrawColor(60,60,60); doc.setLineWidth(.4);
+    doc.line(15,y+20,85,y+20); doc.setTextColor(60,60,60); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text('Worker Signature', 15, y+25); doc.text('Name: '+f.workerName, 15, y+31); doc.text('Date: ………………………', 15, y+37);
+    doc.line(W/2+5,y+20,W-15,y+20);
+    doc.text('Employer Signature', W/2+5, y+25); doc.text('Name: '+f.empName, W/2+5, y+31); doc.text('Date: ………………………', W/2+5, y+37);
+    doc.setFillColor(27,107,69); doc.rect(0,H-14,W,14,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.text('Amilia Care | info@amiliacare.co.ke | www.amiliacare.co.ke | Nairobi, Kenya', W/2, H-7, {align:'center'});
+    doc.text('Generated '+today+' | Legally binding once signed by both parties.', W/2, H-2, {align:'center'});
+    doc.save('AmiliaCare_Contract_'+f.workerName.replace(/\s+/g,'_')+'.pdf');
+    closeModal('emp-contract-modal');
+  } catch(e){ console.error(e); alert('PDF generation failed: '+e.message); }
+}
+</script>
+
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
+<!--End of Tawk.to Script-->
 </body>
 </html>
