@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sounds Care – Favicon Generator</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f0f4f2; margin: 0; padding: 2rem; color: #1a2e27; }
+  h1 { font-size: 1.3rem; margin-bottom: .3rem; color: #1A7A5E; }
+  p  { font-size: 13px; color: #6b7c75; margin: 0 0 1.5rem; }
+  .grid { display: flex; flex-wrap: wrap; gap: 1.2rem; margin-bottom: 2rem; }
+  .card { background: #fff; border-radius: 12px; padding: 1rem; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.07); min-width: 160px; }
+  .card canvas { display: block; margin: 0 auto .6rem; border-radius: 4px; }
+  .card p { font-size: 11px; margin: 0 0 .5rem; color: #6b7c75; }
+  .btn { background: #1A7A5E; color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+  .btn:hover { background: #145c47; }
+  .note { background: #e8f5f0; border: 1px solid #9FE1CB; border-radius: 10px; padding: 1rem 1.2rem; font-size: 13px; color: #145c47; max-width: 600px; }
+  .note strong { display: block; margin-bottom: .4rem; }
+  .note code { background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Sounds Care — Favicon Generator</h1>
+<p>Click "Download" under each size, then upload all files to your website root (<code>/</code>).</p>
+
+<div class="grid" id="grid"></div>
+
+<div class="note">
+  <strong>📁 Files to upload to your website root:</strong>
+  <code>favicon-16.png</code> &nbsp; <code>favicon-32.png</code> &nbsp;
+  <code>apple-touch-icon.png</code> &nbsp; <code>og-image.jpg</code>
+  <br><br>
+  Also create a <code>favicon.ico</code> by converting <code>favicon-32.png</code> at
+  <a href="https://favicon.io/favicon-converter/" target="_blank" style="color:#1A7A5E">favicon.io/favicon-converter</a>
+  and upload that too.
+  <br><br>
+  <strong>🖼 OG Image (1200×630):</strong> The og-image canvas below is your social share preview.
+  Download it and upload as <code>/og-image.jpg</code>.
+</div>
+
+<script>
+const GREEN      = '#1A7A5E';
+const GREEN_DARK = '#0F2D23';
+const WHITE      = '#ffffff';
+
+function drawIcon(canvas, size) {
+  const ctx = canvas.getContext('2d');
+  const r   = size * 0.22;  // corner radius
+
+  // Background rounded rect
+  ctx.clearRect(0, 0, size, size);
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(size - r, 0);
+  ctx.quadraticCurveTo(size, 0, size, r);
+  ctx.lineTo(size, size - r);
+  ctx.quadraticCurveTo(size, size, size - r, size);
+  ctx.lineTo(r, size);
+  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = GREEN;
+  ctx.fill();
+
+  // "SC" text
+  ctx.fillStyle = WHITE;
+  ctx.font = `700 ${size * 0.44}px Georgia, serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SC', size / 2, size * 0.53);
+}
+
+function drawOGImage(canvas) {
+  const w = 1200, h = 630;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#0F2D23');
+  grad.addColorStop(0.6, '#1A4332');
+  grad.addColorStop(1, '#0d2340');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle circle pattern
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.arc(w * 0.78, h * 0.5, 80 + i * 70, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Logo icon box
+  const bx = 80, by = h/2 - 48, bs = 96, br = 18;
+  ctx.beginPath();
+  ctx.moveTo(bx + br, by); ctx.lineTo(bx + bs - br, by);
+  ctx.quadraticCurveTo(bx + bs, by, bx + bs, by + br);
+  ctx.lineTo(bx + bs, by + bs - br);
+  ctx.quadraticCurveTo(bx + bs, by + bs, bx + bs - br, by + bs);
+  ctx.lineTo(bx + br, by + bs);
+  ctx.quadraticCurveTo(bx, by + bs, bx, by + bs - br);
+  ctx.lineTo(bx, by + br);
+  ctx.quadraticCurveTo(bx, by, bx + br, by);
+  ctx.closePath();
+  ctx.fillStyle = '#1A7A5E';
+  ctx.fill();
+
+  ctx.fillStyle = WHITE;
+  ctx.font = '700 44px Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SC', bx + 14, by + bs / 2 + 2);
+
+  // Brand name
+  ctx.fillStyle = WHITE;
+  ctx.font = '700 72px Georgia, serif';
+  ctx.fillText('Sounds Care', 196, h / 2 - 30);
+
+  // Tagline
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = '400 28px system-ui, sans-serif';
+  ctx.fillText('Kenya\'s Trusted Platform for Verified Domestic Workers', 196, h / 2 + 28);
+
+  // Bottom pills
+  const pills = ['✓ Background Checked', '✓ ID Verified', '✓ All 47 Counties'];
+  ctx.font = '500 20px system-ui, sans-serif';
+  let px = 196;
+  pills.forEach(p => {
+    const pw = ctx.measureText(p).width + 28;
+    // pill bg
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.roundRect(px, h / 2 + 72, pw, 36, 18);
+    ctx.fill();
+    ctx.fillStyle = '#9FE1CB';
+    ctx.fillText(p, px + 14, h / 2 + 90);
+    px += pw + 12;
+  });
+
+  // URL
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '400 18px system-ui, sans-serif';
+  ctx.fillText('www.sounds.co.ke', 196, h - 48);
+}
+
+// Icon sizes
+const sizes = [
+  { label: 'favicon-16.png',       size: 16,  isOG: false },
+  { label: 'favicon-32.png',       size: 32,  isOG: false },
+  { label: 'apple-touch-icon.png', size: 180, isOG: false },
+  { label: 'og-image.jpg',         size: 0,   isOG: true  },
+];
+
+const grid = document.getElementById('grid');
+
+sizes.forEach(({ label, size, isOG }) => {
+  const card  = document.createElement('div');
+  card.className = 'card';
+
+  const canvas = document.createElement('canvas');
+
+  if (isOG) {
+    drawOGImage(canvas);
+    const preview = document.createElement('canvas');
+    preview.width = 280; preview.height = 147;
+    preview.style.borderRadius = '6px';
+    preview.style.width = '280px';
+    preview.style.height = '147px';
+    const pCtx = preview.getContext('2d');
+    pCtx.drawImage(canvas, 0, 0, 280, 147);
+    card.appendChild(preview);
+    const lbl = document.createElement('p');
+    lbl.textContent = 'og-image.jpg (1200×630)';
+    card.appendChild(lbl);
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = 'Download';
+    btn.onclick = () => {
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'og-image.jpg';
+        a.click();
+      }, 'image/jpeg', 0.92);
+    };
+    card.appendChild(btn);
+  } else {
+    canvas.width = size; canvas.height = size;
+    canvas.style.width  = Math.max(size, 64) + 'px';
+    canvas.style.height = Math.max(size, 64) + 'px';
+    canvas.style.imageRendering = 'pixelated';
+    drawIcon(canvas, size);
+    card.appendChild(canvas);
+    const lbl = document.createElement('p');
+    lbl.textContent = `${label} (${size}×${size})`;
+    card.appendChild(lbl);
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = 'Download';
+    btn.onclick = () => {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = label;
+      a.click();
+    };
+    card.appendChild(btn);
+  }
+
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>
