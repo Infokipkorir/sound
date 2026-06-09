@@ -306,7 +306,7 @@ input.ok{border-color:var(--green)}
 
       <div class="otp-info">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span>A 6-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes.</span>
+        <span>A 8-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes.</span>
       </div>
 
       <div class="alert error" id="alertOtp">
@@ -321,6 +321,8 @@ input.ok{border-color:var(--green)}
         <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)">
         <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)">
         <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)">
+        <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)">
+        <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)">
       </div>
 
       <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
@@ -746,22 +748,22 @@ function otpIn(i) {
   box.value = v ? v[0] : '';
   box.classList.toggle('filled', !!v);
   box.classList.remove('err');
-  if (v && i < 5) document.getElementById('otp' + (i+1)).focus();
+  if (v && i < 7) document.getElementById('otp' + (i+1)).focus();
   var full = getOtp();
-  if (full.length === 6) { setTimeout(verifyOtp, 200); }
+  if (full.length === 8) { setTimeout(verifyOtp, 200); }
 }
 function otpKey(e, i) {
   if (e.key === 'Backspace' && !document.getElementById('otp'+i).value && i > 0) {
     document.getElementById('otp'+(i-1)).focus();
   }
   if (e.key === 'ArrowLeft' && i > 0) document.getElementById('otp'+(i-1)).focus();
-  if (e.key === 'ArrowRight' && i < 5) document.getElementById('otp'+(i+1)).focus();
+  if (e.key === 'ArrowRight' && i < 7) document.getElementById('otp'+(i+1)).focus();
 }
 function getOtp() {
-  return [0,1,2,3,4,5].map(function(i){ return document.getElementById('otp'+i).value; }).join('');
+  return [0,1,2,3,4,5,6,7].map(function(i){ return document.getElementById('otp'+i).value; }).join('');
 }
 function clearOtpBoxes(markErr) {
-  for (var i=0;i<6;i++) {
+  for (var i=0;i<8;i++) {
     var b = document.getElementById('otp'+i);
     b.value = '';
     b.className = 'otp-box' + (markErr ? ' err' : '');
@@ -812,8 +814,8 @@ async function verifyOtp() {
   const email = (pendingUser && pendingUser.email) || document.getElementById('email').value.trim();
   const entered = getOtp();
 
-  if (entered.length < 6) {
-    showAlert('alertOtp','alertOtpText','Please enter all 6 digits.');
+  if (entered.length < 8) {
+    showAlert('alertOtp','alertOtpText','Please enter all 8 digits.');
     return;
   }
 
