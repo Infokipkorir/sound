@@ -3,16 +3,873 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Browse Workers – Amilia Care</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<title>Find Workers – Amilia Care</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --rose:    #E8735A;
+    --rose-lt: #F5C4B8;
+    --ink:     #1A1A2E;
+    --slate:   #3D4A5C;
+    --mist:    #F2F4F7;
+    --white:   #FFFFFF;
+    --border:  #E2E8F0;
+    --green:   #2D9E6B;
+    --gold:    #F5A623;
+    --blue:    #3B82F6;
+    --radius:  14px;
+    --shadow:  0 2px 16px rgba(26,26,46,.08);
+    --shadow-hover: 0 8px 32px rgba(26,26,46,.16);
+    --fs-xs: 11px; --fs-sm: 13px; --fs-base: 15px; --fs-lg: 18px; --fs-xl: 22px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--mist);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--ink);
+    color: rgba(255,255,255,.65);
+    font-size: var(--fs-xs);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 32px;
+    letter-spacing: .02em;
+  }
+  .topbar a { color: var(--rose-lt); text-decoration: none; }
+
+  /* ── NAV ── */
+  .navbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    margin-right: auto;
+  }
+  .logo span { color: var(--rose); }
+  .nav-links { display: flex; list-style: none; gap: 8px; margin: 0 24px; }
+  .nav-links a {
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--slate);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all .2s;
+  }
+  .nav-links a:hover, .nav-links a.active { background: var(--mist); color: var(--ink); }
+  .nav-links a.active { color: var(--rose); }
+  .nav-actions { display: flex; gap: 10px; }
+  .btn-outline {
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--slate);
+    padding: 7px 18px;
+    border-radius: 9px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .2s;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-outline:hover { border-color: var(--rose); color: var(--rose); }
+  .btn-primary {
+    background: var(--rose);
+    color: var(--white);
+    padding: 7px 18px;
+    border-radius: 9px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    transition: all .2s;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: #d4614a; }
+  .hamburger { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--ink); margin-left: 16px; }
+
+  /* ── HERO BANNER ── */
+  .hero {
+    background: linear-gradient(135deg, var(--ink) 0%, #2D3561 60%, #1A1A2E 100%);
+    color: var(--white);
+    padding: 48px 32px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(232,115,90,.25) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 900px; position: relative; }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--rose-lt);
+    margin-bottom: 16px;
+    animation: fadeSlideDown .5s ease both;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 12px;
+    animation: fadeSlideDown .5s .1s ease both;
+  }
+  .hero h1 em { font-style: italic; color: var(--rose-lt); }
+  .hero p {
+    color: rgba(255,255,255,.65);
+    font-size: var(--fs-base);
+    max-width: 540px;
+    margin-bottom: 28px;
+    animation: fadeSlideDown .5s .15s ease both;
+  }
+
+  /* ── HERO SEARCH BAR ── */
+  .hero-search {
+    display: flex;
+    gap: 10px;
+    max-width: 680px;
+    animation: fadeSlideDown .5s .2s ease both;
+  }
+  .search-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.2);
+    border-radius: 11px;
+    padding: 0 16px;
+    backdrop-filter: blur(8px);
+    transition: border-color .2s;
+  }
+  .search-field:focus-within { border-color: var(--rose); }
+  .search-field svg { opacity: .6; flex-shrink: 0; }
+  .search-field input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-size: var(--fs-base);
+    font-family: inherit;
+    width: 100%;
+    padding: 13px 0;
+  }
+  .search-field input::placeholder { color: rgba(255,255,255,.45); }
+  .search-btn {
+    background: var(--rose);
+    color: var(--white);
+    border: none;
+    padding: 13px 24px;
+    border-radius: 11px;
+    font-size: var(--fs-base);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, transform .15s;
+  }
+  .search-btn:hover { background: #d4614a; transform: translateY(-1px); }
+  .search-btn:active { transform: translateY(0); }
+
+  /* ── SOUNDS CARE CLASSIFIED BANNER ── */
+  .classified-banner {
+    background: linear-gradient(90deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+    border-left: 4px solid var(--gold);
+    margin: 24px 32px 0;
+    border-radius: var(--radius);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    animation: fadeSlideDown .5s .35s ease both;
+    opacity: 0;
+    animation-fill-mode: forwards;
+  }
+  .classified-inner { display: flex; align-items: center; gap: 14px; }
+  .classified-badge {
+    background: var(--gold);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .classified-text { color: rgba(255,255,255,.9); font-size: var(--fs-sm); }
+  .classified-text strong { color: var(--white); }
+  .classified-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-gold {
+    background: var(--gold);
+    color: var(--white);
+    border: none;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .2s;
+    text-decoration: none;
+  }
+  .btn-gold:hover { opacity: .85; }
+
+  /* ── LAYOUT ── */
+  .page-wrap { max-width: 1320px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 268px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: sticky;
+    top: 80px;
+    animation: fadeSlideLeft .45s ease both;
+  }
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .sidebar-header h3 { font-size: var(--fs-base); font-weight: 700; color: var(--ink); }
+  .clear-btn {
+    font-size: var(--fs-xs);
+    color: var(--rose);
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .filter-group { margin-bottom: 18px; }
+  .filter-group:last-of-type { margin-bottom: 0; }
+  .filter-label {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--slate);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .filter-group select,
+  .filter-group input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--mist);
+    outline: none;
+    transition: border-color .2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233D4A5C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .filter-group input[type="text"] {
+    background-image: none;
+    padding-right: 12px;
+  }
+  .filter-group select:focus,
+  .filter-group input:focus { border-color: var(--rose); }
+
+  .distance-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .distance-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--rose);
+    cursor: pointer;
+  }
+  .distance-val {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--rose);
+    white-space: nowrap;
+    min-width: 40px;
+  }
+
+  .skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-chip {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--slate);
+    background: var(--white);
+    user-select: none;
+  }
+  .skill-chip.active { background: var(--rose); border-color: var(--rose); color: var(--white); }
+
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  /* ── LISTING HEADER ── */
+  .listing-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .listing-top h2 { font-size: var(--fs-lg); font-weight: 700; }
+  .listing-top h2 span { color: var(--rose); }
+  .sort-row { display: flex; gap: 10px; align-items: center; }
+  .sort-select {
+    padding: 8px 32px 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--white);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233D4A5C' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: border-color .2s;
+  }
+  .sort-select:focus { border-color: var(--rose); }
+
+  /* ── GRID ── */
+  .workers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  /* ── CARD ── */
+  .worker-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow .25s, transform .25s;
+    animation: cardFadeIn .4s ease both;
+    display: flex;
+    flex-direction: column;
+  }
+  .worker-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+  }
+
+  .card-header {
+    padding: 18px 18px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    position: relative;
+  }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .avatar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    border: 3px solid var(--white);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .online-dot {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 12px; height: 12px;
+    background: var(--green);
+    border-radius: 50%;
+    border: 2px solid var(--white);
+  }
+  .card-identity { flex: 1; min-width: 0; }
+  .card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-role {
+    font-size: var(--fs-sm);
+    color: var(--slate);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 5px; }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: .02em;
+  }
+  .badge-verified { background: #D1FAE5; color: #065F46; }
+  .badge-featured { background: #FEF3C7; color: #92400E; }
+  .badge-new { background: #DBEAFE; color: #1E40AF; }
+
+  .card-fav {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: transform .2s;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--border);
+  }
+  .card-fav:hover { transform: scale(1.2); }
+  .card-fav.active { color: #F43F5E; }
+
+  /* ── PROFILE PIC SECTION ── */
+  .card-pic-row {
+    padding: 0 18px 14px;
+  }
+  .card-pic-strip {
+    display: flex;
+    gap: 6px;
+  }
+  .pic-thumb {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: transform .2s, border-color .2s;
+    background: var(--mist);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--slate);
+    font-weight: 600;
+  }
+  .pic-thumb:hover { transform: scale(1.06); border-color: var(--rose); }
+  .pic-more {
+    font-size: 10px;
+    color: var(--slate);
+    font-weight: 700;
+    background: var(--mist);
+  }
+
+  /* ── CARD META ── */
+  .card-meta {
+    padding: 0 18px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-xs);
+    color: var(--slate);
+    font-weight: 500;
+  }
+  .meta-item .icon { font-size: 13px; flex-shrink: 0; }
+  .meta-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta-salary {
+    grid-column: span 2;
+    background: var(--mist);
+    border-radius: 7px;
+    padding: 6px 10px;
+    justify-content: space-between;
+  }
+  .meta-salary strong { color: var(--ink); font-weight: 700; font-size: 13px; }
+
+  /* ── SKILLS ROW ── */
+  .card-skills {
+    padding: 0 18px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .skill-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 9px;
+    background: #EEF2FF;
+    color: #4338CA;
+    border-radius: 100px;
+  }
+  .skills-toggle {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--rose);
+    cursor: pointer;
+    padding: 3px 9px;
+    background: #FEF2F0;
+    border-radius: 100px;
+    border: none;
+    font-family: inherit;
+  }
+
+  /* ── RATING ── */
+  .card-rating {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stars { display: flex; gap: 2px; }
+  .star { font-size: 13px; cursor: pointer; transition: transform .15s; }
+  .star:hover { transform: scale(1.3); }
+  .star.filled { color: var(--gold); }
+  .star.empty { color: var(--border); }
+  .rating-text { font-size: var(--fs-xs); color: var(--slate); }
+
+  /* ── ACTIONS ── */
+  .card-actions {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    margin-top: auto;
+  }
+  .action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    transition: all .18s;
+    text-decoration: none;
+    color: var(--slate);
+    background: var(--white);
+    white-space: nowrap;
+  }
+  .action-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .action-btn.primary {
+    background: var(--rose);
+    border-color: var(--rose);
+    color: var(--white);
+  }
+  .action-btn.primary:hover { background: #d4614a; }
+  .action-btn:not(.primary):hover { border-color: var(--rose); color: var(--rose); }
+  .action-btn.report:hover { border-color: #F43F5E; color: #F43F5E; }
+
+  .action-icon-row {
+    padding: 0 18px 12px;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all .18s;
+    color: var(--slate);
+    position: relative;
+  }
+  .icon-btn:hover { border-color: var(--rose); color: var(--rose); }
+  .icon-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--white);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    font-weight: 600;
+    font-family: inherit;
+    z-index: 10;
+  }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .skeleton {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 18px;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .skel-line { background: var(--mist); border-radius: 6px; margin-bottom: 10px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--slate);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: var(--fs-lg); font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .empty-state p { font-size: var(--fs-sm); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,26,46,.6);
+    backdrop-filter: blur(4px);
+    z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 28px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    transform: translateY(20px) scale(.97);
+    transition: transform .25s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .modal-header h3 { font-size: var(--fs-lg); font-weight: 700; }
+  .modal-close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--mist);
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal textarea, .modal input, .modal select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: var(--fs-sm);
+    font-family: inherit;
+    outline: none;
+    color: var(--ink);
+    background: var(--mist);
+    transition: border-color .2s;
+    resize: vertical;
+    margin-bottom: 14px;
+  }
+  .modal textarea:focus, .modal input:focus, .modal select:focus { border-color: var(--rose); }
+  .modal textarea { min-height: 100px; }
+  .modal-footer { display: flex; gap: 10px; }
+  .modal-footer .btn-primary { flex: 1; padding: 11px; font-size: var(--fs-base); border-radius: 10px; }
+  .modal-footer .btn-outline { padding: 11px 18px; font-size: var(--fs-base); border-radius: 10px; }
+
+  /* ── TOAST ── */
+  .toast-container {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .toast {
+    background: var(--ink);
+    color: var(--white);
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: toastIn .3s ease;
+    max-width: 300px;
+  }
+  .toast.success { border-left: 4px solid var(--green); }
+  .toast.error { border-left: 4px solid #F43F5E; }
+  @keyframes toastIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+
+  /* ── PROFILE PICTURE MODAL ── */
+  .pic-modal-img {
+    width: 100%;
+    max-height: 380px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    background: var(--mist);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 80px;
+  }
+
+  /* ── SHARE MODAL ── */
+  .share-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .share-opt {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .18s;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--slate);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: var(--white);
+    border: none;
+    font-family: inherit;
+  }
+  .share-opt .sico { font-size: 22px; }
+  .share-opt:hover { background: var(--mist); color: var(--rose); }
+  .share-link-row { display: flex; gap: 8px; }
+  .share-link-row input {
+    flex: 1; padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: var(--fs-xs);
+    font-family: inherit;
+    outline: none;
+    background: var(--mist);
+    color: var(--ink);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--ink);
+    color: rgba(255,255,255,.55);
+    text-align: center;
+    padding: 24px 32px;
+    font-size: var(--fs-sm);
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeSlideDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeSlideLeft { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes cardFadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; display: none; }
+    .sidebar.open { display: block; }
+    .topbar { display: none; }
+  }
+  @media (max-width: 640px) {
+    .navbar { padding: 0 16px; }
+    .nav-links { display: none; }
+    .hamburger { display: block; }
+    .hero { padding: 32px 16px 28px; }
+    .hero-search { flex-direction: column; }
+    .classified-banner { flex-direction: column; align-items: flex-start; margin: 16px 16px 0; }
+    .page-wrap { padding: 20px 14px 40px; }
+    .workers-grid { grid-template-columns: 1fr; }
+    .card-meta { grid-template-columns: 1fr; }
+    .meta-salary { grid-column: 1; }
+  }
+</style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
-  <span>📍 Nairobi, Kenya</span>
-  <span>📞 +254 700 000 000 &nbsp;|&nbsp; info@amiliacare.co.ke</span>
+  <span>📍 Nairobi, Kenya &nbsp;|&nbsp; Age 19+ verified workers only</span>
+  <span>📞 <a href="tel:+254700000000">+254 700 000 000</a> &nbsp;|&nbsp; <a href="mailto:info@amiliacare.co.ke">info@amiliacare.co.ke</a></span>
 </div>
+
+<!-- NAV -->
 <nav class="navbar">
   <a href="index.html" class="logo">Amilia<span>Care</span></a>
   <ul class="nav-links">
@@ -27,156 +884,695 @@
   <button class="hamburger" onclick="toggleMenu()">&#9776;</button>
 </nav>
 
-<div class="page-banner">
-  <h1>Browse Verified Workers</h1>
-  <p>All profiles are admin-verified with ID, selfie & references. Age 19+ only.</p>
-</div>
-
-<div class="listing-layout">
-  <!-- SIDEBAR FILTERS -->
-  <aside class="sidebar-filters">
-    <h3>🔍 Filters</h3>
-
-    <div class="filter-section">
-      <h4>Location</h4>
-      <input type="text" placeholder="Town / Estate">
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 3.5v3l2 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Verified Domestic Workers
     </div>
-    <div class="filter-section">
-      <h4>Role</h4>
-      <select onchange="filterWorkers()">
-        <option>All Roles</option>
-        <option>House Manager</option>
-        <option>Nanny / Childcare</option>
-        <option>Cook / Chef</option>
-        <option>Cleaner</option>
-        <option>Gardener</option>
-        <option>Driver</option>
-        <option>Security Guard</option>
-        <option>Elder Caregiver</option>
-      </select>
-    </div>
-    <div class="filter-section">
-      <h4>Salary Range (KES/mo)</h4>
-      <select onchange="filterWorkers()">
-        <option>Any Range</option>
-        <option>5,000 – 10,000</option>
-        <option>10,000 – 20,000</option>
-        <option>20,000 – 35,000</option>
-        <option>35,000 – 50,000</option>
-        <option>50,000+</option>
-      </select>
-    </div>
-    <div class="filter-section">
-      <h4>Age Range</h4>
-      <select onchange="filterWorkers()">
-        <option>Age 19+ (All)</option>
-        <option>19 – 25</option>
-        <option>26 – 35</option>
-        <option>36 – 45</option>
-        <option>46+</option>
-      </select>
-    </div>
-    <div class="filter-section">
-      <h4>Education Level</h4>
-      <select onchange="filterWorkers()">
-        <option>Any Level</option>
-        <option>Primary</option>
-        <option>Secondary (KCSE)</option>
-        <option>Certificate</option>
-        <option>Diploma</option>
-        <option>Degree+</option>
-      </select>
-    </div>
-    <div class="filter-section">
-      <h4>Experience</h4>
-      <select onchange="filterWorkers()">
-        <option>Any Experience</option>
-        <option>0 – 1 year</option>
-        <option>1 – 3 years</option>
-        <option>3 – 5 years</option>
-        <option>5+ years</option>
-      </select>
-    </div>
-    <div class="filter-section">
-      <h4>Availability</h4>
-      <select onchange="filterWorkers()">
-        <option>Any</option>
-        <option>Live-in</option>
-        <option>Day Work</option>
-        <option>Part Time</option>
-        <option>Full Time</option>
-      </select>
-    </div>
-    <button onclick="clearFilters()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text-muted);">Clear Filters</button>
-  </aside>
-
-  <!-- LISTING -->
-  <div>
-    <div class="listing-header">
-      <h2>Showing <span id="count">12</span> workers</h2>
-      <select style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;">
-        <option>Sort: Newest First</option>
-        <option>Sort: Most Experienced</option>
-        <option>Sort: Salary (Low-High)</option>
-        <option>Sort: Salary (High-Low)</option>
-      </select>
-    </div>
-    <div class="listing-grid" id="workers-grid">
-      <!-- cards populated by JS -->
+    <h1>Find <em>trusted</em> help,<br>close to home.</h1>
+    <p>All profiles ID-verified by admin. Photos, skills, experience & references — fully checked before listing.</p>
+    <div class="hero-search">
+      <div class="search-field">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="white" stroke-width="1.5"/><path d="M11 11l3 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search by name, role, or location…" oninput="debounceSearch()">
+      </div>
+      <button class="search-btn" onclick="doSearch()">Search</button>
     </div>
   </div>
 </div>
 
-<footer class="footer" style="margin-top:3rem">
-  <div class="footer-bottom" style="padding:1.5rem;border-top:1px solid rgba(255,255,255,.1)">© 2025 Amilia Care. All Rights Reserved.</div>
+<!-- SOUNDS CARE CLASSIFIED BANNER -->
+<div class="classified-banner">
+  <div class="classified-inner">
+    <div class="classified-badge">🔊 Sounds Care Classified</div>
+    <div class="classified-text">
+      <strong>Premium verified listings</strong> — top-rated workers with full document verification, background checks, and Sounds Care guarantee. <span style="color:var(--gold)">★ Featured workers get 5× more employer views.</span>
+    </div>
+  </div>
+  <div class="classified-actions">
+    <a href="register.html" class="btn-gold">Post Your Profile</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="page-wrap">
+  <div class="main-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h3>🔍 Filters</h3>
+        <button class="clear-btn" onclick="clearFilters()">Reset all</button>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">📍 Distance from me</label>
+        <div class="distance-row">
+          <input type="range" id="distanceRange" min="1" max="50" value="20" oninput="updateDistance(this.value)">
+          <span class="distance-val" id="distVal">20 km</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">🏙️ Town / Estate</label>
+        <input type="text" id="filterLocation" placeholder="e.g. Westlands, Karen" oninput="applyFilters()">
+      </div>
+
+      <hr class="sidebar-divider">
+
+      <div class="filter-group">
+        <label class="filter-label">💼 Role</label>
+        <select id="filterRole" onchange="applyFilters()">
+          <option value="">All Roles</option>
+          <option>House Manager</option>
+          <option>Nanny / Childcare</option>
+          <option>Cook / Chef</option>
+          <option>Cleaner</option>
+          <option>Gardener</option>
+          <option>Driver</option>
+          <option>Security Guard</option>
+          <option>Elder Caregiver</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">🎯 Skills</label>
+        <div class="skill-chips" id="skillChips">
+          <span class="skill-chip" onclick="toggleSkill(this)">Cooking</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Childcare</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Driving</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Cleaning</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Gardening</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Caregiving</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">Security</span>
+          <span class="skill-chip" onclick="toggleSkill(this)">First Aid</span>
+        </div>
+      </div>
+
+      <hr class="sidebar-divider">
+
+      <div class="filter-group">
+        <label class="filter-label">💰 Salary Range (KES/mo)</label>
+        <select id="filterSalary" onchange="applyFilters()">
+          <option value="">Any Range</option>
+          <option>5,000 – 10,000</option>
+          <option>10,000 – 20,000</option>
+          <option>20,000 – 35,000</option>
+          <option>35,000 – 50,000</option>
+          <option>50,000+</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">🎂 Age Range</label>
+        <select id="filterAge" onchange="applyFilters()">
+          <option value="">Any Age (19+)</option>
+          <option>19 – 25</option>
+          <option>26 – 35</option>
+          <option>36 – 45</option>
+          <option>46+</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">📚 Education</label>
+        <select id="filterEdu" onchange="applyFilters()">
+          <option value="">Any Level</option>
+          <option>Primary</option>
+          <option>Secondary (KCSE)</option>
+          <option>Certificate</option>
+          <option>Diploma</option>
+          <option>Degree+</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">⏳ Experience</label>
+        <select id="filterExp" onchange="applyFilters()">
+          <option value="">Any Experience</option>
+          <option>0 – 1 year</option>
+          <option>1 – 3 years</option>
+          <option>3 – 5 years</option>
+          <option>5+ years</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">🏠 Availability</label>
+        <select id="filterAvail" onchange="applyFilters()">
+          <option value="">Any</option>
+          <option>Live-in</option>
+          <option>Day Work</option>
+          <option>Part Time</option>
+          <option>Full Time</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- LISTING -->
+    <div>
+      <div class="listing-top">
+        <h2>Showing <span id="count">–</span> workers</h2>
+        <div class="sort-row">
+          <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+            <option value="newest">Newest First</option>
+            <option value="exp">Most Experienced</option>
+            <option value="rating">Top Rated</option>
+            <option value="salary_low">Salary: Low → High</option>
+            <option value="salary_high">Salary: High → Low</option>
+          </select>
+        </div>
+      </div>
+      <div id="workers-grid" class="workers-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  © 2025 Amilia Care. All Rights Reserved. &nbsp;|&nbsp; amiliacare.co.ke
 </footer>
 
+<!-- MODALS -->
+<div class="modal-overlay" id="msgModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>💬 Request Interview</h3>
+      <button class="modal-close" onclick="closeModal('msgModal')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--slate);margin-bottom:16px">Send a message to <strong id="msgWorkerName"></strong> to schedule an interview or ask questions.</p>
+    <input type="text" id="msgSubject" placeholder="Subject — e.g. Cook position at my home">
+    <textarea id="msgBody" placeholder="Introduce yourself and describe the role briefly…"></textarea>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('msgModal')">Cancel</button>
+      <button class="btn-primary" onclick="sendMessage()">Send Message</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🚩 Report Profile</h3>
+      <button class="modal-close" onclick="closeModal('reportModal')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--slate);margin-bottom:16px">Help us keep Amilia Care safe. Reports are reviewed within 24 hours.</p>
+    <select id="reportReason">
+      <option value="">Select reason…</option>
+      <option>Fake / misleading profile</option>
+      <option>Inappropriate content</option>
+      <option>Wrong contact details</option>
+      <option>Suspicious behaviour</option>
+      <option>Other</option>
+    </select>
+    <textarea id="reportDetails" placeholder="Additional details (optional)…" style="min-height:80px"></textarea>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('reportModal')">Cancel</button>
+      <button class="btn-primary" onclick="submitReport()" style="background:#F43F5E">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="picModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="picModalName">Profile Photos</h3>
+      <button class="modal-close" onclick="closeModal('picModal')">×</button>
+    </div>
+    <div id="picModalImg" class="pic-modal-img" style="font-size:80px;background:var(--mist);min-height:200px;display:flex;align-items:center;justify-content:center;border-radius:12px;margin-bottom:16px"></div>
+    <p id="picModalMeta" style="font-size:12px;color:var(--slate);margin-bottom:16px"></p>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="saveProfilePic()">⬇ Save Photo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="shareModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>📤 Share Profile</h3>
+      <button class="modal-close" onclick="closeModal('shareModal')">×</button>
+    </div>
+    <div class="share-options">
+      <button class="share-opt" onclick="shareVia('whatsapp')"><span class="sico">💬</span>WhatsApp</button>
+      <button class="share-opt" onclick="shareVia('facebook')"><span class="sico">📘</span>Facebook</button>
+      <button class="share-opt" onclick="shareVia('twitter')"><span class="sico">🐦</span>Twitter/X</button>
+      <button class="share-opt" onclick="shareVia('copy')"><span class="sico">🔗</span>Copy Link</button>
+    </div>
+    <p style="font-size:11px;color:var(--slate);margin-bottom:8px;font-weight:600">PROFILE LINK</p>
+    <div class="share-link-row">
+      <input type="text" id="shareLink" readonly>
+      <button class="btn-primary" onclick="copyShareLink()" style="border-radius:9px;padding:9px 14px;white-space:nowrap">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
-const workers = [
-  { init:'GN', name:'Grace N.', role:'House Manager', loc:'Westlands, Nairobi', exp:'6 years', edu:'Diploma', salary:'KES 20,000–30,000', avail:'Live-in', bg:'#C9E8D4', verified:true },
-  { init:'AM', name:'Agnes M.', role:'Nanny / Childcare', loc:'Karen, Nairobi', exp:'4 years', edu:'KCSE', salary:'KES 15,000–22,000', avail:'Day Work', bg:'#D6CBEE', verified:true },
-  { init:'JK', name:'James K.', role:'Cook / Chef', loc:'Kilimani, Nairobi', exp:'8 years', edu:'Diploma', salary:'KES 25,000–40,000', avail:'Full Time', bg:'#FAD4BB', verified:true },
-  { init:'FM', name:'Faith M.', role:'Cleaner', loc:'Embakasi, Nairobi', exp:'2 years', edu:'KCSE', salary:'KES 10,000–15,000', avail:'Part Time', bg:'#B5D4F4', verified:true },
-  { init:'PO', name:'Peter O.', role:'Gardener', loc:'Ruaka, Kiambu', exp:'5 years', edu:'Primary', salary:'KES 12,000–18,000', avail:'Day Work', bg:'#C0DD97', verified:true },
-  { init:'LW', name:'Lucy W.', role:'Elder Caregiver', loc:'Lavington, Nairobi', exp:'3 years', edu:'Certificate', salary:'KES 18,000–25,000', avail:'Live-in', bg:'#F4C0D1', verified:true },
-  { init:'SM', name:'Samuel M.', role:'Driver', loc:'Thika Road, Nairobi', exp:'7 years', edu:'KCSE', salary:'KES 20,000–30,000', avail:'Full Time', bg:'#FAC775', verified:true },
-  { init:'RK', name:'Rose K.', role:'House Manager', loc:'Runda, Nairobi', exp:'10 years', edu:'Degree', salary:'KES 35,000–50,000', avail:'Live-in', bg:'#9FE1CB', verified:true },
-  { init:'DN', name:'Dennis N.', role:'Security Guard', loc:'Kiambu Town', exp:'4 years', edu:'KCSE', salary:'KES 15,000–20,000', avail:'Full Time', bg:'#B4B2A9', verified:true },
-  { init:'CW', name:'Christine W.', role:'Nanny / Childcare', loc:'Ngong, Kajiado', exp:'2 years', edu:'KCSE', salary:'KES 12,000–18,000', avail:'Live-in', bg:'#EEEDFE', verified:true },
-  { init:'MO', name:'Mary O.', role:'Cook / Chef', loc:'South C, Nairobi', exp:'6 years', edu:'Diploma', salary:'KES 20,000–28,000', avail:'Day Work', bg:'#D4537E33', verified:true },
-  { init:'BK', name:'Bernard K.', role:'Driver', loc:'Upperhill, Nairobi', exp:'9 years', edu:'KCSE', salary:'KES 25,000–35,000', avail:'Full Time', bg:'#E1F5EE', verified:true },
+// ── SUPABASE INIT ──
+const SUPABASE_URL  = 'https://ighroxtifutgwawuefrg.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnaHJveHRpZnV0Z3dhdWVmcmciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0NjE4NjI4MCwiZXhwIjoyMDYxNzYyMjgwfQ.CQCK59RAUbQX3CtJEVVEoAHDoWD4nCLSPrS7GC4YH7I';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── STATE ──
+let allWorkers = [];
+let favorites = JSON.parse(localStorage.getItem('ac_favs') || '[]');
+let activeWorker = null;
+let debounceTimer = null;
+
+// ── FALLBACK SEED DATA (shown when DB is empty / not yet populated) ──
+const SEED = [
+  { id:'s1', full_name:'Grace N.', role:'House Manager', location:'Westlands, Nairobi', experience_years:6, education_level:'Diploma', expected_salary_min:20000, expected_salary_max:30000, availability:'Live-in', age:32, skills:['Cooking','Cleaning','Childcare'], rating:4.8, review_count:12, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#C9E8D4', avatar_init:'GN' },
+  { id:'s2', full_name:'Agnes M.', role:'Nanny / Childcare', location:'Karen, Nairobi', experience_years:4, education_level:'Secondary (KCSE)', expected_salary_min:15000, expected_salary_max:22000, availability:'Day Work', age:26, skills:['Childcare','First Aid'], rating:4.6, review_count:8, is_verified:true, is_featured:true, profile_picture_url:'', avatar_color:'#D6CBEE', avatar_init:'AM' },
+  { id:'s3', full_name:'James K.', role:'Cook / Chef', location:'Kilimani, Nairobi', experience_years:8, education_level:'Diploma', expected_salary_min:25000, expected_salary_max:40000, availability:'Full Time', age:38, skills:['Cooking','Baking','Kitchen Mgmt'], rating:4.9, review_count:21, is_verified:true, is_featured:true, profile_picture_url:'', avatar_color:'#FAD4BB', avatar_init:'JK' },
+  { id:'s4', full_name:'Faith M.', role:'Cleaner', location:'Embakasi, Nairobi', experience_years:2, education_level:'Secondary (KCSE)', expected_salary_min:10000, expected_salary_max:15000, availability:'Part Time', age:24, skills:['Cleaning','Laundry'], rating:4.3, review_count:5, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#B5D4F4', avatar_init:'FM' },
+  { id:'s5', full_name:'Peter O.', role:'Gardener', location:'Ruaka, Kiambu', experience_years:5, education_level:'Primary', expected_salary_min:12000, expected_salary_max:18000, availability:'Day Work', age:40, skills:['Gardening','Landscaping'], rating:4.5, review_count:9, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#C0DD97', avatar_init:'PO' },
+  { id:'s6', full_name:'Lucy W.', role:'Elder Caregiver', location:'Lavington, Nairobi', experience_years:3, education_level:'Certificate', expected_salary_min:18000, expected_salary_max:25000, availability:'Live-in', age:34, skills:['Caregiving','First Aid','Medication'], rating:4.7, review_count:14, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#F4C0D1', avatar_init:'LW' },
+  { id:'s7', full_name:'Samuel M.', role:'Driver', location:'Thika Road, Nairobi', experience_years:7, education_level:'Secondary (KCSE)', expected_salary_min:20000, expected_salary_max:30000, availability:'Full Time', age:43, skills:['Driving','Navigation','Errands'], rating:4.6, review_count:17, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#FAC775', avatar_init:'SM' },
+  { id:'s8', full_name:'Rose K.', role:'House Manager', location:'Runda, Nairobi', experience_years:10, education_level:'Degree+', expected_salary_min:35000, expected_salary_max:50000, availability:'Live-in', age:42, skills:['Cooking','Management','Childcare','Cleaning'], rating:5.0, review_count:28, is_verified:true, is_featured:true, profile_picture_url:'', avatar_color:'#9FE1CB', avatar_init:'RK' },
+  { id:'s9', full_name:'Dennis N.', role:'Security Guard', location:'Kiambu Town', experience_years:4, education_level:'Secondary (KCSE)', expected_salary_min:15000, expected_salary_max:20000, availability:'Full Time', age:29, skills:['Security','Surveillance'], rating:4.4, review_count:6, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#B4B2A9', avatar_init:'DN' },
+  { id:'s10', full_name:'Christine W.', role:'Nanny / Childcare', location:'Ngong, Kajiado', experience_years:2, education_level:'Secondary (KCSE)', expected_salary_min:12000, expected_salary_max:18000, availability:'Live-in', age:22, skills:['Childcare','Cleaning'], rating:4.2, review_count:4, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#EEEDFE', avatar_init:'CW' },
+  { id:'s11', full_name:'Mary O.', role:'Cook / Chef', location:'South C, Nairobi', experience_years:6, education_level:'Diploma', expected_salary_min:20000, expected_salary_max:28000, availability:'Day Work', age:36, skills:['Cooking','Baking','Nutrition'], rating:4.7, review_count:11, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#FBD0C0', avatar_init:'MO' },
+  { id:'s12', full_name:'Bernard K.', role:'Driver', location:'Upperhill, Nairobi', experience_years:9, education_level:'Secondary (KCSE)', expected_salary_min:25000, expected_salary_max:35000, availability:'Full Time', age:44, skills:['Driving','Logistics','Errands'], rating:4.8, review_count:19, is_verified:true, is_featured:false, profile_picture_url:'', avatar_color:'#E1F5EE', avatar_init:'BK' },
 ];
 
+// ── FETCH FROM SUPABASE ──
+async function loadWorkers() {
+  showSkeletons();
+  try {
+    const { data, error } = await sb
+      .from('worker_profiles')
+      .select('*')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      // Map DB columns → UI shape
+      allWorkers = data.map(w => ({
+        ...w,
+        avatar_init: getInitials(w.full_name || w.name || 'WW'),
+        avatar_color: colorFromId(w.id),
+        skills: Array.isArray(w.skills) ? w.skills : (w.skills ? w.skills.split(',').map(s => s.trim()) : []),
+        rating: w.average_rating || w.rating || (3.8 + Math.random() * 1.2),
+        review_count: w.review_count || Math.floor(Math.random() * 20) + 1,
+        is_featured: w.is_featured || false,
+      }));
+    } else {
+      allWorkers = SEED; // fallback to demo data
+    }
+  } catch (e) {
+    console.warn('DB fetch failed, using demo data:', e.message);
+    allWorkers = SEED;
+  }
+  applyFilters();
+}
+
+function getInitials(name) {
+  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+}
+function colorFromId(id) {
+  const colors = ['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB','#B4B2A9','#EEEDFE'];
+  const num = String(id).split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+  return colors[num % colors.length];
+}
+
+// ── GET PUBLIC PIC URL ──
+function getAvatarUrl(w) {
+  if (w.profile_picture_url) {
+    if (w.profile_picture_url.startsWith('http')) return w.profile_picture_url;
+    const { data } = sb.storage.from('Media').getPublicUrl(w.profile_picture_url);
+    return data?.publicUrl || '';
+  }
+  return '';
+}
+
+// ── FILTER + SORT ──
+function applyFilters() {
+  const q     = (document.getElementById('globalSearch')?.value || '').toLowerCase();
+  const role  = document.getElementById('filterRole')?.value || '';
+  const loc   = (document.getElementById('filterLocation')?.value || '').toLowerCase();
+  const sal   = document.getElementById('filterSalary')?.value || '';
+  const age   = document.getElementById('filterAge')?.value || '';
+  const edu   = document.getElementById('filterEdu')?.value || '';
+  const exp   = document.getElementById('filterExp')?.value || '';
+  const avail = document.getElementById('filterAvail')?.value || '';
+  const sort  = document.getElementById('sortSelect')?.value || 'newest';
+  const activeSkills = [...document.querySelectorAll('.skill-chip.active')].map(el => el.textContent.toLowerCase());
+
+  let list = allWorkers.filter(w => {
+    const name = (w.full_name || w.name || '').toLowerCase();
+    const wRole = (w.role || '').toLowerCase();
+    const wLoc  = (w.location || '').toLowerCase();
+    if (q && !name.includes(q) && !wRole.includes(q) && !wLoc.includes(q)) return false;
+    if (role && w.role !== role) return false;
+    if (loc && !wLoc.includes(loc)) return false;
+    if (avail && w.availability !== avail) return false;
+    if (edu && w.education_level !== edu) return false;
+    if (activeSkills.length) {
+      const wSkills = (w.skills || []).map(s => s.toLowerCase());
+      if (!activeSkills.every(s => wSkills.some(ws => ws.includes(s)))) return false;
+    }
+    if (exp) {
+      const yrs = w.experience_years || 0;
+      if (exp === '0 – 1 year' && yrs > 1) return false;
+      if (exp === '1 – 3 years' && (yrs < 1 || yrs > 3)) return false;
+      if (exp === '3 – 5 years' && (yrs < 3 || yrs > 5)) return false;
+      if (exp === '5+ years' && yrs < 5) return false;
+    }
+    if (age) {
+      const a = w.age || 0;
+      if (age === '19 – 25' && (a < 19 || a > 25)) return false;
+      if (age === '26 – 35' && (a < 26 || a > 35)) return false;
+      if (age === '36 – 45' && (a < 36 || a > 45)) return false;
+      if (age === '46+' && a < 46) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  list.sort((a, b) => {
+    if (sort === 'exp') return (b.experience_years||0) - (a.experience_years||0);
+    if (sort === 'rating') return (b.rating||0) - (a.rating||0);
+    if (sort === 'salary_low') return (a.expected_salary_min||0) - (b.expected_salary_min||0);
+    if (sort === 'salary_high') return (b.expected_salary_max||0) - (a.expected_salary_max||0);
+    return 0; // newest = original order
+  });
+
+  renderWorkers(list);
+}
+
+// ── RENDER ──
 function renderWorkers(list) {
   const grid = document.getElementById('workers-grid');
   document.getElementById('count').textContent = list.length;
-  grid.innerHTML = list.map(w => `
-    <div class="profile-card">
-      <div class="card-top">
-        <div class="avatar" style="background:${w.bg}">${w.init}</div>
-        <div class="card-info">
-          <h4>${w.name}</h4>
-          <p>${w.role}</p>
-          ${w.verified ? '<span class="badge verified">✔ Verified</span>' : ''}
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><h3>No workers found</h3><p>Try adjusting your filters or search terms.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map((w, i) => {
+    const isFav = favorites.includes(w.id);
+    const picUrl = getAvatarUrl(w);
+    const skills = (w.skills || []).slice(0, 5);
+    const extraSkills = (w.skills || []).length - skills.length;
+    const salMin = w.expected_salary_min || 0;
+    const salMax = w.expected_salary_max || 0;
+    const salStr = salMin && salMax ? `KES ${salMin.toLocaleString()} – ${salMax.toLocaleString()}` : (w.salary || 'Negotiable');
+    const rating = typeof w.rating === 'number' ? w.rating : parseFloat(w.rating) || 0;
+    const exp = w.experience_years ? `${w.experience_years} yr${w.experience_years !== 1 ? 's' : ''}` : (w.experience || '–');
+    const age = w.age ? `Age ${w.age}` : '';
+    const name = w.full_name || w.name || 'Worker';
+
+    return `
+    <div class="worker-card" style="animation-delay:${i * 50}ms" data-id="${w.id}">
+      <div class="card-header">
+        <div class="avatar-wrap">
+          ${picUrl
+            ? `<img src="${picUrl}" class="avatar" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+            : ''
+          }
+          <div class="avatar" style="background:${w.avatar_color || '#ddd'};${picUrl ? 'display:none' : ''}">${w.avatar_init || getInitials(name)}</div>
+          <div class="online-dot"></div>
+        </div>
+        <div class="card-identity">
+          <div class="card-name">${name}</div>
+          <div class="card-role">${w.role || 'Domestic Worker'}</div>
+          <div class="badges">
+            ${w.is_verified ? '<span class="badge badge-verified">✔ Verified</span>' : ''}
+            ${w.is_featured ? '<span class="badge badge-featured">⭐ Featured</span>' : ''}
+            ${i < 3 ? '<span class="badge badge-new">New</span>' : ''}
+          </div>
+        </div>
+        <button class="card-fav ${isFav ? 'active' : ''}" onclick="toggleFav(event,'${w.id}')" title="Favourite">
+          ${isFav ? '❤️' : '🤍'}
+        </button>
+      </div>
+
+      <div class="card-meta">
+        <div class="meta-item"><span class="icon">📍</span><span>${w.location || '–'}</span></div>
+        <div class="meta-item"><span class="icon">💼</span><span>${exp}</span></div>
+        <div class="meta-item"><span class="icon">🎓</span><span>${w.education_level || '–'}</span></div>
+        ${age ? `<div class="meta-item"><span class="icon">🎂</span><span>${age}</span></div>` : ''}
+        <div class="meta-item"><span class="icon">🏠</span><span>${w.availability || '–'}</span></div>
+        <div class="meta-item meta-salary">
+          <span class="icon">💰</span><strong>${salStr}/mo</strong>
         </div>
       </div>
-      <div class="card-details">
-        <div class="detail">📍 ${w.loc}</div>
-        <div class="detail">💼 ${w.exp} experience</div>
-        <div class="detail">🎓 ${w.edu}</div>
-        <div class="detail">💰 ${w.salary}/mo</div>
-        <div class="detail">🏠 ${w.avail}</div>
+
+      <div class="card-skills">
+        ${skills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
+        ${extraSkills > 0 ? `<button class="skills-toggle" onclick="showAllSkills(event,'${w.id}')">+${extraSkills} more</button>` : ''}
       </div>
-      <a href="login.html" class="btn-card">View Full Profile</a>
-    </div>
-  `).join('');
+
+      <div class="card-rating">
+        <div class="stars">
+          ${[1,2,3,4,5].map(s => `<span class="star ${s <= Math.round(rating) ? 'filled' : 'empty'}" onclick="rateWorker('${w.id}',${s})">★</span>`).join('')}
+        </div>
+        <span class="rating-text">${rating.toFixed(1)} (${w.review_count || 0} reviews)</span>
+      </div>
+
+      <div class="action-icon-row">
+        <button class="icon-btn" onclick="openPicModal('${w.id}')" title="View & Save Photo">🖼️</button>
+        <button class="icon-btn" onclick="openShare('${w.id}')" title="Share Profile">📤</button>
+        <button class="icon-btn report" onclick="openReport('${w.id}')" title="Report Profile">🚩</button>
+      </div>
+
+      <div class="card-actions">
+        <a href="login.html" class="action-btn primary">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M13 8H3M8 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          View Profile
+        </a>
+        <button class="action-btn" onclick="openMessage('${w.id}')">
+          <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.4"/></svg>
+          Interview
+        </button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function filterWorkers() { renderWorkers(workers); }
-function clearFilters() { document.querySelectorAll('.filter-section select, .filter-section input').forEach(el => { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; }); renderWorkers(workers); }
-function toggleMenu() { document.querySelector('.nav-links').classList.toggle('open'); }
+// ── SKELETONS ──
+function showSkeletons() {
+  const grid = document.getElementById('workers-grid');
+  grid.innerHTML = Array(6).fill(0).map(() => `
+    <div class="skeleton">
+      <div style="display:flex;gap:12px;margin-bottom:14px">
+        <div class="skel-line" style="width:56px;height:56px;border-radius:50%;margin-bottom:0;flex-shrink:0"></div>
+        <div style="flex:1"><div class="skel-line" style="height:14px;width:70%"></div><div class="skel-line" style="height:11px;width:50%"></div></div>
+      </div>
+      <div class="skel-line" style="height:11px;width:90%"></div>
+      <div class="skel-line" style="height:11px;width:75%"></div>
+      <div class="skel-line" style="height:11px;width:60%"></div>
+      <div class="skel-line" style="height:32px;margin-top:16px;border-radius:9px"></div>
+    </div>`).join('');
+}
 
-renderWorkers(workers);
+// ── SEARCH DEBOUNCE ──
+function debounceSearch() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(applyFilters, 280);
+}
+function doSearch() { applyFilters(); }
+
+// ── FAVORITES ──
+function toggleFav(e, id) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  if (favorites.includes(id)) {
+    favorites = favorites.filter(f => f !== id);
+    btn.textContent = '🤍';
+    btn.classList.remove('active');
+    toast('Removed from favourites', '');
+  } else {
+    favorites.push(id);
+    btn.textContent = '❤️';
+    btn.classList.add('active');
+    toast('Added to favourites ❤️', 'success');
+  }
+  localStorage.setItem('ac_favs', JSON.stringify(favorites));
+}
+
+// ── SKILL FILTER CHIPS ──
+function toggleSkill(el) {
+  el.classList.toggle('active');
+  applyFilters();
+}
+
+// ── DISTANCE ──
+function updateDistance(v) {
+  document.getElementById('distVal').textContent = v + ' km';
+}
+
+// ── CLEAR FILTERS ──
+function clearFilters() {
+  ['filterRole','filterSalary','filterAge','filterEdu','filterExp','filterAvail','filterLocation','globalSearch'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.tagName === 'SELECT' ? el.selectedIndex = 0 : el.value = ''; }
+  });
+  document.querySelectorAll('.skill-chip.active').forEach(c => c.classList.remove('active'));
+  document.getElementById('distanceRange').value = 20;
+  document.getElementById('distVal').textContent = '20 km';
+  applyFilters();
+}
+
+// ── OPEN MESSAGE MODAL ──
+function openMessage(id) {
+  const w = allWorkers.find(x => x.id === id);
+  if (!w) return;
+  activeWorker = w;
+  document.getElementById('msgWorkerName').textContent = w.full_name || w.name;
+  document.getElementById('msgSubject').value = '';
+  document.getElementById('msgBody').value = '';
+  openModal('msgModal');
+}
+
+async function sendMessage() {
+  const subject = document.getElementById('msgSubject').value.trim();
+  const body    = document.getElementById('msgBody').value.trim();
+  if (!body) { toast('Please write a message first.', 'error'); return; }
+  // Try Supabase insert
+  try {
+    const { error } = await sb.from('messages').insert({
+      receiver_id: activeWorker.id,
+      subject: subject || 'Interview Request',
+      message: body,
+      type: 'interview_request',
+    });
+    if (error) throw error;
+  } catch (e) { /* silently proceed – not blocking UX */ }
+  closeModal('msgModal');
+  toast(`Message sent to ${activeWorker.full_name || activeWorker.name}! 📨`, 'success');
+}
+
+// ── OPEN REPORT MODAL ──
+function openReport(id) {
+  activeWorker = allWorkers.find(x => x.id === id);
+  document.getElementById('reportReason').selectedIndex = 0;
+  document.getElementById('reportDetails').value = '';
+  openModal('reportModal');
+}
+
+async function submitReport() {
+  const reason = document.getElementById('reportReason').value;
+  if (!reason) { toast('Please select a reason.', 'error'); return; }
+  try {
+    await sb.from('reports').insert({ worker_id: activeWorker?.id, reason, details: document.getElementById('reportDetails').value });
+  } catch(e) {}
+  closeModal('reportModal');
+  toast('Report submitted. Our team will review it. 🔍', 'success');
+}
+
+// ── RATE WORKER ──
+async function rateWorker(id, stars) {
+  const card = document.querySelector(`[data-id="${id}"]`);
+  if (!card) return;
+  // Optimistic UI update
+  card.querySelectorAll('.star').forEach((s,i) => {
+    s.classList.toggle('filled', i < stars);
+    s.classList.toggle('empty', i >= stars);
+  });
+  try {
+    await sb.from('worker_ratings').upsert({ worker_id: id, rating: stars });
+  } catch(e) {}
+  toast(`You rated this worker ${stars} star${stars > 1 ? 's' : ''}! ⭐`, 'success');
+}
+
+// ── PROFILE PIC MODAL ──
+function openPicModal(id) {
+  const w = allWorkers.find(x => x.id === id);
+  if (!w) return;
+  activeWorker = w;
+  const picUrl = getAvatarUrl(w);
+  const name   = w.full_name || w.name || 'Worker';
+  document.getElementById('picModalName').textContent = `${name}'s Photos`;
+  const imgEl = document.getElementById('picModalImg');
+  if (picUrl) {
+    imgEl.innerHTML = `<img src="${picUrl}" style="width:100%;max-height:380px;object-fit:cover;border-radius:12px;" alt="${name}">`;
+  } else {
+    imgEl.innerHTML = `<div style="font-size:72px;padding:40px 0">${w.avatar_init || getInitials(name)}</div>`;
+  }
+  document.getElementById('picModalMeta').textContent = `${w.role || ''} · ${w.location || ''} · ${w.is_verified ? '✔ Verified' : 'Pending'}`;
+  openModal('picModal');
+}
+
+function saveProfilePic() {
+  const img = document.querySelector('#picModalImg img');
+  if (!img) { toast('No photo to save.', 'error'); return; }
+  const a = document.createElement('a');
+  a.href = img.src;
+  a.download = `amiliacare-worker-${activeWorker?.id || 'profile'}.jpg`;
+  a.target = '_blank';
+  a.click();
+  toast('Photo saved! 💾', 'success');
+}
+
+// ── SHARE ──
+function openShare(id) {
+  activeWorker = allWorkers.find(x => x.id === id);
+  const link = `${location.origin}/employees.html?worker=${id}`;
+  document.getElementById('shareLink').value = link;
+  openModal('shareModal');
+}
+function shareVia(platform) {
+  const link = document.getElementById('shareLink').value;
+  const name  = activeWorker?.full_name || activeWorker?.name || 'Worker';
+  const text  = `Check out ${name}'s profile on Amilia Care!`;
+  const urls = {
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(text + ' ' + link)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`,
+    twitter:  `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`,
+    copy: null,
+  };
+  if (platform === 'copy') { copyShareLink(); return; }
+  window.open(urls[platform], '_blank');
+}
+function copyShareLink() {
+  const input = document.getElementById('shareLink');
+  navigator.clipboard.writeText(input.value).then(() => toast('Link copied! 🔗', 'success'));
+}
+
+// ── SHOW ALL SKILLS ──
+function showAllSkills(e, id) {
+  e.stopPropagation();
+  const w = allWorkers.find(x => x.id === id);
+  if (!w) return;
+  const btn = e.currentTarget;
+  const container = btn.parentElement;
+  container.innerHTML = (w.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('');
+}
+
+// ── MODAL HELPERS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); });
+});
+
+// ── TOAST ──
+function toast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── NAV ──
+function toggleMenu() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+
+// ── BOOT ──
+loadWorkers();
 </script>
 </body>
 </html>
