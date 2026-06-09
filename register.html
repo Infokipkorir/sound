@@ -117,8 +117,8 @@ input.ok{border-color:var(--green)}
 #step-otp{display:none}
 .otp-info{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;color:var(--green-dark);margin-bottom:1.4rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
 .otp-info svg{width:16px;height:16px;flex-shrink:0;margin-top:2px}
-.otp-boxes{display:flex;gap:8px;justify-content:center;margin:1rem 0}
-.otp-box{width:46px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:22px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green)}
+.otp-boxes{display:flex;gap:6px;justify-content:center;margin:1rem 0}
+.otp-box{width:40px;height:48px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);line-height:48px;padding:0}
 .otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.12);background:var(--surface)}
 .otp-box.filled{border-color:var(--green);background:var(--green-light)}
 .otp-box.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
@@ -315,14 +315,14 @@ input.ok{border-color:var(--green)}
       </div>
 
       <div class="otp-boxes">
-        <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)">
-        <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)">
-        <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)">
-        <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)">
-        <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)">
-        <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)">
-        <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)">
-        <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)">
+        <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)" onpaste="otpPaste(event,0)">
+        <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)" onpaste="otpPaste(event,1)">
+        <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)" onpaste="otpPaste(event,2)">
+        <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)" onpaste="otpPaste(event,3)">
+        <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)" onpaste="otpPaste(event,4)">
+        <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)" onpaste="otpPaste(event,5)">
+        <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)" onpaste="otpPaste(event,6)">
+        <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)" onpaste="otpPaste(event,7)">
       </div>
 
       <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
@@ -744,20 +744,57 @@ function handleRegister() {
 // =============================================
 function otpIn(i) {
   var box = document.getElementById('otp' + i);
-  var v = box.value.replace(/\D/g,'');
-  box.value = v ? v[0] : '';
+  var v = box.value.replace(/\D/g, '');
+  // If more than 1 char landed here (mobile autocomplete / quick type), distribute
+  if (v.length > 1) {
+    distributePaste(v, i);
+    return;
+  }
+  box.value = v;
   box.classList.toggle('filled', !!v);
   box.classList.remove('err');
-  if (v && i < 7) document.getElementById('otp' + (i+1)).focus();
-  var full = getOtp();
-  if (full.length === 8) { setTimeout(verifyOtp, 200); }
+  if (v && i < 7) document.getElementById('otp' + (i + 1)).focus();
+  checkAutoSubmit();
 }
 function otpKey(e, i) {
-  if (e.key === 'Backspace' && !document.getElementById('otp'+i).value && i > 0) {
-    document.getElementById('otp'+(i-1)).focus();
+  if (e.key === 'Backspace') {
+    var box = document.getElementById('otp' + i);
+    if (box.value) {
+      box.value = '';
+      box.classList.remove('filled');
+    } else if (i > 0) {
+      var prev = document.getElementById('otp' + (i - 1));
+      prev.value = '';
+      prev.classList.remove('filled');
+      prev.focus();
+    }
+    e.preventDefault();
+    return;
   }
-  if (e.key === 'ArrowLeft' && i > 0) document.getElementById('otp'+(i-1)).focus();
-  if (e.key === 'ArrowRight' && i < 7) document.getElementById('otp'+(i+1)).focus();
+  if (e.key === 'ArrowLeft' && i > 0) { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && i < 7) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
+}
+function otpPaste(e, i) {
+  e.preventDefault();
+  var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+  if (!text) return;
+  distributePaste(text, i);
+}
+function distributePaste(digits, startIndex) {
+  for (var j = 0; j < digits.length && (startIndex + j) < 8; j++) {
+    var box = document.getElementById('otp' + (startIndex + j));
+    box.value = digits[j];
+    box.classList.add('filled');
+    box.classList.remove('err');
+  }
+  // Focus the box after the last filled, or the last box
+  var nextFocus = Math.min(startIndex + digits.length, 7);
+  document.getElementById('otp' + nextFocus).focus();
+  checkAutoSubmit();
+}
+function checkAutoSubmit() {
+  var full = getOtp();
+  if (full.length === 8) { setTimeout(verifyOtp, 200); }
 }
 function getOtp() {
   return [0,1,2,3,4,5,6,7].map(function(i){ return document.getElementById('otp'+i).value; }).join('');
