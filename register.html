@@ -767,32 +767,59 @@ function startTimer(s) {
     }
   }, 1000);
 }
-function resendOtp() {
-  var email = document.getElementById('email').value.trim();
-  var firstName = document.getElementById('firstName').value.trim();
-  generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
-  simulateSend(email, firstName, generatedOtp);
+async function resendOtp() {
+  const email = document.getElementById('email').value.trim();
+
+  setBtnLoading('resendBtn','resendSpinner','resendBtnText', true, 'Sending OTP...');
+
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true, // or false if you don’t want auto-signup
+      // emailRedirectTo: window.location.origin, // optional depending on your template/flow
+    },
+  });
+
+  setBtnLoading('resendBtn','resendSpinner','resendBtnText', false, 'Resend OTP');
+
+  if (error) {
+    showAlert('alertOtp','alertOtpText', error.message);
+    return;
+  }
+
   clearOtpBoxes(false);
-  hideAlert('alertOtp');
   startTimer(60);
-  showAlert('alertOtp','alertOtpText','A new code has been sent to your email.','success');
-  setTimeout(function(){ hideAlert('alertOtp'); }, 3000);
-}
-function verifyOtp() {
-  var entered = getOtp();
-  if (entered.length < 6) { showAlert('alertOtp','alertOtpText','Please enter all 6 digits.'); return; }
+  showAlert('alertOtp','alertOtpText','Check your email for the OTP code.','success');
+  }
+async function verifyOtp() {
+  const email = document.getElementById('email').value.trim();
+  const entered = getOtp();
+
+  if (entered.length < 6) {
+    showAlert('alertOtp','alertOtpText','Please enter all 6 digits.');
+    return;
+  }
+
   setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Verifying...');
-  setTimeout(function() {
-    if (entered !== generatedOtp) {
-      clearOtpBoxes(true);
-      setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
-      showAlert('alertOtp','alertOtpText','Incorrect code. Check your email and try again.');
-      return;
-    }
-    setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Creating account...');
-    createAccount();
-  }, 600);
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: entered,
+    type: 'email',
+  });
+
+  if (error) {
+    clearOtpBoxes(true);
+    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
+    showAlert('alertOtp','alertOtpText', error.message);
+    return;
+  }
+
+  // If successful, you have a session/user
+  setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Creating account...');
+  createAccount();
 }
+  
 function goBack() {
   clearInterval(otpInterval);
   document.getElementById('step-otp').style.display = 'none';
@@ -803,48 +830,41 @@ function goBack() {
 // =============================================
 // CREATE ACCOUNT
 // =============================================
-function createAccount() {
-  var firstName = document.getElementById('firstName').value.trim();
-  var lastName  = document.getElementById('lastName').value.trim();
-  var phone     = document.getElementById('phone').value.trim();
-  var country   = document.getElementById('countryName').value;
-  var countryCode = document.getElementById('countryCode').value;
-  var email     = document.getElementById('email').value.trim();
-  var pw        = document.getElementById('password').value;
+async function createAccount() {
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName  = document.getElementById('lastName').value.trim();
+  const phone     = document.getElementById('phone').value.trim();
+  const country   = document.getElementById('countryName').value;
+  const countryCode = document.getElementById('countryCode').value;
+  const email     = document.getElementById('email').value.trim();
 
-  dbClient.auth.signUp({
-    email: email,
-    password: pw,
-    options: {
-      data: {
-        full_name: firstName + ' ' + lastName,
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || null,
-        country: country,
-        country_code: countryCode,
-        role: currentRole,
-        ip_address: userIpData ? userIpData.ip : null,
-        ip_country: userIpData ? userIpData.country_code : null,
-        email_verified: true
-      }
-    }
-  }).then(function(res) {
-    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
-    if (res.error) {
-      showAlert('alertOtp','alertOtpText', res.error.message || 'Registration failed. Please try again.');
-      return;
-    }
-    clearInterval(otpInterval);
-    document.getElementById('step-otp').style.display = 'none';
-    document.getElementById('step-success').style.display = 'block';
-    document.getElementById('successName').textContent = firstName;
-    document.getElementById('successEmail').textContent = email;
-    document.getElementById('successLink').href = currentRole === 'employer' ? 'employer-dashboard.html' : 'post-profile.html';
-  }).catch(function(err) {
-    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
-    showAlert('alertOtp','alertOtpText', err.message || 'Registration failed. Please try again.');
+  const entered = getOtp(); // must match what verifyOtp uses
+
+  setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Verifying...');
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: entered,
+    type: 'email',
   });
+
+  if (error) {
+    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
+    showAlert('alertOtp','alertOtpText', error.message || 'Invalid OTP. Please try again.');
+    return;
+  }
+
+  // At this point, user is verified and you have `data.session` (and user in most cases).
+  clearInterval(otpInterval);
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-success').style.display = 'block';
+  document.getElementById('successName').textContent = firstName;
+  document.getElementById('successEmail').textContent = email;
+  document.getElementById('successLink').href =
+    currentRole === 'employer' ? 'employer-dashboard.html' : 'post-profile.html';
+
+  // NOTE: If you need to store full_name/phone/country/role, do it in a profile table
+  // using data.session.user.id (RLS-controlled), or use auth user metadata.
 }
 
 // =============================================
