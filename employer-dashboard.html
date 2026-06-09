@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root {
@@ -31,7 +32,7 @@
   --purple: #6B52C8;
   --radius: 12px;
   --radius-sm: 8px;
-  --sidebar-w: 228px;
+  --sidebar-w: 232px;
 }
 
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,34 +46,24 @@ body {
   overflow-x: hidden;
 }
 
-/* ══════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════ */
+/* ── SIDEBAR ── */
 .sidebar {
   width: var(--sidebar-w);
   min-height: 100vh;
   background: var(--sidebar-bg);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  z-index: 300;
-  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
-  overflow-y: auto;
-  scrollbar-width: none;
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 300; transition: transform .28s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto; scrollbar-width: none;
 }
 .sidebar::-webkit-scrollbar { display: none; }
 
 .sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 299;
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 299;
 }
 .sidebar-overlay.show { display: block; }
 
-/* Mobile: slide off screen by default */
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
@@ -80,108 +71,72 @@ body {
 }
 
 .sidebar-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 1.2rem 1rem 1.2rem 1.4rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0;
 }
 .logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  color: #fff;
-  letter-spacing: -0.3px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-family: 'Playfair Display', serif; font-size: 20px; color: #fff;
+  letter-spacing: -.3px; text-decoration: none;
+  display: flex; align-items: center; gap: 8px;
 }
 .logo span { color: var(--accent); }
 .logo-pulse {
-  width: 8px; height: 8px;
-  background: #22c55e;
-  border-radius: 50%;
-  animation: livePulse 2s ease-in-out infinite;
-  flex-shrink: 0;
+  width: 8px; height: 8px; background: #22c55e;
+  border-radius: 50%; animation: livePulse 2s ease-in-out infinite; flex-shrink: 0;
 }
 @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
 
 .sidebar-close {
-  background: rgba(255,255,255,0.08);
-  border: none;
-  color: rgba(255,255,255,0.6);
-  border-radius: 7px;
+  background: rgba(255,255,255,.08); border: none;
+  color: rgba(255,255,255,.6); border-radius: 7px;
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
+  cursor: pointer; font-size: 18px; flex-shrink: 0; transition: .15s;
 }
-.sidebar-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.sidebar-close:hover { background: rgba(255,255,255,.15); color: #fff; }
 
-nav { padding: 0.75rem; flex: 1; }
-
+nav { padding: .75rem; flex: 1; }
 .nav-section-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: rgba(184,217,198,0.4);
-  text-transform: uppercase;
-  padding: 1rem 10px 0.35rem;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  color: rgba(184,217,198,.4); text-transform: uppercase;
+  padding: 1rem 10px .35rem;
 }
-
 nav a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--sidebar-text);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 400;
-  margin-bottom: 2px;
-  transition: background 0.14s, color 0.14s;
-  cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  color: var(--sidebar-text); text-decoration: none;
+  font-size: 13.5px; font-weight: 400; margin-bottom: 2px;
+  transition: .14s; cursor: pointer;
 }
 nav a i { font-size: 16px; flex-shrink: 0; }
-nav a:hover { background: rgba(255,255,255,0.07); color: #fff; }
+nav a:hover { background: rgba(255,255,255,.07); color: #fff; }
 nav a.active { background: var(--brand); color: #fff; font-weight: 500; }
 nav a .badge-pill {
-  margin-left: auto;
-  background: var(--accent);
-  color: #fff;
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 50px;
-  font-weight: 700;
+  margin-left: auto; background: var(--accent); color: #fff;
+  font-size: 10px; padding: 1px 6px; border-radius: 50px; font-weight: 700;
 }
 
 .sidebar-footer {
-  padding: 0.75rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  flex-shrink: 0;
+  padding: .75rem; border-top: 1px solid rgba(255,255,255,.08); flex-shrink: 0;
 }
 .sidebar-footer a {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border-radius: var(--radius-sm);
-  color: rgba(184,217,198,0.6);
-  text-decoration: none; font-size: 13px;
-  transition: all 0.15s;
+  color: rgba(184,217,198,.6); text-decoration: none; font-size: 13px; transition: .15s;
 }
 .sidebar-footer a i { font-size: 15px; }
-.sidebar-footer a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.sidebar-footer a:hover { color: #fff; background: rgba(255,255,255,.06); }
 
-/* Employer profile chip in sidebar */
 .sidebar-employer {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; margin: 6px 0;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  cursor: pointer; transition: background .15s;
 }
+.sidebar-employer:hover { background: rgba(255,255,255,.08); }
 .sidebar-employer .av {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--brand); color: #fff;
@@ -189,63 +144,38 @@ nav a .badge-pill {
   font-size: 12px; font-weight: 700; flex-shrink: 0;
 }
 .sidebar-employer .emp-name { font-size: 13px; font-weight: 500; color: #fff; }
-.sidebar-employer .emp-role { font-size: 11px; color: rgba(184,217,198,0.55); }
+.sidebar-employer .emp-role { font-size: 11px; color: rgba(184,217,198,.55); }
 
-/* ══════════════════════════════════════
-   MAIN
-══════════════════════════════════════ */
-.main {
-  margin-left: var(--sidebar-w);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* ── MAIN ── */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ── Topbar ── */
+/* ── TOPBAR ── */
 .topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 1.5rem;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem; height: 60px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
   position: sticky; top: 0; z-index: 100;
 }
-
 .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-
 .hamburger {
-  display: none;
-  background: none; border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  width: 36px; height: 36px;
-  align-items: center; justify-content: center;
+  display: none; background: none; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  width: 36px; height: 36px; align-items: center; justify-content: center;
   cursor: pointer; font-size: 18px; flex-shrink: 0;
 }
 @media (max-width: 768px) { .hamburger { display: flex; } }
-
 .topbar-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.topbar-sub { font-size: 12px; color: var(--text-muted); font-family: 'DM Sans',sans-serif; font-weight: 400; }
-
+.topbar-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; }
 .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* ── Buttons ── */
+/* ── BUTTONS ── */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 50px;
-  font-size: 13px; font-weight: 500; font-family: inherit;
-  cursor: pointer; border: none; transition: all 0.15s;
+  padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 500;
+  font-family: inherit; cursor: pointer; border: none; transition: .15s;
   text-decoration: none; white-space: nowrap;
 }
 .btn i { font-size: 15px; }
@@ -264,127 +194,96 @@ nav a .badge-pill {
   background: linear-gradient(135deg, var(--brand), #25a87f); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; flex-shrink: 0;
-  border: 2px solid var(--brand-light);
-  cursor: pointer;
-  transition: border-color .2s;
-  overflow: hidden;
+  border: 2px solid var(--brand-light); cursor: pointer;
+  transition: border-color .2s; overflow: hidden;
 }
 .avatar-circle:hover { border-color: var(--brand); }
 
-/* ── Content ── */
-.content {
-  padding: 1.5rem;
-  max-width: 1160px;
-  width: 100%;
-}
+/* ── CONTENT ── */
+.content { padding: 1.5rem; max-width: 1200px; width: 100%; }
 @media (max-width: 600px) { .content { padding: 1rem; } }
 
-/* ── Stats Grid ── */
+/* ── STATS ── */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 0.85rem;
-  margin-bottom: 1.5rem;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: .85rem; margin-bottom: 1.5rem;
 }
 @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; } }
+@media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; gap: .6rem; } }
 
 .stat-card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 1.1rem 1.1rem 0.9rem;
-  border: 1px solid var(--border);
+  background: var(--surface); border-radius: var(--radius);
+  padding: 1.1rem 1.1rem .9rem; border: 1px solid var(--border);
   position: relative; overflow: hidden;
 }
 .stat-card::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 3px;
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
 }
-.stat-card.green::before { background: var(--brand); }
-.stat-card.amber::before { background: var(--accent); }
-.stat-card.blue::before  { background: var(--info); }
+.stat-card.green::before  { background: var(--brand); }
+.stat-card.amber::before  { background: var(--accent); }
+.stat-card.blue::before   { background: var(--info); }
 .stat-card.purple::before { background: var(--purple); }
 .stat-icon {
   width: 34px; height: 34px; border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 0.75rem; font-size: 16px;
+  margin-bottom: .75rem; font-size: 16px;
 }
 .stat-card.green .stat-icon  { background: var(--brand-light); color: var(--brand); }
 .stat-card.amber .stat-icon  { background: var(--accent-light); color: #8B5E1C; }
 .stat-card.blue .stat-icon   { background: var(--info-light); color: var(--info); }
 .stat-card.purple .stat-icon { background: var(--purple-light); color: var(--purple); }
-.stat-value {
-  font-size: 24px; font-weight: 700;
-  font-family: 'Playfair Display', serif;
-  color: var(--text); line-height: 1; margin-bottom: 3px;
-}
+.stat-value { font-size: 24px; font-weight: 700; font-family: 'Playfair Display',serif; color: var(--text); line-height: 1; margin-bottom: 3px; }
 .stat-label { font-size: 11.5px; color: var(--text-muted); }
 
-/* ── Panel ── */
+/* ── PANEL ── */
 .panel {
-  background: var(--surface);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  margin-bottom: 1.25rem;
-  overflow: hidden;
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--border); margin-bottom: 1.25rem; overflow: hidden;
 }
 .panel-header {
-  padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.panel-title {
-  font-size: 13.5px; font-weight: 600;
-  display: flex; align-items: center; gap: 7px;
-}
+.panel-title { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
 .panel-title i { font-size: 15px; color: var(--text-muted); }
 .panel-body { padding: 1.1rem 1.25rem; }
 
-/* ── Quick Search ── */
-.search-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap: 10px;
-  align-items: end;
-}
-@media (max-width: 700px) {
-  .search-grid { grid-template-columns: 1fr 1fr; }
-  .search-grid .btn { grid-column: 1/-1; }
-}
-@media (max-width: 420px) {
-  .search-grid { grid-template-columns: 1fr; }
-}
+/* ── FORM ── */
 .form-group label {
   display: block; font-size: 11px; font-weight: 600;
   color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 0.05em; margin-bottom: 5px;
+  letter-spacing: .05em; margin-bottom: 5px;
 }
 .form-control {
   width: 100%; padding: 9px 11px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit;
-  color: var(--text); background: var(--surface);
-  outline: none; transition: border-color 0.15s; appearance: none;
+  font-size: 13px; font-family: inherit; color: var(--text);
+  background: var(--surface); outline: none; transition: border-color .15s; appearance: none;
 }
 .form-control:focus { border-color: var(--brand); }
 
-/* ── Two column ── */
+/* ── SEARCH GRID ── */
+.search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+@media (max-width: 700px) { .search-grid { grid-template-columns: 1fr 1fr; } .search-grid .btn { grid-column: 1/-1; } }
+@media (max-width: 420px) { .search-grid { grid-template-columns: 1fr; } }
+
+/* ── TWO-COL ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
 @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
 
-/* ── Table ── */
+/* ── THREE-COL ── */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 900px) { .three-col { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .three-col { grid-template-columns: 1fr; } }
+
+/* ── TABLE ── */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 480px; }
 .data-table th {
-  text-align: left; font-size: 10.5px; font-weight: 600;
-  color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 0.05em; padding: 0 1.1rem 0.7rem;
-  border-bottom: 1px solid var(--border);
+  text-align: left; font-size: 10.5px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 0 1.1rem .7rem; border-bottom: 1px solid var(--border);
 }
-.data-table td {
-  padding: 0.8rem 1.1rem; font-size: 13px;
-  border-bottom: 1px solid var(--border); vertical-align: middle;
-}
+.data-table td { padding: .8rem 1.1rem; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background: var(--bg); }
 .worker-avatar {
@@ -394,22 +293,21 @@ nav a .badge-pill {
 }
 .action-row { display: flex; gap: 5px; flex-wrap: wrap; }
 
-/* ── Badges ── */
+/* ── BADGES ── */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 9px; border-radius: 50px;
-  font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 500;
 }
 .badge i { font-size: 10px; }
 .badge-verified { background: var(--brand-light); color: var(--brand); }
 .badge-pending  { background: var(--accent-light); color: #7A5010; }
+.badge-new      { background: #EEF2FF; color: #4338CA; }
 
-/* ── Action Buttons ── */
+/* ── ACTION BUTTONS ── */
 .action-btn {
-  padding: 5px 11px; border-radius: 50px; font-size: 12px;
-  font-weight: 500; font-family: inherit; cursor: pointer;
-  border: 1.5px solid var(--border); background: transparent;
-  color: var(--text); transition: all 0.14s;
+  padding: 5px 11px; border-radius: 50px; font-size: 12px; font-weight: 500;
+  font-family: inherit; cursor: pointer; border: 1.5px solid var(--border);
+  background: transparent; color: var(--text); transition: .14s;
   display: inline-flex; align-items: center; gap: 4px;
 }
 .action-btn i { font-size: 12px; }
@@ -419,35 +317,28 @@ nav a .badge-pill {
 .action-btn.danger { color: var(--danger); border-color: #EFC5C2; }
 .action-btn.danger:hover { background: var(--danger-light); }
 
-/* ── Loading / empty ── */
+/* ── LOADING / EMPTY ── */
 .loading-row td { text-align: center; padding: 2rem !important; color: var(--text-muted); }
 .spinner {
   width: 16px; height: 16px;
   border: 2px solid var(--border); border-top-color: var(--brand);
-  border-radius: 50%; animation: spin 0.7s linear infinite;
+  border-radius: 50%; animation: spin .7s linear infinite;
   display: inline-block; margin-right: 8px; vertical-align: -3px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Activity Feed ── */
+/* ── ACTIVITY ── */
 .activity-item {
   display: flex; align-items: flex-start; gap: 10px;
-  padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+  padding: .6rem 0; border-bottom: 1px solid var(--border);
 }
 .activity-item:last-child { border-bottom: none; }
-.act-icon {
-  width: 28px; height: 28px; border-radius: 50%;
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-}
+.act-icon { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .activity-text { font-size: 13px; color: var(--text); line-height: 1.4; }
 .activity-time { font-size: 11px; color: var(--text-light); margin-top: 2px; }
 
-/* ── Hire badges ── */
-.hire-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 500;
-}
+/* ── HIRE BADGES ── */
+.hire-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 50px; font-size: 11px; font-weight: 500; }
 .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .dot-green { background: var(--brand); }
 .dot-amber { background: var(--accent); }
@@ -456,204 +347,132 @@ nav a .badge-pill {
 .hire-pending { background: var(--accent-light); color: #7A5010; }
 .hire-ended   { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
 
-/* ── Toast ── */
+/* ── TOAST ── */
 #toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
   background: var(--text); color: #fff;
   padding: 10px 20px; border-radius: 50px;
-  font-size: 13px; font-weight: 500;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  opacity: 0; transition: opacity 0.25s;
-  pointer-events: none; z-index: 9999;
+  font-size: 13px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 9999;
   display: flex; align-items: center; gap: 8px;
 }
 #toast.show { opacity: 1; }
 #toast.error { background: var(--danger); }
 
-/* ══════════════════════════════════════
-   MODALS — shared base
-══════════════════════════════════════ */
+/* ── MODALS ── */
 .modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.48);
-  z-index: 500;
-  display: none;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0;
+  position: fixed; inset: 0; background: rgba(0,0,0,.48); z-index: 500;
+  display: none; align-items: flex-end; justify-content: center; padding: 0;
 }
 .modal-overlay.open { display: flex; }
-
-/* Sheet-style on mobile, centered on desktop */
 .modal {
-  background: var(--surface);
-  border-radius: var(--radius) var(--radius) 0 0;
-  width: 100%;
-  max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 -4px 40px rgba(0,0,0,0.18);
-  animation: slideUp 0.25s ease;
+  background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%; max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 -4px 40px rgba(0,0,0,.18); animation: slideUp .25s ease;
 }
 @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
 @media (min-width: 640px) {
-  .modal-overlay {
-    align-items: center;
-    padding: 1rem;
-  }
-  .modal {
-    border-radius: var(--radius);
-    max-width: 520px;
-    max-height: 88vh;
-    animation: fadeScale 0.22s ease;
-  }
-  @keyframes fadeScale { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-overlay { align-items: center; padding: 1rem; }
+  .modal { border-radius: var(--radius); max-width: 520px; max-height: 88vh; animation: fadeScale .22s ease; }
+  @keyframes fadeScale { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 }
-
-/* Large modal */
-.modal.modal-lg { max-width: 780px; }
-
+.modal.modal-lg { max-width: 800px; }
+.modal.modal-xl { max-width: 1000px; }
 .modal-drag { width: 36px; height: 4px; background: var(--border); border-radius: 50px; margin: 10px auto 0; }
 @media (min-width: 640px) { .modal-drag { display: none; } }
-
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
   position: sticky; top: 0; background: var(--surface); z-index: 1;
 }
 .modal-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .modal-title i { font-size: 17px; color: var(--brand); }
 .modal-close {
-  background: var(--bg); border: 1px solid var(--border);
-  cursor: pointer; color: var(--text-muted);
-  border-radius: 50%; width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; transition: all 0.14s;
+  background: var(--bg); border: 1px solid var(--border); cursor: pointer;
+  color: var(--text-muted); border-radius: 50%; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px; transition: .14s;
 }
 .modal-close:hover { background: var(--border); color: var(--text); }
 .modal-body { padding: 1.25rem; }
 .modal-footer {
   display: flex; gap: 8px; justify-content: flex-end;
-  padding: 1rem 1.25rem;
-  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem; border-top: 1px solid var(--border);
   position: sticky; bottom: 0; background: var(--surface);
 }
 
-/* Profile detail inside modal */
-.profile-section {
-  display: flex; align-items: center; gap: 14px;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
+/* ── PROFILE MODAL ── */
+.profile-header-banner {
+  background: linear-gradient(135deg, var(--sidebar-bg) 0%, var(--brand) 100%);
+  border-radius: var(--radius) var(--radius) 0 0; padding: 1.5rem 1.25rem 1rem;
+  color: #fff; position: relative;
 }
-.profile-avatar-lg {
-  width: 56px; height: 56px; border-radius: 50%;
+.profile-av-wrap {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 700; flex-shrink: 0;
+  font-size: 24px; font-weight: 700; margin-bottom: .75rem; overflow: hidden;
 }
-.detail-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 0.7rem 1rem; margin-bottom: 1.1rem;
+.profile-row { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem 1rem; }
+@media (max-width: 400px) { .profile-row { grid-template-columns: 1fr; } }
+.profile-field label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 2px; }
+.profile-field span { font-size: 13px; color: var(--text); }
+.profile-field input, .profile-field select, .profile-field textarea {
+  width: 100%; padding: 9px 11px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 13px; font-family: inherit;
+  color: var(--text); outline: none; transition: border-color .15s; appearance: none;
 }
-@media (max-width: 400px) { .detail-grid { grid-template-columns: 1fr; } }
-.detail-item label {
-  font-size: 10px; color: var(--text-muted); font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 2px;
-}
-.detail-item span { font-size: 13px; color: var(--text); }
+.profile-field input:focus, .profile-field select:focus, .profile-field textarea:focus { border-color: var(--brand); }
 
-/* Messages modal */
-.msg-list { display: flex; flex-direction: column; gap: 0; }
-.msg-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer;
-  transition: background 0.12s;
-}
-.msg-item:last-child { border-bottom: none; }
-.msg-item:hover { background: var(--bg); margin: 0 -1.25rem; padding: 12px 1.25rem; }
-.msg-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
-.msg-name { font-size: 13.5px; font-weight: 500; }
-.msg-preview { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
-.msg-time { font-size: 11px; color: var(--text-light); margin-left: auto; white-space: nowrap; flex-shrink: 0; }
-.msg-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
-
-.msg-compose { margin-top: 1rem; }
-.msg-compose textarea {
-  width: 100%; min-height: 90px;
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  padding: 10px 12px; font-size: 13px; font-family: inherit;
-  resize: vertical; outline: none;
-}
-.msg-compose textarea:focus { border-color: var(--brand); }
-
-/* Find Workers modal */
-.worker-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.85rem;
-}
+/* ── WORKER CARDS ── */
+.worker-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .85rem; }
 .worker-card {
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem; text-align: center;
-  transition: box-shadow 0.15s, border-color 0.15s; cursor: pointer;
+  transition: box-shadow .15s, border-color .15s; cursor: pointer;
 }
-.worker-card:hover { border-color: var(--brand-mid); box-shadow: 0 2px 12px rgba(27,107,69,0.08); }
+.worker-card:hover { border-color: var(--brand-mid); box-shadow: 0 2px 12px rgba(27,107,69,.08); }
 .worker-card .wc-av {
   width: 52px; height: 52px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 700; margin: 0 auto 0.6rem;
+  font-size: 16px; font-weight: 700; margin: 0 auto .6rem;
 }
 .worker-card .wc-name { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
 .worker-card .wc-role { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
 .worker-card .wc-loc { font-size: 11.5px; color: var(--text-light); display: flex; align-items: center; justify-content: center; gap: 3px; }
 
-/* Saved workers modal cards */
-.saved-card {
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 0; border-bottom: 1px solid var(--border);
-}
+/* ── SAVED / MSG CARDS ── */
+.saved-card { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .saved-card:last-child { border-bottom: none; }
-
-/* Search bar inside modal */
-.modal-search {
-  display: flex; gap: 8px; margin-bottom: 1rem; align-items: center;
-}
-.modal-search input {
-  flex: 1; padding: 9px 12px;
-  border: 1.5px solid var(--border); border-radius: 50px;
-  font-size: 13px; font-family: inherit; outline: none;
-}
+.modal-search { display: flex; gap: 8px; margin-bottom: 1rem; align-items: center; }
+.modal-search input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 50px; font-size: 13px; font-family: inherit; outline: none; }
 .modal-search input:focus { border-color: var(--brand); }
+.msg-list { display: flex; flex-direction: column; gap: 0; }
+.msg-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: .12s; }
+.msg-item:last-child { border-bottom: none; }
+.msg-item:hover { background: var(--bg); margin: 0 -1.25rem; padding: 12px 1.25rem; }
+.msg-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.msg-name { font-size: 13.5px; font-weight: 500; }
+.msg-preview { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.msg-time { font-size: 11px; color: var(--text-light); margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+.msg-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
 
-/* Empty state */
-.empty-state {
-  text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);
-}
-.empty-state i { font-size: 36px; opacity: 0.3; display: block; margin-bottom: 0.5rem; }
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); }
+.empty-state i { font-size: 36px; opacity: .3; display: block; margin-bottom: .5rem; }
 .empty-state p { font-size: 13px; }
 
-/* ── Quick action strip ── */
+/* ── QUICK ACTIONS ── */
 .quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  display: grid; grid-template-columns: repeat(4,1fr); gap: .75rem; margin-bottom: 1.5rem;
 }
-@media (max-width: 600px) { .quick-actions { grid-template-columns: repeat(2,1fr); } }
-
+@media (max-width: 640px) { .quick-actions { grid-template-columns: repeat(2,1fr); } }
 .qa-btn {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; padding: 1rem 0.5rem;
-  background: var(--surface); border: 1px solid var(--border);
+  gap: 6px; padding: 1rem .5rem;
+  background: var(--surface); border: 1.5px solid var(--border);
   border-radius: var(--radius); cursor: pointer;
   font-family: inherit; font-size: 12px; font-weight: 500;
-  color: var(--text-muted); transition: all 0.14s;
-  text-align: center;
+  color: var(--text-muted); transition: all .14s; text-align: center;
 }
 .qa-btn i { font-size: 22px; }
 .qa-btn:hover { border-color: var(--brand-mid); color: var(--brand); background: var(--brand-light); }
@@ -662,42 +481,93 @@ nav a .badge-pill {
 .qa-btn.qa-purple i{ color: var(--purple); }
 .qa-btn.qa-amber i { color: #8B5E1C; }
 
-/* ── Welcome Banner ── */
+/* ── WELCOME BANNER ── */
 .welcome-banner {
   background: linear-gradient(135deg, var(--sidebar-bg) 0%, #1B6B45 100%);
-  border-radius: var(--radius);
-  padding: 1.4rem 1.5rem;
-  color: #fff;
-  margin-bottom: 1.5rem;
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  flex-wrap: wrap;
+  border-radius: var(--radius); padding: 1.4rem 1.5rem; color: #fff;
+  margin-bottom: 1.5rem; display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem; flex-wrap: wrap;
 }
 .wb-title { font-family: 'Playfair Display',serif; font-size: 18px; font-weight: 700; }
-.wb-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+.wb-sub { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 3px; }
+
+/* ── NEW REGISTRANTS TICKER ── */
+.new-reg-ticker {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(90deg, #EEF2FF 0%, #E6F5EE 100%);
+  border: 1px solid #C7D2FE; border-radius: var(--radius);
+  padding: .75rem 1.1rem; margin-bottom: 1.25rem; overflow: hidden;
+}
+.ticker-label {
+  background: #4338CA; color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 50px; white-space: nowrap; flex-shrink: 0;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.ticker-scroll { flex: 1; overflow: hidden; }
+.ticker-inner {
+  display: flex; gap: 2rem; white-space: nowrap;
+  animation: tickerMove 24s linear infinite;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+@keyframes tickerMove { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.ticker-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--text); cursor: pointer;
+  padding: 2px 0;
+}
+.ticker-item:hover { color: var(--brand); }
+.ticker-av { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; flex-shrink: 0; }
+
+/* ── NEW EMPLOYER CARDS ── */
+.new-emp-card {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: .9rem;
+  display: flex; align-items: flex-start; gap: 10px; background: var(--surface);
+  transition: box-shadow .15s, border-color .15s;
+}
+.new-emp-card:hover { border-color: var(--brand-mid); box-shadow: 0 2px 10px rgba(27,107,69,.07); }
+.new-emp-av {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.new-emp-name { font-size: 13px; font-weight: 600; }
+.new-emp-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.new-emp-time { font-size: 10.5px; color: var(--text-light); margin-top: 3px; }
+
+/* ── DETAIL GRID ── */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem 1rem; margin-bottom: 1.1rem; }
+@media (max-width: 400px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-item label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 2px; }
+.detail-item span { font-size: 13px; color: var(--text); }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin: 1.25rem 0 .75rem;
+}
+.section-divider::before, .section-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+@media (max-width: 420px) { .hide-xs { display: none; } }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════
-     SIDEBAR OVERLAY
-════════════════════════════════════ -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-<!-- ═══════════════════════════════════
-     SIDEBAR
-════════════════════════════════════ -->
+<!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-top">
     <a href="index.html" class="logo">Sounds<span>Care</span> <span class="logo-pulse"></span></a>
-    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close sidebar">
-      <i class="bi bi-x-lg"></i>
-    </button>
+    <button class="sidebar-close" onclick="closeSidebar()"><i class="bi bi-x-lg"></i></button>
   </div>
 
-  <!-- Employer identity chip -->
-  <div style="padding: 0.75rem">
-    <div class="sidebar-employer">
-      <div class="av" id="sidebar-av">SM</div>
+  <div style="padding:.75rem">
+    <div class="sidebar-employer" onclick="openModal('my-profile-modal')">
+      <div class="av" id="sidebar-av">—</div>
       <div>
         <div class="emp-name" id="sidebar-name">Loading…</div>
         <div class="emp-role">Employer Account</div>
@@ -710,46 +580,49 @@ nav a .badge-pill {
     <a href="#" class="active" onclick="setActive(this);closeSidebar()">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    <a href="#" onclick="openModal('find-modal');setActive(this)">
+    <a href="#" onclick="openModal('find-modal');setActive(this);closeSidebar()">
       <i class="bi bi-search"></i> Find Workers
     </a>
-    <a href="#" onclick="openModal('saved-modal');setActive(this)">
+    <a href="#" onclick="openModal('saved-modal');setActive(this);closeSidebar()">
       <i class="bi bi-heart"></i> Saved Workers
     </a>
-    <a href="#" onclick="openModal('messages-modal');setActive(this)">
+    <a href="#" onclick="openModal('messages-modal');setActive(this);closeSidebar()">
       <i class="bi bi-chat-dots"></i> Messages
       <span class="badge-pill" id="msg-badge" style="display:none">0</span>
     </a>
 
     <div class="nav-section-label">Manage</div>
-    <a href="#" onclick="setActive(this);closeSidebar()">
-      <i class="bi bi-clipboard-check"></i> My Hires
+    <a href="#" onclick="openModal('all-jobseekers-modal');setActive(this);closeSidebar()">
+      <i class="bi bi-people"></i> All Job Seekers
     </a>
-    <a href="#" onclick="setActive(this);closeSidebar()">
-      <i class="bi bi-person-circle"></i> Profile
+    <a href="#" onclick="openModal('new-employers-modal');setActive(this);closeSidebar()">
+      <i class="bi bi-building-add"></i> New Employers
+      <span class="badge-pill" id="new-emp-badge" style="display:none">0</span>
     </a>
-    <a href="#" onclick="setActive(this);closeSidebar()">
-      <i class="bi bi-bar-chart-line"></i> Reports
+    <a href="#" onclick="openModal('post-job-modal');setActive(this);closeSidebar()">
+      <i class="bi bi-plus-circle"></i> Post a Job
+    </a>
+    <a href="#" onclick="openModal('emp-contract-modal');setActive(this);closeSidebar()">
+      <i class="bi bi-file-earmark-text"></i> Contract
+    </a>
+    <a href="#" onclick="openModal('my-profile-modal');setActive(this);closeSidebar()">
+      <i class="bi bi-person-circle"></i> My Profile
     </a>
   </nav>
 
   <div class="sidebar-footer">
     <a href="#"><i class="bi bi-gear"></i> Settings</a>
-    <a href="index.html"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
+    <a href="#" onclick="signOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
   </div>
 </aside>
 
-<!-- ═══════════════════════════════════
-     MAIN
-════════════════════════════════════ -->
+<!-- ═══ MAIN ═══ -->
 <div class="main">
 
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
-      <button class="hamburger" onclick="openSidebar()" aria-label="Open menu">
-        <i class="bi bi-list"></i>
-      </button>
+      <button class="hamburger" onclick="openSidebar()"><i class="bi bi-list"></i></button>
       <div>
         <div class="topbar-title" id="topbar-title">Dashboard</div>
         <div class="topbar-sub" id="greeting-time"></div>
@@ -757,13 +630,12 @@ nav a .badge-pill {
     </div>
     <div class="topbar-right">
       <button class="btn btn-primary btn-sm" onclick="openModal('find-modal')">
-        <i class="bi bi-search"></i>
-        <span class="hide-xs">Find Workers</span>
+        <i class="bi bi-search"></i><span class="hide-xs"> Find Workers</span>
       </button>
-      <button class="btn btn-ghost btn-sm" onclick="openModal('messages-modal')" style="padding:6px 10px" aria-label="Messages">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('messages-modal')" style="padding:6px 10px">
         <i class="bi bi-chat-dots" style="font-size:17px"></i>
       </button>
-      <div class="avatar-circle" id="topbar-av">SM</div>
+      <div class="avatar-circle" id="topbar-av" onclick="openModal('my-profile-modal')" title="My Profile">—</div>
     </div>
   </div>
 
@@ -776,9 +648,21 @@ nav a .badge-pill {
         <div class="wb-title" id="welcome-name">Welcome back 👋</div>
         <div class="wb-sub">Here's what's happening with your account today.</div>
       </div>
-      <button class="btn btn-primary" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25)" onclick="openModal('find-modal')">
-        <i class="bi bi-search"></i> Find Workers
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff" onclick="openModal('find-modal')">
+          <i class="bi bi-search"></i> Find Workers
+        </button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff" onclick="openModal('my-profile-modal')">
+          <i class="bi bi-person-circle"></i> My Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- NEW REGISTRANT TICKER -->
+    <div class="new-reg-ticker" id="reg-ticker" style="display:none">
+      <span class="ticker-label">🆕 New</span>
+      <div class="ticker-scroll"><div class="ticker-inner" id="ticker-inner"></div></div>
+      <button class="btn btn-outline btn-sm" onclick="openModal('all-jobseekers-modal')" style="white-space:nowrap">View All</button>
     </div>
 
     <!-- STATS -->
@@ -816,20 +700,20 @@ nav a .badge-pill {
       <button class="qa-btn qa-purple" onclick="openModal('saved-modal')">
         <i class="bi bi-heart-fill"></i> Saved Workers
       </button>
-      <button class="qa-btn qa-amber" onclick="document.getElementById('search-role').focus();document.querySelector('.panel').scrollIntoView({behavior:'smooth'})">
-        <i class="bi bi-funnel-fill"></i> Quick Search
+      <button class="qa-btn qa-amber" onclick="openModal('all-jobseekers-modal')">
+        <i class="bi bi-person-lines-fill"></i> All Job Seekers
       </button>
-      <button class="qa-btn" style="background:#EEF2FF;color:#4338CA;border:1.5px solid #C7D2FE" onclick="openModal('post-job-modal')">
-        <i class="bi bi-plus-circle-fill"></i> Post a Job
+      <button class="qa-btn" style="border-color:#C7D2FE;color:#4338CA" onclick="openModal('post-job-modal')">
+        <i class="bi bi-plus-circle-fill" style="color:#4338CA"></i> Post a Job
       </button>
-      <button class="qa-btn" style="background:#F0FDF4;color:#166534;border:1.5px solid #BBF7D0" onclick="openEmpPayModal()">
-        <i class="bi bi-credit-card-fill"></i> Make Payment
+      <button class="qa-btn" style="border-color:#BBF7D0;color:#166534" onclick="openEmpPayModal()">
+        <i class="bi bi-credit-card-fill" style="color:#166534"></i> Make Payment
       </button>
-      <button class="qa-btn" style="background:#FFF7ED;color:#C2410C;border:1.5px solid #FED7AA" onclick="openModal('emp-contract-modal')">
-        <i class="bi bi-file-earmark-text-fill"></i> Contract
+      <button class="qa-btn" style="border-color:#FED7AA;color:#C2410C" onclick="openModal('emp-contract-modal')">
+        <i class="bi bi-file-earmark-text-fill" style="color:#C2410C"></i> Contract
       </button>
-      <button class="qa-btn" style="background:#F8FAFC;color:#475569;border:1.5px solid #CBD5E1" onclick="openTawkChat()">
-        <i class="bi bi-headset"></i> Support Chat
+      <button class="qa-btn" style="border-color:#CBD5E1;color:#475569" onclick="openTawkChat()">
+        <i class="bi bi-headset" style="color:#475569"></i> Support
       </button>
     </div>
 
@@ -837,9 +721,7 @@ nav a .badge-pill {
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title"><i class="bi bi-search"></i> Quick Worker Search</span>
-        <button class="btn btn-outline btn-sm" onclick="loadWorkers()">
-          <i class="bi bi-grid"></i> Browse All
-        </button>
+        <button class="btn btn-outline btn-sm" onclick="loadWorkers()"><i class="bi bi-grid"></i> Browse All</button>
       </div>
       <div class="panel-body">
         <div class="search-grid">
@@ -847,12 +729,9 @@ nav a .badge-pill {
             <label>Role</label>
             <select class="form-control" id="search-role">
               <option value="">Any Role</option>
-              <option value="House Manager">House Manager</option>
-              <option value="Nanny">Nanny / Childcare</option>
-              <option value="Cook">Cook / Chef</option>
-              <option value="Cleaner">Cleaner</option>
-              <option value="Driver">Driver</option>
-              <option value="Guard">Guard / Security</option>
+              <option>House Manager</option><option>Nanny / Childcare</option>
+              <option>Cook / Chef</option><option>Cleaner</option>
+              <option>Driver</option><option>Guard / Security</option>
             </select>
           </div>
           <div class="form-group">
@@ -868,22 +747,31 @@ nav a .badge-pill {
               <option value="35000-999999">KES 35k+</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="runSearch()">
-            <i class="bi bi-search"></i> Search
-          </button>
+          <button class="btn btn-primary" onclick="runSearch()"><i class="bi bi-search"></i> Search</button>
         </div>
       </div>
     </div>
 
-    <!-- TWO COL: SAVED + HIRES -->
+    <!-- SEARCH RESULTS -->
+    <div class="panel" id="results-panel" style="display:none">
+      <div class="panel-header">
+        <span class="panel-title"><i class="bi bi-people"></i> Search Results</span>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('results-panel').style.display='none'"><i class="bi bi-x-lg"></i> Close</button>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Worker</th><th>Role</th><th>Location</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TWO-COL: SAVED + HIRES -->
     <div class="two-col">
-      <!-- SAVED WORKERS -->
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title"><i class="bi bi-heart"></i> Saved Workers</span>
-          <button class="btn btn-outline btn-sm" onclick="openModal('saved-modal')">
-            View All <i class="bi bi-arrow-right"></i>
-          </button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('saved-modal')">View All <i class="bi bi-arrow-right"></i></button>
         </div>
         <div class="table-scroll">
           <table class="data-table">
@@ -895,7 +783,6 @@ nav a .badge-pill {
         </div>
       </div>
 
-      <!-- ACTIVE HIRES -->
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title"><i class="bi bi-clipboard-check"></i> Active Hires</span>
@@ -911,18 +798,29 @@ nav a .badge-pill {
       </div>
     </div>
 
-    <!-- SEARCH RESULTS -->
-    <div class="panel" id="results-panel" style="display:none">
+    <!-- NEWLY REGISTERED EMPLOYERS -->
+    <div class="panel">
       <div class="panel-header">
-        <span class="panel-title"><i class="bi bi-people"></i> Search Results</span>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('results-panel').style.display='none'">
-          <i class="bi bi-x-lg"></i> Close
-        </button>
+        <span class="panel-title"><i class="bi bi-building-add"></i> Newly Registered Employers</span>
+        <button class="btn btn-outline btn-sm" onclick="openModal('new-employers-modal')">See All <i class="bi bi-arrow-right"></i></button>
+      </div>
+      <div class="panel-body" id="new-employers-preview">
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spinner"></span> Loading…</div>
+      </div>
+    </div>
+
+    <!-- ALL JOB SEEKERS PREVIEW -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><i class="bi bi-people"></i> Registered Job Seekers</span>
+        <button class="btn btn-outline btn-sm" onclick="openModal('all-jobseekers-modal')">View All <i class="bi bi-arrow-right"></i></button>
       </div>
       <div class="table-scroll">
         <table class="data-table">
-          <thead><tr><th>Worker</th><th>Role</th><th>Location</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="results-body"></tbody>
+          <thead><tr><th>Name</th><th>Role</th><th>Location</th><th>Salary</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="jobseekers-preview-body">
+            <tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -931,9 +829,7 @@ nav a .badge-pill {
     <div class="panel">
       <div class="panel-header">
         <span class="panel-title"><i class="bi bi-activity"></i> Recent Activity</span>
-        <button class="btn btn-ghost btn-sm" onclick="loadActivity()">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
+        <button class="btn btn-ghost btn-sm" onclick="loadActivity()"><i class="bi bi-arrow-clockwise"></i></button>
       </div>
       <div class="panel-body" id="activity-body">
         <div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><span class="spinner"></span> Loading…</div>
@@ -942,9 +838,7 @@ nav a .badge-pill {
 
     <!-- HIRE HISTORY -->
     <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title"><i class="bi bi-clock-history"></i> Hire History</span>
-      </div>
+      <div class="panel-header"><span class="panel-title"><i class="bi bi-clock-history"></i> Hire History</span></div>
       <div class="table-scroll">
         <table class="data-table">
           <thead><tr><th>Worker</th><th>Role</th><th>Start</th><th>Salary</th><th>Status</th><th>Contract</th></tr></thead>
@@ -961,7 +855,7 @@ nav a .badge-pill {
         <span class="panel-title"><i class="bi bi-credit-card"></i> Payment History</span>
         <button class="btn btn-primary btn-sm" onclick="openEmpPayModal()"><i class="bi bi-plus"></i> Pay Now</button>
       </div>
-      <div style="background:#E8F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:12.5px;color:#1B5E35;display:flex;gap:8px;align-items:flex-start">
+      <div style="background:#E8F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;margin:.8rem 1.25rem;font-size:12.5px;color:#1B5E35;display:flex;gap:8px;align-items:flex-start">
         <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i>
         <span>Employer access fee: <strong>KES 1,000 one-time, non-refundable</strong>. Unlocks full contact access, messaging and worker profile details. <a href="#" onclick="openEmpTCModal()" style="color:var(--brand);font-weight:600;text-decoration:underline">View Terms</a></span>
       </div>
@@ -978,11 +872,36 @@ nav a .badge-pill {
   </div><!-- /content -->
 </div><!-- /main -->
 
+<!-- TOAST -->
+<div id="toast"><i class="bi bi-check-circle-fill"></i><span id="toast-msg"></span></div>
+
+
 <!-- ═══════════════════════════════════════════
-     MODAL 1 — FIND WORKERS
+     MODAL: MY PROFILE
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="my-profile-modal" onclick="if(event.target===this)closeModal('my-profile-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <!-- Banner is rendered by JS -->
+    <div id="my-profile-banner"></div>
+    <div class="modal-body" id="my-profile-body">
+      <div style="text-align:center;padding:2rem"><span class="spinner"></span></div>
+    </div>
+    <div class="modal-footer" id="my-profile-footer">
+      <button class="btn btn-ghost" onclick="closeModal('my-profile-modal')">Close</button>
+      <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()" style="display:none">
+        <i class="bi bi-check-circle"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     MODAL: FIND WORKERS
 ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="find-modal" onclick="if(event.target===this)closeModal('find-modal')">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl">
     <div class="modal-drag"></div>
     <div class="modal-header">
       <span class="modal-title"><i class="bi bi-people-fill"></i> Find Workers</span>
@@ -993,12 +912,8 @@ nav a .badge-pill {
         <input type="text" id="fw-search" placeholder="Search by name, role, location…" oninput="filterFindWorkers()">
         <select class="form-control" id="fw-role" style="max-width:150px;border-radius:50px;padding:9px 12px" onchange="filterFindWorkers()">
           <option value="">All Roles</option>
-          <option value="House Manager">House Manager</option>
-          <option value="Nanny">Nanny</option>
-          <option value="Cook">Cook</option>
-          <option value="Cleaner">Cleaner</option>
-          <option value="Driver">Driver</option>
-          <option value="Guard">Security</option>
+          <option>House Manager</option><option>Nanny</option><option>Cook</option>
+          <option>Cleaner</option><option>Driver</option><option>Guard</option>
         </select>
       </div>
       <div id="fw-grid" class="worker-card-grid">
@@ -1014,8 +929,76 @@ nav a .badge-pill {
   </div>
 </div>
 
+
 <!-- ═══════════════════════════════════════════
-     MODAL 2 — SAVED WORKERS
+     MODAL: ALL JOB SEEKERS
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="all-jobseekers-modal" onclick="if(event.target===this)closeModal('all-jobseekers-modal')">
+  <div class="modal modal-xl">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-person-lines-fill"></i> All Registered Job Seekers</span>
+      <button class="modal-close" onclick="closeModal('all-jobseekers-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-search" style="margin-bottom:.75rem">
+        <input type="text" id="js-search" placeholder="Search name, role, location…" oninput="filterJobseekers()">
+        <select class="form-control" id="js-role-filter" style="max-width:150px;border-radius:50px;padding:9px 12px" onchange="filterJobseekers()">
+          <option value="">All Roles</option>
+          <option>House Manager</option><option>Nanny</option><option>Cook</option>
+          <option>Cleaner</option><option>Driver</option><option>Guard</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem" id="js-count-label"></div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Role</th><th>Location</th><th>Salary Exp.</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="all-js-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('all-jobseekers-modal')">Close</button>
+      <button class="btn btn-primary" onclick="openModal('find-modal')"><i class="bi bi-grid"></i> Card View</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     MODAL: NEW EMPLOYERS
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="new-employers-modal" onclick="if(event.target===this)closeModal('new-employers-modal')">
+  <div class="modal modal-lg">
+    <div class="modal-drag"></div>
+    <div class="modal-header">
+      <span class="modal-title"><i class="bi bi-building-add"></i> Newly Registered Employers</span>
+      <button class="modal-close" onclick="closeModal('new-employers-modal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-search">
+        <input type="text" id="ne-search" placeholder="Search by name or email…" oninput="filterNewEmployers()">
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Registered</th><th>Payment</th></tr></thead>
+          <tbody id="new-emp-tbody">
+            <tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('new-employers-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     MODAL: SAVED WORKERS
 ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="saved-modal" onclick="if(event.target===this)closeModal('saved-modal')">
   <div class="modal">
@@ -1031,15 +1014,14 @@ nav a .badge-pill {
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('saved-modal')">Close</button>
-      <button class="btn btn-primary" onclick="closeModal('saved-modal');openModal('find-modal')">
-        <i class="bi bi-search"></i> Find More Workers
-      </button>
+      <button class="btn btn-primary" onclick="closeModal('saved-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find More Workers</button>
     </div>
   </div>
 </div>
 
+
 <!-- ═══════════════════════════════════════════
-     MODAL 3 — MESSAGES
+     MODAL: MESSAGES
 ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="messages-modal" onclick="if(event.target===this)closeModal('messages-modal')">
   <div class="modal">
@@ -1059,8 +1041,9 @@ nav a .badge-pill {
   </div>
 </div>
 
+
 <!-- ═══════════════════════════════════════════
-     MODAL 4 — WORKER PROFILE DETAIL
+     MODAL: WORKER PROFILE DETAIL
 ════════════════════════════════════════════ -->
 <div class="modal-overlay" id="worker-modal" onclick="if(event.target===this)closeModal('worker-modal')">
   <div class="modal">
@@ -1078,534 +1061,10 @@ nav a .badge-pill {
   </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast"><i class="bi bi-check-circle-fill"></i><span id="toast-msg"></span></div>
 
 <!-- ═══════════════════════════════════════════
-     SCRIPT
+     MODAL: POST JOB
 ════════════════════════════════════════════ -->
-<script>
-const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let EMPLOYER_ID = null;
-let _allFindWorkers = [];
-
-/* ── Helpers ── */
-const AVATAR_COLORS = [
-  ['#C9E8D4','#1B6B45'],['#D6CBEE','#6B52C8'],['#FAEEDA','#7A5010'],
-  ['#B5D4F4','#1A6BB5'],['#F5C4B3','#993C1D'],['#F4C0D1','#993556'],
-];
-function avatarColor(name) {
-  let h = 0; for (let c of (name||'')) h = (h*31+c.charCodeAt(0)) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
-}
-function initials(name) {
-  return (name||'??').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-}
-function formatSalary(min,max) {
-  if (!min && !max) return '—';
-  const f = n => n >= 1000 ? Math.round(n/1000)+'k' : n;
-  if (min && max) return `${f(min)}–${f(max)}`;
-  return min ? `${f(min)}+` : `Up to ${f(max)}`;
-}
-function timeAgo(ts) {
-  const d = Math.floor((Date.now()-new Date(ts))/1000);
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d/60)+'m ago';
-  if (d < 86400) return Math.floor(d/3600)+'h ago';
-  return Math.floor(d/86400)+'d ago';
-}
-function fmtDate(ts) {
-  if (!ts) return '—';
-  return new Date(ts).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
-}
-
-/* ── Toast ── */
-function toast(msg, type='success') {
-  const t = document.getElementById('toast');
-  const icon = t.querySelector('i');
-  document.getElementById('toast-msg').textContent = msg;
-  icon.className = type === 'error' ? 'bi bi-exclamation-circle-fill' : 'bi bi-check-circle-fill';
-  t.className = type === 'error' ? 'error show' : 'show';
-  setTimeout(()=>t.className='', 2800);
-}
-
-/* ── Sidebar ── */
-function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebar-overlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('show');
-  document.body.style.overflow = '';
-}
-function setActive(el) {
-  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
-  el.classList.add('active');
-}
-
-/* ── Modal system ── */
-const _loadedModals = {};
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-  if (!_loadedModals[id]) {
-    _loadedModals[id] = true;
-    if (id === 'find-modal')    loadFindWorkers();
-    if (id === 'saved-modal')   loadSavedModal();
-    if (id === 'messages-modal')loadMessagesModal();
-  }
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-/* ── Keyboard ── */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    ['worker-modal','find-modal','saved-modal','messages-modal'].forEach(id => {
-      document.getElementById(id)?.classList.remove('open');
-    });
-    document.body.style.overflow = '';
-  }
-});
-
-/* ══════════════════════════════════════
-   AUTH + BOOT
-══════════════════════════════════════ */
-(async function init() {
-  /* Greeting */
-  const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('greeting-time').textContent = g;
-
-  /* Get current user */
-  const { data: { user } } = await db.auth.getUser();
-
-  if (user) {
-    /* Load profile */
-    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
-    const { data: employer } = await db.from('employers').select('*').eq('user_id', user.id).single();
-
-    const name = profile?.full_name || user.email?.split('@')[0] || 'Employer';
-    const ini  = initials(name);
-
-    document.getElementById('welcome-name').textContent = `Welcome back, ${name.split(' ')[0]} 👋`;
-    document.getElementById('topbar-title').textContent  = `${name.split(' ')[0]}'s Dashboard`;
-    document.getElementById('sidebar-name').textContent  = name;
-    document.getElementById('sidebar-av').textContent    = ini;
-    document.getElementById('topbar-av').textContent     = ini;
-
-    if (employer) EMPLOYER_ID = employer.id;
-  } else {
-    /* Not logged in — show guest mode */
-    document.getElementById('welcome-name').textContent = 'Welcome to Sounds Care 👋';
-  }
-
-  await Promise.all([loadStats(), loadSavedWorkers(), loadHires(), loadActivity()]);
-})();
-
-/* ══════════════════════════════════════
-   STATS
-══════════════════════════════════════ */
-async function loadStats() {
-  if (!EMPLOYER_ID) { ['stat-searches','stat-saved','stat-contacted','stat-hires'].forEach(id => document.getElementById(id).textContent = '0'); return; }
-  const [a,b,c,d] = await Promise.allSettled([
-    db.from('searches').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
-    db.from('saved_workers').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
-    db.from('contacts').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
-    db.from('hires').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID).eq('status','active'),
-  ]);
-  document.getElementById('stat-searches').textContent  = a.status==='fulfilled' ? (a.value.count??0) : '—';
-  document.getElementById('stat-saved').textContent     = b.status==='fulfilled' ? (b.value.count??0) : '—';
-  document.getElementById('stat-contacted').textContent = c.status==='fulfilled' ? (c.value.count??0) : '—';
-  document.getElementById('stat-hires').textContent     = d.status==='fulfilled' ? (d.value.count??0) : '—';
-}
-
-/* ══════════════════════════════════════
-   SAVED WORKERS (inline table)
-══════════════════════════════════════ */
-async function loadSavedWorkers() {
-  const tbody = document.getElementById('saved-body');
-  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>';
-  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
-  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
-  tbody.innerHTML = data.map(row => {
-    const w = row.workers||{};
-    const name = w.full_name||w.name||'Worker';
-    const role = w.role||'—';
-    const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong>${name}</strong></div></td>
-      <td style="color:var(--text-muted)">${role}</td>
-      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'check-circle-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
-      <td><button class="action-btn primary" onclick="viewWorker('${row.workers?.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button></td>
-    </tr>`;
-  }).join('');
-}
-
-/* ══════════════════════════════════════
-   HIRES
-══════════════════════════════════════ */
-async function loadHires() {
-  const tbody = document.getElementById('hires-body');
-  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires yet.</td></tr>'; return; }
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="3"><span class="spinner"></span>Loading…</td></tr>';
-  const { data, error } = await db.from('hires').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
-  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>'; return; }
-  tbody.innerHTML = data.map(h => {
-    const w = h.workers||{};
-    const name = w.full_name||w.name||'Worker';
-    const role = w.role||h.role||'—';
-    const [bg,fg] = avatarColor(name);
-    const st = h.status||'active';
-    const cls = st==='active'?'hire-active':st==='pending'?'hire-pending':'hire-ended';
-    const dotCls = st==='active'?'dot-green':st==='pending'?'dot-amber':'dot-gray';
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong>${name}</strong></div></td>
-      <td style="color:var(--text-muted)">${role}</td>
-      <td><span class="hire-badge ${cls}"><span class="dot ${dotCls}"></span> ${st.charAt(0).toUpperCase()+st.slice(1)}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-/* ══════════════════════════════════════
-   ACTIVITY
-══════════════════════════════════════ */
-async function loadActivity() {
-  const div = document.getElementById('activity-body');
-  if (!EMPLOYER_ID) { div.innerHTML = '<div class="empty-state"><i class="bi bi-clock-history"></i><p>No activity yet.</p></div>'; return; }
-  const { data, error } = await db.from('activity_log').select('*').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(10);
-  if (error || !data?.length) {
-    div.innerHTML = `<div class="activity-item">
-      <div class="act-icon" style="background:var(--brand-light)"><i class="bi bi-search" style="color:var(--brand);font-size:14px"></i></div>
-      <div><div class="activity-text">Get started by searching for workers</div><div class="activity-time">Now</div></div></div>`;
-    return;
-  }
-  const iconMap = { saved:'bi-heart-fill', contacted:'bi-chat-fill', hired:'bi-person-check-fill', searched:'bi-search', viewed:'bi-eye-fill' };
-  const bgMap = { saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)' };
-  div.innerHTML = data.map(a => {
-    const icon = iconMap[a.action_type] || 'bi-activity';
-    const bg   = bgMap[a.action_type] || 'var(--bg)';
-    return `<div class="activity-item">
-      <div class="act-icon" style="background:${bg}"><i class="bi ${icon}" style="color:var(--brand);font-size:14px"></i></div>
-      <div><div class="activity-text">${a.description||a.action_type}</div><div class="activity-time">${timeAgo(a.created_at)}</div></div>
-    </div>`;
-  }).join('');
-}
-
-/* ══════════════════════════════════════
-   FIND WORKERS MODAL
-══════════════════════════════════════ */
-async function loadFindWorkers() {
-  const grid = document.getElementById('fw-grid');
-  const { data, error } = await db.from('workers').select('*').eq('is_verified', true).order('created_at',{ascending:false}).limit(24);
-  if (error || !data?.length) {
-    /* Try without verified filter */
-    const { data: all } = await db.from('workers').select('*').limit(24);
-    _allFindWorkers = all || [];
-  } else {
-    _allFindWorkers = data;
-  }
-  renderFindWorkers(_allFindWorkers);
-}
-
-function renderFindWorkers(list) {
-  const grid = document.getElementById('fw-grid');
-  if (!list?.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="bi bi-people"></i><p>No workers found. Try different filters.</p></div>`;
-    return;
-  }
-  grid.innerHTML = list.map(w => {
-    const name = w.full_name||w.name||'Worker';
-    const role = w.role||'—';
-    const loc  = w.location||w.area||'Kenya';
-    const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
-    return `<div class="worker-card" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
-      <div class="wc-av" style="background:${bg};color:${fg}">${initials(name)}</div>
-      <div class="wc-name">${name}</div>
-      <div class="wc-role">${role}</div>
-      ${isV ? '<span class="badge badge-verified" style="font-size:10px;margin-bottom:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
-      <div class="wc-loc"><i class="bi bi-geo-alt" style="font-size:11px"></i> ${loc}</div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
-    </div>`;
-  }).join('');
-}
-
-function filterFindWorkers() {
-  const q    = (document.getElementById('fw-search')?.value||'').toLowerCase();
-  const role = (document.getElementById('fw-role')?.value||'').toLowerCase();
-  let list = _allFindWorkers;
-  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
-  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
-  renderFindWorkers(list);
-}
-
-/* ══════════════════════════════════════
-   SAVED MODAL
-══════════════════════════════════════ */
-async function loadSavedModal() {
-  const list = document.getElementById('saved-modal-list');
-  if (!EMPLOYER_ID) {
-    list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>Log in to see your saved workers.</p></div>';
-    return;
-  }
-  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(20);
-  if (error || !data?.length) {
-    list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>You haven\'t saved any workers yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal(\'saved-modal\');openModal(\'find-modal\')"><i class="bi bi-search"></i> Find Workers</button></div>';
-    return;
-  }
-  list.innerHTML = data.map(row => {
-    const w = row.workers||{};
-    const name = w.full_name||w.name||'Worker';
-    const role = w.role||'—';
-    const loc  = w.location||'Kenya';
-    const sal  = formatSalary(w.salary_min,w.salary_max);
-    const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
-    return `<div class="saved-card">
-      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13.5px;font-weight:600">${name}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${role} &nbsp;·&nbsp; ${loc}</div>
-        <div style="font-size:11.5px;color:var(--text-light);margin-top:1px">KES ${sal}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
-        ${isV ? '<span class="badge badge-verified" style="font-size:10px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
-        <div style="display:flex;gap:4px">
-          <button class="action-btn primary" style="padding:4px 10px;font-size:11px" onclick="contactWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
-          <button class="action-btn" style="padding:4px 9px;font-size:11px" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ══════════════════════════════════════
-   MESSAGES MODAL
-══════════════════════════════════════ */
-async function loadMessagesModal() {
-  const list = document.getElementById('messages-list');
-  if (!EMPLOYER_ID) {
-    list.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>Log in to view messages.</p></div>';
-    return;
-  }
-  /* Load contacts as "conversations" */
-  const { data, error } = await db.from('contacts').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('contacted_at',{ascending:false}).limit(15);
-  if (error || !data?.length) {
-    list.innerHTML = `<div class="empty-state"><i class="bi bi-chat-square-dots"></i><p>No messages yet. Contact a worker to start a conversation.</p>
-      <button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal('messages-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find Workers</button></div>`;
-    return;
-  }
-  list.innerHTML = '<div class="msg-list">' + data.map((c,i) => {
-    const w = c.workers||{};
-    const name = w.full_name||w.name||'Worker';
-    const [bg,fg] = avatarColor(name);
-    const isNew = i < 2;
-    return `<div class="msg-item" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')">
-      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
-      <div style="flex:1;min-width:0">
-        <div class="msg-name">${name}</div>
-        <div class="msg-preview">Contact request sent — awaiting response</div>
-      </div>
-      ${isNew ? '<div class="msg-unread"></div>' : ''}
-      <div class="msg-time">${timeAgo(c.contacted_at)}</div>
-    </div>`;
-  }).join('') + '</div>';
-
-  /* Update badge */
-  const newCount = Math.min(data.length, 2);
-  const badge = document.getElementById('msg-badge');
-  if (newCount > 0) { badge.textContent = newCount; badge.style.display = 'inline'; }
-}
-
-/* ══════════════════════════════════════
-   VIEW WORKER (profile modal)
-══════════════════════════════════════ */
-async function viewWorker(id, knownName) {
-  document.getElementById('modal-content').innerHTML = '<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>';
-  openModal('worker-modal');
-
-  if (!id) {
-    document.getElementById('modal-content').innerHTML = '<p style="color:var(--danger);padding:1rem">Could not load profile.</p>';
-    return;
-  }
-
-  const { data: w, error } = await db.from('workers').select('*').eq('id', id).single();
-  if (error || !w) {
-    /* Fallback: show what we know */
-    const name = knownName || 'Worker';
-    const [bg,fg] = avatarColor(name);
-    document.getElementById('modal-content').innerHTML = `
-      <div class="profile-section">
-        <div class="profile-avatar-lg" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <div><div style="font-size:16px;font-weight:600">${name}</div>
-          <div style="font-size:13px;color:var(--text-muted)">Profile details not available</div>
-        </div>
-      </div><p style="font-size:13px;color:var(--text-muted)">Full profile details could not be loaded. The worker may not be in the workers table yet.</p>`;
-    document.getElementById('modal-contact-btn').onclick = () => toast('Contact feature requires full profile');
-    document.getElementById('modal-save-btn').onclick    = () => toast('Save feature requires full profile');
-    return;
-  }
-
-  const name = w.full_name||w.name||'Worker';
-  const role = w.role||'—';
-  const loc  = w.location||w.area||'—';
-  const sal  = formatSalary(w.salary_min,w.salary_max);
-  const [bg,fg] = avatarColor(name);
-  const isV = w.is_verified||w.verified;
-
-  document.getElementById('modal-content').innerHTML = `
-    <div class="profile-section">
-      <div class="profile-avatar-lg" style="background:${bg};color:${fg}">${initials(name)}</div>
-      <div>
-        <div style="font-size:16px;font-weight:600">${name}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${role}</div>
-        ${isV ? '<span class="badge badge-verified" style="margin-top:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-pending">Pending</span>'}
-      </div>
-    </div>
-    <div class="detail-grid">
-      <div class="detail-item"><label>Location</label><span>${loc}</span></div>
-      <div class="detail-item"><label>Salary</label><span>KES ${sal}</span></div>
-      <div class="detail-item"><label>Experience</label><span>${w.experience_years ? w.experience_years+' years' : '—'}</span></div>
-      <div class="detail-item"><label>Languages</label><span>${Array.isArray(w.languages) ? w.languages.join(', ') : (w.languages||'English, Swahili')}</span></div>
-      <div class="detail-item"><label>Availability</label><span>${w.availability||'Immediate'}</span></div>
-      <div class="detail-item"><label>Live-in</label><span>${w.live_in ? 'Yes — available' : 'No'}</span></div>
-    </div>
-    ${w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm)"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${w.bio}</div>` : ''}
-  `;
-
-  document.getElementById('modal-contact-btn').onclick = () => contactWorker(w.id, name);
-  document.getElementById('modal-save-btn').onclick    = () => saveWorker(w.id, name);
-}
-
-/* ══════════════════════════════════════
-   CONTACT / SAVE
-══════════════════════════════════════ */
-async function contactWorker(workerId, workerName) {
-  if (!EMPLOYER_ID) { toast('Please log in to contact workers', 'error'); return; }
-  const { error } = await db.from('contacts').insert({ employer_id: EMPLOYER_ID, worker_id: workerId, contacted_at: new Date().toISOString() });
-  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'contacted', description: `You contacted ${workerName}`, worker_id: workerId }).catch(()=>{});
-  toast(error ? `Could not send: ${error.message}` : `Contact request sent to ${workerName}`);
-  closeModal('worker-modal');
-  loadStats(); loadActivity();
-}
-
-async function saveWorker(workerId, workerName) {
-  if (!EMPLOYER_ID) { toast('Please log in to save workers', 'error'); return; }
-  const { error } = await db.from('saved_workers').upsert({ employer_id: EMPLOYER_ID, worker_id: workerId }, { onConflict: 'employer_id,worker_id' });
-  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'saved', description: `Saved ${workerName} to your shortlist`, worker_id: workerId }).catch(()=>{});
-  toast(error ? `Could not save: ${error.message}` : `${workerName} saved to your list`);
-  _loadedModals['saved-modal'] = false;
-  loadStats(); loadSavedWorkers();
-}
-
-/* ══════════════════════════════════════
-   QUICK SEARCH (inline)
-══════════════════════════════════════ */
-async function runSearch() {
-  const role = document.getElementById('search-role').value;
-  const loc  = document.getElementById('search-location').value;
-  const sal  = document.getElementById('search-salary').value;
-  let min, max;
-  if (sal) [min, max] = sal.split('-').map(Number);
-
-  if (EMPLOYER_ID) {
-    await db.from('searches').insert({ employer_id: EMPLOYER_ID, role: role||null, location: loc||null, searched_at: new Date().toISOString() }).catch(()=>{});
-    await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'searched', description: `Searched for ${role||'workers'}${loc?' in '+loc:''}` }).catch(()=>{});
-  }
-  loadWorkers({ role, location: loc, salaryMin: min, salaryMax: max });
-  loadStats();
-}
-
-async function loadWorkers(filters) {
-  const panel = document.getElementById('results-panel');
-  const tbody = document.getElementById('results-body');
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Searching…</td></tr>';
-
-  let q = db.from('workers').select('*').limit(20);
-  if (filters?.role)      q = q.ilike('role', `%${filters.role}%`);
-  if (filters?.location)  q = q.ilike('location', `%${filters.location}%`);
-  if (filters?.salaryMin) q = q.gte('salary_min', filters.salaryMin);
-  if (filters?.salaryMax) q = q.lte('salary_max', filters.salaryMax);
-
-  const { data, error } = await q;
-  if (error || !data?.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No workers found matching your criteria.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.map(w => {
-    const name = w.full_name||w.name||'Unknown';
-    const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
-    return `<tr>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
-        <strong>${name}</strong></div></td>
-      <td>${w.role||'—'}</td>
-      <td>${w.location||'—'}</td>
-      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
-      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
-      <td><div class="action-row">
-        <button class="action-btn primary" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
-        <button class="action-btn" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
-        <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
-/* Hide .hide-xs on very small screens */
-(function() {
-  const style = document.createElement('style');
-  style.textContent = '@media(max-width:420px){.hide-xs{display:none}}';
-  document.head.appendChild(style);
-})();
-
-/* ══ Quick Actions grid fix ══ */
-(function(){
-  const style = document.createElement('style');
-  style.textContent = '.quick-actions{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:8px!important}@media(max-width:640px){.quick-actions{grid-template-columns:repeat(2,1fr)!important}}.qa-btn{flex-direction:column!important;gap:4px!important;padding:14px 8px!important;font-size:12px!important;border-radius:12px!important;border:1.5px solid transparent!important;background:#fff!important}';
-  document.head.appendChild(style);
-})();
-
-/* ══ Tawk.to ══ */
-function openTawkChat() {
-  if (window.Tawk_API && typeof window.Tawk_API.toggle === 'function') {
-    window.Tawk_API.toggle();
-  } else {
-    window.open('https://tawk.to/chat/6a0adad3c744531c43732c65/1jot6ditn','_blank');
-  }
-}
-
-/* ══ Employer Payment Modal ══ */
-function openEmpPayModal() {
-  document.getElementById('emp-pay-modal').classList.add('open');
-}
-function openEmpTCModal() {
-  document.getElementById('emp-tc-modal').classList.add('open');
-}
-</script>
-
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- ══ POST JOB MODAL ══ -->
 <div class="modal-overlay" id="post-job-modal" onclick="if(event.target===this)closeModal('post-job-modal')">
   <div class="modal modal-lg">
     <div class="modal-drag"></div>
@@ -1614,7 +1073,7 @@ function openEmpTCModal() {
       <button class="modal-close" onclick="closeModal('post-job-modal')"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="post-job-form">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="form-group" style="grid-column:1/-1">
           <label>Job Title *</label>
           <input type="text" class="form-control" id="pj-title" placeholder="e.g. Experienced Nanny Needed">
@@ -1670,7 +1129,10 @@ function openEmpTCModal() {
   </div>
 </div>
 
-<!-- ══ EMPLOYER PAYMENT MODAL ══ -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL: PAYMENT
+════════════════════════════════════════════ -->
 <div class="modal-overlay" id="emp-pay-modal" onclick="if(event.target===this)closeModal('emp-pay-modal')">
   <div class="modal">
     <div class="modal-drag"></div>
@@ -1683,33 +1145,28 @@ function openEmpTCModal() {
         <div style="font-size:2rem;font-weight:700;color:var(--brand);font-family:'Playfair Display',serif">KES 1,000</div>
         <div style="font-size:12.5px;color:var(--text-muted);margin-top:3px">One-Time Employer Access Fee</div>
       </div>
-      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 13px;font-size:12.5px;color:#92400E;margin-bottom:1rem;display:flex;gap:8px">
-        <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;margin-top:1px"></i>
-        <div>
-          <strong>Non-Refundable.</strong> This fee unlocks full access to worker profiles, contact details, and messaging.
-          <div style="margin-top:8px;display:flex;align-items:flex-start;gap:7px">
-            <input type="checkbox" id="emp-tc-agree" style="margin-top:2px;accent-color:var(--brand);flex-shrink:0">
-            <label for="emp-tc-agree" style="cursor:pointer">I agree to the <a href="#" onclick="openEmpTCModal();event.preventDefault()" style="color:#92400E;font-weight:600;text-decoration:underline">Terms & Conditions</a>. I understand this payment is non-refundable.</label>
-          </div>
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 13px;font-size:12.5px;color:#92400E;margin-bottom:1rem">
+        <strong>Non-Refundable.</strong> Unlocks full access to worker profiles, contact details, and messaging.
+        <div style="margin-top:8px;display:flex;align-items:flex-start;gap:7px">
+          <input type="checkbox" id="emp-tc-agree" style="margin-top:2px;accent-color:var(--brand);flex-shrink:0">
+          <label for="emp-tc-agree" style="cursor:pointer">I agree to the <a href="#" onclick="openEmpTCModal();event.preventDefault()" style="color:#92400E;font-weight:600;text-decoration:underline">Terms & Conditions</a>. I understand this payment is non-refundable.</label>
         </div>
       </div>
-      <div style="margin-bottom:.8rem">
-        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px">SELECT PAYMENT METHOD</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.9rem">
-          <div id="emp-mpesa-btn" onclick="empSelectMethod('mpesa',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
-            <div style="font-weight:700;font-size:13px;color:#00a651">M-Pesa</div>
-            <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
-          </div>
-          <div id="emp-airtel-btn" onclick="empSelectMethod('airtel',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
-            <div style="font-weight:700;font-size:13px;color:#e3000b">Airtel Money</div>
-            <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
-          </div>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.5rem">SELECT PAYMENT METHOD</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.9rem">
+        <div id="emp-mpesa-btn" onclick="empSelectMethod('mpesa',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
+          <div style="font-weight:700;font-size:13px;color:#00a651">M-Pesa</div>
+          <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
         </div>
-        <div id="emp-phone-wrap" style="display:none">
-          <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px"><i class="bi bi-phone"></i> MOBILE NUMBER</label>
-          <input type="tel" id="emp-pay-phone" class="form-control" placeholder="+254 7XX XXX XXX" style="border-radius:8px;padding:10px 13px;font-size:13.5px;border:1.5px solid var(--border);width:100%;outline:none">
-          <p style="font-size:11px;color:var(--text-muted);margin-top:4px"><i class="bi bi-info-circle"></i> You'll receive an STK prompt on this number</p>
+        <div id="emp-airtel-btn" onclick="empSelectMethod('airtel',this)" style="border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:.2s">
+          <div style="font-weight:700;font-size:13px;color:#e3000b">Airtel Money</div>
+          <div style="font-size:11px;color:var(--text-muted)">STK Push</div>
         </div>
+      </div>
+      <div id="emp-phone-wrap" style="display:none">
+        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px"><i class="bi bi-phone"></i> MOBILE NUMBER</label>
+        <input type="tel" id="emp-pay-phone" class="form-control" placeholder="+254 7XX XXX XXX">
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px"><i class="bi bi-info-circle"></i> You'll receive an STK prompt on this number</p>
       </div>
       <div id="emp-pay-msg" style="display:none;padding:10px 13px;border-radius:8px;font-size:13px;margin-top:.5rem"></div>
     </div>
@@ -1722,7 +1179,10 @@ function openEmpTCModal() {
   </div>
 </div>
 
-<!-- ══ EMPLOYER RECEIPT MODAL ══ -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL: RECEIPT
+════════════════════════════════════════════ -->
 <div class="modal-overlay" id="emp-receipt-modal" onclick="if(event.target===this)closeModal('emp-receipt-modal')">
   <div class="modal" style="max-width:420px">
     <div class="modal-drag"></div>
@@ -1751,7 +1211,10 @@ function openEmpTCModal() {
   </div>
 </div>
 
-<!-- ══ EMPLOYER TERMS & CONDITIONS MODAL ══ -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL: TERMS & CONDITIONS
+════════════════════════════════════════════ -->
 <div class="modal-overlay" id="emp-tc-modal" onclick="if(event.target===this)closeModal('emp-tc-modal')">
   <div class="modal modal-lg">
     <div class="modal-drag"></div>
@@ -1759,38 +1222,26 @@ function openEmpTCModal() {
       <span class="modal-title"><i class="bi bi-file-earmark-text"></i> Terms & Conditions — Employers</span>
       <button class="modal-close" onclick="closeModal('emp-tc-modal')"><i class="bi bi-x-lg"></i></button>
     </div>
-    <div class="modal-body" style="max-height:60vh;overflow-y:auto;font-size:13px;line-height:1.8;color:#1A2E24">
+    <div class="modal-body" style="max-height:60vh;overflow-y:auto;font-size:13px;line-height:1.8">
       <p style="font-size:11.5px;color:var(--text-muted);margin-bottom:1rem">Last updated: <strong id="emp-tc-date"></strong> | Sounds Care, Nairobi, Kenya</p>
-
       <h4 style="color:var(--brand);margin-bottom:.3rem">1. Platform Services</h4>
-      <p style="margin-bottom:1rem">Sounds Care connects employers with verified domestic workers in Kenya. We act as an <strong>introduction and placement agency only</strong>. The employment contract is solely between the employer and worker.</p>
-
+      <p style="margin-bottom:1rem">Sounds Care connects employers with verified domestic workers in Kenya. We act as an <strong>introduction and placement agency only</strong>.</p>
       <h4 style="color:var(--brand);margin-bottom:.3rem">2. Employer Access Fee</h4>
-      <p style="margin-bottom:.5rem">Employers pay a <strong>one-time, non-refundable platform access fee of KES 1,000</strong>. This fee grants:</p>
-      <ul style="margin-left:1.2rem;margin-bottom:1rem">
-        <li>Full access to verified worker profiles including contact details</li>
-        <li>Direct messaging with workers and admin support</li>
-        <li>Job posting capability (up to 5 active posts per cycle)</li>
-        <li>Contract generation tools and placement assistance</li>
-      </ul>
+      <p style="margin-bottom:.5rem">Employers pay a <strong>one-time, non-refundable platform access fee of KES 1,000</strong>. This fee grants: full access to verified worker profiles, direct messaging, job posting (up to 5 active posts), and contract generation tools.</p>
       <div style="background:#FEECEC;border:1px solid #FAC8C8;border-radius:8px;padding:10px 13px;margin-bottom:1rem;font-size:12.5px;color:#8B1A1A">
-        <i class="bi bi-exclamation-triangle-fill"></i> <strong>This fee is strictly non-refundable</strong> once payment is confirmed, regardless of whether a suitable worker is found or a placement is made.
+        <i class="bi bi-exclamation-triangle-fill"></i> <strong>This fee is strictly non-refundable</strong> once payment is confirmed.
       </div>
-
       <h4 style="color:var(--brand);margin-bottom:.3rem">3. Replacement Guarantee</h4>
-      <p style="margin-bottom:1rem">If a placed worker leaves within the first <strong>30 days</strong>, Sounds Care will provide one free replacement, subject to written notice from the employer within 7 days of the worker's departure. No additional placement fee applies for the replacement.</p>
-
+      <p style="margin-bottom:1rem">If a placed worker leaves within the first <strong>30 days</strong>, Sounds Care will provide one free replacement, subject to written notice within 7 days.</p>
       <h4 style="color:var(--brand);margin-bottom:.3rem">4. Employer Obligations</h4>
       <ul style="margin-left:1.2rem;margin-bottom:1rem">
         <li>Pay workers agreed salary on time and in full.</li>
-        <li>Comply with the Kenya Employment Act 2007 regarding leave, notice periods, and statutory deductions (NHIF/NSSF).</li>
+        <li>Comply with the Kenya Employment Act 2007.</li>
         <li>Treat all domestic workers with dignity and respect.</li>
         <li>Not share worker contact details with third parties without consent.</li>
       </ul>
-
       <h4 style="color:var(--brand);margin-bottom:.3rem">5. Liability Limitation</h4>
-      <p style="margin-bottom:1rem">Sounds Care is not liable for any losses, damages, or disputes arising from the employment relationship. All workers are background-checked to reasonable standards but we cannot guarantee conduct, character, or performance. Employers are encouraged to conduct their own interviews and trial periods.</p>
-
+      <p style="margin-bottom:1rem">Sounds Care is not liable for any losses or disputes arising from the employment relationship.</p>
       <h4 style="color:var(--brand);margin-bottom:.3rem">6. Governing Law</h4>
       <p>These terms are governed by Kenyan law. Disputes shall be resolved through mediation first, then the courts of Kenya.</p>
       <p style="margin-top:1rem;font-size:12px;color:var(--text-muted)">Contact: info@sounds.co.ke | www.sounds.co.ke</p>
@@ -1802,7 +1253,10 @@ function openEmpTCModal() {
   </div>
 </div>
 
-<!-- ══ EMPLOYER CONTRACT MODAL ══ -->
+
+<!-- ═══════════════════════════════════════════
+     MODAL: CONTRACT
+════════════════════════════════════════════ -->
 <div class="modal-overlay" id="emp-contract-modal" onclick="if(event.target===this)closeModal('emp-contract-modal')">
   <div class="modal modal-lg">
     <div class="modal-drag"></div>
@@ -1813,11 +1267,11 @@ function openEmpTCModal() {
     <div class="modal-body">
       <div style="background:var(--brand-light);border:1px solid var(--brand-mid);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--brand);margin-bottom:1rem;display:flex;gap:8px">
         <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i>
-        <span>Fill in the details below. A professional PDF contract with the <strong>Sounds Care official stamp</strong> and today's date will be generated immediately.</span>
+        <span>A professional PDF contract with the <strong>Sounds Care official stamp</strong> will be generated immediately.</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="form-group"><label>Worker Full Name *</label><input type="text" class="form-control" id="ec-worker-name" placeholder="Worker's full name"></div>
-        <div class="form-group"><label>Worker ID / Passport *</label><input type="text" class="form-control" id="ec-worker-id" placeholder="e.g. 12345678"></div>
+        <div class="form-group"><label>Worker ID / Passport</label><input type="text" class="form-control" id="ec-worker-id" placeholder="e.g. 12345678"></div>
         <div class="form-group"><label>Worker Phone</label><input type="tel" class="form-control" id="ec-worker-phone" placeholder="07XX XXX XXX"></div>
         <div class="form-group"><label>Worker Location</label><input type="text" class="form-control" id="ec-worker-location" placeholder="e.g. Westlands, Nairobi"></div>
         <div class="form-group"><label>Employer / Family Name *</label><input type="text" class="form-control" id="ec-employer-name" placeholder="Your name / company"></div>
@@ -1841,7 +1295,7 @@ function openEmpTCModal() {
         </div>
         <div class="form-group"><label>Start Date *</label><input type="date" id="ec-start-date" class="form-control"></div>
         <div class="form-group"><label>End Date (leave blank if permanent)</label><input type="date" id="ec-end-date" class="form-control"></div>
-        <div class="form-group" style="grid-column:1/-1"><label>Duties & Responsibilities</label><textarea class="form-control" id="ec-duties" rows="3" style="resize:vertical" placeholder="e.g. Cooking, childcare, cleaning, shopping…"></textarea></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Duties & Responsibilities</label><textarea class="form-control" id="ec-duties" rows="3" style="resize:vertical" placeholder="e.g. Cooking, childcare, cleaning…"></textarea></div>
         <div class="form-group" style="grid-column:1/-1"><label>Additional Terms / Notes</label><textarea class="form-control" id="ec-notes" rows="2" style="resize:vertical" placeholder="Leave days, probation period, special agreements…"></textarea></div>
       </div>
     </div>
@@ -1852,61 +1306,881 @@ function openEmpTCModal() {
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════ -->
 <script>
-// T&C date
-document.addEventListener('DOMContentLoaded', function(){
-  var el = document.getElementById('emp-tc-date');
-  if (el) el.textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+/* ── SUPABASE ── */
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let EMPLOYER_ID  = null;
+let CURRENT_USER = null;
+let CURRENT_PROFILE = null;
+let _allFindWorkers   = [];
+let _allJobseekers    = [];
+let _allNewEmployers  = [];
+
+/* ── HELPERS ── */
+const AVATAR_COLORS = [
+  ['#C9E8D4','#1B6B45'],['#D6CBEE','#6B52C8'],['#FAEEDA','#7A5010'],
+  ['#B5D4F4','#1A6BB5'],['#F5C4B3','#993C1D'],['#F4C0D1','#993556'],
+];
+function avatarColor(name) {
+  let h = 0; for (let c of (name||'')) h = (h*31+c.charCodeAt(0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+function initials(name) {
+  return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+function formatSalary(min,max) {
+  if (!min && !max) return '—';
+  const f = n => n >= 1000 ? Math.round(n/1000)+'k' : n;
+  if (min && max) return `${f(min)}–${f(max)}`;
+  return min ? `${f(min)}+` : `Up to ${f(max)}`;
+}
+function timeAgo(ts) {
+  const d = Math.floor((Date.now()-new Date(ts))/1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60)+'m ago';
+  if (d < 86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
+}
+
+/* ── TOAST ── */
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.querySelector('i').className = type==='error' ? 'bi bi-exclamation-circle-fill' : 'bi bi-check-circle-fill';
+  t.className = type==='error' ? 'error show' : 'show';
+  setTimeout(()=>t.className='', 2800);
+}
+
+/* ── SIDEBAR ── */
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); document.body.style.overflow='hidden'; }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); document.body.style.overflow=''; }
+function setActive(el)  { document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active')); el.classList.add('active'); }
+
+/* ── MODAL SYSTEM ── */
+const _loadedModals = {};
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (!_loadedModals[id]) {
+    _loadedModals[id] = true;
+    if (id === 'find-modal')            loadFindWorkers();
+    if (id === 'saved-modal')           loadSavedModal();
+    if (id === 'messages-modal')        loadMessagesModal();
+    if (id === 'all-jobseekers-modal')  loadAllJobseekers();
+    if (id === 'new-employers-modal')   loadNewEmployersModal();
+    if (id === 'my-profile-modal')      loadMyProfile();
+  }
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function reopenModal(id) { _loadedModals[id] = false; openModal(id); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    document.body.style.overflow = '';
+  }
 });
+
+/* ══════════════════════════════════════
+   AUTH + BOOT
+══════════════════════════════════════ */
+(async function init() {
+  const h = new Date().getHours();
+  document.getElementById('greeting-time').textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+
+  const { data: { user } } = await db.auth.getUser();
+  CURRENT_USER = user;
+
+  if (user) {
+    /* Load profile from profiles table */
+    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
+    /* Load employer record */
+    const { data: employer } = await db.from('employers').select('*').eq('user_id', user.id).single();
+
+    CURRENT_PROFILE = profile;
+    if (employer) EMPLOYER_ID = employer.id;
+
+    const name = profile?.full_name || user.email?.split('@')[0] || 'Employer';
+    const ini  = initials(name);
+    const [bg,fg] = avatarColor(name);
+
+    document.getElementById('welcome-name').textContent  = `Welcome back, ${name.split(' ')[0]} 👋`;
+    document.getElementById('topbar-title').textContent  = `${name.split(' ')[0]}'s Dashboard`;
+    document.getElementById('sidebar-name').textContent  = name;
+    document.getElementById('sidebar-av').textContent    = ini;
+    document.getElementById('topbar-av').textContent     = ini;
+    document.getElementById('sidebar-av').style.background = bg;
+    document.getElementById('sidebar-av').style.color      = fg;
+    document.getElementById('topbar-av').style.background  = `linear-gradient(135deg,${bg},${fg})`;
+  } else {
+    document.getElementById('welcome-name').textContent = 'Welcome to Sounds Care 👋';
+  }
+
+  await Promise.all([
+    loadStats(), loadSavedWorkers(), loadHires(),
+    loadActivity(), loadNewEmployersPreview(), loadJobseekersPreview(),
+    loadNewRegTicker()
+  ]);
+})();
+
+/* ══════════════════════════════════════
+   STATS
+══════════════════════════════════════ */
+async function loadStats() {
+  if (!EMPLOYER_ID) {
+    ['stat-searches','stat-saved','stat-contacted','stat-hires'].forEach(id => document.getElementById(id).textContent = '0');
+    return;
+  }
+  const [a,b,c,d] = await Promise.allSettled([
+    db.from('searches').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('saved_workers').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('contacts').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('hires').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID).eq('status','active'),
+  ]);
+  document.getElementById('stat-searches').textContent  = a.status==='fulfilled' ? (a.value.count??0) : '—';
+  document.getElementById('stat-saved').textContent     = b.status==='fulfilled' ? (b.value.count??0) : '—';
+  document.getElementById('stat-contacted').textContent = c.status==='fulfilled' ? (c.value.count??0) : '—';
+  document.getElementById('stat-hires').textContent     = d.status==='fulfilled' ? (d.value.count??0) : '—';
+}
+
+/* ══════════════════════════════════════
+   TICKER — NEW JOB SEEKERS
+══════════════════════════════════════ */
+async function loadNewRegTicker() {
+  const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+  const { data } = await db.from('workers').select('id,full_name,name,role,created_at')
+    .gte('created_at', since).order('created_at',{ascending:false}).limit(20);
+  if (!data?.length) return;
+
+  document.getElementById('reg-ticker').style.display = 'flex';
+  // Duplicate items for seamless loop
+  const items = [...data, ...data].map(w => {
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    return `<span class="ticker-item" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
+      <span class="ticker-av" style="background:${bg};color:${fg}">${initials(name)}</span>
+      <strong>${name}</strong> · ${w.role||'Worker'}
+    </span>`;
+  }).join('');
+  document.getElementById('ticker-inner').innerHTML = items;
+}
+
+/* ══════════════════════════════════════
+   SAVED WORKERS (inline)
+══════════════════════════════════════ */
+async function loadSavedWorkers() {
+  const tbody = document.getElementById('saved-body');
+  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>';
+  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
+  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
+  tbody.innerHTML = data.map(row => {
+    const w = row.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td style="color:var(--text-muted)">${w.role||'—'}</td>
+      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'check-circle-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
+      <td><button class="action-btn primary" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   HIRES (inline)
+══════════════════════════════════════ */
+async function loadHires() {
+  const tbody = document.getElementById('hires-body');
+  if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires yet.</td></tr>'; return; }
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="3"><span class="spinner"></span>Loading…</td></tr>';
+  const { data, error } = await db.from('hires').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
+  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>'; return; }
+  tbody.innerHTML = data.map(h => {
+    const w = h.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    const st = h.status||'active';
+    const cls = st==='active'?'hire-active':st==='pending'?'hire-pending':'hire-ended';
+    const dotCls = st==='active'?'dot-green':st==='pending'?'dot-amber':'dot-gray';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td style="color:var(--text-muted)">${w.role||h.role||'—'}</td>
+      <td><span class="hire-badge ${cls}"><span class="dot ${dotCls}"></span> ${st.charAt(0).toUpperCase()+st.slice(1)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   ACTIVITY
+══════════════════════════════════════ */
+async function loadActivity() {
+  const div = document.getElementById('activity-body');
+  if (!EMPLOYER_ID) { div.innerHTML = '<div class="empty-state"><i class="bi bi-clock-history"></i><p>No activity yet. Start by searching for workers.</p></div>'; return; }
+  const { data, error } = await db.from('activity_log').select('*').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(10);
+  if (error || !data?.length) {
+    div.innerHTML = `<div class="activity-item"><div class="act-icon" style="background:var(--brand-light)"><i class="bi bi-search" style="color:var(--brand);font-size:14px"></i></div><div><div class="activity-text">Get started by searching for workers</div><div class="activity-time">Now</div></div></div>`;
+    return;
+  }
+  const iconMap = { saved:'bi-heart-fill', contacted:'bi-chat-fill', hired:'bi-person-check-fill', searched:'bi-search', viewed:'bi-eye-fill' };
+  const bgMap   = { saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)' };
+  div.innerHTML = data.map(a => {
+    const icon = iconMap[a.action_type]||'bi-activity';
+    const bg   = bgMap[a.action_type]||'var(--bg)';
+    return `<div class="activity-item">
+      <div class="act-icon" style="background:${bg}"><i class="bi ${icon}" style="color:var(--brand);font-size:14px"></i></div>
+      <div><div class="activity-text">${a.description||a.action_type}</div><div class="activity-time">${timeAgo(a.created_at)}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   NEWLY REGISTERED EMPLOYERS (inline preview)
+══════════════════════════════════════ */
+async function loadNewEmployersPreview() {
+  const wrap = document.getElementById('new-employers-preview');
+  const since = new Date(Date.now() - 14*24*60*60*1000).toISOString();
+
+  // Try employers table first, fallback to profiles with role=employer
+  let data = null;
+  const { data: empData } = await db.from('employers').select('*, profiles(full_name,email,phone,location,avatar_url)')
+    .gte('created_at', since).order('created_at',{ascending:false}).limit(6);
+  data = empData;
+
+  if (!data?.length) {
+    // Fallback: query profiles with role column
+    const { data: profileData } = await db.from('profiles')
+      .select('*').eq('role','employer').gte('created_at', since)
+      .order('created_at',{ascending:false}).limit(6);
+    data = profileData;
+  }
+
+  if (!data?.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="bi bi-building"></i><p>No new employer registrations in the last 2 weeks.</p></div>';
+    return;
+  }
+
+  // Update badge
+  if (data.length > 0) {
+    const badge = document.getElementById('new-emp-badge');
+    badge.textContent = data.length > 9 ? '9+' : data.length;
+    badge.style.display = 'inline';
+  }
+
+  wrap.innerHTML = `<div class="three-col">` + data.map(row => {
+    const p = row.profiles || row;
+    const name = p.full_name || row.company_name || 'Employer';
+    const loc  = p.location || row.location || 'Kenya';
+    const [bg,fg] = avatarColor(name);
+    return `<div class="new-emp-card">
+      <div class="new-emp-av" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="new-emp-name">${name}</div>
+        <div class="new-emp-meta"><i class="bi bi-geo-alt" style="font-size:10px"></i> ${loc}</div>
+        <div class="new-emp-time"><i class="bi bi-clock" style="font-size:10px"></i> ${timeAgo(row.created_at)}</div>
+      </div>
+      <span class="badge badge-new" style="align-self:flex-start;font-size:10px">New</span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+/* ══════════════════════════════════════
+   JOB SEEKERS PREVIEW (inline table)
+══════════════════════════════════════ */
+async function loadJobseekersPreview() {
+  const tbody = document.getElementById('jobseekers-preview-body');
+  const { data, error } = await db.from('workers').select('*').order('created_at',{ascending:false}).limit(8);
+  if (error || !data?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No job seekers found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(w => {
+    const name = w.full_name||w.name||'Unknown';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td>${w.role||'—'}</td>
+      <td>${w.location||'—'}</td>
+      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td>${fmtDate(w.created_at)}</td>
+      <td><div class="action-row">
+        <button class="action-btn primary" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
+        <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   ALL JOB SEEKERS MODAL
+══════════════════════════════════════ */
+async function loadAllJobseekers() {
+  const tbody = document.getElementById('all-js-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr>';
+  const { data, error } = await db.from('workers').select('*').order('created_at',{ascending:false}).limit(200);
+  _allJobseekers = data || [];
+  document.getElementById('js-count-label').textContent = `${_allJobseekers.length} job seeker${_allJobseekers.length!==1?'s':''} registered`;
+  renderJobseekers(_allJobseekers);
+}
+
+function renderJobseekers(list) {
+  const tbody = document.getElementById('all-js-tbody');
+  if (!list?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">No job seekers found.</td></tr>'; return; }
+  tbody.innerHTML = list.map(w => {
+    const name = w.full_name||w.name||'Unknown';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td>${w.role||'—'}</td>
+      <td>${w.location||'—'}</td>
+      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
+      <td style="color:var(--text-muted)">${fmtDate(w.created_at)}</td>
+      <td><div class="action-row">
+        <button class="action-btn primary" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
+        <button class="action-btn" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+        <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterJobseekers() {
+  const q    = (document.getElementById('js-search')?.value||'').toLowerCase();
+  const role = (document.getElementById('js-role-filter')?.value||'').toLowerCase();
+  let list = _allJobseekers;
+  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
+  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
+  document.getElementById('js-count-label').textContent = `${list.length} result${list.length!==1?'s':''}`;
+  renderJobseekers(list);
+}
+
+/* ══════════════════════════════════════
+   NEW EMPLOYERS MODAL
+══════════════════════════════════════ */
+async function loadNewEmployersModal() {
+  const tbody = document.getElementById('new-emp-tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>';
+
+  let data = null;
+  const { data: empData } = await db.from('employers')
+    .select('id,created_at,company_name,location,profiles(full_name,email,phone,location),employer_payments(status)')
+    .order('created_at',{ascending:false}).limit(100);
+  data = empData;
+
+  if (!data?.length) {
+    // fallback: profiles with employer role
+    const { data: pData } = await db.from('profiles').select('*').eq('role','employer')
+      .order('created_at',{ascending:false}).limit(100);
+    data = pData;
+  }
+
+  _allNewEmployers = data || [];
+
+  if (!data?.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No employer registrations found.</td></tr>';
+    return;
+  }
+  renderNewEmployers(_allNewEmployers);
+}
+
+function renderNewEmployers(list) {
+  const tbody = document.getElementById('new-emp-tbody');
+  if (!list?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No results.</td></tr>'; return; }
+  tbody.innerHTML = list.map(row => {
+    const p = row.profiles || row;
+    const name  = p.full_name || row.company_name || 'Employer';
+    const email = p.email || row.email || '—';
+    const phone = p.phone || row.phone || '—';
+    const loc   = p.location || row.location || '—';
+    const pmt   = row.employer_payments;
+    const hasPaid = Array.isArray(pmt) ? pmt.some(x=>x.status==='paid') : false;
+    const [bg,fg] = avatarColor(name);
+    const isNew = (Date.now() - new Date(row.created_at)) < 7*24*60*60*1000;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <div>
+          <strong>${name}</strong>
+          ${isNew ? ' <span class="badge badge-new" style="font-size:9px;padding:1px 6px">New</span>' : ''}
+        </div>
+      </div></td>
+      <td style="color:var(--text-muted)">${email}</td>
+      <td>${phone}</td>
+      <td>${loc}</td>
+      <td style="color:var(--text-muted)">${fmtDate(row.created_at)}</td>
+      <td>
+        <span style="font-size:11px;font-weight:600;color:${hasPaid?'var(--brand)':'#7A5010'}">
+          <i class="bi bi-${hasPaid?'check-circle-fill':'clock'}"></i> ${hasPaid?'Paid':'Pending'}
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterNewEmployers() {
+  const q = (document.getElementById('ne-search')?.value||'').toLowerCase();
+  let list = _allNewEmployers;
+  if (q) list = list.filter(row => {
+    const p = row.profiles||row;
+    return (p.full_name||row.company_name||'').toLowerCase().includes(q)
+        || (p.email||row.email||'').toLowerCase().includes(q);
+  });
+  renderNewEmployers(list);
+}
+
+/* ══════════════════════════════════════
+   MY PROFILE MODAL
+══════════════════════════════════════ */
+async function loadMyProfile() {
+  const banner = document.getElementById('my-profile-banner');
+  const body   = document.getElementById('my-profile-body');
+  const saveBtn = document.getElementById('profile-save-btn');
+
+  if (!CURRENT_USER) {
+    body.innerHTML = '<div class="empty-state"><i class="bi bi-person-x"></i><p>Please log in to view your profile.</p></div>';
+    return;
+  }
+
+  // Re-fetch fresh data
+  const { data: profile } = await db.from('profiles').select('*').eq('id', CURRENT_USER.id).single();
+  const { data: employer } = EMPLOYER_ID
+    ? await db.from('employers').select('*').eq('id', EMPLOYER_ID).single()
+    : { data: null };
+
+  const name  = profile?.full_name || CURRENT_USER.email?.split('@')[0] || 'Employer';
+  const email = CURRENT_USER.email || '—';
+  const phone = profile?.phone || '';
+  const loc   = profile?.location || '';
+  const bio   = profile?.bio || '';
+  const [bg,fg] = avatarColor(name);
+
+  // Banner
+  banner.innerHTML = `
+    <div class="profile-header-banner" style="border-radius:var(--radius) var(--radius) 0 0">
+      <div class="profile-av-wrap" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700">${name}</div>
+      <div style="font-size:12.5px;color:rgba(255,255,255,.65);margin-top:3px"><i class="bi bi-envelope" style="font-size:11px"></i> ${email}</div>
+      <div style="margin-top:.75rem;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,.12);color:#fff;font-size:11px;padding:3px 10px;border-radius:50px;border:1px solid rgba(255,255,255,.2)"><i class="bi bi-building"></i> Employer Account</span>
+        ${profile?.is_verified ? '<span style="background:rgba(34,197,94,.2);color:#d1fae5;font-size:11px;padding:3px 10px;border-radius:50px;border:1px solid rgba(34,197,94,.3)"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+      </div>
+    </div>`;
+
+  saveBtn.style.display = 'inline-flex';
+
+  body.innerHTML = `
+    <div class="section-divider">Personal Information</div>
+    <div class="profile-row">
+      <div class="profile-field">
+        <label>Full Name</label>
+        <input type="text" id="pf-name" value="${name}" placeholder="Your full name">
+      </div>
+      <div class="profile-field">
+        <label>Email</label>
+        <input type="email" id="pf-email" value="${email}" placeholder="email@example.com" disabled style="background:var(--bg);opacity:.7">
+      </div>
+      <div class="profile-field">
+        <label>Phone Number</label>
+        <input type="tel" id="pf-phone" value="${phone}" placeholder="+254 7XX XXX XXX">
+      </div>
+      <div class="profile-field">
+        <label>Location / Neighbourhood</label>
+        <input type="text" id="pf-location" value="${loc}" placeholder="e.g. Karen, Nairobi">
+      </div>
+    </div>
+    ${employer ? `
+    <div class="section-divider">Company / Household</div>
+    <div class="profile-row">
+      <div class="profile-field">
+        <label>Company / Household Name</label>
+        <input type="text" id="pf-company" value="${employer.company_name||''}" placeholder="e.g. Smith Household">
+      </div>
+      <div class="profile-field">
+        <label>Company Address</label>
+        <input type="text" id="pf-company-addr" value="${employer.address||''}" placeholder="e.g. Karen Road, Nairobi">
+      </div>
+    </div>` : ''}
+    <div class="section-divider">About</div>
+    <div class="profile-field">
+      <label>Bio / Notes</label>
+      <textarea id="pf-bio" rows="3" style="resize:vertical">${bio}</textarea>
+    </div>
+    <div class="section-divider">Account</div>
+    <div class="profile-row">
+      <div class="profile-field">
+        <label>User ID</label>
+        <span style="font-size:12px;color:var(--text-muted);word-break:break-all">${CURRENT_USER.id}</span>
+      </div>
+      <div class="profile-field">
+        <label>Member Since</label>
+        <span>${fmtDate(CURRENT_USER.created_at||profile?.created_at)}</span>
+      </div>
+    </div>
+    <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border)">
+      <button class="btn btn-danger btn-sm" onclick="signOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+    </div>
+  `;
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('profile-save-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  const updates = {
+    full_name: document.getElementById('pf-name')?.value.trim(),
+    phone:     document.getElementById('pf-phone')?.value.trim(),
+    location:  document.getElementById('pf-location')?.value.trim(),
+    bio:       document.getElementById('pf-bio')?.value.trim(),
+  };
+
+  const { error } = await db.from('profiles').update(updates).eq('id', CURRENT_USER.id);
+
+  // Also update employer table if it exists
+  const companyName = document.getElementById('pf-company')?.value.trim();
+  const companyAddr = document.getElementById('pf-company-addr')?.value.trim();
+  if (EMPLOYER_ID && (companyName || companyAddr)) {
+    await db.from('employers').update({ company_name: companyName, address: companyAddr }).eq('id', EMPLOYER_ID);
+  }
+
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Save Changes';
+
+  if (error) { toast('Could not save: '+error.message, 'error'); return; }
+
+  // Update local state
+  if (CURRENT_PROFILE) Object.assign(CURRENT_PROFILE, updates);
+  const name = updates.full_name || 'Employer';
+  document.getElementById('welcome-name').textContent = `Welcome back, ${name.split(' ')[0]} 👋`;
+  document.getElementById('sidebar-name').textContent = name;
+  document.getElementById('sidebar-av').textContent   = initials(name);
+  document.getElementById('topbar-av').textContent    = initials(name);
+
+  // Reload banner
+  _loadedModals['my-profile-modal'] = false;
+  loadMyProfile();
+  toast('Profile saved successfully!');
+}
+
+async function signOut() {
+  await db.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+/* ══════════════════════════════════════
+   FIND WORKERS MODAL
+══════════════════════════════════════ */
+async function loadFindWorkers() {
+  const grid = document.getElementById('fw-grid');
+  const { data, error } = await db.from('workers').select('*').eq('is_verified', true).order('created_at',{ascending:false}).limit(24);
+  if (error || !data?.length) {
+    const { data: all } = await db.from('workers').select('*').limit(24);
+    _allFindWorkers = all || [];
+  } else {
+    _allFindWorkers = data;
+  }
+  renderFindWorkers(_allFindWorkers);
+}
+
+function renderFindWorkers(list) {
+  const grid = document.getElementById('fw-grid');
+  if (!list?.length) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="bi bi-people"></i><p>No workers found.</p></div>`; return; }
+  grid.innerHTML = list.map(w => {
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<div class="worker-card" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
+      <div class="wc-av" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div class="wc-name">${name}</div>
+      <div class="wc-role">${w.role||'—'}</div>
+      ${isV ? '<span class="badge badge-verified" style="font-size:10px;margin-bottom:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+      <div class="wc-loc"><i class="bi bi-geo-alt" style="font-size:11px"></i> ${w.location||'Kenya'}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterFindWorkers() {
+  const q    = (document.getElementById('fw-search')?.value||'').toLowerCase();
+  const role = (document.getElementById('fw-role')?.value||'').toLowerCase();
+  let list = _allFindWorkers;
+  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
+  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
+  renderFindWorkers(list);
+}
+
+/* ══════════════════════════════════════
+   SAVED WORKERS MODAL
+══════════════════════════════════════ */
+async function loadSavedModal() {
+  const list = document.getElementById('saved-modal-list');
+  if (!EMPLOYER_ID) { list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>Log in to see your saved workers.</p></div>'; return; }
+  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(20);
+  if (error || !data?.length) {
+    list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>You haven\'t saved any workers yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal(\'saved-modal\');openModal(\'find-modal\')"><i class="bi bi-search"></i> Find Workers</button></div>';
+    return;
+  }
+  list.innerHTML = data.map(row => {
+    const w = row.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<div class="saved-card">
+      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:600">${name}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${w.role||'—'} &nbsp;·&nbsp; ${w.location||'Kenya'}</div>
+        <div style="font-size:11.5px;color:var(--text-light);margin-top:1px">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+        ${isV ? '<span class="badge badge-verified" style="font-size:10px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+        <div style="display:flex;gap:4px">
+          <button class="action-btn primary" style="padding:4px 10px;font-size:11px" onclick="contactWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+          <button class="action-btn" style="padding:4px 9px;font-size:11px" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   MESSAGES MODAL
+══════════════════════════════════════ */
+async function loadMessagesModal() {
+  const list = document.getElementById('messages-list');
+  if (!EMPLOYER_ID) { list.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>Log in to view messages.</p></div>'; return; }
+  const { data, error } = await db.from('contacts').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('contacted_at',{ascending:false}).limit(15);
+  if (error || !data?.length) {
+    list.innerHTML = `<div class="empty-state"><i class="bi bi-chat-square-dots"></i><p>No messages yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal('messages-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find Workers</button></div>`;
+    return;
+  }
+  list.innerHTML = '<div class="msg-list">'+data.map((c,i) => {
+    const w = c.workers||{};
+    const name = w.full_name||w.name||'Worker';
+    const [bg,fg] = avatarColor(name);
+    return `<div class="msg-item" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')">
+      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="msg-name">${name}</div>
+        <div class="msg-preview">Contact request sent — awaiting response</div>
+      </div>
+      ${i<2 ? '<div class="msg-unread"></div>' : ''}
+      <div class="msg-time">${timeAgo(c.contacted_at)}</div>
+    </div>`;
+  }).join('')+'</div>';
+
+  const newCount = Math.min(data.length,2);
+  const badge = document.getElementById('msg-badge');
+  if (newCount>0) { badge.textContent=newCount; badge.style.display='inline'; }
+}
+
+/* ══════════════════════════════════════
+   WORKER PROFILE MODAL
+══════════════════════════════════════ */
+async function viewWorker(id, knownName) {
+  document.getElementById('modal-content').innerHTML = '<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>';
+  openModal('worker-modal');
+
+  if (!id) { document.getElementById('modal-content').innerHTML = '<p style="color:var(--danger);padding:1rem">Could not load profile.</p>'; return; }
+
+  const { data: w, error } = await db.from('workers').select('*').eq('id', id).single();
+  if (error || !w) {
+    const name = knownName||'Worker';
+    const [bg,fg] = avatarColor(name);
+    document.getElementById('modal-content').innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+        <div style="width:56px;height:56px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">${initials(name)}</div>
+        <div><div style="font-size:16px;font-weight:600">${name}</div><div style="font-size:13px;color:var(--text-muted)">Profile details not available</div></div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted)">Full profile could not be loaded.</p>`;
+    document.getElementById('modal-contact-btn').onclick = ()=>toast('Contact feature requires full profile');
+    document.getElementById('modal-save-btn').onclick    = ()=>toast('Save feature requires full profile');
+    return;
+  }
+
+  const name = w.full_name||w.name||'Worker';
+  const [bg,fg] = avatarColor(name);
+  const isV = w.is_verified||w.verified;
+
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+      <div style="width:56px;height:56px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">${initials(name)}</div>
+      <div>
+        <div style="font-size:16px;font-weight:600">${name}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${w.role||'—'}</div>
+        ${isV ? '<span class="badge badge-verified" style="margin-top:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-pending">Pending</span>'}
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><label>Location</label><span>${w.location||w.area||'—'}</span></div>
+      <div class="detail-item"><label>Salary Expectation</label><span>KES ${formatSalary(w.salary_min,w.salary_max)}</span></div>
+      <div class="detail-item"><label>Experience</label><span>${w.experience_years ? w.experience_years+' years' : '—'}</span></div>
+      <div class="detail-item"><label>Languages</label><span>${Array.isArray(w.languages)?w.languages.join(', '):(w.languages||'English, Swahili')}</span></div>
+      <div class="detail-item"><label>Availability</label><span>${w.availability||'Immediate'}</span></div>
+      <div class="detail-item"><label>Live-in</label><span>${w.live_in?'Available':'No'}</span></div>
+      <div class="detail-item"><label>Joined</label><span>${fmtDate(w.created_at)}</span></div>
+    </div>
+    ${w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm);margin-top:.5rem"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${w.bio}</div>` : ''}
+  `;
+
+  document.getElementById('modal-contact-btn').onclick = ()=>contactWorker(w.id, name);
+  document.getElementById('modal-save-btn').onclick    = ()=>saveWorker(w.id, name);
+}
+
+/* ══════════════════════════════════════
+   CONTACT / SAVE
+══════════════════════════════════════ */
+async function contactWorker(workerId, workerName) {
+  if (!EMPLOYER_ID) { toast('Please log in to contact workers', 'error'); return; }
+  const { error } = await db.from('contacts').insert({ employer_id: EMPLOYER_ID, worker_id: workerId, contacted_at: new Date().toISOString() });
+  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'contacted', description: `You contacted ${workerName}`, worker_id: workerId }).catch(()=>{});
+  toast(error ? `Could not send: ${error.message}` : `Contact request sent to ${workerName}`);
+  closeModal('worker-modal');
+  loadStats(); loadActivity();
+}
+
+async function saveWorker(workerId, workerName) {
+  if (!EMPLOYER_ID) { toast('Please log in to save workers', 'error'); return; }
+  const { error } = await db.from('saved_workers').upsert({ employer_id: EMPLOYER_ID, worker_id: workerId }, { onConflict: 'employer_id,worker_id' });
+  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'saved', description: `Saved ${workerName} to shortlist`, worker_id: workerId }).catch(()=>{});
+  toast(error ? `Could not save: ${error.message}` : `${workerName} saved to your list`);
+  _loadedModals['saved-modal'] = false;
+  loadStats(); loadSavedWorkers();
+}
+
+/* ══════════════════════════════════════
+   QUICK SEARCH
+══════════════════════════════════════ */
+async function runSearch() {
+  const role = document.getElementById('search-role').value;
+  const loc  = document.getElementById('search-location').value;
+  const sal  = document.getElementById('search-salary').value;
+  let min, max;
+  if (sal) [min, max] = sal.split('-').map(Number);
+
+  if (EMPLOYER_ID) {
+    await db.from('searches').insert({ employer_id: EMPLOYER_ID, role: role||null, location: loc||null, searched_at: new Date().toISOString() }).catch(()=>{});
+    await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'searched', description: `Searched for ${role||'workers'}${loc?' in '+loc:''}` }).catch(()=>{});
+  }
+  loadWorkers({ role, location: loc, salaryMin: min, salaryMax: max });
+  loadStats();
+}
+
+async function loadWorkers(filters) {
+  const panel = document.getElementById('results-panel');
+  const tbody = document.getElementById('results-body');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Searching…</td></tr>';
+
+  let q = db.from('workers').select('*').limit(20);
+  if (filters?.role)      q = q.ilike('role', `%${filters.role}%`);
+  if (filters?.location)  q = q.ilike('location', `%${filters.location}%`);
+  if (filters?.salaryMin) q = q.gte('salary_min', filters.salaryMin);
+  if (filters?.salaryMax) q = q.lte('salary_max', filters.salaryMax);
+
+  const { data, error } = await q;
+  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No workers found matching your criteria.</td></tr>'; return; }
+  tbody.innerHTML = data.map(w => {
+    const name = w.full_name||w.name||'Unknown';
+    const [bg,fg] = avatarColor(name);
+    const isV = w.is_verified||w.verified;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+        <strong>${name}</strong></div></td>
+      <td>${w.role||'—'}</td>
+      <td>${w.location||'—'}</td>
+      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
+      <td><div class="action-row">
+        <button class="action-btn primary" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+        <button class="action-btn" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
+        <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   PAYMENT
+══════════════════════════════════════ */
+function openEmpPayModal()  { document.getElementById('emp-pay-modal').classList.add('open'); }
+function openEmpTCModal()   { document.getElementById('emp-tc-modal').classList.add('open'); }
 
 var _empPayMethod = '';
 function empSelectMethod(m, el) {
   _empPayMethod = m;
-  ['emp-mpesa-btn','emp-airtel-btn'].forEach(function(id){
-    var btn = document.getElementById(id);
-    btn.style.borderColor = 'var(--border)';
-    btn.style.background = '#fff';
+  ['emp-mpesa-btn','emp-airtel-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn.style.borderColor = 'var(--border)'; btn.style.background = '#fff';
   });
-  el.style.borderColor = 'var(--brand)';
-  el.style.background = 'var(--brand-light)';
+  el.style.borderColor = 'var(--brand)'; el.style.background = 'var(--brand-light)';
   document.getElementById('emp-phone-wrap').style.display = 'block';
   document.getElementById('emp-pay-submit-btn').style.display = 'flex';
 }
 
 async function submitEmpPayment() {
-  var cb = document.getElementById('emp-tc-agree');
-  if (!cb || !cb.checked) {
-    alert('Please accept the Terms & Conditions before proceeding.');
-    return;
-  }
-  var phone = (document.getElementById('emp-pay-phone').value||'').trim();
+  if (!document.getElementById('emp-tc-agree')?.checked) { alert('Please accept the Terms & Conditions.'); return; }
+  const phone = (document.getElementById('emp-pay-phone').value||'').trim();
   if (!phone) { alert('Please enter your mobile number.'); return; }
-  var btn = document.getElementById('emp-pay-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Sending prompt…';
 
-  // Simulate STK push (replace with real Daraja API call)
+  const btn = document.getElementById('emp-pay-submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending prompt…';
+
   await new Promise(r=>setTimeout(r,2000));
 
-  var ref = 'QJX' + Math.random().toString(36).slice(2,8).toUpperCase();
-  var dt  = new Date().toLocaleString('en-KE');
+  const ref = 'QJX'+Math.random().toString(36).slice(2,8).toUpperCase();
+  const dt  = new Date().toLocaleString('en-KE');
 
-  // Save to pay table
-  var tbody = document.getElementById('emp-pay-tbody');
+  // Save payment to Supabase
+  if (EMPLOYER_ID) {
+    await db.from('employer_payments').insert({
+      employer_id: EMPLOYER_ID, mpesa_ref: ref,
+      phone, amount: 1000, status: 'paid', paid_at: new Date().toISOString()
+    }).catch(()=>{});
+    await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'payment', description: `Payment of KES 1,000 confirmed (Ref: ${ref})` }).catch(()=>{});
+  }
+
+  const tbody = document.getElementById('emp-pay-tbody');
   if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
-  var tr = document.createElement('tr');
-  tr.innerHTML = '<td><strong>'+ref+'</strong></td><td>'+dt+'</td><td>'+phone+'</td><td><strong>KES 1,000</strong></td><td><span style="color:var(--brand);font-weight:600"><i class="bi bi-check-circle-fill"></i> Paid</span></td><td><button class="btn btn-outline btn-sm" onclick="showEmpReceipt(\''+ref+'\',\''+dt+'\',\''+phone+'\')"><i class="bi bi-receipt"></i> Receipt</button></td>';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><strong>${ref}</strong></td><td>${dt}</td><td>${phone}</td><td><strong>KES 1,000</strong></td><td><span style="color:var(--brand);font-weight:600"><i class="bi bi-check-circle-fill"></i> Paid</span></td><td><button class="btn btn-outline btn-sm" onclick="showEmpReceipt('${ref}','${dt}','${phone}')"><i class="bi bi-receipt"></i> Receipt</button></td>`;
   tbody.appendChild(tr);
 
   closeModal('emp-pay-modal');
-  btn.disabled = false;
-  btn.innerHTML = '<i class="bi bi-send-fill"></i> Send Payment Prompt';
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-send-fill"></i> Send Payment Prompt';
   showEmpReceipt(ref, dt, phone);
 }
 
 function showEmpReceipt(ref, dt, phone) {
-  document.getElementById('er-ref').textContent = ref;
-  document.getElementById('er-dt').textContent = dt;
+  document.getElementById('er-ref').textContent   = ref;
+  document.getElementById('er-dt').textContent    = dt;
   document.getElementById('er-phone').textContent = phone;
   document.getElementById('er-amount').textContent = 'KES 1,000';
   document.getElementById('emp-receipt-modal').classList.add('open');
@@ -1927,52 +2201,40 @@ function downloadEmpReceiptPDF() {
     doc.setFontSize(9); doc.setFont('helvetica','normal');
     doc.text('Employer Platform Access Receipt', 74, 20, {align:'center'});
     doc.text('www.sounds.co.ke', 74, 26, {align:'center'});
-
     doc.setDrawColor(27,107,69); doc.setLineWidth(.8); doc.circle(120, 50, 18);
     doc.setTextColor(27,107,69); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('AMILIA CARE', 120, 45, {align:'center'});
-    doc.text('OFFICIAL', 120, 51, {align:'center'});
-    doc.text('RECEIPT', 120, 57, {align:'center'});
-
+    doc.text('SOUNDS CARE', 120, 45, {align:'center'}); doc.text('OFFICIAL', 120, 51, {align:'center'}); doc.text('RECEIPT', 120, 57, {align:'center'});
     doc.setTextColor(30,30,30); doc.setFontSize(10); doc.setFont('helvetica','normal');
     var rows=[['M-Pesa Ref',ref],['Date & Time',dt],['Phone',ph],['Fee Type','Employer Access Fee (One-Time)'],['Amount','KES 1,000'],['Status','CONFIRMED']];
-    var y=38;
-    rows.forEach(function(r){
-      doc.setFont('helvetica','bold'); doc.setTextColor(100,100,100); doc.setFontSize(8);
-      doc.text(r[0].toUpperCase(), 12, y);
-      doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.setFontSize(10);
-      doc.text(r[1]||'—', 12, y+5);
-      doc.setDrawColor(220,220,220); doc.setLineWidth(.3); doc.line(12, y+8, 136, y+8);
-      y += 14;
-    });
-
+    var y=38; rows.forEach(function(r){ doc.setFont('helvetica','bold'); doc.setTextColor(100,100,100); doc.setFontSize(8); doc.text(r[0].toUpperCase(),12,y); doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.setFontSize(10); doc.text(r[1]||'—',12,y+5); doc.setDrawColor(220,220,220); doc.setLineWidth(.3); doc.line(12,y+8,136,y+8); y+=14; });
     doc.setFillColor(245,249,247); doc.rect(0,183,148,12,'F');
     doc.setTextColor(120,120,120); doc.setFontSize(7.5);
-    doc.text('Non-refundable fee. Official receipt — keep for your records.', 74, 190, {align:'center'});
-    doc.text('Generated: '+new Date().toLocaleString('en-KE'), 74, 195, {align:'center'});
+    doc.text('Non-refundable fee. Official receipt — keep for your records.',74,190,{align:'center'});
+    doc.text('Generated: '+new Date().toLocaleString('en-KE'),74,195,{align:'center'});
     doc.save('SoundsCare_Employer_Receipt_'+ref+'.pdf');
   } catch(e) { console.error(e); window.print(); }
 }
 
+/* ══════════════════════════════════════
+   POST JOB
+══════════════════════════════════════ */
 async function submitJobPosting() {
-  var title    = document.getElementById('pj-title').value.trim();
-  var role     = document.getElementById('pj-role').value;
-  var location = document.getElementById('pj-location').value.trim();
-  if (!title || !role || !location) { alert('Please fill in Title, Role, and Location.'); return; }
+  var title = document.getElementById('pj-title').value.trim();
+  var role  = document.getElementById('pj-role').value;
+  var loc   = document.getElementById('pj-location').value.trim();
+  if (!title || !role || !loc) { alert('Please fill in Title, Role, and Location.'); return; }
 
   var btn = document.getElementById('pj-submit-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Posting…';
 
   const payload = {
-    employer_id: EMPLOYER_ID,
-    title, job_role: role, location,
+    employer_id: EMPLOYER_ID, title, job_role: role, location: loc,
     salary_min: parseInt(document.getElementById('pj-salary-min').value)||null,
     salary_max: parseInt(document.getElementById('pj-salary-max').value)||null,
     work_type:  document.getElementById('pj-work-type').value||null,
     is_urgent:  document.getElementById('pj-urgent').value === 'true',
     description: document.getElementById('pj-desc').value.trim()||null,
-    status: 'active',
-    created_at: new Date().toISOString(),
+    status: 'active', created_at: new Date().toISOString(),
   };
 
   const { error } = await db.from('job_postings').insert(payload);
@@ -1982,31 +2244,38 @@ async function submitJobPosting() {
   msg.style.display = 'block';
   if (error) {
     msg.style.background = '#FEECEC'; msg.style.color = '#8B1A1A';
-    msg.textContent = 'Error: ' + error.message;
+    msg.textContent = 'Error: '+error.message;
   } else {
     msg.style.background = 'var(--brand-light)'; msg.style.color = 'var(--brand)';
-    msg.innerHTML = '<i class="bi bi-check-circle-fill"></i> Job posted successfully! It will appear on the public listing shortly.';
-    setTimeout(function(){ closeModal('post-job-modal'); msg.style.display='none'; toast('Job posted!'); }, 2200);
+    msg.innerHTML = '<i class="bi bi-check-circle-fill"></i> Job posted successfully!';
+    setTimeout(()=>{ closeModal('post-job-modal'); msg.style.display='none'; toast('Job posted!'); }, 2200);
   }
 }
 
+/* ══════════════════════════════════════
+   CONTRACT PDF
+══════════════════════════════════════ */
 function generateEmpContractPDF() {
   var f = {
-    workerName: document.getElementById('ec-worker-name').value.trim(),
-    workerId:   document.getElementById('ec-worker-id').value.trim(),
-    workerPhone:document.getElementById('ec-worker-phone').value.trim(),
-    workerLoc:  document.getElementById('ec-worker-location').value.trim(),
-    empName:    document.getElementById('ec-employer-name').value.trim(),
-    empPhone:   document.getElementById('ec-employer-phone').value.trim(),
-    empAddr:    document.getElementById('ec-employer-addr').value.trim(),
-    role:       document.getElementById('ec-role').value,
-    salary:     document.getElementById('ec-salary').value.trim(),
-    workType:   document.getElementById('ec-work-type').value,
-    startDate:  document.getElementById('ec-start-date').value,
-    endDate:    document.getElementById('ec-end-date').value,
-    duties:     document.getElementById('ec-duties').value.trim(),
-    notes:      document.getElementById('ec-notes').value.trim(),
+    workerName:  document.getElementById('ec-worker-name').value.trim(),
+    workerId:    document.getElementById('ec-worker-id').value.trim(),
+    workerPhone: document.getElementById('ec-worker-phone').value.trim(),
+    workerLoc:   document.getElementById('ec-worker-location').value.trim(),
+    empName:     document.getElementById('ec-employer-name').value.trim(),
+    empPhone:    document.getElementById('ec-employer-phone').value.trim(),
+    empAddr:     document.getElementById('ec-employer-addr').value.trim(),
+    role:        document.getElementById('ec-role').value,
+    salary:      document.getElementById('ec-salary').value.trim(),
+    workType:    document.getElementById('ec-work-type').value,
+    startDate:   document.getElementById('ec-start-date').value,
+    endDate:     document.getElementById('ec-end-date').value,
+    duties:      document.getElementById('ec-duties').value.trim(),
+    notes:       document.getElementById('ec-notes').value.trim(),
   };
+
+  // Auto-fill employer name from profile
+  if (!f.empName && CURRENT_PROFILE?.full_name) f.empName = CURRENT_PROFILE.full_name;
+
   if (!f.workerName||!f.empName||!f.role||!f.salary||!f.startDate) {
     alert('Please fill in: Worker Name, Employer Name, Role, Salary, and Start Date.'); return;
   }
@@ -2015,64 +2284,40 @@ function generateEmpContractPDF() {
     var doc = new jsPDF({unit:'mm',format:'a4'});
     var today = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
     var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
-
     doc.setDrawColor(27,107,69); doc.setLineWidth(.5); doc.rect(8,8,W-16,H-16);
     doc.setFillColor(27,107,69); doc.rect(0,0,W,32,'F');
     doc.setTextColor(255,255,255);
-    doc.setFontSize(22); doc.setFont('helvetica','bold');
-    doc.text('AMILIA CARE', W/2, 14, {align:'center'});
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.text('Trusted People. Better Homes. | www.sounds.co.ke', W/2, 22, {align:'center'});
-    doc.setFontSize(11); doc.setFont('helvetica','bold');
-    doc.text('DOMESTIC EMPLOYMENT CONTRACT', W/2, 29, {align:'center'});
-
-    // Stamp
-    doc.setFillColor(255,255,255); doc.setDrawColor(27,107,69); doc.setLineWidth(1);
-    doc.circle(W-28, 50, 18, 'FD');
+    doc.setFontSize(22); doc.setFont('helvetica','bold'); doc.text('SOUNDS CARE', W/2, 14, {align:'center'});
+    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text('Trusted People. Better Homes. | www.sounds.co.ke', W/2, 22, {align:'center'});
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('DOMESTIC EMPLOYMENT CONTRACT', W/2, 29, {align:'center'});
+    doc.setFillColor(255,255,255); doc.setDrawColor(27,107,69); doc.setLineWidth(1); doc.circle(W-28, 50, 18, 'FD');
     doc.setTextColor(27,107,69); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('✦ AMILIA CARE ✦', W-28, 45, {align:'center'});
-    doc.text('OFFICIAL', W-28, 50, {align:'center'});
-    doc.text('PLACEMENT', W-28, 55, {align:'center'});
-    doc.text('STAMP', W-28, 60, {align:'center'});
+    doc.text('✦ SOUNDS CARE ✦', W-28, 45, {align:'center'}); doc.text('OFFICIAL', W-28, 50, {align:'center'}); doc.text('STAMP', W-28, 55, {align:'center'});
     doc.setLineWidth(.3); doc.circle(W-28, 50, 16);
-
     doc.setTextColor(60,60,60); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-    doc.text('Date: '+today, 15, 40);
-    doc.text('Ref: AC-'+Date.now().toString().slice(-6), 15, 46);
-
+    doc.text('Date: '+today, 15, 40); doc.text('Ref: SC-'+Date.now().toString().slice(-6), 15, 46);
     var y = 68;
     function sec(t){ doc.setFillColor(232,245,240); doc.rect(12,y-5,W-24,9,'F'); doc.setTextColor(27,107,69); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text(t,15,y+1); y+=10; }
     function row(l,v){ doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80); doc.setFontSize(8.5); doc.text(l+':',15,y); doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.text(String(v||'—'),65,y); doc.setDrawColor(210,225,218); doc.setLineWidth(.2); doc.line(15,y+2,W-15,y+2); y+=9; }
-
     sec('1. PARTIES TO THIS CONTRACT');
-    row('Worker Name', f.workerName); row('Worker ID', f.workerId); row('Worker Phone', f.workerPhone); row('Worker Location', f.workerLoc);
-    y+=3;
-    row('Employer Name', f.empName); row('Employer Phone', f.empPhone); row('Employer Address', f.empAddr);
+    row('Worker Name',f.workerName); row('Worker ID',f.workerId); row('Worker Phone',f.workerPhone); row('Worker Location',f.workerLoc);
+    y+=3; row('Employer Name',f.empName); row('Employer Phone',f.empPhone); row('Employer Address',f.empAddr);
     y+=4; sec('2. EMPLOYMENT TERMS');
-    row('Position', f.role); row('Work Type', f.workType);
-    row('Monthly Salary', 'KES '+Number(f.salary||0).toLocaleString());
-    row('Start Date', new Date(f.startDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}));
-    row('End Date', f.endDate ? new Date(f.endDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : 'Permanent / Open-ended');
+    row('Position',f.role); row('Work Type',f.workType); row('Monthly Salary','KES '+Number(f.salary||0).toLocaleString());
+    row('Start Date',f.startDate ? new Date(f.startDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—');
+    row('End Date',f.endDate ? new Date(f.endDate).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : 'Permanent / Open-ended');
     y+=4; sec('3. DUTIES & RESPONSIBILITIES');
-    var dl = doc.splitTextToSize(f.duties||'As agreed.', W-30);
-    doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30); doc.setFontSize(8.5);
-    doc.text(dl, 15, y); y += dl.length*5+6;
-    if (f.notes){ y+=2; sec('4. ADDITIONAL TERMS'); var nl=doc.splitTextToSize(f.notes,W-30); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.text(nl,15,y); y+=nl.length*5+6; }
+    var dl=doc.splitTextToSize(f.duties||'As agreed.',W-30); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30); doc.setFontSize(8.5); doc.text(dl,15,y); y+=dl.length*5+6;
+    if (f.notes){ y+=2; sec('4. ADDITIONAL TERMS'); var nl=doc.splitTextToSize(f.notes,W-30); doc.text(nl,15,y); y+=nl.length*5+6; }
     y+=2; sec('5. STANDARD CLAUSES');
-    var cls=['• 14 days written notice required for termination by either party.','• Worker entitled to one rest day per week and public holidays.','• Sounds Care facilitated this placement as an introduction agency only.','• Statutory deductions (NHIF, NSSF) to be handled by employer as per Kenyan law.','• Disputes: mediation first, then Kenyan courts.'];
-    doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50); doc.setFontSize(8);
-    cls.forEach(function(c){ doc.text(c,15,y); y+=6; });
-    y+=8;
-    if (y>H-60){ doc.addPage(); y=20; }
-    doc.setFillColor(248,250,249); doc.rect(12,y-4,W-24,50,'F');
-    doc.setDrawColor(27,107,69); doc.setLineWidth(.3); doc.rect(12,y-4,W-24,50);
-    doc.setTextColor(27,107,69); doc.setFontSize(9); doc.setFont('helvetica','bold');
-    doc.text('SIGNATURES', W/2, y+3, {align:'center'}); y+=10;
+    ['• 14 days written notice required for termination.','• Worker entitled to one rest day per week and public holidays.','• Sounds Care facilitated this placement as an introduction agency only.','• Statutory deductions (NHIF, NSSF) to be handled by employer per Kenyan law.','• Disputes: mediation first, then Kenyan courts.'].forEach(c=>{ doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50); doc.setFontSize(8); doc.text(c,15,y); y+=6; });
+    y+=8; if(y>H-60){ doc.addPage(); y=20; }
+    doc.setFillColor(248,250,249); doc.rect(12,y-4,W-24,50,'F'); doc.setDrawColor(27,107,69); doc.setLineWidth(.3); doc.rect(12,y-4,W-24,50);
+    doc.setTextColor(27,107,69); doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.text('SIGNATURES', W/2, y+3, {align:'center'}); y+=10;
     doc.setDrawColor(60,60,60); doc.setLineWidth(.4);
     doc.line(15,y+20,85,y+20); doc.setTextColor(60,60,60); doc.setFontSize(8); doc.setFont('helvetica','normal');
-    doc.text('Worker Signature', 15, y+25); doc.text('Name: '+f.workerName, 15, y+31); doc.text('Date: ………………………', 15, y+37);
-    doc.line(W/2+5,y+20,W-15,y+20);
-    doc.text('Employer Signature', W/2+5, y+25); doc.text('Name: '+f.empName, W/2+5, y+31); doc.text('Date: ………………………', W/2+5, y+37);
+    doc.text('Worker Signature',15,y+25); doc.text('Name: '+f.workerName,15,y+31); doc.text('Date: ………………………',15,y+37);
+    doc.line(W/2+5,y+20,W-15,y+20); doc.text('Employer Signature',W/2+5,y+25); doc.text('Name: '+f.empName,W/2+5,y+31); doc.text('Date: ………………………',W/2+5,y+37);
     doc.setFillColor(27,107,69); doc.rect(0,H-14,W,14,'F');
     doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
     doc.text('Sounds Care | info@sounds.co.ke | www.sounds.co.ke | Nairobi, Kenya', W/2, H-7, {align:'center'});
@@ -2081,6 +2326,20 @@ function generateEmpContractPDF() {
     closeModal('emp-contract-modal');
   } catch(e){ console.error(e); alert('PDF generation failed: '+e.message); }
 }
+
+/* ── MISC ── */
+function openTawkChat() {
+  if (window.Tawk_API && typeof window.Tawk_API.toggle === 'function') window.Tawk_API.toggle();
+  else window.open('https://tawk.to/chat/6a0adad3c744531c43732c65/1jot6ditn','_blank');
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  const el = document.getElementById('emp-tc-date');
+  if (el) el.textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
+  // Auto-fill employer name in contract form from profile
+  const ecEmp = document.getElementById('ec-employer-name');
+  if (ecEmp && CURRENT_PROFILE?.full_name) ecEmp.value = CURRENT_PROFILE.full_name;
+});
 </script>
 
 <!--Start of Tawk.to Script-->
@@ -2088,10 +2347,8 @@ function generateEmpContractPDF() {
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
+s1.async=true; s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
+s1.charset='UTF-8'; s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
