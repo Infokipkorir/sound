@@ -437,7 +437,7 @@ async function doLogin(){
   bootDashboard();
 }
 
-function bootDashboard(){
+async function bootDashboard(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'flex';
   // set sidebar user info
@@ -445,7 +445,8 @@ function bootDashboard(){
   document.getElementById('sb-uname').textContent = name;
   var inits = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
   document.getElementById('sb-av').textContent = inits;
-  loadAllData();
+  // Await data load before rendering overview so counts/tables are populated
+  await loadAllData();
   startRealtime();
   showPage('overview', null);
 }
@@ -739,7 +740,7 @@ function renderEmployers(){
           '<td><div class="acts">'+
             '<button class="act act-view" onclick="openEmpModal(\''+e.id+'\')"><i class="bi bi-eye"></i> View</button>'+
             (!e.is_verified?'<button class="act act-approve" onclick="verifyEmployer(\''+e.id+'\')"><i class="bi bi-patch-check"></i> Verify</button>':'')+
-            '<button class="act act-pw" onclick="openResetPw(\''+esc('')+'\',\''+e.user_id+'\')"><i class="bi bi-key"></i> Reset PW</button>'+
+            '<button class="act act-pw" onclick="openEmpResetPw(\''+e.id+'\',\''+esc(e.user_id||'')+'\')"><i class="bi bi-key"></i> Reset PW</button>'+
           '</div></td>'+
         '</tr>';
       }).join('')+
@@ -951,10 +952,17 @@ async function submitPostWorker(){
     submitted_at: new Date().toISOString(),
   };
   if(!vals.full_name){ toast('err','bi-exclamation-circle','Missing Name','Full name is required.',3500); return; }
+  var submitBtn = document.querySelector('#content .btn-brand');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></div> Saving…'; }
   var r = await sb.from('worker_profiles').insert(vals);
-  if(r.error){ toast('err','bi-exclamation-circle','Error', r.error.message, 5000); return; }
+  if(r.error){
+    toast('err','bi-exclamation-circle','Error', r.error.message, 6000);
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Post Worker'; }
+    return;
+  }
+  await sb.from('activity_log').insert({action_type:'post', description:'Admin posted worker profile: '+(vals.full_name||''), created_at: new Date().toISOString()});
   toast('ok','bi-check-circle-fill','Worker Posted','Profile saved and approved.',4000);
-  await loadWorkers();
+  await loadAllData();
   showPage('workers',null);
 }
 
@@ -1001,12 +1009,21 @@ async function submitPostJob(){
     description: val('pj-desc'), requirements: val('pj-req'),
     is_featured: document.getElementById('pj-feat').checked,
     is_urgent: document.getElementById('pj-urgent').checked,
-    status: 'active', posted_by: currentUser.id,
+    status: 'active', posted_by: currentUser ? currentUser.id : null,
   };
   if(!payload.title){ toast('err','bi-exclamation-circle','Missing Title','Job title is required.',3500); return; }
+  // Disable submit button to prevent double-click
+  var submitBtn = document.querySelector('#content .btn-brand');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></div> Posting…'; }
   var r = await sb.from('job_postings').insert(payload);
-  if(r.error){ toast('err','bi-exclamation-circle','Error', r.error.message, 5000); return; }
+  if(r.error){
+    toast('err','bi-exclamation-circle','Error', r.error.message, 6000);
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Post Job'; }
+    return;
+  }
+  await sb.from('activity_log').insert({action_type:'post', description:'Admin posted job: '+(payload.title||'Untitled'), created_at: new Date().toISOString()});
   toast('ok','bi-briefcase-fill','Job Posted','Job listing is now active.',4000);
+  await loadAllData();
   showPage('overview',null);
 }
 
@@ -1108,7 +1125,8 @@ function openEmpModal(id){
 
   document.getElementById('em-footer').innerHTML =
     '<button class="btn btn-ghost btn-sm" onclick="closeModal(\'empModal\')">Close</button>'+
-    (!e.is_verified?'<button class="btn btn-brand btn-sm" onclick="verifyEmployer(\''+e.id+'\');closeModal(\'empModal\')"><i class="bi bi-patch-check-fill"></i> Verify</button>':'');
+    (!e.is_verified?'<button class="btn btn-brand btn-sm" onclick="verifyEmployer(\''+e.id+'\');closeModal(\'empModal\')"><i class="bi bi-patch-check-fill"></i> Verify</button>':'')+
+    '<button class="btn btn-sm btn-sm" style="background:var(--purple-l);color:var(--purple)" onclick="openEmpResetPw(\''+e.id+'\',\''+esc(e.user_id||'')+'\');closeModal(\'empModal\')"><i class="bi bi-key-fill"></i> Reset PW</button>';
   openModal('empModal');
 }
 
@@ -1118,8 +1136,10 @@ function openEmpModal(id){
 async function approveWorker(id){
   var r = await sb.from('worker_profiles').update({status:'approved',is_verified:true}).eq('id',id);
   if(r.error){ toast('err','bi-exclamation-circle','Error',r.error.message,5000); return; }
+  // Log activity
+  await sb.from('activity_log').insert({action_type:'approve', description:'Admin approved worker profile (id: '+id+')', created_at: new Date().toISOString()});
   toast('ok','bi-check-circle-fill','Approved','Worker profile approved.',3500);
-  await loadWorkers(); updateSidebarCounts();
+  await loadAllData();
   if(currentPage==='workers') renderWorkers(workerFilterState);
   else if(currentPage==='overview') renderOverview();
 }
@@ -1128,8 +1148,9 @@ async function banWorker(id){
   showConfirm('Ban Worker','Are you sure you want to ban this worker? Their profile will be hidden.','btn-danger','Ban', async function(){
     var r = await sb.from('worker_profiles').update({is_deleted:true,status:'banned'}).eq('id',id);
     if(r.error){ toast('err','bi-exclamation-circle','Error',r.error.message,5000); return; }
+    await sb.from('activity_log').insert({action_type:'ban', description:'Admin banned worker profile (id: '+id+')', created_at: new Date().toISOString()});
     toast('warn','bi-slash-circle','Banned','Worker has been banned.',3500);
-    await loadWorkers(); updateSidebarCounts();
+    await loadAllData();
     if(currentPage==='workers') renderWorkers(workerFilterState);
   });
 }
@@ -1137,17 +1158,20 @@ async function banWorker(id){
 async function unbanWorker(id){
   var r = await sb.from('worker_profiles').update({is_deleted:false,status:'pending_review'}).eq('id',id);
   if(r.error){ toast('err','bi-exclamation-circle','Error',r.error.message,5000); return; }
+  await sb.from('activity_log').insert({action_type:'unban', description:'Admin unbanned worker profile (id: '+id+')', created_at: new Date().toISOString()});
   toast('ok','bi-arrow-counterclockwise','Unbanned','Worker reinstated. Set to pending review.',3500);
-  await loadWorkers(); updateSidebarCounts();
+  await loadAllData();
   if(currentPage==='workers') renderWorkers(workerFilterState);
 }
 
 async function verifyEmployer(id){
   var r = await sb.from('employer_profiles').update({is_verified:true,verified_at:new Date().toISOString()}).eq('id',id);
   if(r.error){ toast('err','bi-exclamation-circle','Error',r.error.message,5000); return; }
+  await sb.from('activity_log').insert({action_type:'verify', description:'Admin verified employer profile (id: '+id+')', created_at: new Date().toISOString()});
   toast('ok','bi-patch-check-fill','Verified','Employer account verified.',3500);
-  await loadEmployers();
+  await loadAllData();
   if(currentPage==='employers') renderEmployers();
+  else if(currentPage==='overview') renderOverview();
 }
 
 async function setUserActive(id, active){
@@ -1155,8 +1179,9 @@ async function setUserActive(id, active){
   showConfirm(action+' User', (active?'Unban':'Ban')+' this user account?', active?'btn-brand':'btn-danger', action, async function(){
     var r = await sb.from('users').update({is_active:active}).eq('id',id);
     if(r.error){ toast('err','bi-exclamation-circle','Error',r.error.message,5000); return; }
+    await sb.from('activity_log').insert({action_type: active ? 'unban' : 'ban', description:'Admin '+(active?'unbanned':'banned')+' user account (id: '+id+')', created_at: new Date().toISOString()});
     toast('ok','bi-person-check-fill',action+'ned','User account updated.',3000);
-    await loadUsers();
+    await loadAllData();
     if(currentPage==='allusers') renderAllUsers();
   });
 }
@@ -1165,6 +1190,17 @@ function openResetPw(email){
   document.getElementById('pw-email').textContent = email;
   document.getElementById('pw-email-input').value = email;
   openModal('pwModal');
+}
+
+// For employers: look up their email from allUsers by user_id, then open reset modal
+function openEmpResetPw(empId, userId){
+  var user = allUsers.find(function(u){ return u.id === userId; });
+  var email = user ? user.email : '';
+  if(!email){
+    toast('warn','bi-exclamation-circle','No Email','Could not find an email for this employer account.',4000);
+    return;
+  }
+  openResetPw(email);
 }
 
 async function sendPasswordReset(){
