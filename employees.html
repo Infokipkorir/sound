@@ -21,7 +21,7 @@
   --accent-light: #FAEEDA;
   --sidebar-bg:   #0F3D28;
   --sidebar-text: #B8D9C6;
-  --bg:           #F4F7F5;
+  --bg:           #F0F5F2;
   --surface:      #FFFFFF;
   --border:       #E2EBE6;
   --text:         #1A2E24;
@@ -364,14 +364,15 @@ body {
 
 /* ── WORKER CARD ── */
 .wcard {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #FFFFFF;
+  border: 1px solid #E8F0EC;
   border-radius: var(--radius);
   overflow: hidden;
   transition: box-shadow .22s, transform .22s, border-color .22s;
   animation: cardIn .35s ease both;
   display: flex; flex-direction: column;
   position: relative;
+  box-shadow: 0 1px 6px rgba(27,107,69,.06);
 }
 .wcard:hover {
   box-shadow: var(--shadow-lg);
@@ -1064,8 +1065,9 @@ async function loadWorkers() {
   try {
     var res = await sb
       .from('worker_profiles')
-      .select('*')
+      .select('id,full_name,preferred_role,current_town,county,salary_min,salary_max,salary_range,edu_level,availability,work_arrangement,experience,key_skills,languages,profile_photo_url,is_verified,avg_rating,rating_count,profile_views,has_medical_cert,has_good_conduct,is_currently_hired,about_text,status,submitted_at,created_at,dob,gender,is_deleted')
       .eq('status', 'approved')
+      .neq('is_deleted', true)
       .order('submitted_at', { ascending: false });
 
     if (res.error) throw res.error;
@@ -1091,33 +1093,43 @@ async function loadWorkers() {
 
 /* Map DB row → UI object */
 function normalise(w, idx) {
-  var name   = w.full_name || w.name || 'Worker';
+  var name   = w.full_name || 'Worker';
   var inits  = name.split(' ').map(function(x){return x[0]||'';}).slice(0,2).join('').toUpperCase();
-  var skills = Array.isArray(w.skills) ? w.skills
-             : (w.key_skills ? w.key_skills.split(',').map(function(s){return s.trim();}) : []);
+  var skills = w.key_skills ? w.key_skills.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
   var picUrl = '';
-  if (w.profile_photo_url || w.profile_picture_url) {
-    var raw = w.profile_photo_url || w.profile_picture_url;
+  if (w.profile_photo_url) {
+    var raw = w.profile_photo_url;
     picUrl  = raw.startsWith('http') ? raw : sb.storage.from(BUCKET).getPublicUrl(raw).data.publicUrl;
   }
   var colors = ['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB'];
   var col    = colors[(idx || 0) % colors.length];
-  var rating = parseFloat(w.average_rating || w.rating) || (3.8 + Math.random() * 1.2);
+  var rating = parseFloat(w.avg_rating) || 0;
+  // Compute age from dob
+  var age = null;
+  if (w.dob) { var d = new Date(w.dob); if (!isNaN(d)) age = new Date().getFullYear() - d.getFullYear(); }
+  // Compute experience years from jsonb array
+  var expYrs = 0;
+  if (Array.isArray(w.experience)) {
+    expYrs = w.experience.reduce(function(t, e){ return t + (parseInt(e.years_worked || e.duration_years || 0)||0); }, 0);
+  }
+  // Salary
+  var salMin = parseFloat(w.salary_min) || 0;
+  var salMax = parseFloat(w.salary_max) || 0;
   return Object.assign({}, w, {
     _name: name, _inits: inits, _skills: skills,
     _picUrl: picUrl, _color: col,
     _rating: rating,
-    _reviews: w.review_count || Math.floor(Math.random()*15)+1,
-    _salMin: w.expected_salary_min || w.salary_min || 0,
-    _salMax: w.expected_salary_max || w.salary_max || 0,
-    _exp: w.experience_years || 0,
-    _avail: w.availability || '',
-    _age: w.age || null,
-    _edu: w.education_level || '',
-    _loc: w.current_town || w.location || '',
-    _role: w.preferred_role || w.role || '',
+    _reviews: w.rating_count || 0,
+    _salMin: salMin,
+    _salMax: salMax,
+    _exp: expYrs,
+    _avail: w.availability || w.work_arrangement || '',
+    _age: age,
+    _edu: w.edu_level || '',
+    _loc: w.current_town || w.county || '',
+    _role: w.preferred_role || '',
     _verified: !!(w.is_verified),
-    _featured: !!(w.is_featured),
+    _featured: !!(w.has_medical_cert || w.has_good_conduct),
   });
 }
 
@@ -1139,8 +1151,8 @@ function renderWorkers(list) {
     var extra  = w._skills.length - skills.length;
     var salStr = w._salMin && w._salMax
                ? 'KES ' + w._salMin.toLocaleString() + ' – ' + w._salMax.toLocaleString()
-               : (w.salary || w.salary_range || 'Negotiable');
-    var exp    = w._exp ? (w._exp + ' yr' + (w._exp !== 1 ? 's' : '')) : (w.experience || '–');
+               : (w.salary_range || 'Negotiable');
+    var exp    = w._exp ? (w._exp + ' yr' + (w._exp !== 1 ? 's' : '')) : '–';
     var stars  = [1,2,3,4,5].map(function(s) {
       return '<span class="star '+(s <= Math.round(w._rating) ? 'on' : 'off')+'" onclick="rateWorker(\''+w.id+'\','+s+')">★</span>';
     }).join('');
@@ -1159,7 +1171,7 @@ function renderWorkers(list) {
           '<div class="wcard-role">'+escHtml(w._role || '–')+'</div>' +
           '<div class="badges">' +
             (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '') +
-            (w._featured ? '<span class="badge b-featured"><i class="bi bi-star-fill"></i> Featured</span>' : '') +
+            (w._featured ? '<span class="badge b-featured"><i class="bi bi-award-fill"></i> Certified</span>' : '') +
             (i < 4     ? '<span class="badge b-new">New</span>' : '') +
           '</div>' +
         '</div>' +
@@ -1178,8 +1190,9 @@ function renderWorkers(list) {
         (extra > 0 ? '<button class="s-more" onclick="showMoreSkills(event,\''+w.id+'\')">+'+extra+' more</button>' : '') +
       '</div>' : '') +
       '<div class="wcard-rating">' +
-        '<div class="stars">'+stars+'</div>' +
-        '<span class="rating-txt">'+w._rating.toFixed(1)+' ('+w._reviews+' reviews)</span>' +
+        (w._rating > 0
+          ? '<div class="stars">'+stars+'</div><span class="rating-txt">'+w._rating.toFixed(1)+' ('+w._reviews+' review'+(w._reviews!==1?'s':'')+')</span>'
+          : '<span class="rating-txt" style="color:var(--light);font-style:italic">No ratings yet</span>') +
       '</div>' +
       '<div class="wcard-icons">' +
         '<button class="icon-btn" onclick="openPicModal(\''+w.id+'\')" title="View Photo"><i class="bi bi-person-circle"></i></button>' +
