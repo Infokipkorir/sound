@@ -4,21 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Browse Workers – Sounds Care</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
 <style>
-/* ══════════════════════════════════════════
-   DESIGN TOKENS — exact match to employer/employee dashboards
-══════════════════════════════════════════ */
 :root {
   --brand:        #1B6B45;
   --brand-light:  #E6F5EE;
   --brand-mid:    #C9E8D4;
   --brand-dark:   #0F4D30;
   --accent:       #E8A040;
-  --accent-light: #FAEEDA;
   --sidebar-bg:   #0F3D28;
   --sidebar-text: #B8D9C6;
   --bg:           #F0F5F2;
@@ -28,691 +23,181 @@
   --muted:        #6B8876;
   --light:        #9BB5A5;
   --danger:       #C0392B;
-  --danger-light: #FDECEA;
-  --info-light:   #E6F1FB;
-  --info:         #1A6BB5;
-  --purple-light: #EEE9FB;
-  --purple:       #6B52C8;
-  --gold:         #E8A040;
   --radius:       12px;
   --radius-sm:    8px;
   --shadow:       0 2px 12px rgba(27,107,69,.08);
   --shadow-lg:    0 8px 32px rgba(27,107,69,.14);
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* LOADER */
+#pg-loader{display:none;position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#pg-loader.show{display:flex}
+.spin-ring{width:40px;height:40px;border:3px solid var(--brand-light);border-top-color:var(--brand);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pg-loader p{font-size:13px;color:var(--muted);font-weight:500}
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
-  min-height: 100vh;
-}
+/* TOPBAR */
+.topbar{background:var(--sidebar-bg);color:var(--sidebar-text);font-size:12px;display:flex;justify-content:space-between;align-items:center;padding:6px 28px;letter-spacing:.01em}
+.topbar a{color:var(--brand-mid);text-decoration:none}
 
-/* ── PAGE LOADER ── */
-#pg-loader {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(255,255,255,.95);
-  z-index: 9999;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-}
-#pg-loader.show { display: flex; }
-.spin-ring {
-  width: 40px; height: 40px;
-  border: 3px solid var(--brand-light);
-  border-top-color: var(--brand);
-  border-radius: 50%;
-  animation: spin .75s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-#pg-loader p { font-size: 13px; color: var(--muted); font-weight: 500; }
+/* NAVBAR */
+.navbar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;height:62px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 var(--border)}
+.logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:9px;margin-right:auto}
+.logo span{color:var(--brand)}
+.logo-pulse{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:livePulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.nav-links{display:flex;list-style:none;gap:4px;margin:0 20px}
+.nav-links a{font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 13px;border-radius:var(--radius-sm);transition:all .18s}
+.nav-links a:hover,.nav-links a.active{background:var(--brand-light);color:var(--brand)}
+.nav-links a.active{font-weight:600}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2DB877);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;overflow:hidden;border:2px solid var(--brand-light);transition:.18s}
+.nav-avatar img{width:100%;height:100%;object-fit:cover}
+.hamburger{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);margin-left:12px}
 
-/* ── TOPBAR ── */
-.topbar {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 28px;
-  letter-spacing: .01em;
-}
-.topbar a { color: var(--brand-mid); text-decoration: none; }
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--sidebar-bg) 0%,#1B4D32 60%,var(--brand-dark) 100%);color:#fff;padding:40px 28px 36px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 50%,rgba(232,160,64,.18) 0%,transparent 60%);pointer-events:none}
+.hero-inner{max-width:840px;position:relative}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:4px 13px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-mid);margin-bottom:14px}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(24px,3.5vw,38px);font-weight:700;line-height:1.18;margin-bottom:10px}
+.hero h1 em{font-style:italic;color:var(--accent)}
+.hero p{color:rgba(255,255,255,.65);font-size:14px;max-width:500px;margin-bottom:24px}
 
-/* ── NAV ── */
-.navbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 28px;
-  height: 62px;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  box-shadow: 0 1px 0 var(--border);
-}
-.logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  color: var(--text);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-right: auto;
-}
-.logo span { color: var(--brand); }
-.logo-pulse {
-  width: 8px; height: 8px;
-  background: #22c55e;
-  border-radius: 50%;
-  animation: livePulse 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+/* FILTER BAR */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.filter-bar input,.filter-bar select{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);transition:border-color .18s}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--brand);background:var(--surface)}
+.filter-bar input{flex:1;min-width:180px}
+.filter-bar select{min-width:150px}
+.btn-search{background:var(--brand);color:#fff;border:none;padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:6px}
+.btn-search:hover{background:var(--brand-dark)}
+.filter-count{font-size:13px;color:var(--muted);margin-left:auto;white-space:nowrap}
 
-.nav-links {
-  display: flex;
-  list-style: none;
-  gap: 4px;
-  margin: 0 20px;
-}
-.nav-links a {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--muted);
-  text-decoration: none;
-  padding: 6px 13px;
-  border-radius: var(--radius-sm);
-  transition: all .18s;
-}
-.nav-links a:hover { background: var(--brand-light); color: var(--brand); }
-.nav-links a.active { background: var(--brand-light); color: var(--brand); font-weight: 600; }
+/* PAGE WRAP */
+.page-wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
+.listing-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.listing-hd h2{font-size:16px;font-weight:700}
+.listing-hd h2 span{color:var(--brand)}
+.sort-sel{padding:7px 28px 7px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;cursor:pointer}
 
-.nav-right { display: flex; align-items: center; gap: 8px; }
-.nav-icon-btn {
-  position: relative;
-  background: none; border: none;
-  font-size: 18px; cursor: pointer;
-  color: var(--muted); padding: 7px;
-  border-radius: var(--radius-sm); transition: .18s; display: flex;
-}
-.nav-icon-btn:hover { background: var(--brand-light); color: var(--brand); }
-.nav-badge {
-  position: absolute; top: 2px; right: 2px;
-  min-width: 15px; height: 15px;
-  background: var(--danger); border-radius: 50px;
-  border: 2px solid #fff; font-size: 8px; color: #fff;
-  font-weight: 700; display: none; align-items: center;
-  justify-content: center; padding: 0 2px;
-}
-.nav-badge.show { display: flex; }
-.nav-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand), #2DB877);
-  color: #fff; display: flex; align-items: center;
-  justify-content: center; font-weight: 700; font-size: 12px;
-  cursor: pointer; overflow: hidden;
-  border: 2px solid var(--brand-light); transition: .18s;
-}
-.nav-avatar:hover { border-color: var(--brand); }
-.nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.hamburger {
-  display: none; background: none; border: none;
-  font-size: 22px; cursor: pointer; color: var(--text); margin-left: 12px;
-}
+/* GRID */
+.workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 
-/* ── HERO ── */
-.hero {
-  background: linear-gradient(135deg, var(--sidebar-bg) 0%, #1B4D32 60%, var(--brand-dark) 100%);
-  color: #fff;
-  padding: 40px 28px 36px;
-  position: relative;
-  overflow: hidden;
-}
-.hero::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 75% 50%, rgba(232,160,64,.18) 0%, transparent 60%);
-  pointer-events: none;
-}
-.hero-inner { max-width: 840px; position: relative; }
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.15);
-  padding: 4px 13px; border-radius: 100px;
-  font-size: 11px; font-weight: 600;
-  letter-spacing: .06em; text-transform: uppercase;
-  color: var(--brand-mid); margin-bottom: 14px;
-  animation: fadeDown .5s ease both;
-}
-.hero h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: clamp(24px, 3.5vw, 38px);
-  font-weight: 700; line-height: 1.18;
-  margin-bottom: 10px;
-  animation: fadeDown .5s .08s ease both;
-}
-.hero h1 em { font-style: italic; color: var(--accent); }
-.hero p {
-  color: rgba(255,255,255,.65);
-  font-size: 14px; max-width: 500px;
-  margin-bottom: 24px;
-  animation: fadeDown .5s .14s ease both;
-}
-.hero-search {
-  display: flex; gap: 10px; max-width: 640px;
-  animation: fadeDown .5s .2s ease both;
-}
-.search-wrap {
-  flex: 1; display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.1);
-  border: 1.5px solid rgba(255,255,255,.18);
-  border-radius: 10px; padding: 0 14px;
-  backdrop-filter: blur(6px); transition: border-color .2s;
-}
-.search-wrap:focus-within { border-color: var(--accent); }
-.search-wrap i { opacity: .6; font-size: 16px; flex-shrink: 0; }
-.search-wrap input {
-  background: transparent; border: none; outline: none;
-  color: #fff; font-size: 14px;
-  font-family: inherit; width: 100%; padding: 12px 0;
-}
-.search-wrap input::placeholder { color: rgba(255,255,255,.45); }
-.btn-search {
-  background: var(--accent); color: #fff; border: none;
-  padding: 12px 22px; border-radius: 10px;
-  font-size: 14px; font-weight: 700;
-  font-family: inherit; cursor: pointer; white-space: nowrap;
-  transition: background .18s, transform .15s;
-}
-.btn-search:hover { background: #d4903a; transform: translateY(-1px); }
+/* WORKER CARD */
+.wcard{background:#fff;border:1px solid #E8F0EC;border-radius:var(--radius);overflow:hidden;transition:box-shadow .22s,transform .22s,border-color .22s;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;padding:24px 16px 16px;text-align:center;position:relative;animation:cardIn .35s ease both}
+.wcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);border-color:var(--brand-mid)}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── SOUNDS CARE CLASSIFIED ── */
-.classified {
-  background: linear-gradient(90deg, #0A2518 0%, #1B3D2A 50%, #0F3020 100%);
-  border-left: 4px solid var(--accent);
-  margin: 20px 28px 0;
-  border-radius: var(--radius);
-  padding: 14px 20px;
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 14px;
-  animation: fadeDown .5s .28s ease both;
-  opacity: 0; animation-fill-mode: forwards;
-}
-.classified-inner { display: flex; align-items: center; gap: 12px; }
-.classified-badge {
-  background: var(--accent); color: #fff;
-  font-size: 10px; font-weight: 800;
-  letter-spacing: .08em; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 100px; white-space: nowrap;
-}
-.classified-text { color: rgba(255,255,255,.85); font-size: 13px; }
-.classified-text strong { color: #fff; }
-.classified-text .highlight { color: var(--accent); }
-.btn-accent {
-  background: var(--accent); color: #fff; border: none;
-  padding: 7px 16px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 700;
-  font-family: inherit; cursor: pointer; white-space: nowrap;
-  transition: opacity .18s; text-decoration: none; display: inline-block;
-}
-.btn-accent:hover { opacity: .88; }
+.wcard-av-wrap{position:relative;margin-bottom:12px}
+.wcard-av{width:80px;height:80px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--text);border:3px solid var(--surface);box-shadow:0 2px 12px rgba(0,0,0,.12);flex-shrink:0}
+.wcard-av-img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface);box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.wcard-flag{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,.15);overflow:hidden;background:#eee;display:flex;align-items:center;justify-content:center;font-size:13px}
+.wcard-flag img{width:100%;height:100%;object-fit:cover}
 
-/* ── PAGE WRAP ── */
-.page-wrap { max-width: 1300px; margin: 0 auto; padding: 24px 20px 60px; }
+.wcard-name{font-size:15px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.wcard-role{font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:8px}
+.wcard-loc{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);background:var(--bg);border-radius:100px;padding:3px 10px}
+.wcard-loc i{color:var(--brand);font-size:11px}
+.wcard-badges{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.02em}
+.b-verified{background:var(--brand-light);color:var(--brand)}
+.b-cert{background:#FAEEDA;color:#7A5000}
+.b-hired{background:#FDECEA;color:var(--danger)}
 
-/* ── MAIN LAYOUT ── */
-.main-layout {
-  display: grid;
-  grid-template-columns: 252px 1fr;
-  gap: 20px;
-  align-items: start;
-}
+.wcard-btn{margin-top:14px;width:100%;background:var(--brand-light);color:var(--brand);border:none;padding:8px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:6px}
+.wcard-btn:hover{background:var(--brand);color:#fff}
 
-/* ── SIDEBAR ── */
-.sidebar {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  position: sticky;
-  top: 78px;
-  animation: fadeLeft .4s ease both;
-}
-.sidebar-hd {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 16px;
-}
-.sidebar-hd h3 { font-size: 14px; font-weight: 700; color: var(--text); }
-.btn-clear {
-  font-size: 12px; color: var(--brand); font-weight: 600;
-  cursor: pointer; background: none; border: none; font-family: inherit;
-}
-.filter-grp { margin-bottom: 15px; }
-.filter-lbl {
-  display: block; font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em;
-  color: var(--muted); margin-bottom: 6px;
-}
-.filter-grp select,
-.filter-grp input[type="text"] {
-  width: 100%; padding: 8px 11px;
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit; color: var(--text);
-  background: var(--bg); outline: none; transition: border-color .18s;
-  appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B8876' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center;
-  padding-right: 28px;
-}
-.filter-grp input[type="text"] { background-image: none; padding-right: 11px; }
-.filter-grp select:focus,
-.filter-grp input:focus { border-color: var(--brand); background: var(--surface); }
+/* SKELETON */
+.skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.skel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.sl{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;height:13px;width:80%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-.dist-row { display: flex; align-items: center; gap: 8px; }
-.dist-row input[type="range"] {
-  flex: 1; accent-color: var(--brand); cursor: pointer; height: 4px;
-}
-.dist-val { font-size: 11px; font-weight: 700; color: var(--brand); white-space: nowrap; min-width: 38px; }
+/* EMPTY */
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state i{font-size:48px;margin-bottom:16px;display:block;opacity:.4}
+.empty-state h3{font-size:16px;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:13px}
 
-.skill-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-.skill-chip {
-  font-size: 11px; font-weight: 600;
-  padding: 4px 9px; border: 1.5px solid var(--border);
-  border-radius: 100px; cursor: pointer; transition: all .14s;
-  color: var(--muted); background: var(--surface); user-select: none;
-}
-.skill-chip:hover { border-color: var(--brand); color: var(--brand); }
-.skill-chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+/* ── PROFILE MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,40,25,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.22);animation:modalIn .22s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-.sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+/* Modal header with cover */
+.modal-cover{height:110px;background:linear-gradient(135deg,var(--sidebar-bg),#1B4D32);position:relative;border-radius:16px 16px 0 0;flex-shrink:0}
+.modal-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.15);border:none;font-size:18px;cursor:pointer;color:#fff;padding:4px 8px;border-radius:8px;transition:.15s;line-height:1}
+.modal-close:hover{background:rgba(255,255,255,.3)}
+.modal-av-wrap{position:absolute;bottom:-36px;left:24px}
+.modal-av{width:72px;height:72px;border-radius:50%;border:4px solid var(--surface);object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.modal-av-img{width:72px;height:72px;border-radius:50%;border:4px solid var(--surface);object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.modal-flag{position:absolute;bottom:0;right:-4px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;font-size:14px;background:#eee;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.modal-flag img{width:100%;height:100%;object-fit:cover}
 
-/* ── LISTING ── */
-.listing-hd {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 18px;
-}
-.listing-hd h2 { font-size: 16px; font-weight: 700; }
-.listing-hd h2 span { color: var(--brand); }
-.sort-sel {
-  padding: 7px 28px 7px 11px;
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 13px; font-family: inherit; color: var(--text);
-  background: var(--surface); outline: none; cursor: pointer;
-  appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B8876' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center;
-  transition: border-color .18s;
-}
-.sort-sel:focus { border-color: var(--brand); }
+.modal-body{padding:48px 24px 20px}
+.modal-name{font-size:20px;font-weight:700;margin-bottom:2px}
+.modal-role{font-size:13.5px;color:var(--muted);margin-bottom:10px}
+.modal-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
 
-/* ── GRID ── */
-.workers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 16px;
-}
+.modal-section{margin-bottom:18px}
+.modal-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.modal-section-title i{color:var(--brand)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px}
+.info-item .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--light);margin-bottom:3px}
+.info-item .value{font-size:13px;font-weight:600;color:var(--text)}
+.info-item.full{grid-column:1/-1}
 
-/* ── WORKER CARD ── */
-.wcard {
-  background: #FFFFFF;
-  border: 1px solid #E8F0EC;
-  border-radius: var(--radius);
-  overflow: hidden;
-  transition: box-shadow .22s, transform .22s, border-color .22s;
-  animation: cardIn .35s ease both;
-  display: flex; flex-direction: column;
-  position: relative;
-  box-shadow: 0 1px 6px rgba(27,107,69,.06);
-}
-.wcard:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-3px);
-  border-color: var(--brand-mid);
-}
+.about-box{background:var(--brand-light);border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;line-height:1.7;color:var(--text)}
+.skills-wrap{display:flex;flex-wrap:wrap;gap:5px}
+.s-tag{font-size:11px;font-weight:600;padding:3px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:100px;color:var(--text)}
+.exp-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
+.exp-item .exp-employer{font-size:13px;font-weight:700}
+.exp-item .exp-detail{font-size:12px;color:var(--muted);margin-top:2px}
+.ref-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
+.ref-item .ref-name{font-size:13px;font-weight:700}
+.ref-item .ref-detail{font-size:12px;color:var(--muted);margin-top:2px}
 
-/* Card Header */
-.wcard-top {
-  padding: 16px 16px 12px;
-  display: flex; align-items: flex-start; gap: 12px;
-  position: relative;
-}
-.av-wrap { position: relative; flex-shrink: 0; }
-.wcard-av {
-  width: 58px; height: 58px; border-radius: 50%;
-  object-fit: cover; display: flex;
-  align-items: center; justify-content: center;
-  font-size: 19px; font-weight: 800;
-  color: var(--text); border: 3px solid var(--surface);
-  box-shadow: 0 2px 8px rgba(0,0,0,.1);
-}
-.av-online {
-  position: absolute; bottom: 2px; right: 2px;
-  width: 12px; height: 12px;
-  background: #22c55e; border-radius: 50%;
-  border: 2px solid var(--surface);
-}
-.wcard-id { flex: 1; min-width: 0; }
-.wcard-name {
-  font-size: 14.5px; font-weight: 700; color: var(--text);
-  margin-bottom: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.wcard-role { font-size: 12.5px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-.badges { display: flex; flex-wrap: wrap; gap: 4px; }
-.badge {
-  font-size: 10px; font-weight: 700;
-  padding: 2px 8px; border-radius: 100px; letter-spacing: .02em;
-}
-.b-verified { background: var(--brand-light); color: var(--brand); }
-.b-featured  { background: var(--accent-light); color: #7A5000; }
-.b-new       { background: var(--info-light); color: var(--info); }
-.b-classified { background: linear-gradient(90deg,#0F3D28,#1B6B45); color: #fff; }
+.modal-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.18s}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-brand:hover{background:var(--brand-dark)}
+.btn-ghost{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border)}
 
-/* Fav button */
-.wcard-fav {
-  position: absolute; top: 12px; right: 12px;
-  background: none; border: none; cursor: pointer;
-  padding: 3px; border-radius: 6px;
-  font-size: 18px; line-height: 1;
-  color: var(--border); transition: transform .18s;
-}
-.wcard-fav:hover { transform: scale(1.25); }
-.wcard-fav.active { color: #E53E6A; }
+/* TOAST */
+.toast-stack{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--text);color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.22);display:flex;align-items:center;gap:10px;animation:toastIn .28s ease;max-width:290px;border-left:4px solid transparent}
+.toast.ok{border-left-color:#22c55e}
+.toast.err{border-left-color:var(--danger)}
+.toast.hide{animation:toastOut .3s ease forwards}
+.toast-close{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:16px;padding:0;line-height:1}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
 
-/* Meta grid */
-.wcard-meta {
-  padding: 0 16px 12px;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
-}
-.meta-item {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 12px; color: var(--muted); font-weight: 500;
-}
-.meta-item i { font-size: 12px; flex-shrink: 0; color: var(--brand); }
-.meta-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta-salary {
-  grid-column: span 2;
-  background: var(--brand-light);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px; justify-content: space-between;
-}
-.meta-salary strong { color: var(--brand); font-weight: 700; font-size: 13px; }
+/* FOOTER */
+.footer{background:var(--sidebar-bg);color:var(--sidebar-text);text-align:center;padding:20px 24px;font-size:13px;border-top:1px solid rgba(255,255,255,.08)}
 
-/* Skills */
-.wcard-skills {
-  padding: 0 16px 12px;
-  display: flex; flex-wrap: wrap; gap: 5px;
-}
-.s-tag {
-  font-size: 10px; font-weight: 600; padding: 3px 9px;
-  background: var(--brand-light); color: var(--brand); border-radius: 100px;
-}
-.s-more {
-  font-size: 10px; font-weight: 700; color: var(--brand);
-  cursor: pointer; padding: 3px 9px;
-  background: var(--brand-mid); border-radius: 100px;
-  border: none; font-family: inherit;
-}
-
-/* Rating */
-.wcard-rating {
-  padding: 0 16px 11px;
-  display: flex; align-items: center; gap: 8px;
-}
-.stars { display: flex; gap: 2px; }
-.star { font-size: 13px; cursor: pointer; transition: transform .14s; }
-.star:hover { transform: scale(1.3); }
-.star.on { color: var(--accent); }
-.star.off { color: var(--border); }
-.rating-txt { font-size: 11px; color: var(--muted); }
-
-/* Icon row */
-.wcard-icons {
-  padding: 0 16px 12px;
-  display: flex; gap: 5px; justify-content: flex-end;
-}
-.icon-btn {
-  width: 30px; height: 30px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border); background: var(--surface);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 13px; transition: all .16s; color: var(--muted);
-  position: relative;
-}
-.icon-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
-.icon-btn[title]:hover::after {
-  content: attr(title);
-  position: absolute; bottom: calc(100% + 5px); left: 50%;
-  transform: translateX(-50%);
-  background: var(--text); color: #fff;
-  font-size: 10px; padding: 3px 7px; border-radius: 5px;
-  white-space: nowrap; pointer-events: none;
-  font-weight: 600; font-family: inherit; z-index: 10;
-}
-
-/* Actions */
-.wcard-actions {
-  padding: 11px 16px;
-  border-top: 1px solid var(--border);
-  display: flex; gap: 7px; margin-top: auto;
-}
-.act-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  gap: 5px; padding: 8px 6px; border-radius: var(--radius-sm);
-  font-size: 12px; font-weight: 700; font-family: inherit;
-  cursor: pointer; border: 1.5px solid var(--border);
-  transition: all .16s; color: var(--muted); background: var(--surface);
-  white-space: nowrap; text-decoration: none;
-}
-.act-btn i { font-size: 12px; }
-.act-btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
-.act-btn.primary:hover { background: var(--brand-dark); }
-.act-btn:not(.primary):hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
-
-/* ── SKELETON ── */
-.skel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
-.skel {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px;
-  animation: pulse 1.4s ease-in-out infinite;
-}
-.sl { background: var(--bg); border-radius: 5px; margin-bottom: 9px; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  grid-column: 1/-1; text-align: center;
-  padding: 60px 20px; color: var(--muted);
-}
-.empty-state i { font-size: 44px; display: block; margin-bottom: 12px; opacity: .35; color: var(--brand); }
-.empty-state h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
-.empty-state p { font-size: 13px; }
-
-/* ── MODALS ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(15,40,25,.55); z-index: 1000;
-  align-items: center; justify-content: center;
-  padding: 1rem; backdrop-filter: blur(3px);
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface); border-radius: 16px;
-  width: 100%; max-width: 500px; max-height: 92vh;
-  overflow-y: auto;
-  box-shadow: 0 24px 80px rgba(0,0,0,.22);
-  animation: modalIn .22s ease;
-}
-.modal.narrow { max-width: 400px; }
-.modal.wide   { max-width: 560px; }
-@keyframes modalIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-.modal-hd {
-  padding: 16px 18px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; background: var(--surface); z-index: 2;
-  border-radius: 16px 16px 0 0;
-}
-.modal-hd h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.modal-hd h3 i { color: var(--brand); }
-.modal-close {
-  background: none; border: none; font-size: 20px;
-  cursor: pointer; color: var(--muted); padding: 3px;
-  border-radius: 6px; transition: .15s; line-height: 1;
-}
-.modal-close:hover { color: var(--danger); background: var(--danger-light); }
-.modal-body { padding: 18px; }
-.modal-footer {
-  padding: 12px 18px; border-top: 1px solid var(--border);
-  display: flex; gap: 8px; justify-content: flex-end;
-}
-
-/* Form helpers */
-.fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.fg label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .05em; color: var(--muted);
-  display: flex; align-items: center; gap: 4px;
-}
-.fg label i { color: var(--brand); }
-.fg input, .fg select, .fg textarea {
-  padding: 9px 11px; border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 13px;
-  font-family: inherit; outline: none; transition: border .18s;
-  background: var(--bg); color: var(--text);
-}
-.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--brand); background: var(--surface); }
-.fg textarea { resize: vertical; min-height: 90px; }
-
-/* Buttons */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 18px; border-radius: 50px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  border: none; font-family: inherit; transition: .18s;
-}
-.btn-brand { background: var(--brand); color: #fff; }
-.btn-brand:hover { background: var(--brand-dark); }
-.btn-ghost { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-.btn-ghost:hover { background: var(--border); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: #a02920; }
-.btn:disabled { opacity: .55; cursor: not-allowed; }
-
-/* Pic modal */
-.pic-modal-view {
-  width: 100%; min-height: 200px; max-height: 360px;
-  background: var(--bg); border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; margin-bottom: 14px;
-}
-.pic-modal-view img { width: 100%; max-height: 360px; object-fit: cover; border-radius: 10px; }
-.pic-modal-view .fallback-av { font-size: 72px; }
-
-/* Share */
-.share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.share-opt {
-  border: 1.5px solid var(--border); border-radius: 10px;
-  padding: 14px 10px; text-align: center; cursor: pointer;
-  transition: all .15s; font-size: 12px; font-weight: 700; color: var(--muted);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  background: var(--surface); font-family: inherit;
-}
-.share-opt span { font-size: 22px; }
-.share-opt:hover { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
-.share-link-row { display: flex; gap: 8px; }
-.share-link-row input {
-  flex: 1; padding: 8px 11px; border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 12px; font-family: inherit;
-  outline: none; background: var(--bg); color: var(--text);
-}
-.btn-copy {
-  background: var(--brand); color: #fff; border: none;
-  padding: 8px 14px; border-radius: var(--radius-sm);
-  font-size: 12px; font-weight: 700; font-family: inherit;
-  cursor: pointer; white-space: nowrap; transition: opacity .15s;
-}
-.btn-copy:hover { opacity: .88; }
-
-/* Toast */
-.toast-stack {
-  position: fixed; bottom: 24px; right: 24px;
-  z-index: 2000; display: flex; flex-direction: column; gap: 8px;
-}
-.toast {
-  background: var(--text); color: #fff;
-  padding: 11px 16px; border-radius: 10px;
-  font-size: 13px; font-weight: 500;
-  box-shadow: 0 4px 20px rgba(0,0,0,.22);
-  display: flex; align-items: center; gap: 10px;
-  animation: toastIn .28s ease; max-width: 290px;
-  border-left: 4px solid transparent;
-}
-.toast.ok  { border-left-color: #22c55e; }
-.toast.err { border-left-color: var(--danger); }
-.toast.warn{ border-left-color: var(--accent); }
-.toast.hide { animation: toastOut .3s ease forwards; }
-.toast-icon { font-size: 15px; flex-shrink: 0; }
-.toast-icon.ok  { color: #22c55e; }
-.toast-icon.err { color: #ff6b6b; }
-.toast-icon.warn{ color: var(--accent); }
-.toast-close { margin-left: auto; background: none; border: none; color: rgba(255,255,255,.6); cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
-@keyframes toastIn  { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
-@keyframes toastOut { to{opacity:0;transform:translateX(30px)} }
-
-/* ── FOOTER ── */
-.footer {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  text-align: center;
-  padding: 20px 24px;
-  font-size: 13px;
-  border-top: 1px solid rgba(255,255,255,.08);
-}
-
-/* ── ANIMATIONS ── */
-@keyframes fadeDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fadeLeft { from{opacity:0;transform:translateX(-14px)} to{opacity:1;transform:translateX(0)} }
-@keyframes cardIn   { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-
-@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important;transition:none!important; } }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 920px) {
-  .main-layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; display: none; }
-  .sidebar.open { display: block; }
-}
-@media (max-width: 620px) {
-  .topbar { display: none; }
-  .navbar { padding: 0 14px; }
-  .nav-links { display: none; }
-  .hamburger { display: block; }
-  .hero { padding: 28px 14px 24px; }
-  .hero-search { flex-direction: column; }
-  .classified { flex-direction: column; align-items: flex-start; margin: 14px 14px 0; }
-  .page-wrap { padding: 16px 12px 40px; }
-  .workers-grid { grid-template-columns: 1fr; }
-  .wcard-meta { grid-template-columns: 1fr; }
-  .meta-salary { grid-column: 1; }
+/* RESPONSIVE */
+@media(max-width:620px){
+  .topbar{display:none}
+  .navbar{padding:0 14px}
+  .nav-links{display:none}
+  .hamburger{display:block}
+  .hero{padding:28px 14px 24px}
+  .filter-bar{padding:10px 14px}
+  .page-wrap{padding:16px 12px 40px}
+  .workers-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .info-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- PAGE LOADER -->
-<div id="pg-loader">
-  <div class="spin-ring"></div>
-  <p>Loading workers…</p>
-</div>
+<div id="pg-loader"><div class="spin-ring"></div><p>Loading workers…</p></div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -729,14 +214,11 @@ body {
   <ul class="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="employees.html" class="active">Find Workers</a></li>
+    <li><a href="employers.html">Find Jobs</a></li>
     <li><a href="employer-dashboard.html">Dashboard</a></li>
   </ul>
-  <div class="nav-right">
-    <button class="nav-icon-btn" id="nav-fav-btn" title="My Favourites" onclick="toggleFavFilter()">
-      <i class="bi bi-heart"></i>
-      <span class="nav-badge" id="fav-badge">0</span>
-    </button>
-    <div class="nav-avatar" id="nav-av" title="My Account" onclick="window.location.href='employer-dashboard.html'">?</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="nav-avatar" id="nav-av" title="My Account">?</div>
     <button class="hamburger" onclick="toggleMenu()">&#9776;</button>
   </div>
 </nav>
@@ -744,518 +226,323 @@ body {
 <!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow">
-      <i class="bi bi-patch-check-fill"></i>
-      Verified Domestic Workers · Kenya
-    </div>
+    <div class="hero-eyebrow"><i class="bi bi-patch-check-fill"></i> Verified Domestic Workers · Kenya</div>
     <h1>Find <em>trusted</em> domestic help,<br>anywhere in Kenya.</h1>
-    <p>Every profile is admin-verified with national ID, selfie &amp; references. Browse, interview, and hire with confidence.</p>
-    <div class="hero-search">
-      <div class="search-wrap">
-        <i class="bi bi-search"></i>
-        <input type="text" id="globalSearch" placeholder="Search by name, role, or location…" oninput="debounceFilter()">
-      </div>
-      <button class="btn-search" onclick="applyFilters()"><i class="bi bi-search"></i> Search</button>
-    </div>
+    <p>Every profile is admin-verified with national ID, selfie &amp; references.</p>
   </div>
 </div>
 
-<!-- CLASSIFIED BANNER -->
-<div class="classified">
-  <div class="classified-inner">
-    <div class="classified-badge">🔊 Sounds Care Classified</div>
-    <div class="classified-text">
-      <strong>Premium verified listings</strong> — workers with full document checks &amp; background verification.
-      <span class="highlight">★ Featured profiles receive 5× more employer views.</span>
-    </div>
-  </div>
-  <a href="register.html" class="btn-accent">Post Your Profile</a>
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <input type="text" id="globalSearch" placeholder="🔍  Search by name, role or location…" oninput="debounceFilter()">
+  <select id="fRole" onchange="applyFilters()">
+    <option value="">All Roles</option>
+    <option>House Manager</option>
+    <option>Nanny / Childcare</option>
+    <option>Cook / Chef</option>
+    <option>Cleaner</option>
+    <option>Gardener</option>
+    <option>Driver</option>
+    <option>Security Guard</option>
+    <option>Elder Caregiver</option>
+  </select>
+  <select id="fAvail" onchange="applyFilters()">
+    <option value="">Any Availability</option>
+    <option>Live-In</option>
+    <option>Live-Out</option>
+    <option>Part-Time</option>
+    <option>Contract</option>
+    <option>Flexible</option>
+  </select>
+  <button class="btn-search" onclick="applyFilters()"><i class="bi bi-search"></i> Search</button>
+  <span class="filter-count" id="filter-count"></span>
 </div>
 
-<!-- MAIN CONTENT -->
+<!-- MAIN -->
 <div class="page-wrap">
-  <div class="main-layout">
-
-    <!-- SIDEBAR FILTERS -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-hd">
-        <h3><i class="bi bi-sliders" style="color:var(--brand)"></i> Filters</h3>
-        <button class="btn-clear" onclick="clearFilters()">Reset all</button>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-geo-alt-fill" style="color:var(--brand)"></i> Distance from you</label>
-        <div class="dist-row">
-          <input type="range" id="distRange" min="1" max="50" value="25" oninput="updateDist(this.value)">
-          <span class="dist-val" id="distVal">25 km</span>
-        </div>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-map" style="color:var(--brand)"></i> Town / Estate</label>
-        <input type="text" id="fLoc" placeholder="e.g. Westlands, Karen" oninput="debounceFilter()">
-      </div>
-
-      <hr class="sidebar-divider">
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-lightning-charge-fill" style="color:var(--brand)"></i> Skills</label>
-        <div class="skill-chips" id="skillChips">
-          <span class="skill-chip" onclick="toggleSkill(this)">Cooking</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Childcare</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Driving</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Cleaning</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Gardening</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Caregiving</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">Security</span>
-          <span class="skill-chip" onclick="toggleSkill(this)">First Aid</span>
-        </div>
-      </div>
-
-      <hr class="sidebar-divider">
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-briefcase-fill" style="color:var(--brand)"></i> Role</label>
-        <select id="fRole" onchange="applyFilters()">
-          <option value="">All Roles</option>
-          <option>House Manager</option>
-          <option>Nanny / Childcare</option>
-          <option>Cook / Chef</option>
-          <option>Cleaner</option>
-          <option>Gardener</option>
-          <option>Driver</option>
-          <option>Security Guard</option>
-          <option>Elder Caregiver</option>
-        </select>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-cash-stack" style="color:var(--brand)"></i> Salary Range (KES/mo)</label>
-        <select id="fSalary" onchange="applyFilters()">
-          <option value="">Any Range</option>
-          <option>5,000 – 10,000</option>
-          <option>10,000 – 20,000</option>
-          <option>20,000 – 35,000</option>
-          <option>35,000 – 50,000</option>
-          <option>50,000+</option>
-        </select>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-person-fill" style="color:var(--brand)"></i> Age Range</label>
-        <select id="fAge" onchange="applyFilters()">
-          <option value="">Any Age (19+)</option>
-          <option>19 – 25</option>
-          <option>26 – 35</option>
-          <option>36 – 45</option>
-          <option>46+</option>
-        </select>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-mortarboard-fill" style="color:var(--brand)"></i> Education Level</label>
-        <select id="fEdu" onchange="applyFilters()">
-          <option value="">Any Level</option>
-          <option>Primary</option>
-          <option>Secondary (KCSE)</option>
-          <option>Certificate</option>
-          <option>Diploma</option>
-          <option>Degree+</option>
-        </select>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-hourglass-split" style="color:var(--brand)"></i> Experience</label>
-        <select id="fExp" onchange="applyFilters()">
-          <option value="">Any Experience</option>
-          <option>0 – 1 year</option>
-          <option>1 – 3 years</option>
-          <option>3 – 5 years</option>
-          <option>5+ years</option>
-        </select>
-      </div>
-
-      <div class="filter-grp">
-        <label class="filter-lbl"><i class="bi bi-house-door-fill" style="color:var(--brand)"></i> Availability</label>
-        <select id="fAvail" onchange="applyFilters()">
-          <option value="">Any</option>
-          <option>Live-in</option>
-          <option>Day Work</option>
-          <option>Part Time</option>
-          <option>Full Time</option>
-        </select>
-      </div>
-    </aside>
-
-    <!-- LISTING -->
-    <div>
-      <div class="listing-hd">
-        <h2>Showing <span id="wcount">–</span> workers</h2>
-        <select class="sort-sel" id="sortSel" onchange="applyFilters()">
-          <option value="newest">Newest First</option>
-          <option value="exp">Most Experienced</option>
-          <option value="rating">Top Rated</option>
-          <option value="salary_low">Salary: Low → High</option>
-          <option value="salary_high">Salary: High → Low</option>
-        </select>
-      </div>
-      <div id="workers-grid" class="workers-grid"></div>
-    </div>
-
+  <div class="listing-hd">
+    <h2>Showing <span id="wcount">–</span> workers</h2>
+    <select class="sort-sel" id="sortSel" onchange="applyFilters()">
+      <option value="newest">Newest First</option>
+      <option value="rating">Top Rated</option>
+      <option value="exp">Most Experienced</option>
+      <option value="salary_low">Salary: Low → High</option>
+      <option value="salary_high">Salary: High → Low</option>
+    </select>
   </div>
+  <div id="workers-grid" class="workers-grid"></div>
 </div>
 
 <!-- FOOTER -->
 <footer class="footer">© 2025 Sounds Care – Trusted People. Better Homes. &nbsp;|&nbsp; sounds.co.ke</footer>
 
-<!-- ══ MESSAGE / INTERVIEW MODAL ══ -->
-<div class="modal-overlay" id="msgModal">
-  <div class="modal narrow">
-    <div class="modal-hd">
-      <h3><i class="bi bi-chat-dots-fill"></i> Request Interview</h3>
-      <button class="modal-close" onclick="closeModal('msgModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Sending message to <strong id="msgName"></strong></p>
-      <div class="fg"><label><i class="bi bi-tag"></i> Subject</label><input type="text" id="msgSubject" placeholder="e.g. Cook position at my home in Karen"></div>
-      <div class="fg"><label><i class="bi bi-chat-text"></i> Message</label><textarea id="msgBody" placeholder="Introduce yourself and describe the role…"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('msgModal')">Cancel</button>
-      <button class="btn btn-brand" onclick="sendMessage()"><i class="bi bi-send-fill"></i> Send Message</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ REPORT MODAL ══ -->
-<div class="modal-overlay" id="reportModal">
-  <div class="modal narrow">
-    <div class="modal-hd">
-      <h3><i class="bi bi-flag-fill" style="color:var(--danger)"></i> Report Profile</h3>
-      <button class="modal-close" onclick="closeModal('reportModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Reports are reviewed within 24 hours. Keep Sounds Care safe.</p>
-      <div class="fg"><label><i class="bi bi-exclamation-triangle"></i> Reason</label>
-        <select id="reportReason">
-          <option value="">Select reason…</option>
-          <option>Fake / misleading profile</option>
-          <option>Inappropriate content</option>
-          <option>Incorrect contact details</option>
-          <option>Suspicious behaviour</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="fg"><label><i class="bi bi-chat-quote"></i> Details (optional)</label><textarea id="reportDetails" placeholder="More information…" style="min-height:70px"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('reportModal')">Cancel</button>
-      <button class="btn btn-danger" onclick="submitReport()"><i class="bi bi-flag-fill"></i> Submit Report</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ PROFILE PHOTO MODAL ══ -->
-<div class="modal-overlay" id="picModal">
-  <div class="modal narrow">
-    <div class="modal-hd">
-      <h3><i class="bi bi-person-circle"></i> <span id="picModalName">Profile Photo</span></h3>
-      <button class="modal-close" onclick="closeModal('picModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="pic-modal-view" id="picModalView"></div>
-      <p id="picModalMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px"></p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('picModal')">Close</button>
-      <button class="btn btn-brand" onclick="saveProfilePic()"><i class="bi bi-download"></i> Save Photo</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SHARE MODAL ══ -->
-<div class="modal-overlay" id="shareModal">
-  <div class="modal narrow">
-    <div class="modal-hd">
-      <h3><i class="bi bi-share-fill"></i> Share Profile</h3>
-      <button class="modal-close" onclick="closeModal('shareModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="share-grid">
-        <button class="share-opt" onclick="shareVia('whatsapp')"><span>💬</span>WhatsApp</button>
-        <button class="share-opt" onclick="shareVia('facebook')"><span>📘</span>Facebook</button>
-        <button class="share-opt" onclick="shareVia('twitter')"><span>🐦</span>Twitter / X</button>
-        <button class="share-opt" onclick="shareVia('copy')"><span>🔗</span>Copy Link</button>
-      </div>
-      <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Profile link</p>
-      <div class="share-link-row">
-        <input type="text" id="shareLink" readonly>
-        <button class="btn-copy" onclick="copyShareLink()"><i class="bi bi-clipboard"></i> Copy</button>
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal" id="profileModalInner">
+    <div class="modal-cover" id="mCover">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <div class="modal-av-wrap">
+        <div id="mAvWrap"></div>
       </div>
     </div>
+    <div class="modal-body" id="mBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <a id="mDashBtn" href="employer-dashboard.html" class="btn btn-brand"><i class="bi bi-arrow-right-circle-fill"></i> Go to Dashboard</a>
+    </div>
   </div>
 </div>
 
-<!-- Toast stack -->
 <div class="toast-stack" id="toast-stack"></div>
 
-<!-- ══ TAWK.TO ══ -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
 (function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
 </script>
 
 <script>
-/* ══════════════════════════════════════════
-   CONFIG — exact match to employer/employee dashboards
-══════════════════════════════════════════ */
 var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
-var BUCKET = 'Media'; // public bucket for profile pics
+var BUCKET = 'Media';
 
-var sb, currentUser, employerProfile;
+var sb, currentUser;
 var allWorkers = [];
-var favorites = JSON.parse(localStorage.getItem('sc_worker_favs') || '[]');
-var activeWorker = null;
-var showFavsOnly = false;
 var debTimer = null;
 
-/* ══════════════════════════════════════════
-   INIT + AUTH GUARD
-══════════════════════════════════════════ */
+/* ── COUNTRY → FLAG EMOJI ── */
+function countryFlag(country) {
+  if (!country) return '';
+  var map = {
+    'Kenya':'🇰🇪','Uganda':'🇺🇬','Tanzania':'🇹🇿','Rwanda':'🇷🇼','Ethiopia':'🇪🇹',
+    'Nigeria':'🇳🇬','Ghana':'🇬🇭','South Africa':'🇿🇦','Zambia':'🇿🇲',
+    'Zimbabwe':'🇿🇼','Malawi':'🇲🇼','Mozambique':'🇲🇿','Congo':'🇨🇩',
+    'Somalia':'🇸🇴','Sudan':'🇸🇩','Burundi':'🇧🇮','India':'🇮🇳','Pakistan':'🇵🇰',
+  };
+  var key = Object.keys(map).find(function(k){ return country.toLowerCase().includes(k.toLowerCase()); });
+  return key ? map[key] : '🌍';
+}
+
+/* ── INIT ── */
 document.addEventListener('DOMContentLoaded', function() {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById('pg-loader').classList.add('show');
-
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
-    if (!session || !session.user) {
-      window.location.href = 'login.html';
-      return;
-    }
+    if (!session || !session.user) { window.location.href = 'login.html'; return; }
     currentUser = session.user;
     loadNavUser();
     loadWorkers();
-  }).catch(function() {
-    window.location.href = 'login.html';
-  });
+  }).catch(function() { window.location.href = 'login.html'; });
 });
 
 function loadNavUser() {
   var name = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
-  var initials = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+  var inits = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
   var av = document.getElementById('nav-av');
-  av.textContent = initials;
-  // Try fetching employer avatar
-  sb.from('employer_profiles').select('full_name,avatar_url').eq('user_id', currentUser.id).maybeSingle().then(function(r) {
-    if (r.data && r.data.avatar_url) {
-      av.innerHTML = '<img src="'+r.data.avatar_url+'" alt="avatar">';
-    } else if (r.data && r.data.full_name) {
-      av.textContent = r.data.full_name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
-    }
+  av.textContent = inits;
+  sb.from('employer_profiles').select('full_name,profile_photo_url').eq('user_id', currentUser.id).maybeSingle().then(function(r) {
+    if (r.data && r.data.profile_photo_url) av.innerHTML = '<img src="'+r.data.profile_photo_url+'" alt="avatar">';
+    else if (r.data && r.data.full_name) av.textContent = r.data.full_name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
   });
-  updateFavBadge();
 }
 
-/* ══════════════════════════════════════════
-   FETCH WORKERS FROM DB
-══════════════════════════════════════════ */
+/* ── FETCH WORKERS ── */
 async function loadWorkers() {
   showSkeletons();
   try {
     var res = await sb
       .from('worker_profiles')
-      .select('id,full_name,preferred_role,current_town,county,salary_min,salary_max,salary_range,edu_level,availability,work_arrangement,experience,key_skills,languages,profile_photo_url,is_verified,avg_rating,rating_count,profile_views,has_medical_cert,has_good_conduct,is_currently_hired,about_text,status,submitted_at,created_at,dob,gender,is_deleted')
+      .select('id,full_name,preferred_role,current_town,county,country,country_flag_url,salary_min,salary_max,salary_range,edu_level,availability,work_arrangement,experience,work_experience,key_skills,languages,profile_photo_url,is_verified,avg_rating,rating_count,has_medical_cert,has_good_conduct,is_currently_hired,about_text,status,submitted_at,created_at,dob,gender,referees,willing_to_relocate,disability')
       .eq('status', 'approved')
       .neq('is_deleted', true)
       .order('submitted_at', { ascending: false });
 
     if (res.error) throw res.error;
 
+    var colors = ['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB'];
     allWorkers = (res.data || []).map(function(w, i) {
-      return normalise(w, i);
+      var name  = w.full_name || 'Worker';
+      var inits = name.split(' ').map(function(x){return x[0]||'';}).slice(0,2).join('').toUpperCase();
+      var skills = w.key_skills ? w.key_skills.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+      var picUrl = '';
+      if (w.profile_photo_url) {
+        var raw = w.profile_photo_url;
+        picUrl = raw.startsWith('http') ? raw : sb.storage.from(BUCKET).getPublicUrl(raw).data.publicUrl;
+      }
+      var age = null;
+      if (w.dob) { var d = new Date(w.dob); if (!isNaN(d)) age = new Date().getFullYear() - d.getFullYear(); }
+      var exp = [];
+      var src = w.experience || w.work_experience;
+      if (Array.isArray(src)) exp = src;
+      var expYrs = exp.reduce(function(t,e){ return t + (parseInt(e.years_worked||e.duration_years||0)||0); }, 0);
+      var refs = [];
+      if (Array.isArray(w.referees)) refs = w.referees;
+      return Object.assign({}, w, {
+        _name: name, _inits: inits, _skills: skills,
+        _picUrl: picUrl, _color: colors[i % colors.length],
+        _rating: parseFloat(w.avg_rating)||0, _reviews: w.rating_count||0,
+        _salMin: parseFloat(w.salary_min)||0, _salMax: parseFloat(w.salary_max)||0,
+        _exp: expYrs, _expItems: exp,
+        _avail: w.work_arrangement || w.availability || '',
+        _age: age, _edu: w.edu_level || '',
+        _loc: w.current_town || w.county || '',
+        _country: w.country || 'Kenya',
+        _flag: w.country_flag_url || '',
+        _flagEmoji: countryFlag(w.country || 'Kenya'),
+        _verified: !!(w.is_verified),
+        _certified: !!(w.has_medical_cert || w.has_good_conduct),
+        _hired: !!(w.is_currently_hired),
+        _refs: refs,
+      });
     });
 
     if (!allWorkers.length) {
-      document.getElementById('workers-grid').innerHTML =
-        '<div class="empty-state"><i class="bi bi-people"></i><h3>No approved workers yet</h3><p>Workers appear here once admin verifies their profiles.</p></div>';
+      document.getElementById('workers-grid').innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><h3>No approved workers yet</h3><p>Workers appear here once admin verifies their profiles.</p></div>';
       document.getElementById('wcount').textContent = '0';
-      document.getElementById('pg-loader').classList.remove('show');
-      return;
     }
   } catch(e) {
-    console.error('loadWorkers:', e.message);
-    showToast('err','bi-exclamation-circle','Load Error', e.message, 6000);
+    showToast('err','bi-exclamation-circle','Load Error',e.message,6000);
   }
   document.getElementById('pg-loader').classList.remove('show');
   applyFilters();
 }
 
-/* Map DB row → UI object */
-function normalise(w, idx) {
-  var name   = w.full_name || 'Worker';
-  var inits  = name.split(' ').map(function(x){return x[0]||'';}).slice(0,2).join('').toUpperCase();
-  var skills = w.key_skills ? w.key_skills.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
-  var picUrl = '';
-  if (w.profile_photo_url) {
-    var raw = w.profile_photo_url;
-    picUrl  = raw.startsWith('http') ? raw : sb.storage.from(BUCKET).getPublicUrl(raw).data.publicUrl;
-  }
-  var colors = ['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB'];
-  var col    = colors[(idx || 0) % colors.length];
-  var rating = parseFloat(w.avg_rating) || 0;
-  // Compute age from dob
-  var age = null;
-  if (w.dob) { var d = new Date(w.dob); if (!isNaN(d)) age = new Date().getFullYear() - d.getFullYear(); }
-  // Compute experience years from jsonb array
-  var expYrs = 0;
-  if (Array.isArray(w.experience)) {
-    expYrs = w.experience.reduce(function(t, e){ return t + (parseInt(e.years_worked || e.duration_years || 0)||0); }, 0);
-  }
-  // Salary
-  var salMin = parseFloat(w.salary_min) || 0;
-  var salMax = parseFloat(w.salary_max) || 0;
-  return Object.assign({}, w, {
-    _name: name, _inits: inits, _skills: skills,
-    _picUrl: picUrl, _color: col,
-    _rating: rating,
-    _reviews: w.rating_count || 0,
-    _salMin: salMin,
-    _salMax: salMax,
-    _exp: expYrs,
-    _avail: w.availability || w.work_arrangement || '',
-    _age: age,
-    _edu: w.edu_level || '',
-    _loc: w.current_town || w.county || '',
-    _role: w.preferred_role || '',
-    _verified: !!(w.is_verified),
-    _featured: !!(w.has_medical_cert || w.has_good_conduct),
-  });
-}
-
-/* ══════════════════════════════════════════
-   RENDER
-══════════════════════════════════════════ */
+/* ── RENDER ── */
 function renderWorkers(list) {
   var grid = document.getElementById('workers-grid');
   document.getElementById('wcount').textContent = list.length;
-
+  document.getElementById('filter-count').textContent = list.length < allWorkers.length ? list.length + ' of ' + allWorkers.length : '';
   if (!list.length) {
-    grid.innerHTML = '<div class="empty-state"><i class="bi bi-search"></i><h3>No workers match your filters</h3><p>Try adjusting the filters or search term.</p></div>';
+    grid.innerHTML = '<div class="empty-state"><i class="bi bi-search"></i><h3>No workers match your filters</h3><p>Try adjusting the search term or filters.</p></div>';
     return;
   }
-
   grid.innerHTML = list.map(function(w, i) {
-    var isFav = favorites.includes(w.id);
-    var skills = w._skills.slice(0, 4);
-    var extra  = w._skills.length - skills.length;
-    var salStr = w._salMin && w._salMax
-               ? 'KES ' + w._salMin.toLocaleString() + ' – ' + w._salMax.toLocaleString()
-               : (w.salary_range || 'Negotiable');
-    var exp    = w._exp ? (w._exp + ' yr' + (w._exp !== 1 ? 's' : '')) : '–';
-    var stars  = [1,2,3,4,5].map(function(s) {
-      return '<span class="star '+(s <= Math.round(w._rating) ? 'on' : 'off')+'" onclick="rateWorker(\''+w.id+'\','+s+')">★</span>';
-    }).join('');
-
-    return '<div class="wcard" style="animation-delay:'+Math.min(i*45,400)+'ms" data-id="'+w.id+'">' +
-      '<div class="wcard-top">' +
-        '<div class="av-wrap">' +
-          (w._picUrl
-            ? '<img src="'+w._picUrl+'" class="wcard-av" alt="'+escHtml(w._name)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-            : '') +
-          '<div class="wcard-av" style="background:'+w._color+';'+(w._picUrl?'display:none':'')+'">'+w._inits+'</div>' +
-          '<div class="av-online"></div>' +
-        '</div>' +
-        '<div class="wcard-id">' +
-          '<div class="wcard-name">'+escHtml(w._name)+'</div>' +
-          '<div class="wcard-role">'+escHtml(w._role || '–')+'</div>' +
-          '<div class="badges">' +
-            (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '') +
-            (w._featured ? '<span class="badge b-featured"><i class="bi bi-award-fill"></i> Certified</span>' : '') +
-            (i < 4     ? '<span class="badge b-new">New</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<button class="wcard-fav'+(isFav?' active':'')+'" onclick="toggleFav(event,\''+w.id+'\')" title="Favourite">'+(isFav?'❤️':'🤍')+'</button>' +
-      '</div>' +
-      '<div class="wcard-meta">' +
-        '<div class="meta-item"><i class="bi bi-geo-alt-fill"></i><span>'+escHtml(w._loc||'–')+'</span></div>' +
-        '<div class="meta-item"><i class="bi bi-briefcase-fill"></i><span>'+exp+' exp.</span></div>' +
-        '<div class="meta-item"><i class="bi bi-mortarboard-fill"></i><span>'+escHtml(w._edu||'–')+'</span></div>' +
-        (w._age ? '<div class="meta-item"><i class="bi bi-calendar-event-fill"></i><span>Age '+w._age+'</span></div>' : '<div class="meta-item"><i class="bi bi-house-door-fill"></i><span>'+escHtml(w._avail||'–')+'</span></div>') +
-        '<div class="meta-item"><i class="bi bi-house-door-fill"></i><span>'+escHtml(w._avail||'–')+'</span></div>' +
-        '<div class="meta-item meta-salary"><i class="bi bi-cash-stack"></i><strong>'+escHtml(salStr)+'/mo</strong></div>' +
-      '</div>' +
-      (skills.length ? '<div class="wcard-skills">' +
-        skills.map(function(s){return '<span class="s-tag">'+escHtml(s)+'</span>';}).join('') +
-        (extra > 0 ? '<button class="s-more" onclick="showMoreSkills(event,\''+w.id+'\')">+'+extra+' more</button>' : '') +
-      '</div>' : '') +
-      '<div class="wcard-rating">' +
-        (w._rating > 0
-          ? '<div class="stars">'+stars+'</div><span class="rating-txt">'+w._rating.toFixed(1)+' ('+w._reviews+' review'+(w._reviews!==1?'s':'')+')</span>'
-          : '<span class="rating-txt" style="color:var(--light);font-style:italic">No ratings yet</span>') +
-      '</div>' +
-      '<div class="wcard-icons">' +
-        '<button class="icon-btn" onclick="openPicModal(\''+w.id+'\')" title="View Photo"><i class="bi bi-person-circle"></i></button>' +
-        '<button class="icon-btn" onclick="openShare(\''+w.id+'\')" title="Share Profile"><i class="bi bi-share-fill"></i></button>' +
-        '<button class="icon-btn" onclick="openReport(\''+w.id+'\')" title="Report"><i class="bi bi-flag-fill" style="color:var(--danger)"></i></button>' +
-      '</div>' +
-      '<div class="wcard-actions">' +
-        '<a href="employer-dashboard.html" class="act-btn primary"><i class="bi bi-arrow-right-circle-fill"></i> View Profile</a>' +
-        '<button class="act-btn" onclick="openMessage(\''+w.id+'\')"><i class="bi bi-chat-dots-fill"></i> Interview</button>' +
-      '</div>' +
+    var avHtml = w._picUrl
+      ? '<img src="'+w._picUrl+'" class="wcard-av-img" alt="'+escHtml(w._name)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        + '<div class="wcard-av" style="background:'+w._color+';display:none">'+w._inits+'</div>'
+      : '<div class="wcard-av" style="background:'+w._color+'">'+w._inits+'</div>';
+    var flagHtml = '<div class="wcard-flag">'+(w._flag ? '<img src="'+escHtml(w._flag)+'" alt="'+escHtml(w._country)+'">' : w._flagEmoji)+'</div>';
+    var salStr = w._salMin && w._salMax ? 'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo' : (w.salary_range || '');
+    return '<div class="wcard" onclick="openProfile(\''+w.id+'\')" style="animation-delay:'+Math.min(i*40,400)+'ms">'+
+      '<div class="wcard-av-wrap">'+avHtml+flagHtml+'</div>'+
+      '<div class="wcard-name">'+escHtml(w._name)+'</div>'+
+      '<div class="wcard-role">'+escHtml(w._role || w.preferred_role || '–')+'</div>'+
+      '<div class="wcard-loc"><i class="bi bi-geo-alt-fill"></i>'+escHtml(w._loc || '–')+'</div>'+
+      '<div class="wcard-badges">'+
+        (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '')+
+        (w._certified ? '<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>' : '')+
+        (w._hired ? '<span class="badge b-hired">Currently Hired</span>' : '')+
+      '</div>'+
+      (salStr ? '<div style="font-size:12px;color:var(--brand);font-weight:700;margin-top:8px">'+escHtml(salStr)+'</div>' : '')+
+      '<button class="wcard-btn"><i class="bi bi-person-lines-fill"></i> View Profile</button>'+
     '</div>';
   }).join('');
 }
 
-/* ══════════════════════════════════════════
-   FILTER + SORT
-══════════════════════════════════════════ */
+/* ── OPEN PROFILE MODAL ── */
+function openProfile(id) {
+  var w = allWorkers.find(function(x){return x.id===id;});
+  if (!w) return;
+
+  /* avatar */
+  var avHtml = w._picUrl
+    ? '<img src="'+w._picUrl+'" class="modal-av-img" alt="'+escHtml(w._name)+'" onerror="this.outerHTML=\'<div class=&quot;modal-av&quot; style=&quot;background:'+w._color+'&quot;>'+w._inits+'</div>\'">'
+    : '<div class="modal-av" style="background:'+w._color+'">'+w._inits+'</div>';
+  var flagHtml = '<div class="modal-flag">'+(w._flag ? '<img src="'+escHtml(w._flag)+'">' : w._flagEmoji)+'</div>';
+  document.getElementById('mAvWrap').innerHTML = avHtml + flagHtml;
+
+  /* salary */
+  var salStr = w._salMin && w._salMax ? 'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo' : (w.salary_range || 'Negotiable');
+  var exp = w._exp ? w._exp+' yr'+(w._exp!==1?'s':'') : '–';
+
+  /* experience items */
+  var expHtml = '';
+  if (w._expItems && w._expItems.length) {
+    expHtml = '<div class="modal-section">'+
+      '<div class="modal-section-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>'+
+      w._expItems.map(function(e){
+        return '<div class="exp-item">'+
+          '<div class="exp-employer">'+escHtml(e.employer_name||e.company||'Employer')+'</div>'+
+          '<div class="exp-detail">'+escHtml(e.job_title||e.role||'')+(e.years_worked||e.duration_years?' · '+(e.years_worked||e.duration_years)+' yr(s)':'')+'</div>'+
+          (e.job_description||e.description ? '<div class="exp-detail" style="margin-top:4px">'+escHtml((e.job_description||e.description||'').slice(0,120))+'</div>' : '')+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  /* referees */
+  var refHtml = '';
+  if (w._refs && w._refs.length) {
+    refHtml = '<div class="modal-section">'+
+      '<div class="modal-section-title"><i class="bi bi-people-fill"></i> Referees</div>'+
+      w._refs.map(function(r){
+        return '<div class="ref-item">'+
+          '<div class="ref-name">'+escHtml(r.full_name||r.name||'Referee')+'</div>'+
+          '<div class="ref-detail">'+escHtml(r.relationship||'')+(r.phone?' · '+escHtml(r.phone):'')+'</div>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  document.getElementById('mBody').innerHTML =
+    '<div class="modal-name">'+escHtml(w._name)+'</div>'+
+    '<div class="modal-role">'+escHtml(w.preferred_role||'–')+'</div>'+
+    '<div class="modal-badges">'+
+      (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '')+
+      (w._certified ? '<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>' : '')+
+      (w._hired ? '<span class="badge b-hired">Currently Hired</span>' : '')+
+    '</div>'+
+
+    (w.about_text ? '<div class="modal-section"><div class="modal-section-title"><i class="bi bi-person-fill"></i> About</div><div class="about-box">'+escHtml(w.about_text)+'</div></div>' : '')+
+
+    '<div class="modal-section">'+
+      '<div class="modal-section-title"><i class="bi bi-info-circle-fill"></i> Profile Details</div>'+
+      '<div class="info-grid">'+
+        '<div class="info-item"><div class="label">Location</div><div class="value">'+escHtml(w._loc||'–')+'</div></div>'+
+        '<div class="info-item"><div class="label">Country</div><div class="value">'+w._flagEmoji+' '+escHtml(w._country)+'</div></div>'+
+        '<div class="info-item"><div class="label">Role</div><div class="value">'+escHtml(w.preferred_role||'–')+'</div></div>'+
+        '<div class="info-item"><div class="label">Availability</div><div class="value">'+escHtml(w._avail||'–')+'</div></div>'+
+        '<div class="info-item"><div class="label">Experience</div><div class="value">'+exp+'</div></div>'+
+        '<div class="info-item"><div class="label">Education</div><div class="value">'+escHtml(w._edu||'–')+'</div></div>'+
+        (w._age ? '<div class="info-item"><div class="label">Age</div><div class="value">'+w._age+'</div></div>' : '')+
+        (w.gender ? '<div class="info-item"><div class="label">Gender</div><div class="value">'+escHtml(w.gender)+'</div></div>' : '')+
+        '<div class="info-item full"><div class="label">Salary Expectation</div><div class="value">'+escHtml(salStr)+'</div></div>'+
+        (w.languages ? '<div class="info-item full"><div class="label">Languages</div><div class="value">'+escHtml(w.languages)+'</div></div>' : '')+
+        (w.willing_to_relocate ? '<div class="info-item"><div class="label">Willing to Relocate</div><div class="value">'+escHtml(w.willing_to_relocate)+'</div></div>' : '')+
+        (w.disability && w.disability!=='No' ? '<div class="info-item"><div class="label">Disability</div><div class="value">'+escHtml(w.disability)+'</div></div>' : '')+
+        (w._rating > 0 ? '<div class="info-item"><div class="label">Rating</div><div class="value">★ '+w._rating.toFixed(1)+' ('+w._reviews+' reviews)</div></div>' : '')+
+      '</div>'+
+    '</div>'+
+
+    (w._skills.length ? '<div class="modal-section"><div class="modal-section-title"><i class="bi bi-lightning-charge-fill"></i> Skills</div><div class="skills-wrap">'+w._skills.map(function(s){return '<span class="s-tag">'+escHtml(s)+'</span>';}).join('')+'</div></div>' : '')+
+
+    expHtml + refHtml;
+
+  document.getElementById('profileModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
+document.addEventListener('click', function(e) {
+  if (e.target === document.getElementById('profileModal')) closeModal();
+});
+
+/* ── FILTER + SORT ── */
 function applyFilters() {
-  var q      = (document.getElementById('globalSearch').value || '').toLowerCase();
-  var fRole  = document.getElementById('fRole').value;
-  var fLoc   = (document.getElementById('fLoc').value || '').toLowerCase();
-  var fSal   = document.getElementById('fSalary').value;
-  var fAge   = document.getElementById('fAge').value;
-  var fEdu   = document.getElementById('fEdu').value;
-  var fExp   = document.getElementById('fExp').value;
-  var fAvail = document.getElementById('fAvail').value;
-  var sort   = document.getElementById('sortSel').value;
-  var chips  = Array.from(document.querySelectorAll('.skill-chip.active')).map(function(c){return c.textContent.toLowerCase();});
+  var q     = (document.getElementById('globalSearch').value||'').toLowerCase();
+  var fRole = document.getElementById('fRole').value;
+  var fAvail= document.getElementById('fAvail').value;
+  var sort  = document.getElementById('sortSel').value;
 
   var list = allWorkers.filter(function(w) {
-    if (showFavsOnly && !favorites.includes(w.id)) return false;
-    if (q) {
-      var hay = (w._name + ' ' + w._role + ' ' + w._loc).toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    if (fRole && w._role !== fRole) return false;
-    if (fLoc  && !w._loc.toLowerCase().includes(fLoc)) return false;
+    if (q) { var hay=(w._name+' '+(w.preferred_role||'')+' '+w._loc).toLowerCase(); if (!hay.includes(q)) return false; }
+    if (fRole && (w.preferred_role||'') !== fRole) return false;
     if (fAvail && w._avail !== fAvail) return false;
-    if (fEdu   && w._edu  !== fEdu)   return false;
-    if (chips.length) {
-      var ws = w._skills.map(function(s){return s.toLowerCase();});
-      if (!chips.every(function(c){return ws.some(function(x){return x.includes(c);});})) return false;
-    }
-    if (fExp) {
-      var y = w._exp;
-      if (fExp==='0 – 1 year'   && y>1)  return false;
-      if (fExp==='1 – 3 years'  && (y<1||y>3)) return false;
-      if (fExp==='3 – 5 years'  && (y<3||y>5)) return false;
-      if (fExp==='5+ years'     && y<5)  return false;
-    }
-    if (fAge) {
-      var a = w._age || 0;
-      if (fAge==='19 – 25' && (a<19||a>25)) return false;
-      if (fAge==='26 – 35' && (a<26||a>35)) return false;
-      if (fAge==='36 – 45' && (a<36||a>45)) return false;
-      if (fAge==='46+'     && a<46)         return false;
-    }
     return true;
   });
 
-  list.sort(function(a, b) {
-    if (sort==='exp')         return b._exp - a._exp;
+  list.sort(function(a,b) {
     if (sort==='rating')      return b._rating - a._rating;
+    if (sort==='exp')         return b._exp - a._exp;
     if (sort==='salary_low')  return a._salMin - b._salMin;
     if (sort==='salary_high') return b._salMax - a._salMax;
     return 0;
@@ -1264,262 +551,34 @@ function applyFilters() {
   renderWorkers(list);
 }
 
-function debounceFilter() {
-  clearTimeout(debTimer);
-  debTimer = setTimeout(applyFilters, 270);
-}
+function debounceFilter() { clearTimeout(debTimer); debTimer = setTimeout(applyFilters,270); }
 
-function clearFilters() {
-  ['fRole','fSalary','fAge','fEdu','fExp','fAvail'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.selectedIndex = 0;
-  });
-  ['fLoc','globalSearch'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.querySelectorAll('.skill-chip.active').forEach(function(c){c.classList.remove('active');});
-  document.getElementById('distRange').value = 25;
-  document.getElementById('distVal').textContent = '25 km';
-  showFavsOnly = false;
-  applyFilters();
-}
-
-function toggleSkill(el) { el.classList.toggle('active'); applyFilters(); }
-function updateDist(v)    { document.getElementById('distVal').textContent = v + ' km'; }
-
-/* ══════════════════════════════════════════
-   FAVOURITES
-══════════════════════════════════════════ */
-function toggleFav(e, id) {
-  e.stopPropagation();
-  var btn = e.currentTarget;
-  if (favorites.includes(id)) {
-    favorites = favorites.filter(function(f){return f!==id;});
-    btn.textContent = '🤍'; btn.classList.remove('active');
-    showToast('warn','bi-heart','Removed from favourites','',2500);
-  } else {
-    favorites.push(id);
-    btn.textContent = '❤️'; btn.classList.add('active');
-    showToast('ok','bi-heart-fill','Added to favourites','',2500);
-  }
-  localStorage.setItem('sc_worker_favs', JSON.stringify(favorites));
-  updateFavBadge();
-}
-function updateFavBadge() {
-  var badge = document.getElementById('fav-badge');
-  if (favorites.length) { badge.textContent = favorites.length; badge.classList.add('show'); }
-  else badge.classList.remove('show');
-}
-function toggleFavFilter() {
-  showFavsOnly = !showFavsOnly;
-  var btn = document.getElementById('nav-fav-btn');
-  btn.style.color = showFavsOnly ? 'var(--danger)' : '';
-  applyFilters();
-}
-
-/* ══════════════════════════════════════════
-   SHOW MORE SKILLS
-══════════════════════════════════════════ */
-function showMoreSkills(e, id) {
-  e.stopPropagation();
-  var w = allWorkers.find(function(x){return x.id===id;});
-  if (!w) return;
-  var container = e.currentTarget.parentElement;
-  container.innerHTML = w._skills.map(function(s){return '<span class="s-tag">'+escHtml(s)+'</span>';}).join('');
-}
-
-/* ══════════════════════════════════════════
-   RATE WORKER
-══════════════════════════════════════════ */
-async function rateWorker(id, stars) {
-  var card = document.querySelector('[data-id="'+id+'"]');
-  if (card) {
-    card.querySelectorAll('.star').forEach(function(s,i){
-      s.classList.toggle('on', i<stars); s.classList.toggle('off', i>=stars);
-    });
-  }
-  try { await sb.from('worker_ratings').upsert({worker_id:id, rating:stars, employer_id:currentUser.id}); } catch(e){}
-  showToast('ok','bi-star-fill','Rated '+ stars +' star'+(stars>1?'s':''),'',2500);
-}
-
-/* ══════════════════════════════════════════
-   MESSAGE MODAL
-══════════════════════════════════════════ */
-function openMessage(id) {
-  var w = allWorkers.find(function(x){return x.id===id;});
-  if (!w) return;
-  activeWorker = w;
-  document.getElementById('msgName').textContent = w._name;
-  document.getElementById('msgSubject').value = '';
-  document.getElementById('msgBody').value = '';
-  openModal('msgModal');
-}
-async function sendMessage() {
-  var subject = document.getElementById('msgSubject').value.trim();
-  var body    = document.getElementById('msgBody').value.trim();
-  if (!body) { showToast('err','bi-exclamation-circle','Empty message','Please write a message first.',3500); return; }
-  try {
-    var payload = {
-      receiver_id:   activeWorker.id,
-      sender_id:     currentUser.id,
-      content:       body,
-      subject:       subject || 'Interview Request',
-      employer_name: employerProfile ? employerProfile.full_name : (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email,
-      is_from_employer: true,
-      type: 'interview_request',
-    };
-    var res = await sb.from('messages').insert(payload);
-    if (res.error && res.error.code !== '23505') throw res.error;
-  } catch(e) { console.warn('sendMessage:', e.message); }
-  closeModal('msgModal');
-  showToast('ok','bi-send-fill','Message sent to '+activeWorker._name+'!','',4000);
-}
-
-/* ══════════════════════════════════════════
-   REPORT MODAL
-══════════════════════════════════════════ */
-function openReport(id) {
-  activeWorker = allWorkers.find(function(x){return x.id===id;});
-  document.getElementById('reportReason').selectedIndex = 0;
-  document.getElementById('reportDetails').value = '';
-  openModal('reportModal');
-}
-async function submitReport() {
-  var reason = document.getElementById('reportReason').value;
-  if (!reason) { showToast('err','bi-exclamation-circle','Select reason','Please choose a reason.',3000); return; }
-  try {
-    await sb.from('reports').insert({
-      worker_id: activeWorker && activeWorker.id,
-      reporter_id: currentUser.id,
-      reason: reason,
-      details: document.getElementById('reportDetails').value.trim() || null,
-    });
-  } catch(e) { console.warn('report:', e.message); }
-  closeModal('reportModal');
-  showToast('ok','bi-flag-fill','Report submitted','Our team will review it within 24 hours.',5000);
-}
-
-/* ══════════════════════════════════════════
-   PHOTO MODAL
-══════════════════════════════════════════ */
-function openPicModal(id) {
-  var w = allWorkers.find(function(x){return x.id===id;});
-  if (!w) return;
-  activeWorker = w;
-  document.getElementById('picModalName').textContent = w._name + "'s Photo";
-  var view = document.getElementById('picModalView');
-  if (w._picUrl) {
-    view.innerHTML = '<img src="'+w._picUrl+'" alt="'+escHtml(w._name)+'">';
-  } else {
-    view.innerHTML = '<div class="fallback-av" style="font-size:72px;padding:36px 0">'+w._inits+'</div>';
-  }
-  document.getElementById('picModalMeta').textContent = (w._role||'') + ' · ' + (w._loc||'') + (w._verified ? ' · ✔ Verified' : '');
-  openModal('picModal');
-}
-function saveProfilePic() {
-  var img = document.querySelector('#picModalView img');
-  if (!img) { showToast('err','bi-exclamation-circle','No photo','This worker has no photo to save.',3000); return; }
-  var a = document.createElement('a');
-  a.href = img.src; a.download = 'soundscare-worker-'+(activeWorker&&activeWorker.id||'photo')+'.jpg';
-  a.target = '_blank'; a.click();
-  showToast('ok','bi-download','Photo saved','',2500);
-}
-
-/* ══════════════════════════════════════════
-   SHARE MODAL
-══════════════════════════════════════════ */
-function openShare(id) {
-  activeWorker = allWorkers.find(function(x){return x.id===id;});
-  var link = window.location.origin + '/employees.html?worker=' + id;
-  document.getElementById('shareLink').value = link;
-  openModal('shareModal');
-}
-function shareVia(platform) {
-  var link = document.getElementById('shareLink').value;
-  var name = activeWorker ? activeWorker._name : 'Worker';
-  var text = 'Check out ' + name + "'s profile on Sounds Care!";
-  var urls = {
-    whatsapp: 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + link),
-    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link),
-    twitter:  'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(link),
-  };
-  if (platform === 'copy') { copyShareLink(); return; }
-  window.open(urls[platform], '_blank');
-}
-function copyShareLink() {
-  var input = document.getElementById('shareLink');
-  navigator.clipboard.writeText(input.value).then(function(){
-    showToast('ok','bi-clipboard-check','Link copied!','',2500);
-  }).catch(function(){
-    input.select(); document.execCommand('copy');
-    showToast('ok','bi-clipboard-check','Link copied!','',2500);
-  });
-}
-
-/* ══════════════════════════════════════════
-   SKELETON
-══════════════════════════════════════════ */
+/* ── SKELETONS ── */
 function showSkeletons() {
   var grid = document.getElementById('workers-grid');
   grid.className = 'skel-grid';
-  grid.innerHTML = Array(6).fill(0).map(function(){
+  grid.innerHTML = Array(8).fill(0).map(function(){
     return '<div class="skel">'+
-      '<div style="display:flex;gap:11px;margin-bottom:13px">'+
-        '<div class="sl" style="width:54px;height:54px;border-radius:50%;margin-bottom:0;flex-shrink:0"></div>'+
-        '<div style="flex:1"><div class="sl" style="height:13px;width:65%"></div><div class="sl" style="height:10px;width:45%"></div></div>'+
-      '</div>'+
-      '<div class="sl" style="height:10px;width:88%"></div>'+
-      '<div class="sl" style="height:10px;width:72%"></div>'+
-      '<div class="sl" style="height:10px;width:55%"></div>'+
-      '<div class="sl" style="height:30px;margin-top:14px;border-radius:8px"></div>'+
+      '<div class="sl" style="width:80px;height:80px;border-radius:50%;margin-bottom:4px"></div>'+
+      '<div class="sl" style="width:70%"></div>'+
+      '<div class="sl" style="width:50%"></div>'+
+      '<div class="sl" style="width:60%;height:10px"></div>'+
     '</div>';
   }).join('');
-  // restore grid class after render
-  setTimeout(function(){grid.className='workers-grid';}, 50);
+  setTimeout(function(){ grid.className='workers-grid'; }, 50);
 }
 
-/* ══════════════════════════════════════════
-   MODAL HELPERS
-══════════════════════════════════════════ */
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('click', function(e) {
-  document.querySelectorAll('.modal-overlay.open').forEach(function(ov){
-    if (e.target === ov) closeModal(ov.id);
-  });
-});
-
-/* ══════════════════════════════════════════
-   TOAST
-══════════════════════════════════════════ */
-function showToast(type, icon, title, body, duration) {
+function showToast(type, icon, title, body, dur) {
   var stack = document.getElementById('toast-stack');
   var t = document.createElement('div');
-  t.className = 'toast ' + (type||'');
-  t.innerHTML =
-    '<i class="bi '+icon+' toast-icon '+(type||'')+'"></i>'+
-    '<div class="toast-content"><strong>'+escHtml(title)+'</strong>'+(body?'<p style="font-size:11.5px;opacity:.8;margin-top:1px">'+escHtml(body)+'</p>':'')+'</div>'+
-    '<button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
+  t.className='toast '+(type||'');
+  t.innerHTML='<i class="bi '+icon+'"></i><div><strong>'+escHtml(title)+'</strong>'+(body?'<p style="font-size:11.5px;opacity:.8;margin-top:1px">'+escHtml(body)+'</p>':'')+'</div><button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
   stack.appendChild(t);
-  if (duration > 0) {
-    setTimeout(function(){
-      t.classList.add('hide');
-      setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);}, 350);
-    }, duration);
-  }
+  if (dur>0) setTimeout(function(){ t.classList.add('hide'); setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},350); }, dur);
 }
 
-/* ══════════════════════════════════════════
-   UTILS
-══════════════════════════════════════════ */
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function toggleMenu() {
-  document.querySelector('.nav-links').classList.toggle('open');
-  document.getElementById('sidebar').classList.toggle('open');
-}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toggleMenu(){ document.querySelector('.nav-links').classList.toggle('open'); }
 </script>
 </body>
 </html>
