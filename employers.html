@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta name="referrer" content="no-referrer">
 <title>Employers & Jobs – Sounds Care</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -201,6 +207,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 /* FOOTER */
 .footer{background:var(--sidebar-bg);color:var(--sidebar-text);text-align:center;padding:20px 24px;font-size:13px;border-top:1px solid rgba(255,255,255,.08)}
 
+/* SECURITY NAV BAR */
+.sec-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sec-nav-left{display:flex;align-items:center;gap:8px}
+.sec-nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;text-decoration:none;transition:.18s}
+.btn-nav-ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.btn-nav-ghost:hover{background:var(--border)}
+.btn-nav-brand{background:var(--brand);color:#fff}
+.btn-nav-brand:hover{background:var(--brand-dark)}
+.btn-nav-danger{background:#FDF2F2;color:var(--danger);border:1.5px solid #f5c6c6}
+.btn-nav-danger:hover{background:var(--danger);color:#fff}
+.session-timer{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.session-timer i{font-size:13px}
+.session-timer.warn{color:#D07C2D;font-weight:600}
+.session-timer.danger{color:var(--danger);font-weight:700}
+
+/* SESSION EXPIRED OVERLAY */
+#session-expired{display:none;position:fixed;inset:0;background:rgba(15,40,25,.85);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+#session-expired.show{display:flex}
+.session-expired-box{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.session-expired-box i{font-size:44px;color:var(--danger);margin-bottom:16px;display:block}
+.session-expired-box h3{font-size:19px;font-weight:700;margin-bottom:8px}
+.session-expired-box p{font-size:13px;color:var(--muted);margin-bottom:22px}
+
 /* RESPONSIVE */
 @media(max-width:620px){
   .topbar{display:none}
@@ -226,6 +256,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   <span>📞 <a href="tel:+254700000000">+254 700 000 000</a> &nbsp;|&nbsp; <a href="mailto:info@sounds.co.ke">info@sounds.co.ke</a></span>
 </div>
 
+<!-- SECURITY NAV -->
+<div class="sec-nav">
+  <div class="sec-nav-left">
+    <a href="javascript:history.back()" class="btn-nav btn-nav-ghost"><i class="bi bi-arrow-left"></i> Back</a>
+    <a href="worker-dashboard.html" class="btn-nav btn-nav-brand"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  </div>
+  <div class="sec-nav-right">
+    <span class="session-timer" id="session-timer"><i class="bi bi-clock"></i> Session: <span id="timer-display">30:00</span></span>
+    <button class="btn-nav btn-nav-danger" onclick="secureLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+  </div>
+</div>
+
 <!-- NAVBAR -->
 <nav class="navbar">
   <a href="index.html" class="logo"><div class="logo-pulse"></div>Sounds<span>Care</span></a>
@@ -240,6 +282,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <button class="hamburger" onclick="toggleMenu()">&#9776;</button>
   </div>
 </nav>
+
+<!-- SESSION EXPIRED OVERLAY -->
+<div id="session-expired">
+  <div class="session-expired-box">
+    <i class="bi bi-shield-lock-fill"></i>
+    <h3>Session Expired</h3>
+    <p>You've been logged out due to inactivity. Please sign in again to continue.</p>
+    <a href="login.html" class="btn-nav btn-nav-brand" style="display:inline-flex;justify-content:center;width:100%;padding:10px 18px">
+      <i class="bi bi-box-arrow-in-right"></i> Sign In Again
+    </a>
+  </div>
+</div>
 
 <!-- HERO -->
 <div class="hero">
@@ -394,17 +448,113 @@ function timeAgo(ts){ if(!ts) return ''; var d=Date.now()-new Date(ts); if(d<360
 function countryFlag(c){ if(!c) return ''; var m={'Kenya':'🇰🇪','Uganda':'🇺🇬','Tanzania':'🇹🇿','Rwanda':'🇷🇼','Ethiopia':'🇪🇹','Nigeria':'🇳🇬','Ghana':'🇬🇭'}; var k=Object.keys(m).find(function(x){return c.toLowerCase().includes(x.toLowerCase());}); return k?m[k]:'🌍'; }
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-/* ── INIT ── */
+/* ══════════════════════════════════════════
+   SECURITY MODULE
+   ══════════════════════════════════════════ */
+var SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+var SESSION_WARN_MS    = 25 * 60 * 1000; // warn at 25 min
+var _sessionTimer = null, _sessionStart = null, _timerInterval = null;
+
+function resetSessionTimer() {
+  _sessionStart = Date.now();
+  clearTimeout(_sessionTimer);
+  _sessionTimer = setTimeout(function() { expireSession(); }, SESSION_TIMEOUT_MS);
+}
+
+function expireSession() {
+  clearInterval(_timerInterval);
+  clearTimeout(_sessionTimer);
+  if (sb) sb.auth.signOut();
+  clearAllCache();
+  document.getElementById('session-expired').classList.add('show');
+}
+
+function clearAllCache() {
+  try {
+    // Clear all Supabase / auth tokens from storage
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    keys.forEach(function(k) { if (k && (k.includes('supabase') || k.includes('sb-') || k.includes('auth'))) localStorage.removeItem(k); });
+    keys = [];
+    for (var i = 0; i < sessionStorage.length; i++) keys.push(sessionStorage.key(i));
+    keys.forEach(function(k) { if (k && (k.includes('supabase') || k.includes('sb-') || k.includes('auth'))) sessionStorage.removeItem(k); });
+  } catch(e) {}
+}
+
+function startTimerDisplay() {
+  _timerInterval = setInterval(function() {
+    if (!_sessionStart) return;
+    var elapsed = Date.now() - _sessionStart;
+    var remaining = Math.max(0, SESSION_TIMEOUT_MS - elapsed);
+    var mins = Math.floor(remaining / 60000);
+    var secs = Math.floor((remaining % 60000) / 1000);
+    var display = document.getElementById('timer-display');
+    var timerEl = document.getElementById('session-timer');
+    if (display) display.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    if (timerEl) {
+      timerEl.className = 'session-timer' + (elapsed >= SESSION_WARN_MS ? (elapsed >= SESSION_TIMEOUT_MS - 60000 ? ' danger' : ' warn') : '');
+    }
+    if (remaining <= 0) expireSession();
+  }, 1000);
+}
+
+function secureLogout() {
+  clearInterval(_timerInterval);
+  clearTimeout(_sessionTimer);
+  if (sb) sb.auth.signOut().then(function() {
+    clearAllCache();
+    window.location.replace('login.html');
+  }).catch(function() {
+    clearAllCache();
+    window.location.replace('login.html');
+  });
+}
+
+// Reset timer on any user interaction
+['click','keydown','mousemove','touchstart','scroll'].forEach(function(evt) {
+  document.addEventListener(evt, resetSessionTimer, { passive: true });
+});
+
+// Handle tab close / window close - sign out
+window.addEventListener('beforeunload', function() {
+  clearAllCache();
+});
+
+// ── INIT ──
 document.addEventListener('DOMContentLoaded', function() {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById('pg-loader').classList.add('show');
+
+  // Listen for auth state changes (logout from another tab, token expiry)
+  sb.auth.onAuthStateChange(function(event, session) {
+    if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+      clearAllCache();
+      window.location.replace('login.html');
+    }
+  });
+
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
     currentUser = session && session.user || null;
-    if (currentUser) loadNavUser();
-    else document.getElementById('nav-av').title = 'Not logged in';
+    if (!currentUser) {
+      clearAllCache();
+      window.location.replace('login.html');
+      return;
+    }
+    // Validate token expiry
+    if (session.expires_at && session.expires_at * 1000 < Date.now()) {
+      clearAllCache();
+      window.location.replace('login.html');
+      return;
+    }
+    resetSessionTimer();
+    startTimerDisplay();
+    loadNavUser();
     loadAll();
-  }).catch(function(){ loadAll(); });
+  }).catch(function() {
+    clearAllCache();
+    window.location.replace('login.html');
+  });
 });
 
 function loadNavUser() {
