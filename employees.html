@@ -4,105 +4,155 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="X-Frame-Options" content="DENY">
-<meta name="referrer" content="no-referrer">
 <title>Browse Workers – Sounds Care</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-:root {
-  --brand:        #1B6B45;
-  --brand-light:  #E6F5EE;
-  --brand-mid:    #C9E8D4;
-  --brand-dark:   #0F4D30;
-  --accent:       #E8A040;
-  --sidebar-bg:   #0F3D28;
-  --sidebar-text: #B8D9C6;
-  --bg:           #F0F5F2;
-  --surface:      #FFFFFF;
-  --border:       #E2EBE6;
-  --text:         #1A2E24;
-  --muted:        #6B8876;
-  --light:        #9BB5A5;
-  --danger:       #C0392B;
-  --radius:       12px;
-  --radius-sm:    8px;
-  --shadow:       0 2px 12px rgba(27,107,69,.08);
-  --shadow-lg:    0 8px 32px rgba(27,107,69,.14);
+:root{
+  --brand:#1B6B45;--brand-light:#E6F5EE;--brand-mid:#C9E8D4;--brand-dark:#0F4D30;
+  --accent:#E8A040;--sidebar-bg:#0F3D28;--sidebar-text:#B8D9C6;
+  --bg:#F0F5F2;--surface:#FFFFFF;--border:#E2EBE6;
+  --text:#1A2E24;--muted:#6B8876;--light:#9BB5A5;
+  --danger:#C0392B;--warn:#D07C2D;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 2px 12px rgba(27,107,69,.08);--shadow-lg:0 8px 32px rgba(27,107,69,.14);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+a{text-decoration:none;color:inherit}
 
-/* LOADER */
+/* ── AUTH GATE OVERLAY ── */
+#auth-gate{display:none;position:fixed;inset:0;background:rgba(10,30,20,.9);z-index:99999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px)}
+#auth-gate.show{display:flex}
+.auth-gate-card{background:#fff;border-radius:20px;padding:2.5rem 2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.35)}
+.auth-gate-card .ag-icon{width:64px;height:64px;background:var(--brand-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:28px}
+.auth-gate-card h2{font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:.6rem}
+.auth-gate-card p{color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:1.6rem}
+.auth-gate-card .btn-ag{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 20px;border-radius:50px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;border:none;margin-bottom:10px;transition:.18s}
+.btn-ag-brand{background:var(--brand);color:#fff}
+.btn-ag-brand:hover{background:var(--brand-dark)}
+.btn-ag-ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.btn-ag-ghost:hover{border-color:var(--brand);color:var(--brand)}
+
+/* ── LOADER ── */
 #pg-loader{display:none;position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 #pg-loader.show{display:flex}
 .spin-ring{width:40px;height:40px;border:3px solid var(--brand-light);border-top-color:var(--brand);border-radius:50%;animation:spin .75s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #pg-loader p{font-size:13px;color:var(--muted);font-weight:500}
 
-/* TOPBAR */
+/* ── TOPBAR ── */
 .topbar{background:var(--sidebar-bg);color:var(--sidebar-text);font-size:12px;display:flex;justify-content:space-between;align-items:center;padding:6px 28px;letter-spacing:.01em}
-.topbar a{color:var(--brand-mid);text-decoration:none}
+.topbar a{color:var(--brand-mid)}
+@media(max-width:620px){.topbar{display:none}}
 
-/* NAVBAR */
+/* ── ACCOUNT PANEL DROPDOWN ── */
+.acct-wrap{position:relative}
+.nav-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2DB877);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;overflow:hidden;border:2px solid var(--brand-light);transition:.18s;flex-shrink:0}
+.nav-avatar img{width:100%;height:100%;object-fit:cover}
+.nav-avatar:hover{border-color:var(--brand)}
+
+.acct-panel{display:none;position:absolute;top:calc(100% + 10px);right:0;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.16);width:280px;z-index:500;animation:panelIn .18s ease;overflow:hidden}
+.acct-panel.open{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.acct-panel-head{background:linear-gradient(135deg,var(--sidebar-bg),#1B4D32);padding:20px 18px 16px;color:#fff}
+.acct-panel-head .ap-greeting{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+.acct-panel-head .ap-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:2px}
+.acct-panel-head .ap-email{font-size:11.5px;color:rgba(255,255,255,.55)}
+.acct-panel-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border)}
+.ap-stat{background:#fff;padding:12px 8px;text-align:center}
+.ap-stat-num{font-size:18px;font-weight:800;color:var(--brand);line-height:1}
+.ap-stat-label{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.acct-panel-menu{padding:8px 0}
+.apm-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13.5px;font-weight:500;color:var(--text);cursor:pointer;transition:.15s;border:none;background:none;width:100%;font-family:inherit;text-decoration:none}
+.apm-item i{width:20px;font-size:15px;color:var(--brand);flex-shrink:0}
+.apm-item:hover{background:var(--brand-light);color:var(--brand)}
+.apm-item.danger{color:var(--danger)}
+.apm-item.danger i{color:var(--danger)}
+.apm-item.danger:hover{background:#fdf2f2}
+.apm-sep{height:1px;background:var(--border);margin:4px 0}
+
+/* ── NAVBAR ── */
 .navbar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;height:62px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 var(--border)}
 .logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:9px;margin-right:auto}
 .logo span{color:var(--brand)}
 .logo-pulse{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:livePulse 2s ease-in-out infinite;flex-shrink:0}
 @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 .nav-links{display:flex;list-style:none;gap:4px;margin:0 20px}
-.nav-links a{font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 13px;border-radius:var(--radius-sm);transition:all .18s}
+.nav-links a{font-size:13.5px;font-weight:500;color:var(--muted);padding:6px 13px;border-radius:var(--radius-sm);transition:all .18s}
 .nav-links a:hover,.nav-links a.active{background:var(--brand-light);color:var(--brand)}
 .nav-links a.active{font-weight:600}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2DB877);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;overflow:hidden;border:2px solid var(--brand-light);transition:.18s}
-.nav-avatar img{width:100%;height:100%;object-fit:cover}
 .hamburger{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);margin-left:12px}
 
-/* HERO */
+/* greeting chip in navbar */
+.greet-chip{display:flex;align-items:center;gap:8px;background:var(--brand-light);border-radius:50px;padding:5px 14px 5px 8px;margin-right:12px;font-size:13px;font-weight:600;color:var(--brand)}
+.greet-chip .gc-av{width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;overflow:hidden;flex-shrink:0}
+.greet-chip .gc-av img{width:100%;height:100%;object-fit:cover}
+@media(max-width:740px){.greet-chip{display:none}}
+
+/* ── SECURITY BAR ── */
+.sec-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 28px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sec-nav-left{display:flex;align-items:center;gap:8px}
+.sec-nav-right{display:flex;align-items:center;gap:8px}
+.btn-nav{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;border:none;text-decoration:none;transition:.18s}
+.btn-nav-ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.btn-nav-ghost:hover{background:var(--border)}
+.btn-nav-brand{background:var(--brand);color:#fff}
+.btn-nav-brand:hover{background:var(--brand-dark)}
+.session-timer{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.session-timer.warn{color:var(--warn);font-weight:600}
+.session-timer.danger{color:var(--danger);font-weight:700}
+
+/* ── SESSION EXPIRED ── */
+#session-expired{display:none;position:fixed;inset:0;background:rgba(15,40,25,.85);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+#session-expired.show{display:flex}
+.session-expired-box{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.session-expired-box i{font-size:44px;color:var(--danger);margin-bottom:16px;display:block}
+.session-expired-box h3{font-size:19px;font-weight:700;margin-bottom:8px}
+.session-expired-box p{font-size:13px;color:var(--muted);margin-bottom:22px}
+
+/* ── HERO ── */
 .hero{background:linear-gradient(135deg,var(--sidebar-bg) 0%,#1B4D32 60%,var(--brand-dark) 100%);color:#fff;padding:40px 28px 36px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 50%,rgba(232,160,64,.18) 0%,transparent 60%);pointer-events:none}
 .hero-inner{max-width:840px;position:relative}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:4px 13px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-mid);margin-bottom:14px}
 .hero h1{font-family:'Playfair Display',serif;font-size:clamp(24px,3.5vw,38px);font-weight:700;line-height:1.18;margin-bottom:10px}
 .hero h1 em{font-style:italic;color:var(--accent)}
-.hero p{color:rgba(255,255,255,.65);font-size:14px;max-width:500px;margin-bottom:24px}
+.hero p{color:rgba(255,255,255,.65);font-size:14px;max-width:500px}
 
-/* FILTER BAR */
+/* ── FILTER BAR ── */
 .filter-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .filter-bar input,.filter-bar select{padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:var(--bg);color:var(--text);transition:border-color .18s}
-.filter-bar input:focus,.filter-bar select:focus{border-color:var(--brand);background:var(--surface)}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--brand);background:#fff}
 .filter-bar input{flex:1;min-width:180px}
-.filter-bar select{min-width:150px}
+.filter-bar select{min-width:140px}
 .btn-search{background:var(--brand);color:#fff;border:none;padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:6px}
 .btn-search:hover{background:var(--brand-dark)}
 .filter-count{font-size:13px;color:var(--muted);margin-left:auto;white-space:nowrap}
 
-/* PAGE WRAP */
+/* ── PAGE WRAP ── */
 .page-wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
 .listing-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .listing-hd h2{font-size:16px;font-weight:700}
 .listing-hd h2 span{color:var(--brand)}
 .sort-sel{padding:7px 28px 7px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;cursor:pointer}
 
-/* GRID */
+/* ── WORKER GRID ── */
 .workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 
-/* WORKER CARD */
-.wcard{background:#fff;border:1px solid #E8F0EC;border-radius:var(--radius);overflow:hidden;transition:box-shadow .22s,transform .22s,border-color .22s;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;padding:24px 16px 16px;text-align:center;position:relative;animation:cardIn .35s ease both}
+/* ── WORKER CARD ── */
+.wcard{background:#fff;border:1px solid #E8F0EC;border-radius:var(--radius);overflow:hidden;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;padding:24px 16px 16px;text-align:center;position:relative;animation:cardIn .35s ease both;transition:box-shadow .22s,transform .22s,border-color .22s}
 .wcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);border-color:var(--brand-mid)}
 @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-
 .wcard-av-wrap{position:relative;margin-bottom:12px}
 .wcard-av{width:80px;height:80px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--text);border:3px solid var(--surface);box-shadow:0 2px 12px rgba(0,0,0,.12);flex-shrink:0}
 .wcard-av-img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface);box-shadow:0 2px 12px rgba(0,0,0,.12)}
-.wcard-flag{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,.15);overflow:hidden;background:#eee;display:flex;align-items:center;justify-content:center;font-size:13px}
+.wcard-flag{position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;border:2px solid #fff;overflow:hidden;background:#eee;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .wcard-flag img{width:100%;height:100%;object-fit:cover}
-
-.wcard-name{font-size:15px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.wcard-name{font-size:15px;font-weight:700;margin-bottom:3px}
 .wcard-role{font-size:12.5px;color:var(--muted);font-weight:500;margin-bottom:8px}
 .wcard-loc{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);background:var(--bg);border-radius:100px;padding:3px 10px}
 .wcard-loc i{color:var(--brand);font-size:11px}
@@ -111,43 +161,49 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .b-verified{background:var(--brand-light);color:var(--brand)}
 .b-cert{background:#FAEEDA;color:#7A5000}
 .b-hired{background:#FDECEA;color:var(--danger)}
-
-.wcard-btn{margin-top:14px;width:100%;background:var(--brand-light);color:var(--brand);border:none;padding:8px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:6px}
+.wcard-interview{font-size:11px;color:var(--brand-dark);background:var(--brand-light);border-radius:6px;padding:4px 8px;margin-top:8px;display:flex;align-items:center;gap:4px;width:100%;justify-content:center}
+.wcard-interview i{font-size:11px}
+.wcard-btn{margin-top:12px;width:100%;background:var(--brand-light);color:var(--brand);border:none;padding:8px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;justify-content:center;gap:6px}
 .wcard-btn:hover{background:var(--brand);color:#fff}
 
-/* SKELETON */
+/* ── SKELETON ── */
 .skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .skel{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
 .sl{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;height:13px;width:80%}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* EMPTY */
+/* ── EMPTY ── */
 .empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}
 .empty-state i{font-size:48px;margin-bottom:16px;display:block;opacity:.4}
 .empty-state h3{font-size:16px;margin-bottom:8px;color:var(--text)}
 .empty-state p{font-size:13px}
 
-/* ── PROFILE MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,40,25,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+/* ═══════════════════════════════════════════
+   PROFILE MODAL
+═══════════════════════════════════════════ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,40,25,.55);z-index:1000;align-items:flex-start;justify-content:center;padding:1rem;backdrop-filter:blur(3px);overflow-y:auto}
 .modal-overlay.open{display:flex}
-.modal{background:var(--surface);border-radius:16px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.22);animation:modalIn .22s ease}
+.modal{background:var(--surface);border-radius:16px;width:100%;max-width:600px;margin:auto;box-shadow:0 24px 80px rgba(0,0,0,.22);animation:modalIn .22s ease}
 @keyframes modalIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-/* Modal header with cover */
+/* modal tabs */
+.modal-tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;border-radius:0}
+.modal-tab{flex:1;padding:12px 8px;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;transition:.18s;border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px}
+.modal-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.modal-tab:hover:not(.active){background:var(--bg)}
+
 .modal-cover{height:110px;background:linear-gradient(135deg,var(--sidebar-bg),#1B4D32);position:relative;border-radius:16px 16px 0 0;flex-shrink:0}
 .modal-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.15);border:none;font-size:18px;cursor:pointer;color:#fff;padding:4px 8px;border-radius:8px;transition:.15s;line-height:1}
 .modal-close:hover{background:rgba(255,255,255,.3)}
 .modal-av-wrap{position:absolute;bottom:-36px;left:24px}
-.modal-av{width:72px;height:72px;border-radius:50%;border:4px solid var(--surface);object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+.modal-av{width:72px;height:72px;border-radius:50%;border:4px solid var(--surface);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.18)}
 .modal-av-img{width:72px;height:72px;border-radius:50%;border:4px solid var(--surface);object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.18)}
 .modal-flag{position:absolute;bottom:0;right:-4px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;font-size:14px;background:#eee;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.modal-flag img{width:100%;height:100%;object-fit:cover}
 
 .modal-body{padding:48px 24px 20px}
 .modal-name{font-size:20px;font-weight:700;margin-bottom:2px}
 .modal-role{font-size:13.5px;color:var(--muted);margin-bottom:10px}
 .modal-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px}
-
 .modal-section{margin-bottom:18px}
 .modal-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .modal-section-title i{color:var(--brand)}
@@ -156,25 +212,62 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .info-item .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--light);margin-bottom:3px}
 .info-item .value{font-size:13px;font-weight:600;color:var(--text)}
 .info-item.full{grid-column:1/-1}
-
 .about-box{background:var(--brand-light);border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;line-height:1.7;color:var(--text)}
 .skills-wrap{display:flex;flex-wrap:wrap;gap:5px}
 .s-tag{font-size:11px;font-weight:600;padding:3px 10px;background:var(--bg);border:1.5px solid var(--border);border-radius:100px;color:var(--text)}
 .exp-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
 .exp-item .exp-employer{font-size:13px;font-weight:700}
 .exp-item .exp-detail{font-size:12px;color:var(--muted);margin-top:2px}
-.ref-item{background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px}
-.ref-item .ref-name{font-size:13px;font-weight:700}
-.ref-item .ref-detail{font-size:12px;color:var(--muted);margin-top:2px}
 
-.modal-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.modal-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.18s}
 .btn-brand{background:var(--brand);color:#fff}
 .btn-brand:hover{background:var(--brand-dark)}
 .btn-ghost{background:var(--bg);color:var(--text);border:1px solid var(--border)}
 .btn-ghost:hover{background:var(--border)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:#c88020}
 
-/* TOAST */
+/* ═══════════════════════════════════════════
+   MESSAGING PANEL (inside modal)
+═══════════════════════════════════════════ */
+#msg-panel{display:none;flex-direction:column;height:460px}
+#msg-panel.active{display:flex}
+
+.msg-thread{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.msg-bubble{max-width:78%;padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;position:relative}
+.msg-bubble.from-employer{background:var(--brand);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+.msg-bubble.from-worker{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;align-self:flex-start}
+.msg-time{font-size:10.5px;opacity:.65;margin-top:4px;display:block}
+.msg-date-sep{text-align:center;font-size:11px;color:var(--light);font-weight:600;padding:4px 0}
+.msg-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
+.msg-empty i{font-size:36px;opacity:.4}
+.msg-empty p{font-size:13px}
+
+.msg-compose{padding:12px 16px;border-top:1px solid var(--border);background:#fff;display:flex;gap:8px;align-items:flex-end}
+.msg-compose textarea{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:10px 13px;font-size:13.5px;font-family:inherit;outline:none;resize:none;max-height:100px;line-height:1.5;transition:border .18s}
+.msg-compose textarea:focus{border-color:var(--brand)}
+.msg-compose textarea::placeholder{color:var(--light)}
+.btn-send{background:var(--brand);color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:.18s;flex-shrink:0}
+.btn-send:hover{background:var(--brand-dark)}
+.btn-send:disabled{background:var(--border);cursor:not-allowed}
+
+/* interview scheduler within messaging */
+.interview-scheduler{background:#fff;border:1.5px solid var(--brand-mid);border-radius:12px;padding:14px 16px;margin:8px 16px}
+.interview-scheduler h4{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;color:var(--brand)}
+.is-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.is-field{display:flex;flex-direction:column;gap:3px}
+.is-field label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.is-field input,.is-field select{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:.18s}
+.is-field input:focus,.is-field select:focus{border-color:var(--brand)}
+.btn-schedule{background:var(--brand);color:#fff;border:none;border-radius:50px;padding:8px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:6px}
+.btn-schedule:hover{background:var(--brand-dark)}
+#schedule-toggle{background:none;border:none;font-size:12.5px;color:var(--brand);cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:4px;padding:0}
+
+/* msg loading */
+.msg-loading{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+
+/* ── TOAST ── */
 .toast-stack{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--text);color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.22);display:flex;align-items:center;gap:10px;animation:toastIn .28s ease;max-width:290px;border-left:4px solid transparent}
 .toast.ok{border-left-color:#22c55e}
@@ -184,50 +277,54 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
 
-/* FOOTER */
-.footer{background:var(--sidebar-bg);color:var(--sidebar-text);text-align:center;padding:20px 24px;font-size:13px;border-top:1px solid rgba(255,255,255,.08)}
+/* ── FOOTER ── */
+.footer{background:var(--sidebar-bg);color:var(--sidebar-text);text-align:center;padding:20px 24px;font-size:13px}
 
-/* SECURITY NAV BAR */
-.sec-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.sec-nav-left{display:flex;align-items:center;gap:8px}
-.sec-nav-right{display:flex;align-items:center;gap:8px}
-.btn-nav{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;text-decoration:none;transition:.18s}
-.btn-nav-ghost{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
-.btn-nav-ghost:hover{background:var(--border)}
-.btn-nav-brand{background:var(--brand);color:#fff}
-.btn-nav-brand:hover{background:var(--brand-dark)}
-.btn-nav-danger{background:#FDF2F2;color:var(--danger);border:1.5px solid #f5c6c6}
-.btn-nav-danger:hover{background:var(--danger);color:#fff}
-.session-timer{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.session-timer i{font-size:13px}
-.session-timer.warn{color:#D07C2D;font-weight:600}
-.session-timer.danger{color:var(--danger);font-weight:700}
-
-/* SESSION EXPIRED OVERLAY */
-#session-expired{display:none;position:fixed;inset:0;background:rgba(15,40,25,.85);z-index:99999;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
-#session-expired.show{display:flex}
-.session-expired-box{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.35)}
-.session-expired-box i{font-size:44px;color:var(--danger);margin-bottom:16px;display:block}
-.session-expired-box h3{font-size:19px;font-weight:700;margin-bottom:8px}
-.session-expired-box p{font-size:13px;color:var(--muted);margin-bottom:22px}
-
-/* RESPONSIVE */
+/* ── RESPONSIVE ── */
 @media(max-width:620px){
-  .topbar{display:none}
   .navbar{padding:0 14px}
-  .nav-links{display:none}
+  .nav-links{display:none;position:absolute;top:62px;left:0;right:0;background:#fff;border-bottom:1px solid var(--border);flex-direction:column;padding:12px;z-index:199}
+  .nav-links.open{display:flex}
   .hamburger{display:block}
   .hero{padding:28px 14px 24px}
   .filter-bar{padding:10px 14px}
   .page-wrap{padding:16px 12px 40px}
   .workers-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
   .info-grid{grid-template-columns:1fr}
+  .is-grid{grid-template-columns:1fr}
+  .acct-panel{width:260px}
+  .sec-nav{padding:7px 14px}
 }
 </style>
 </head>
 <body>
 
+<!-- AUTH GATE -->
+<div id="auth-gate">
+  <div class="auth-gate-card">
+    <div class="ag-icon">🔒</div>
+    <h2>Employer Access Only</h2>
+    <p>This page is for registered employers on Sounds Care. Please sign in to your employer account to browse and contact workers.</p>
+    <a href="login.html" class="btn-ag btn-ag-brand"><i class="bi bi-box-arrow-in-right"></i> Sign In as Employer</a>
+    <a href="employer-register.html" class="btn-ag btn-ag-ghost"><i class="bi bi-person-plus"></i> Register as Employer</a>
+    <a href="index.html" style="font-size:12.5px;color:var(--muted);margin-top:6px;display:block">← Back to home</a>
+  </div>
+</div>
+
+<!-- PAGE LOADER -->
 <div id="pg-loader"><div class="spin-ring"></div><p>Loading workers…</p></div>
+
+<!-- SESSION EXPIRED -->
+<div id="session-expired">
+  <div class="session-expired-box">
+    <i class="bi bi-shield-lock-fill"></i>
+    <h3>Session Expired</h3>
+    <p>You've been logged out due to inactivity. Please sign in again to continue.</p>
+    <a href="login.html" class="btn-nav btn-nav-brand" style="display:inline-flex;justify-content:center;width:100%;padding:10px 18px;border-radius:8px;background:var(--brand);color:#fff;font-weight:700;font-family:'DM Sans',sans-serif">
+      <i class="bi bi-box-arrow-in-right"></i> Sign In Again
+    </a>
+  </div>
+</div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -235,7 +332,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   <span>📞 <a href="tel:+254700000000">+254 700 000 000</a> &nbsp;|&nbsp; <a href="mailto:info@sounds.co.ke">info@sounds.co.ke</a></span>
 </div>
 
-<!-- SECURITY NAV -->
+<!-- SECURITY BAR -->
 <div class="sec-nav">
   <div class="sec-nav-left">
     <a href="javascript:history.back()" class="btn-nav btn-nav-ghost"><i class="bi bi-arrow-left"></i> Back</a>
@@ -243,7 +340,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   </div>
   <div class="sec-nav-right">
     <span class="session-timer" id="session-timer"><i class="bi bi-clock"></i> Session: <span id="timer-display">30:00</span></span>
-    <button class="btn-nav btn-nav-danger" onclick="secureLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+    <button class="btn-nav btn-nav-ghost" style="color:var(--danger);border-color:#f5c6c6" onclick="secureLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
   </div>
 </div>
 
@@ -253,29 +350,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="logo-pulse"></div>
     Sounds<span>Care</span>
   </a>
-  <ul class="nav-links">
+  <ul class="nav-links" id="nav-links">
     <li><a href="index.html">Home</a></li>
     <li><a href="employees.html" class="active">Find Workers</a></li>
     <li><a href="employers.html">Find Jobs</a></li>
     <li><a href="employer-dashboard.html">Dashboard</a></li>
   </ul>
   <div style="display:flex;align-items:center;gap:8px">
-    <div class="nav-avatar" id="nav-av" title="My Account">?</div>
+    <div class="greet-chip" id="greet-chip">
+      <div class="gc-av" id="greet-av">…</div>
+      <span id="greet-text">Hello…</span>
+    </div>
+    <div class="acct-wrap">
+      <div class="nav-avatar" id="nav-av" title="My Account" onclick="toggleAcctPanel()">?</div>
+      <div class="acct-panel" id="acct-panel">
+        <div class="acct-panel-head">
+          <div class="ap-greeting">Good <span id="ap-tod">day</span></div>
+          <div class="ap-name" id="ap-name">Loading…</div>
+          <div class="ap-email" id="ap-email"></div>
+        </div>
+        <div class="acct-panel-stats">
+          <div class="ap-stat"><div class="ap-stat-num" id="ap-activity">–</div><div class="ap-stat-label">Activity</div></div>
+          <div class="ap-stat"><div class="ap-stat-num" id="ap-interviews">–</div><div class="ap-stat-label">Interviews</div></div>
+          <div class="ap-stat"><div class="ap-stat-num" id="ap-contacts">–</div><div class="ap-stat-label">Contacts</div></div>
+        </div>
+        <div class="acct-panel-menu">
+          <a href="employer-dashboard.html" class="apm-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <a href="employer-dashboard.html#activity" class="apm-item"><i class="bi bi-activity"></i> My Activity</a>
+          <a href="employer-dashboard.html#interviews" class="apm-item"><i class="bi bi-calendar-check"></i> Interviews</a>
+          <a href="employer-dashboard.html#contacts" class="apm-item"><i class="bi bi-people"></i> Contacts</a>
+          <div class="apm-sep"></div>
+          <a href="terms.html" class="apm-item"><i class="bi bi-file-text"></i> Terms & Conditions</a>
+          <div class="apm-sep"></div>
+          <button class="apm-item danger" onclick="secureLogout()"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+        </div>
+      </div>
+    </div>
     <button class="hamburger" onclick="toggleMenu()">&#9776;</button>
   </div>
 </nav>
-
-<!-- SESSION EXPIRED OVERLAY -->
-<div id="session-expired">
-  <div class="session-expired-box">
-    <i class="bi bi-shield-lock-fill"></i>
-    <h3>Session Expired</h3>
-    <p>You've been logged out due to inactivity. Please sign in again to continue.</p>
-    <a href="login.html" class="btn-nav btn-nav-brand" style="display:inline-flex;justify-content:center;width:100%;padding:10px 18px">
-      <i class="bi bi-box-arrow-in-right"></i> Sign In Again
-    </a>
-  </div>
-</div>
 
 <!-- HERO -->
 <div class="hero">
@@ -291,22 +404,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   <input type="text" id="globalSearch" placeholder="🔍  Search by name, role or location…" oninput="debounceFilter()">
   <select id="fRole" onchange="applyFilters()">
     <option value="">All Roles</option>
-    <option>House Manager</option>
-    <option>Nanny / Childcare</option>
-    <option>Cook / Chef</option>
-    <option>Cleaner</option>
-    <option>Gardener</option>
-    <option>Driver</option>
-    <option>Security Guard</option>
-    <option>Elder Caregiver</option>
+    <option>House Manager</option><option>Nanny / Childcare</option>
+    <option>Cook / Chef</option><option>Cleaner</option>
+    <option>Gardener</option><option>Driver</option>
+    <option>Security Guard</option><option>Elder Caregiver</option>
   </select>
   <select id="fAvail" onchange="applyFilters()">
     <option value="">Any Availability</option>
-    <option>Live-In</option>
-    <option>Live-Out</option>
-    <option>Part-Time</option>
+    <option>Live-In</option><option>Live-Out</option>
+    <option>Part-Time</option><option>Full Time</option>
     <option>Contract</option>
-    <option>Flexible</option>
   </select>
   <button class="btn-search" onclick="applyFilters()"><i class="bi bi-search"></i> Search</button>
   <span class="filter-count" id="filter-count"></span>
@@ -327,23 +434,82 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   <div id="workers-grid" class="workers-grid"></div>
 </div>
 
-<!-- FOOTER -->
 <footer class="footer">© 2025 Sounds Care – Trusted People. Better Homes. &nbsp;|&nbsp; sounds.co.ke</footer>
 
-<!-- PROFILE MODAL -->
+<!-- ═══════════════════════════════════════════
+     PROFILE MODAL
+═══════════════════════════════════════════ -->
 <div class="modal-overlay" id="profileModal">
   <div class="modal" id="profileModalInner">
     <div class="modal-cover" id="mCover">
       <button class="modal-close" onclick="closeModal()">×</button>
-      <div class="modal-av-wrap">
-        <div id="mAvWrap"></div>
+      <div class="modal-av-wrap"><div id="mAvWrap"></div></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tab-profile" onclick="switchTab('profile')">
+        <i class="bi bi-person-fill"></i> Profile
+      </button>
+      <button class="modal-tab" id="tab-message" onclick="switchTab('message')">
+        <i class="bi bi-chat-dots-fill"></i> Message
+        <span id="unread-badge" style="display:none;background:var(--danger);color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;display:none;align-items:center;justify-content:center"></span>
+      </button>
+    </div>
+
+    <!-- PROFILE TAB CONTENT -->
+    <div id="tab-content-profile">
+      <div class="modal-body" id="mBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+        <button class="btn btn-accent" onclick="switchTab('message')"><i class="bi bi-chat-dots-fill"></i> Message Worker</button>
+        <a id="mDashBtn" href="employer-dashboard.html" class="btn btn-brand"><i class="bi bi-speedometer2"></i> Dashboard</a>
       </div>
     </div>
-    <div class="modal-body" id="mBody"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Close</button>
-      <a id="mDashBtn" href="employer-dashboard.html" class="btn btn-brand"><i class="bi bi-arrow-right-circle-fill"></i> Go to Dashboard</a>
+
+    <!-- MESSAGE TAB CONTENT -->
+    <div id="tab-content-message" style="display:none">
+      <div id="msg-panel">
+        <div class="msg-thread" id="msg-thread">
+          <div class="msg-loading"><div class="spin-ring" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div>Loading messages…</div>
+        </div>
+        <div id="interview-scheduler-wrap" style="display:none">
+          <div class="interview-scheduler">
+            <h4><i class="bi bi-calendar-plus"></i> Schedule Interview</h4>
+            <div class="is-grid">
+              <div class="is-field"><label>Date</label><input type="date" id="is-date"></div>
+              <div class="is-field"><label>Time</label><input type="time" id="is-time"></div>
+              <div class="is-field"><label>Format</label>
+                <select id="is-format">
+                  <option>In-Person</option><option>Phone Call</option>
+                  <option>Video Call</option><option>WhatsApp</option>
+                </select>
+              </div>
+              <div class="is-field"><label>Location / Link</label><input type="text" id="is-location" placeholder="Address or meeting link"></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn-schedule" onclick="sendInterviewInvite()"><i class="bi bi-calendar-check"></i> Send Invite</button>
+              <button style="background:none;border:none;font-size:12.5px;color:var(--muted);cursor:pointer;font-family:inherit" onclick="document.getElementById('interview-scheduler-wrap').style.display='none'">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="msg-compose">
+          <div style="display:flex;flex-direction:column;flex:1;gap:6px">
+            <div style="display:flex;gap:6px">
+              <button id="schedule-toggle" onclick="toggleScheduler()"><i class="bi bi-calendar-plus"></i> Schedule Interview</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <textarea id="msg-input" rows="2" placeholder="Type a message to this worker…" onkeydown="handleMsgKey(event)"></textarea>
+              <button class="btn-send" id="btn-send" onclick="sendMessage()" title="Send message"><i class="bi bi-send-fill"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -359,114 +525,92 @@ var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
 var BUCKET = 'Media';
 
-var sb, currentUser;
+var sb, currentUser, employerProfile;
 var allWorkers = [];
 var debTimer = null;
+var activeWorkerId = null;
+var msgSubscription = null;
+var interviewMap = {}; // workerId -> last interview date
 
-/* ── COUNTRY → FLAG EMOJI ── */
-function countryFlag(country) {
-  if (!country) return '';
-  var map = {
-    'Kenya':'🇰🇪','Uganda':'🇺🇬','Tanzania':'🇹🇿','Rwanda':'🇷🇼','Ethiopia':'🇪🇹',
-    'Nigeria':'🇳🇬','Ghana':'🇬🇭','South Africa':'🇿🇦','Zambia':'🇿🇲',
-    'Zimbabwe':'🇿🇼','Malawi':'🇲🇼','Mozambique':'🇲🇿','Congo':'🇨🇩',
-    'Somalia':'🇸🇴','Sudan':'🇸🇩','Burundi':'🇧🇮','India':'🇮🇳','Pakistan':'🇵🇰',
-  };
-  var key = Object.keys(map).find(function(k){ return country.toLowerCase().includes(k.toLowerCase()); });
-  return key ? map[key] : '🌍';
+/* ── COUNTRY FLAG EMOJI ── */
+function countryFlag(c) {
+  if (!c) return '🌍';
+  var map={'Kenya':'🇰🇪','Uganda':'🇺🇬','Tanzania':'🇹🇿','Rwanda':'🇷🇼','Ethiopia':'🇪🇹','Nigeria':'🇳🇬','Ghana':'🇬🇭','South Africa':'🇿🇦','Zambia':'🇿🇲','Zimbabwe':'🇿🇼','Malawi':'🇲🇼','Mozambique':'🇲🇿','Congo':'🇨🇩','Somalia':'🇸🇴','Sudan':'🇸🇩','Burundi':'🇧🇮','India':'🇮🇳','Pakistan':'🇵🇰'};
+  var k=Object.keys(map).find(function(x){return c.toLowerCase().includes(x.toLowerCase());});
+  return k?map[k]:'🌍';
 }
 
-/* ══════════════════════════════════════════
-   SECURITY MODULE
-   ══════════════════════════════════════════ */
-var SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-var SESSION_WARN_MS    = 25 * 60 * 1000; // warn at 25 min
-var _sessionTimer = null, _sessionStart = null, _timerInterval = null;
+/* ═════════════════════════════════════
+   SESSION / SECURITY
+═════════════════════════════════════ */
+var SESSION_TIMEOUT_MS = 30*60*1000;
+var SESSION_WARN_MS    = 25*60*1000;
+var _sessionTimer=null,_sessionStart=null,_timerInterval=null;
 
-function resetSessionTimer() {
-  _sessionStart = Date.now();
+function resetSessionTimer(){
+  _sessionStart=Date.now();
   clearTimeout(_sessionTimer);
-  _sessionTimer = setTimeout(function() { expireSession(); }, SESSION_TIMEOUT_MS);
+  _sessionTimer=setTimeout(expireSession, SESSION_TIMEOUT_MS);
 }
-
-function expireSession() {
-  clearInterval(_timerInterval);
-  clearTimeout(_sessionTimer);
-  if (sb) sb.auth.signOut();
+function expireSession(){
+  clearInterval(_timerInterval);clearTimeout(_sessionTimer);
+  if(sb)sb.auth.signOut();
   clearAllCache();
   document.getElementById('session-expired').classList.add('show');
 }
-
-function clearAllCache() {
-  try {
-    var keys = [];
-    for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
-    keys.forEach(function(k) { if (k && (k.includes('supabase') || k.includes('sb-') || k.includes('auth'))) localStorage.removeItem(k); });
-    keys = [];
-    for (var i = 0; i < sessionStorage.length; i++) keys.push(sessionStorage.key(i));
-    keys.forEach(function(k) { if (k && (k.includes('supabase') || k.includes('sb-') || k.includes('auth'))) sessionStorage.removeItem(k); });
-  } catch(e) {}
+function clearAllCache(){
+  try{
+    var k=[];for(var i=0;i<localStorage.length;i++)k.push(localStorage.key(i));
+    k.forEach(function(x){if(x&&(x.includes('supabase')||x.includes('sb-')||x.includes('auth')))localStorage.removeItem(x);});
+    k=[];for(var i=0;i<sessionStorage.length;i++)k.push(sessionStorage.key(i));
+    k.forEach(function(x){if(x&&(x.includes('supabase')||x.includes('sb-')||x.includes('auth')))sessionStorage.removeItem(x);});
+  }catch(e){}
 }
-
-function startTimerDisplay() {
-  _timerInterval = setInterval(function() {
-    if (!_sessionStart) return;
-    var elapsed = Date.now() - _sessionStart;
-    var remaining = Math.max(0, SESSION_TIMEOUT_MS - elapsed);
-    var mins = Math.floor(remaining / 60000);
-    var secs = Math.floor((remaining % 60000) / 1000);
-    var display = document.getElementById('timer-display');
-    var timerEl = document.getElementById('session-timer');
-    if (display) display.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-    if (timerEl) {
-      timerEl.className = 'session-timer' + (elapsed >= SESSION_WARN_MS ? (elapsed >= SESSION_TIMEOUT_MS - 60000 ? ' danger' : ' warn') : '');
-    }
-    if (remaining <= 0) expireSession();
-  }, 1000);
+function startTimerDisplay(){
+  _timerInterval=setInterval(function(){
+    if(!_sessionStart)return;
+    var el=Date.now()-_sessionStart;
+    var rem=Math.max(0,SESSION_TIMEOUT_MS-el);
+    var m=Math.floor(rem/60000),s=Math.floor((rem%60000)/1000);
+    var disp=document.getElementById('timer-display');
+    var tel=document.getElementById('session-timer');
+    if(disp)disp.textContent=m+':'+(s<10?'0':'')+s;
+    if(tel)tel.className='session-timer'+(el>=SESSION_WARN_MS?(el>=SESSION_TIMEOUT_MS-60000?' danger':' warn'):'');
+    if(rem<=0)expireSession();
+  },1000);
 }
-
-function secureLogout() {
-  clearInterval(_timerInterval);
-  clearTimeout(_sessionTimer);
-  if (sb) sb.auth.signOut().then(function() {
-    clearAllCache();
-    window.location.replace('login.html');
-  }).catch(function() {
-    clearAllCache();
-    window.location.replace('login.html');
-  });
+function secureLogout(){
+  clearInterval(_timerInterval);clearTimeout(_sessionTimer);
+  if(sb)sb.auth.signOut().then(function(){clearAllCache();window.location.replace('login.html');})
+    .catch(function(){clearAllCache();window.location.replace('login.html');});
 }
-
-['click','keydown','mousemove','touchstart','scroll'].forEach(function(evt) {
-  document.addEventListener(evt, resetSessionTimer, { passive: true });
+['click','keydown','mousemove','touchstart','scroll'].forEach(function(e){
+  document.addEventListener(e,resetSessionTimer,{passive:true});
 });
+window.addEventListener('beforeunload',function(){clearAllCache();});
 
-window.addEventListener('beforeunload', function() {
-  clearAllCache();
-});
-
-/* ── INIT ── */
-document.addEventListener('DOMContentLoaded', function() {
+/* ═════════════════════════════════════
+   INIT
+═════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function(){
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById('pg-loader').classList.add('show');
 
-  // React to auth changes from any tab
-  sb.auth.onAuthStateChange(function(event, session) {
-    if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==='SIGNED_OUT'||(!session&&event!=='INITIAL_SESSION')){
       clearAllCache();
       window.location.replace('login.html');
     }
   });
 
-  sb.auth.getSession().then(function(res) {
+  sb.auth.getSession().then(function(res){
     var session = res.data && res.data.session;
-    if (!session || !session.user) {
-      clearAllCache();
-      window.location.replace('login.html');
+    if(!session||!session.user){
+      document.getElementById('pg-loader').classList.remove('show');
+      document.getElementById('auth-gate').classList.add('show');
       return;
     }
-    // Validate token not already expired
-    if (session.expires_at && session.expires_at * 1000 < Date.now()) {
+    if(session.expires_at && session.expires_at*1000 < Date.now()){
       clearAllCache();
       window.location.replace('login.html');
       return;
@@ -474,258 +618,462 @@ document.addEventListener('DOMContentLoaded', function() {
     currentUser = session.user;
     resetSessionTimer();
     startTimerDisplay();
-    loadNavUser();
-    loadWorkers();
-  }).catch(function() {
-    clearAllCache();
-    window.location.replace('login.html');
+    loadEmployerProfile().then(function(){
+      loadWorkers();
+      loadInterviewMap();
+    });
+  }).catch(function(){
+    document.getElementById('pg-loader').classList.remove('show');
+    document.getElementById('auth-gate').classList.add('show');
   });
 });
 
-function loadNavUser() {
-  var name = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
+/* ── EMPLOYER PROFILE ── */
+async function loadEmployerProfile(){
+  var r = await sb.from('employer_profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
+  employerProfile = r.data || null;
+  renderNavUser();
+  renderAcctPanel();
+}
+
+function getTimeOfDay(){
+  var h = new Date().getHours();
+  if(h<12)return'morning';if(h<17)return'afternoon';return'evening';
+}
+
+function renderNavUser(){
+  var meta = currentUser.user_metadata||{};
+  var name = (employerProfile&&employerProfile.full_name) || meta.full_name || currentUser.email.split('@')[0];
+  var first = name.split(' ')[0];
   var inits = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+  var picUrl = employerProfile&&employerProfile.profile_photo_url ? employerProfile.profile_photo_url : '';
+
+  // Nav avatar
   var av = document.getElementById('nav-av');
-  av.textContent = inits;
-  sb.from('employer_profiles').select('full_name,profile_photo_url').eq('user_id', currentUser.id).maybeSingle().then(function(r) {
-    if (r.data && r.data.profile_photo_url) av.innerHTML = '<img src="'+r.data.profile_photo_url+'" alt="avatar">';
-    else if (r.data && r.data.full_name) av.textContent = r.data.full_name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+  if(picUrl) av.innerHTML='<img src="'+picUrl+'" alt="avatar">';
+  else av.textContent=inits;
+
+  // Greeting chip
+  var gc = document.getElementById('greet-av');
+  if(picUrl) gc.innerHTML='<img src="'+picUrl+'" alt="">';
+  else gc.textContent=inits;
+  document.getElementById('greet-text').textContent='Hi, '+first;
+
+  // Account panel head
+  document.getElementById('ap-tod').textContent=getTimeOfDay();
+  document.getElementById('ap-name').textContent=name;
+  document.getElementById('ap-email').textContent=currentUser.email;
+}
+
+async function renderAcctPanel(){
+  // Activity count = messages sent
+  var msgs = await sb.from('messages').select('id',{count:'exact',head:true}).eq('sender_id',currentUser.id);
+  document.getElementById('ap-activity').textContent = msgs.count||0;
+  // Interviews
+  var ivs = await sb.from('messages').select('id',{count:'exact',head:true}).eq('sender_id',currentUser.id).ilike('body','%interview%');
+  document.getElementById('ap-interviews').textContent = ivs.count||0;
+  // Unique contacts
+  var conts = await sb.from('messages').select('receiver_worker_id').eq('employer_id',currentUser.id);
+  var unique = new Set((conts.data||[]).map(function(x){return x.receiver_worker_id;}));
+  document.getElementById('ap-contacts').textContent = unique.size;
+}
+
+/* ── LOAD LAST INTERVIEW PER WORKER ── */
+async function loadInterviewMap(){
+  var r = await sb.from('messages')
+    .select('receiver_worker_id,created_at,body')
+    .eq('employer_id', currentUser.id)
+    .ilike('body','%interview%')
+    .order('created_at',{ascending:false});
+  if(!r.data)return;
+  r.data.forEach(function(m){
+    if(!interviewMap[m.receiver_worker_id]) interviewMap[m.receiver_worker_id] = m.created_at;
   });
 }
 
-/* ── FETCH WORKERS ── */
-async function loadWorkers() {
+function toggleAcctPanel(){
+  var p = document.getElementById('acct-panel');
+  p.classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.acct-wrap')) document.getElementById('acct-panel').classList.remove('open');
+});
+
+/* ═════════════════════════════════════
+   WORKERS
+═════════════════════════════════════ */
+async function loadWorkers(){
   showSkeletons();
-  try {
-    var res = await sb
-      .from('worker_profiles')
-      .select('id,full_name,preferred_role,current_town,county,country,country_flag_url,salary_min,salary_max,salary_range,edu_level,availability,work_arrangement,experience,work_experience,key_skills,languages,profile_photo_url,is_verified,avg_rating,rating_count,has_medical_cert,has_good_conduct,is_currently_hired,about_text,status,submitted_at,created_at,dob,gender,referees,willing_to_relocate,disability')
-      .eq('status', 'approved')
-      .neq('is_deleted', true)
-      .order('submitted_at', { ascending: false });
-
-    if (res.error) throw res.error;
-
-    var colors = ['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB'];
-    allWorkers = (res.data || []).map(function(w, i) {
-      var name  = w.full_name || 'Worker';
-      var inits = name.split(' ').map(function(x){return x[0]||'';}).slice(0,2).join('').toUpperCase();
-      var skills = w.key_skills ? w.key_skills.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
-      var picUrl = '';
-      if (w.profile_photo_url) {
-        var raw = w.profile_photo_url;
-        picUrl = raw.startsWith('http') ? raw : sb.storage.from(BUCKET).getPublicUrl(raw).data.publicUrl;
-      }
-      var age = null;
-      if (w.dob) { var d = new Date(w.dob); if (!isNaN(d)) age = new Date().getFullYear() - d.getFullYear(); }
-      var exp = [];
-      var src = w.experience || w.work_experience;
-      if (Array.isArray(src)) exp = src;
-      var expYrs = exp.reduce(function(t,e){ return t + (parseInt(e.years_worked||e.duration_years||0)||0); }, 0);
-      var refs = [];
-      if (Array.isArray(w.referees)) refs = w.referees;
-      return Object.assign({}, w, {
-        _name: name, _inits: inits, _skills: skills,
-        _picUrl: picUrl, _color: colors[i % colors.length],
-        _rating: parseFloat(w.avg_rating)||0, _reviews: w.rating_count||0,
-        _salMin: parseFloat(w.salary_min)||0, _salMax: parseFloat(w.salary_max)||0,
-        _exp: expYrs, _expItems: exp,
-        _avail: w.work_arrangement || w.availability || '',
-        _age: age, _edu: w.edu_level || '',
-        _loc: w.current_town || w.county || '',
-        _country: w.country || 'Kenya',
-        _flag: w.country_flag_url || '',
-        _flagEmoji: countryFlag(w.country || 'Kenya'),
-        _verified: !!(w.is_verified),
-        _certified: !!(w.has_medical_cert || w.has_good_conduct),
-        _hired: !!(w.is_currently_hired),
-        _refs: refs,
+  try{
+    var res = await sb.from('worker_profiles')
+      .select('id,full_name,preferred_role,current_town,county,country,country_flag_url,salary_min,salary_max,salary_range,edu_level,availability,work_arrangement,work_experience,experience,key_skills,languages,profile_photo_url,is_verified,avg_rating,rating_count,has_medical_cert,has_good_conduct,is_currently_hired,about_text,status,submitted_at,created_at,dob,gender,referees,willing_to_relocate,disability,home_village,home_county,address,id_type')
+      .eq('status','approved')
+      .neq('is_deleted',true)
+      .order('submitted_at',{ascending:false});
+    if(res.error)throw res.error;
+    var colors=['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4','#C0DD97','#F4C0D1','#FAC775','#9FE1CB'];
+    allWorkers=(res.data||[]).map(function(w,i){
+      var name=w.full_name||'Worker';
+      var inits=name.split(' ').map(function(x){return x[0]||'';}).slice(0,2).join('').toUpperCase();
+      var skills=w.key_skills?w.key_skills.split(',').map(function(s){return s.trim();}).filter(Boolean):[];
+      var picUrl='';
+      if(w.profile_photo_url){var raw=w.profile_photo_url;picUrl=raw.startsWith('http')?raw:sb.storage.from(BUCKET).getPublicUrl(raw).data.publicUrl;}
+      var age=null;
+      if(w.dob){var d=new Date(w.dob);if(!isNaN(d))age=Math.floor((Date.now()-d)/(365.25*24*3600*1000));}
+      var src=w.work_experience||w.experience;
+      var exp=Array.isArray(src)?src:[];
+      var expYrs=exp.reduce(function(t,e){return t+(parseInt(e.duration_years||e.years_worked||e.duration||0)||0);},0);
+      var refs=Array.isArray(w.referees)?w.referees:[];
+      return Object.assign({},w,{
+        _name:name,_inits:inits,_skills:skills,_picUrl:picUrl,_color:colors[i%colors.length],
+        _rating:parseFloat(w.avg_rating)||0,_reviews:w.rating_count||0,
+        _salMin:parseFloat(w.salary_min)||0,_salMax:parseFloat(w.salary_max)||0,
+        _exp:expYrs,_expItems:exp,
+        _avail:w.work_arrangement||w.availability||'',
+        _age:age,_edu:w.edu_level||'',
+        _loc:w.current_town||w.county||'',
+        _country:w.country||'Kenya',
+        _flag:w.country_flag_url||'',
+        _flagEmoji:countryFlag(w.country||'Kenya'),
+        _verified:!!w.is_verified,
+        _certified:!!(w.has_medical_cert||w.has_good_conduct),
+        _hired:!!w.is_currently_hired,
+        _refs:refs,
       });
     });
-
-    if (!allWorkers.length) {
-      document.getElementById('workers-grid').innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><h3>No approved workers yet</h3><p>Workers appear here once admin verifies their profiles.</p></div>';
-      document.getElementById('wcount').textContent = '0';
+    if(!allWorkers.length){
+      document.getElementById('workers-grid').innerHTML='<div class="empty-state"><i class="bi bi-people"></i><h3>No approved workers yet</h3><p>Workers appear here once admin verifies their profiles.</p></div>';
+      document.getElementById('wcount').textContent='0';
     }
-  } catch(e) {
-    showToast('err','bi-exclamation-circle','Load Error',e.message,6000);
-  }
+  }catch(e){showToast('err','bi-exclamation-circle','Load Error',e.message,6000);}
   document.getElementById('pg-loader').classList.remove('show');
   applyFilters();
 }
 
-/* ── RENDER ── */
-function renderWorkers(list) {
-  var grid = document.getElementById('workers-grid');
-  document.getElementById('wcount').textContent = list.length;
-  document.getElementById('filter-count').textContent = list.length < allWorkers.length ? list.length + ' of ' + allWorkers.length : '';
-  if (!list.length) {
-    grid.innerHTML = '<div class="empty-state"><i class="bi bi-search"></i><h3>No workers match your filters</h3><p>Try adjusting the search term or filters.</p></div>';
+function renderWorkers(list){
+  var grid=document.getElementById('workers-grid');
+  document.getElementById('wcount').textContent=list.length;
+  document.getElementById('filter-count').textContent=list.length<allWorkers.length?list.length+' of '+allWorkers.length:'';
+  if(!list.length){
+    grid.innerHTML='<div class="empty-state"><i class="bi bi-search"></i><h3>No workers match your filters</h3><p>Try adjusting the search or filters.</p></div>';
     return;
   }
-  grid.innerHTML = list.map(function(w, i) {
-    var avHtml = w._picUrl
-      ? '<img src="'+w._picUrl+'" class="wcard-av-img" alt="'+escHtml(w._name)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-        + '<div class="wcard-av" style="background:'+w._color+';display:none">'+w._inits+'</div>'
-      : '<div class="wcard-av" style="background:'+w._color+'">'+w._inits+'</div>';
-    var flagHtml = '<div class="wcard-flag">'+(w._flag ? '<img src="'+escHtml(w._flag)+'" alt="'+escHtml(w._country)+'">' : w._flagEmoji)+'</div>';
-    var salStr = w._salMin && w._salMax ? 'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo' : (w.salary_range || '');
+  grid.className='workers-grid';
+  grid.innerHTML=list.map(function(w,i){
+    var avHtml=w._picUrl
+      ?'<img src="'+w._picUrl+'" class="wcard-av-img" alt="'+escHtml(w._name)+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'+'<div class="wcard-av" style="background:'+w._color+';display:none">'+w._inits+'</div>'
+      :'<div class="wcard-av" style="background:'+w._color+'">'+w._inits+'</div>';
+    var flagHtml='<div class="wcard-flag">'+(w._flag?'<img src="'+escHtml(w._flag)+'" alt="">':w._flagEmoji)+'</div>';
+    var salStr=w._salMin&&w._salMax?'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo':(w.salary_range||'');
+    // Last interview tag
+    var ivTag='';
+    if(interviewMap[w.id]){
+      var d=new Date(interviewMap[w.id]);
+      ivTag='<div class="wcard-interview"><i class="bi bi-calendar-check-fill"></i> Last interview: '+d.toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})+'</div>';
+    }
     return '<div class="wcard" onclick="openProfile(\''+w.id+'\')" style="animation-delay:'+Math.min(i*40,400)+'ms">'+
       '<div class="wcard-av-wrap">'+avHtml+flagHtml+'</div>'+
       '<div class="wcard-name">'+escHtml(w._name)+'</div>'+
-      '<div class="wcard-role">'+escHtml(w._role || w.preferred_role || '–')+'</div>'+
-      '<div class="wcard-loc"><i class="bi bi-geo-alt-fill"></i>'+escHtml(w._loc || '–')+'</div>'+
+      '<div class="wcard-role">'+escHtml(w.preferred_role||'–')+'</div>'+
+      '<div class="wcard-loc"><i class="bi bi-geo-alt-fill"></i>'+escHtml(w._loc||'–')+'</div>'+
       '<div class="wcard-badges">'+
-        (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '')+
-        (w._certified ? '<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>' : '')+
-        (w._hired ? '<span class="badge b-hired">Currently Hired</span>' : '')+
+        (w._verified?'<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>':'')+
+        (w._certified?'<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>':'')+
+        (w._hired?'<span class="badge b-hired">Currently Hired</span>':'')+
       '</div>'+
-      (salStr ? '<div style="font-size:12px;color:var(--brand);font-weight:700;margin-top:8px">'+escHtml(salStr)+'</div>' : '')+
+      (salStr?'<div style="font-size:12px;color:var(--brand);font-weight:700;margin-top:8px">'+escHtml(salStr)+'</div>':'')+
+      ivTag+
       '<button class="wcard-btn"><i class="bi bi-person-lines-fill"></i> View Profile</button>'+
     '</div>';
   }).join('');
 }
 
-/* ── OPEN PROFILE MODAL ── */
-function openProfile(id) {
-  var w = allWorkers.find(function(x){return x.id===id;});
-  if (!w) return;
+/* ═════════════════════════════════════
+   PROFILE MODAL
+═════════════════════════════════════ */
+function openProfile(id){
+  var w=allWorkers.find(function(x){return x.id===id;});
+  if(!w)return;
+  activeWorkerId=id;
 
-  /* avatar */
-  var avHtml = w._picUrl
-    ? '<img src="'+w._picUrl+'" class="modal-av-img" alt="'+escHtml(w._name)+'" onerror="this.outerHTML=\'<div class=&quot;modal-av&quot; style=&quot;background:'+w._color+'&quot;>'+w._inits+'</div>\'">'
-    : '<div class="modal-av" style="background:'+w._color+'">'+w._inits+'</div>';
-  var flagHtml = '<div class="modal-flag">'+(w._flag ? '<img src="'+escHtml(w._flag)+'">' : w._flagEmoji)+'</div>';
-  document.getElementById('mAvWrap').innerHTML = avHtml + flagHtml;
+  // Cover avatar
+  var avHtml=w._picUrl
+    ?'<img src="'+w._picUrl+'" class="modal-av-img" alt="'+escHtml(w._name)+'" onerror="this.outerHTML=\'<div class=&quot;modal-av&quot; style=&quot;background:'+w._color+'&quot;>'+w._inits+'</div>\'">'
+    :'<div class="modal-av" style="background:'+w._color+'">'+w._inits+'</div>';
+  var flagHtml='<div class="modal-flag">'+(w._flag?'<img src="'+escHtml(w._flag)+'">':w._flagEmoji)+'</div>';
+  document.getElementById('mAvWrap').innerHTML=avHtml+flagHtml;
 
-  /* salary */
-  var salStr = w._salMin && w._salMax ? 'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo' : (w.salary_range || 'Negotiable');
-  var exp = w._exp ? w._exp+' yr'+(w._exp!==1?'s':'') : '–';
+  // Salary & exp
+  var salStr=w._salMin&&w._salMax?'KES '+w._salMin.toLocaleString()+' – '+w._salMax.toLocaleString()+'/mo':(w.salary_range||'Negotiable');
+  var exp=w._exp?w._exp+' yr'+(w._exp!==1?'s':''):'–';
 
-  /* experience items */
-  var expHtml = '';
-  if (w._expItems && w._expItems.length) {
-    expHtml = '<div class="modal-section">'+
-      '<div class="modal-section-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>'+
+  // Experience items
+  var expHtml='';
+  if(w._expItems&&w._expItems.length){
+    expHtml='<div class="modal-section"><div class="modal-section-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>'+
       w._expItems.map(function(e){
         return '<div class="exp-item">'+
-          '<div class="exp-employer">'+escHtml(e.employer_name||e.company||'Employer')+'</div>'+
-          '<div class="exp-detail">'+escHtml(e.job_title||e.role||'')+(e.years_worked||e.duration_years?' · '+(e.years_worked||e.duration_years)+' yr(s)':'')+'</div>'+
-          (e.job_description||e.description ? '<div class="exp-detail" style="margin-top:4px">'+escHtml((e.job_description||e.description||'').slice(0,120))+'</div>' : '')+
+          '<div class="exp-employer">'+escHtml(e.employer||e.employer_name||e.company||'Previous Employer')+'</div>'+
+          '<div class="exp-detail">'+escHtml(e.role||e.job_title||'')+(e.duration||e.duration_years||e.years_worked?' · '+(e.duration||e.duration_years||e.years_worked)+' yr(s)':'')+'</div>'+
+          (e.location?'<div class="exp-detail">📍 '+escHtml(e.location)+'</div>':'')+
+          (e.contact?'<div class="exp-detail">Ref: '+escHtml(e.contact)+'</div>':'')+
         '</div>';
       }).join('')+
     '</div>';
   }
 
-  /* referees */
-  var refHtml = '';
-  if (w._refs && w._refs.length) {
-    refHtml = '<div class="modal-section">'+
-      '<div class="modal-section-title"><i class="bi bi-people-fill"></i> Referees</div>'+
-      w._refs.map(function(r){
-        return '<div class="ref-item">'+
-          '<div class="ref-name">'+escHtml(r.full_name||r.name||'Referee')+'</div>'+
-          '<div class="ref-detail">'+escHtml(r.relationship||'')+(r.phone?' · '+escHtml(r.phone):'')+'</div>'+
-        '</div>';
-      }).join('')+
-    '</div>';
+  // Home / address (shown, not phone/email)
+  var locationExtra='';
+  if(w.home_village||w.home_county){
+    locationExtra='<div class="info-item"><div class="label">Home Village</div><div class="value">'+escHtml(w.home_village||'–')+(w.home_county?', '+escHtml(w.home_county):'')+'</div></div>';
   }
 
-  document.getElementById('mBody').innerHTML =
+  document.getElementById('mBody').innerHTML=
     '<div class="modal-name">'+escHtml(w._name)+'</div>'+
     '<div class="modal-role">'+escHtml(w.preferred_role||'–')+'</div>'+
     '<div class="modal-badges">'+
-      (w._verified ? '<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '')+
-      (w._certified ? '<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>' : '')+
-      (w._hired ? '<span class="badge b-hired">Currently Hired</span>' : '')+
+      (w._verified?'<span class="badge b-verified"><i class="bi bi-patch-check-fill"></i> Verified</span>':'')+
+      (w._certified?'<span class="badge b-cert"><i class="bi bi-award-fill"></i> Certified</span>':'')+
+      (w._hired?'<span class="badge b-hired">Currently Hired</span>':'')+
     '</div>'+
+    (w.about_text?'<div class="modal-section"><div class="modal-section-title"><i class="bi bi-person-fill"></i> About</div><div class="about-box">'+escHtml(w.about_text)+'</div></div>':'')+
+    '<div class="modal-section"><div class="modal-section-title"><i class="bi bi-info-circle-fill"></i> Profile Details</div>'+
+    '<div class="info-grid">'+
+      '<div class="info-item"><div class="label">Location</div><div class="value">'+escHtml(w._loc||'–')+'</div></div>'+
+      '<div class="info-item"><div class="label">County</div><div class="value">'+escHtml(w.county||'–')+'</div></div>'+
+      (w.address?'<div class="info-item full"><div class="label">Address</div><div class="value">'+escHtml(w.address)+'</div></div>':'')+
+      locationExtra+
+      '<div class="info-item"><div class="label">Role</div><div class="value">'+escHtml(w.preferred_role||'–')+'</div></div>'+
+      '<div class="info-item"><div class="label">Availability</div><div class="value">'+escHtml(w._avail||'–')+'</div></div>'+
+      '<div class="info-item"><div class="label">Total Experience</div><div class="value">'+exp+'</div></div>'+
+      '<div class="info-item"><div class="label">Education</div><div class="value">'+escHtml(w._edu||'–')+'</div></div>'+
+      (w._age?'<div class="info-item"><div class="label">Age</div><div class="value">'+w._age+' yrs</div></div>':'')+
+      (w.gender?'<div class="info-item"><div class="label">Gender</div><div class="value">'+escHtml(w.gender)+'</div></div>':'')+
+      '<div class="info-item full"><div class="label">Salary Expectation</div><div class="value">'+escHtml(salStr)+'</div></div>'+
+      (w.languages?'<div class="info-item full"><div class="label">Languages</div><div class="value">'+escHtml(w.languages)+'</div></div>':'')+
+      (w.willing_to_relocate?'<div class="info-item full"><div class="label">Willing to Relocate</div><div class="value">'+escHtml(w.willing_to_relocate)+'</div></div>':'')+
+      (w.disability&&w.disability!=='No'&&w.disability!=='no'?'<div class="info-item full"><div class="label">Disability</div><div class="value">'+escHtml(w.disability)+'</div></div>':'')+
+      (w.id_type?'<div class="info-item"><div class="label">ID Type</div><div class="value">'+escHtml(w.id_type)+'</div></div>':'')+
+      (w._rating>0?'<div class="info-item"><div class="label">Rating</div><div class="value">★ '+w._rating.toFixed(1)+' ('+w._reviews+' reviews)</div></div>':'')+
+    '</div></div>'+
+    (w._skills.length?'<div class="modal-section"><div class="modal-section-title"><i class="bi bi-lightning-charge-fill"></i> Skills</div><div class="skills-wrap">'+w._skills.map(function(s){return '<span class="s-tag">'+escHtml(s)+'</span>';}).join('')+'</div></div>':'')+
+    expHtml;
 
-    (w.about_text ? '<div class="modal-section"><div class="modal-section-title"><i class="bi bi-person-fill"></i> About</div><div class="about-box">'+escHtml(w.about_text)+'</div></div>' : '')+
-
-    '<div class="modal-section">'+
-      '<div class="modal-section-title"><i class="bi bi-info-circle-fill"></i> Profile Details</div>'+
-      '<div class="info-grid">'+
-        '<div class="info-item"><div class="label">Location</div><div class="value">'+escHtml(w._loc||'–')+'</div></div>'+
-        '<div class="info-item"><div class="label">Country</div><div class="value">'+w._flagEmoji+' '+escHtml(w._country)+'</div></div>'+
-        '<div class="info-item"><div class="label">Role</div><div class="value">'+escHtml(w.preferred_role||'–')+'</div></div>'+
-        '<div class="info-item"><div class="label">Availability</div><div class="value">'+escHtml(w._avail||'–')+'</div></div>'+
-        '<div class="info-item"><div class="label">Experience</div><div class="value">'+exp+'</div></div>'+
-        '<div class="info-item"><div class="label">Education</div><div class="value">'+escHtml(w._edu||'–')+'</div></div>'+
-        (w._age ? '<div class="info-item"><div class="label">Age</div><div class="value">'+w._age+'</div></div>' : '')+
-        (w.gender ? '<div class="info-item"><div class="label">Gender</div><div class="value">'+escHtml(w.gender)+'</div></div>' : '')+
-        '<div class="info-item full"><div class="label">Salary Expectation</div><div class="value">'+escHtml(salStr)+'</div></div>'+
-        (w.languages ? '<div class="info-item full"><div class="label">Languages</div><div class="value">'+escHtml(w.languages)+'</div></div>' : '')+
-        (w.willing_to_relocate ? '<div class="info-item"><div class="label">Willing to Relocate</div><div class="value">'+escHtml(w.willing_to_relocate)+'</div></div>' : '')+
-        (w.disability && w.disability!=='No' ? '<div class="info-item"><div class="label">Disability</div><div class="value">'+escHtml(w.disability)+'</div></div>' : '')+
-        (w._rating > 0 ? '<div class="info-item"><div class="label">Rating</div><div class="value">★ '+w._rating.toFixed(1)+' ('+w._reviews+' reviews)</div></div>' : '')+
-      '</div>'+
-    '</div>'+
-
-    (w._skills.length ? '<div class="modal-section"><div class="modal-section-title"><i class="bi bi-lightning-charge-fill"></i> Skills</div><div class="skills-wrap">'+w._skills.map(function(s){return '<span class="s-tag">'+escHtml(s)+'</span>';}).join('')+'</div></div>' : '')+
-
-    expHtml + refHtml;
-
+  // Reset to profile tab
+  switchTab('profile');
   document.getElementById('profileModal').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 
-function closeModal() { document.getElementById('profileModal').classList.remove('open'); }
-document.addEventListener('click', function(e) {
-  if (e.target === document.getElementById('profileModal')) closeModal();
+function closeModal(){
+  document.getElementById('profileModal').classList.remove('open');
+  document.body.style.overflow='';
+  // unsubscribe realtime
+  if(msgSubscription){sb.removeChannel(msgSubscription);msgSubscription=null;}
+  activeWorkerId=null;
+}
+document.addEventListener('click', function(e){
+  if(e.target===document.getElementById('profileModal'))closeModal();
 });
 
-/* ── FILTER + SORT ── */
-function applyFilters() {
-  var q     = (document.getElementById('globalSearch').value||'').toLowerCase();
-  var fRole = document.getElementById('fRole').value;
-  var fAvail= document.getElementById('fAvail').value;
-  var sort  = document.getElementById('sortSel').value;
+/* ── MODAL TABS ── */
+function switchTab(tab){
+  document.getElementById('tab-profile').classList.toggle('active', tab==='profile');
+  document.getElementById('tab-message').classList.toggle('active', tab==='message');
+  document.getElementById('tab-content-profile').style.display = tab==='profile'?'block':'none';
+  document.getElementById('tab-content-message').style.display = tab==='message'?'block':'none';
+  if(tab==='message'){
+    document.getElementById('msg-panel').classList.add('active');
+    loadMessages(activeWorkerId);
+  }
+}
 
-  var list = allWorkers.filter(function(w) {
-    if (q) { var hay=(w._name+' '+(w.preferred_role||'')+' '+w._loc).toLowerCase(); if (!hay.includes(q)) return false; }
-    if (fRole && (w.preferred_role||'') !== fRole) return false;
-    if (fAvail && w._avail !== fAvail) return false;
+/* ═════════════════════════════════════
+   MESSAGING
+═════════════════════════════════════ */
+async function loadMessages(workerId){
+  if(!workerId||!currentUser)return;
+  var thread=document.getElementById('msg-thread');
+  thread.innerHTML='<div class="msg-loading"><div class="spin-ring" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div>Loading messages…</div>';
+
+  // Fetch conversation between this employer and worker
+  var r = await sb.from('messages')
+    .select('*')
+    .eq('employer_id', currentUser.id)
+    .eq('receiver_worker_id', workerId)
+    .order('created_at',{ascending:true});
+
+  if(r.error){
+    thread.innerHTML='<div class="msg-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load messages.</p></div>';
+    return;
+  }
+
+  renderMessages(r.data||[]);
+
+  // Realtime subscription
+  if(msgSubscription)sb.removeChannel(msgSubscription);
+  msgSubscription = sb.channel('msgs_'+workerId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'employer_id=eq.'+currentUser.id},
+      function(payload){
+        if(payload.new.receiver_worker_id===workerId) appendMessage(payload.new);
+      })
+    .subscribe();
+}
+
+function renderMessages(msgs){
+  var thread=document.getElementById('msg-thread');
+  if(!msgs.length){
+    thread.innerHTML='<div class="msg-empty"><i class="bi bi-chat-dots"></i><p>No messages yet. Start the conversation!</p></div>';
+    return;
+  }
+  var html='';var lastDate='';
+  msgs.forEach(function(m){
+    var d=new Date(m.created_at);
+    var dateStr=d.toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'});
+    if(dateStr!==lastDate){
+      html+='<div class="msg-date-sep">'+escHtml(dateStr)+'</div>';
+      lastDate=dateStr;
+    }
+    var isEmployer=m.sender_id===currentUser.id||m.sender_type==='employer';
+    var time=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+    html+='<div class="msg-bubble '+(isEmployer?'from-employer':'from-worker')+'">'+
+      escHtml(m.body||m.message||m.content||'')+'<span class="msg-time">'+time+'</span>'+
+    '</div>';
+  });
+  thread.innerHTML=html;
+  thread.scrollTop=thread.scrollHeight;
+}
+
+function appendMessage(m){
+  var thread=document.getElementById('msg-thread');
+  var empty=thread.querySelector('.msg-empty');
+  if(empty)empty.remove();
+  var d=new Date(m.created_at||Date.now());
+  var isEmployer=m.sender_id===currentUser.id||m.sender_type==='employer';
+  var time=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  var el=document.createElement('div');
+  el.className='msg-bubble '+(isEmployer?'from-employer':'from-worker');
+  el.innerHTML=escHtml(m.body||m.message||m.content||'')+'<span class="msg-time">'+time+'</span>';
+  thread.appendChild(el);
+  thread.scrollTop=thread.scrollHeight;
+}
+
+async function sendMessage(){
+  var input=document.getElementById('msg-input');
+  var body=(input.value||'').trim();
+  if(!body||!activeWorkerId||!currentUser)return;
+  var btn=document.getElementById('btn-send');
+  btn.disabled=true;
+  input.value='';
+
+  var r = await sb.from('messages').insert({
+    employer_id:    currentUser.id,
+    sender_id:      currentUser.id,
+    sender_type:    'employer',
+    receiver_worker_id: activeWorkerId,
+    body:           body,
+    message:        body,
+    created_at:     new Date().toISOString(),
+    is_read:        false,
+  }).select().single();
+
+  if(r.error){
+    showToast('err','bi-exclamation-circle','Send Failed',r.error.message,5000);
+    input.value=body; // restore
+  } else {
+    appendMessage(r.data);
+    // update panel stats
+    renderAcctPanel();
+  }
+  btn.disabled=false;
+}
+
+function handleMsgKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+}
+
+function toggleScheduler(){
+  var w=document.getElementById('interview-scheduler-wrap');
+  w.style.display=w.style.display==='none'?'block':'none';
+  if(w.style.display==='block'){
+    // default to tomorrow
+    var tom=new Date();tom.setDate(tom.getDate()+1);
+    var iso=tom.toISOString().split('T')[0];
+    document.getElementById('is-date').value=iso;
+    document.getElementById('is-time').value='10:00';
+  }
+}
+
+async function sendInterviewInvite(){
+  var date=document.getElementById('is-date').value;
+  var time=document.getElementById('is-time').value;
+  var format=document.getElementById('is-format').value;
+  var loc=document.getElementById('is-location').value.trim();
+  if(!date||!time)return showToast('err','bi-exclamation-circle','Missing Details','Please select a date and time.',4000);
+
+  var empName=(employerProfile&&employerProfile.full_name)||(currentUser.user_metadata&&currentUser.user_metadata.full_name)||'The employer';
+  var d=new Date(date+'T'+time);
+  var readable=d.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' at '+d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  var body='📅 Interview Invitation\n\nYou have been invited for an interview by '+empName+'.\n\n📆 '+readable+'\n📋 Format: '+format+(loc?'\n📍 '+loc:'')+'\n\nPlease reply to confirm or request a different time.';
+
+  document.getElementById('msg-input').value=body;
+  document.getElementById('interview-scheduler-wrap').style.display='none';
+  await sendMessage();
+  // update interview map
+  interviewMap[activeWorkerId]=new Date().toISOString();
+  renderWorkers(allWorkers.filter(function(x){
+    var q=(document.getElementById('globalSearch').value||'').toLowerCase();
+    if(q){var h=(x._name+' '+(x.preferred_role||'')+' '+x._loc).toLowerCase();if(!h.includes(q))return false;}
+    return true;
+  }));
+}
+
+/* ═════════════════════════════════════
+   FILTER / SORT
+═════════════════════════════════════ */
+function applyFilters(){
+  var q=(document.getElementById('globalSearch').value||'').toLowerCase();
+  var fRole=document.getElementById('fRole').value;
+  var fAvail=document.getElementById('fAvail').value;
+  var sort=document.getElementById('sortSel').value;
+  var list=allWorkers.filter(function(w){
+    if(q){var h=(w._name+' '+(w.preferred_role||'')+' '+w._loc).toLowerCase();if(!h.includes(q))return false;}
+    if(fRole&&(w.preferred_role||'')!==fRole)return false;
+    if(fAvail&&w._avail!==fAvail)return false;
     return true;
   });
-
-  list.sort(function(a,b) {
-    if (sort==='rating')      return b._rating - a._rating;
-    if (sort==='exp')         return b._exp - a._exp;
-    if (sort==='salary_low')  return a._salMin - b._salMin;
-    if (sort==='salary_high') return b._salMax - a._salMax;
+  list.sort(function(a,b){
+    if(sort==='rating')return b._rating-a._rating;
+    if(sort==='exp')return b._exp-a._exp;
+    if(sort==='salary_low')return a._salMin-b._salMin;
+    if(sort==='salary_high')return b._salMax-a._salMax;
     return 0;
   });
-
   renderWorkers(list);
 }
-
-function debounceFilter() { clearTimeout(debTimer); debTimer = setTimeout(applyFilters,270); }
+function debounceFilter(){clearTimeout(debTimer);debTimer=setTimeout(applyFilters,270);}
 
 /* ── SKELETONS ── */
-function showSkeletons() {
-  var grid = document.getElementById('workers-grid');
-  grid.className = 'skel-grid';
-  grid.innerHTML = Array(8).fill(0).map(function(){
-    return '<div class="skel">'+
-      '<div class="sl" style="width:80px;height:80px;border-radius:50%;margin-bottom:4px"></div>'+
-      '<div class="sl" style="width:70%"></div>'+
-      '<div class="sl" style="width:50%"></div>'+
-      '<div class="sl" style="width:60%;height:10px"></div>'+
-    '</div>';
+function showSkeletons(){
+  var grid=document.getElementById('workers-grid');
+  grid.className='skel-grid';
+  grid.innerHTML=Array(8).fill(0).map(function(){
+    return '<div class="skel"><div class="sl" style="width:80px;height:80px;border-radius:50%;margin-bottom:4px"></div><div class="sl" style="width:70%"></div><div class="sl" style="width:50%"></div><div class="sl" style="width:60%;height:10px"></div></div>';
   }).join('');
-  setTimeout(function(){ grid.className='workers-grid'; }, 50);
 }
 
-function showToast(type, icon, title, body, dur) {
-  var stack = document.getElementById('toast-stack');
-  var t = document.createElement('div');
+/* ── TOAST ── */
+function showToast(type,icon,title,body,dur){
+  var stack=document.getElementById('toast-stack');
+  var t=document.createElement('div');
   t.className='toast '+(type||'');
   t.innerHTML='<i class="bi '+icon+'"></i><div><strong>'+escHtml(title)+'</strong>'+(body?'<p style="font-size:11.5px;opacity:.8;margin-top:1px">'+escHtml(body)+'</p>':'')+'</div><button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
   stack.appendChild(t);
-  if (dur>0) setTimeout(function(){ t.classList.add('hide'); setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},350); }, dur);
+  if(dur>0)setTimeout(function(){t.classList.add('hide');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},350);},dur);
 }
 
-function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function toggleMenu(){ document.querySelector('.nav-links').classList.toggle('open'); }
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toggleMenu(){document.getElementById('nav-links').classList.toggle('open');}
 </script>
 </body>
 </html>
