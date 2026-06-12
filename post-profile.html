@@ -121,7 +121,7 @@ a{text-decoration:none;color:inherit;}
 .email-status.clear{background:var(--green-light);color:var(--green-dark);}
 
 /* ── Intelligence check badges ── */
-.intel-check{display:none;margin-top:6px;padding:6px 11px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:7px;}
+.intel-check{margin-top:6px;padding:6px 11px;border-radius:8px;font-size:12px;display:none;align-items:center;gap:7px;}
 .intel-check.checking{background:#f5f9ff;color:#2563EB;border:1px solid #c7dcff;}
 .intel-check.match{background:var(--green-light);color:var(--green-dark);border:1px solid #9FE1CB;}
 .intel-check.mismatch{background:#FCEBEB;color:#A32D2D;border:1px solid #F09595;}
@@ -334,7 +334,7 @@ a{text-decoration:none;color:inherit;}
           <div class="upload-zone" onclick="this.querySelector('input').click()">
             <span>📄</span><p>Click to upload front of ID</p>
             <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-            <input type="file" id="id-front" accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="showFileName(this)">
+            <input type="file" id="id-front" accept=".jpg,.jpeg,.png,.pdf" style="display:none">
           </div>
         </div>
         <div class="form-group">
@@ -382,7 +382,7 @@ a{text-decoration:none;color:inherit;}
         </div>
         <div class="form-group">
           <label>Year Completed <span class="required">*</span></label>
-          <input type="number" id="edu-year" placeholder="e.g. 2018" min="1990" max="2025">
+          <input type="number" id="edu-year" placeholder="e.g. 2018" min="1990" max="2026">
         </div>
         <div class="form-group">
           <label>Name of Institution</label>
@@ -710,7 +710,7 @@ const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let expCount = 1;
+let expCountNum = 1;
 let currentUserData = null;
 let emailCheckTimer = null;
 
@@ -744,7 +744,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (regData.fullname) document.getElementById('fullname').value = regData.fullname;
   if (regData.email)    { document.getElementById('email').value = regData.email; document.getElementById('email').readOnly = !!session; }
   if (regData.phone)    document.getElementById('phone').value = regData.phone;
-  if (regData.dob)      document.getElementById('dob').value = regData.dob;
+  if (regData.dob)      {
+    document.getElementById('dob').value = regData.dob;
+    // Also update the calendar display text so it doesn't show placeholder
+    const dobParts = regData.dob.split('-');
+    if (dobParts.length === 3) {
+      const dobDate = new Date(parseInt(dobParts[0]), parseInt(dobParts[1])-1, parseInt(dobParts[2]));
+      const displayEl = document.getElementById('dob-display-text');
+      if (displayEl) {
+        displayEl.textContent = dobDate.toLocaleDateString('en-KE', { dateStyle: 'medium' });
+        displayEl.classList.remove('cal-placeholder');
+      }
+      // Pre-seed calState so calendar opens on correct month/year
+      calState['dob'] = { view: 'days', month: dobDate.getMonth(), year: dobDate.getFullYear(), selected: dobDate };
+    }
+  }
   if (regData.gender) {
     const gSel = document.getElementById('gender');
     for (let o of gSel.options) if (o.text === regData.gender || o.value === regData.gender) { gSel.value = o.value; break; }
@@ -1128,7 +1142,11 @@ function calClear(id) {
   calState[id].selected = null;
   document.getElementById(id).value = '';
   const display = document.getElementById(id + '-display-text');
-  if (display) { display.textContent = 'Select your date of birth'; display.classList.add('cal-placeholder'); }
+  if (display) {
+    const placeholders = { dob: 'Select your date of birth' };
+    display.textContent = placeholders[id] || 'Select a date';
+    display.classList.add('cal-placeholder');
+  }
   renderCalendar(id);
 }
 
@@ -1214,7 +1232,11 @@ Please extract the name and DOB visible on this ID and respond ONLY with valid J
 
     const res = await fetch(ANTH_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify(payload)
     });
 
@@ -1323,7 +1345,11 @@ Check if the name on this certificate matches the applicant's name. Respond ONLY
 
     const res = await fetch(ANTH_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify(payload)
     });
 
@@ -1390,7 +1416,11 @@ Original text:
 
     const res = await fetch(ANTH_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify(payload)
     });
 
