@@ -231,18 +231,65 @@ a{text-decoration:none;color:inherit}
 /* ═══════════════════════════════════════════
    MESSAGING PANEL (inside modal)
 ═══════════════════════════════════════════ */
-#msg-panel{display:none;flex-direction:column;height:460px}
+#msg-panel{display:none;flex-direction:column;height:500px}
 #msg-panel.active{display:flex}
 
+/* Presence bar */
+.msg-presence-bar{padding:8px 16px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.presence-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.presence-dot.online{background:#22c55e;animation:livePulse 2s ease-in-out infinite}
+.presence-dot.offline{background:#cbd5e1}
+
+/* Safety disclaimer banner */
+.msg-safety-bar{background:#FFFBEB;border-bottom:1px solid #FDE68A;padding:7px 16px;font-size:11.5px;color:#92400E;display:flex;align-items:center;gap:6px}
+.msg-safety-bar i{color:#D97706;flex-shrink:0}
+
 .msg-thread{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
-.msg-bubble{max-width:78%;padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;position:relative}
-.msg-bubble.from-employer{background:var(--brand);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
-.msg-bubble.from-worker{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;align-self:flex-start}
-.msg-time{font-size:10.5px;opacity:.65;margin-top:4px;display:block}
+
+/* Bubble wrapper for context menu */
+.msg-wrap{display:flex;flex-direction:column;position:relative}
+.msg-wrap.from-employer{align-items:flex-end}
+.msg-wrap.from-worker{align-items:flex-start}
+
+.msg-bubble{max-width:78%;padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;position:relative;word-break:break-word}
+.msg-bubble.from-employer{background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.msg-bubble.from-worker{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg-bubble.deleted{opacity:.55;font-style:italic;background:#f1f5f9!important;color:var(--muted)!important;border:1px dashed var(--border)!important}
+.msg-bubble.flagged{background:#FEF2F2!important;color:#991B1B!important;border:1px solid #FCA5A5!important}
+.msg-bubble.edited .msg-edited-tag{font-size:10px;opacity:.6;margin-left:4px}
+
+/* Tick status */
+.msg-meta{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:3px}
+.msg-time{font-size:10.5px;opacity:.65}
+.msg-ticks{font-size:12px;line-height:1}
+.msg-ticks.sent{color:rgba(255,255,255,.55)}
+.msg-ticks.delivered{color:rgba(255,255,255,.55)}
+.msg-ticks.seen{color:#93C5FD}
+.msg-wrap.from-worker .msg-ticks{display:none}
+.msg-wrap.from-worker .msg-time{color:var(--muted)}
+
 .msg-date-sep{text-align:center;font-size:11px;color:var(--light);font-weight:600;padding:4px 0}
 .msg-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
 .msg-empty i{font-size:36px;opacity:.4}
 .msg-empty p{font-size:13px}
+
+/* Bubble action buttons (edit/delete/report) */
+.msg-actions{display:none;position:absolute;top:-28px;gap:3px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:3px 6px;box-shadow:0 2px 12px rgba(0,0,0,.12);z-index:10}
+.msg-wrap.from-employer .msg-actions{right:0}
+.msg-wrap.from-worker .msg-actions{left:0}
+.msg-wrap:hover .msg-actions{display:flex}
+.msg-act-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:4px;color:var(--muted);transition:.15s;display:flex;align-items:center;gap:3px}
+.msg-act-btn:hover{background:var(--bg);color:var(--text)}
+.msg-act-btn.danger:hover{color:var(--danger)}
+
+/* Interview card bubble */
+.iv-card{background:var(--brand-light);border:1.5px solid var(--brand-mid);border-radius:10px;padding:10px 12px;font-size:12.5px;min-width:220px}
+.iv-card .iv-title{font-weight:700;color:var(--brand);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.iv-card .iv-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;color:var(--text)}
+.iv-card .iv-actions{display:flex;gap:6px;margin-top:8px}
+.iv-btn{border:none;border-radius:50px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.iv-btn-confirm{background:var(--brand);color:#fff}
+.iv-btn-decline{background:#FEF2F2;color:var(--danger)}
 
 .msg-compose{padding:12px 16px;border-top:1px solid var(--border);background:#fff;display:flex;gap:8px;align-items:flex-end}
 .msg-compose textarea{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:10px 13px;font-size:13.5px;font-family:inherit;outline:none;resize:none;max-height:100px;line-height:1.5;transition:border .18s}
@@ -263,6 +310,15 @@ a{text-decoration:none;color:inherit}
 .btn-schedule{background:var(--brand);color:#fff;border:none;border-radius:50px;padding:8px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:6px}
 .btn-schedule:hover{background:var(--brand-dark)}
 #schedule-toggle{background:none;border:none;font-size:12.5px;color:var(--brand);cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:4px;padding:0}
+
+/* Report modal */
+#report-modal{display:none;position:fixed;inset:0;background:rgba(15,40,25,.55);z-index:2000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)}
+#report-modal.open{display:flex}
+.report-box{background:#fff;border-radius:14px;padding:24px;max-width:360px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.report-box h4{font-size:15px;font-weight:700;margin-bottom:8px}
+.report-box p{font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.report-box select,.report-box textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:10px}
+.report-box textarea{resize:none;height:70px}
 
 /* msg loading */
 .msg-loading{text-align:center;padding:24px;color:var(--muted);font-size:13px}
@@ -470,6 +526,16 @@ a{text-decoration:none;color:inherit}
     <!-- MESSAGE TAB CONTENT -->
     <div id="tab-content-message" style="display:none">
       <div id="msg-panel">
+        <!-- Presence bar -->
+        <div class="msg-presence-bar" id="msg-presence-bar">
+          <div class="presence-dot offline" id="presence-dot"></div>
+          <span id="presence-text">Checking status…</span>
+        </div>
+        <!-- Safety disclaimer -->
+        <div class="msg-safety-bar">
+          <i class="bi bi-shield-fill-check"></i>
+          <span>Do not share personal contacts. Sounds Care is not responsible for any harm arising from contact sharing or sexual communication — violations lead to a ban.</span>
+        </div>
         <div class="msg-thread" id="msg-thread">
           <div class="msg-loading"><div class="spin-ring" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div>Loading messages…</div>
         </div>
@@ -499,7 +565,7 @@ a{text-decoration:none;color:inherit}
               <button id="schedule-toggle" onclick="toggleScheduler()"><i class="bi bi-calendar-plus"></i> Schedule Interview</button>
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end">
-              <textarea id="msg-input" rows="2" placeholder="Type a message to this worker…" onkeydown="handleMsgKey(event)"></textarea>
+              <textarea id="msg-input" rows="2" placeholder="Type a message… (no contact sharing allowed)" onkeydown="handleMsgKey(event)" oninput="checkKeywords(this)"></textarea>
               <button class="btn-send" id="btn-send" onclick="sendMessage()" title="Send message"><i class="bi bi-send-fill"></i></button>
             </div>
           </div>
@@ -510,6 +576,39 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div id="report-modal">
+  <div class="report-box">
+    <h4><i class="bi bi-flag-fill" style="color:var(--danger)"></i> Report Message</h4>
+    <p>Help us keep Sounds Care safe. Your report is confidential and reviewed by our team. Accounts found violating our policy will be banned.</p>
+    <select id="report-reason">
+      <option value="">Select reason…</option>
+      <option>Sharing personal contacts</option>
+      <option>Sexual or inappropriate content</option>
+      <option>Harassment or threats</option>
+      <option>Spam or scam attempt</option>
+      <option>Other</option>
+    </select>
+    <textarea id="report-detail" placeholder="Additional details (optional)"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="document.getElementById('report-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-brand" style="background:var(--danger)" onclick="submitReport()"><i class="bi bi-flag-fill"></i> Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MESSAGE MODAL -->
+<div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(15,40,25,.55);z-index:2000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px)">
+  <div style="background:#fff;border-radius:14px;padding:22px;max-width:380px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2)">
+    <h4 style="font-size:15px;font-weight:700;margin-bottom:10px"><i class="bi bi-pencil-fill" style="color:var(--brand)"></i> Edit Message</h4>
+    <textarea id="edit-input" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;resize:none;margin-bottom:10px"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="document.getElementById('edit-modal').style.display='none'">Cancel</button>
+      <button class="btn btn-brand" onclick="saveEdit()"><i class="bi bi-check-lg"></i> Save</button>
+    </div>
   </div>
 </div>
 
@@ -618,6 +717,8 @@ document.addEventListener('DOMContentLoaded', function(){
     currentUser = session.user;
     resetSessionTimer();
     startTimerDisplay();
+    loadBlockedKeywords();
+    startPresenceHeartbeat();
     loadEmployerProfile().then(function(){
       loadWorkers();
       loadInterviewMap();
@@ -889,23 +990,118 @@ function switchTab(tab){
 }
 
 /* ═════════════════════════════════════
+   BLOCKED KEYWORDS
+═════════════════════════════════════ */
+var blockedKeywords = [];
+async function loadBlockedKeywords(){
+  var r = await sb.from('blocked_keywords').select('keyword');
+  blockedKeywords = (r.data||[]).map(function(k){return k.keyword.toLowerCase();});
+}
+function checkKeywords(el){
+  var val = (el.value||'').toLowerCase();
+  var hit = blockedKeywords.find(function(k){return val.includes(k);});
+  if(hit){
+    el.style.borderColor='var(--danger)';
+    el.title='⚠ Contact sharing is not allowed on Sounds Care';
+  } else {
+    el.style.borderColor='';
+    el.title='';
+  }
+}
+function containsBlockedKeyword(text){
+  var t = (text||'').toLowerCase();
+  return blockedKeywords.find(function(k){return t.includes(k);}) || null;
+}
+
+/* ═════════════════════════════════════
+   ONLINE PRESENCE
+═════════════════════════════════════ */
+var presenceChannel = null;
+var presenceHbInterval = null;
+
+async function upsertPresence(){
+  if(!currentUser) return;
+  await sb.from('user_presence').upsert({
+    user_id: currentUser.id,
+    user_type: 'employer',
+    is_online: true,
+    last_seen_at: new Date().toISOString()
+  }, {onConflict:'user_id'});
+}
+
+async function markOffline(){
+  if(!currentUser) return;
+  await sb.from('user_presence').upsert({
+    user_id: currentUser.id,
+    user_type: 'employer',
+    is_online: false,
+    last_seen_at: new Date().toISOString()
+  }, {onConflict:'user_id'});
+}
+
+function startPresenceHeartbeat(){
+  upsertPresence();
+  presenceHbInterval = setInterval(upsertPresence, 30000);
+  window.addEventListener('beforeunload', markOffline);
+}
+
+async function loadWorkerPresence(workerId){
+  var dot = document.getElementById('presence-dot');
+  var txt = document.getElementById('presence-text');
+  var r = await sb.from('user_presence').select('is_online,last_seen_at').eq('user_id', workerId).maybeSingle();
+  if(!r.data){
+    dot.className='presence-dot offline';
+    txt.textContent='Status unknown';
+    return;
+  }
+  if(r.data.is_online){
+    dot.className='presence-dot online';
+    txt.textContent='Online now';
+  } else {
+    dot.className='presence-dot offline';
+    var ago = r.data.last_seen_at ? timeAgo(r.data.last_seen_at) : 'a while ago';
+    txt.textContent='Last seen '+ago;
+  }
+}
+
+function timeAgo(iso){
+  var d = new Date(iso), now = Date.now(), diff = Math.floor((now - d)/1000);
+  if(diff < 60) return 'just now';
+  if(diff < 3600) return Math.floor(diff/60)+' min ago';
+  if(diff < 86400) return Math.floor(diff/3600)+' hr ago';
+  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
+}
+
+/* ═════════════════════════════════════
    MESSAGING
 ═════════════════════════════════════ */
+var editingMessageId = null;
+var reportingMessageId = null;
+
 async function loadMessages(workerId){
   if(!workerId||!currentUser)return;
   var thread=document.getElementById('msg-thread');
   thread.innerHTML='<div class="msg-loading"><div class="spin-ring" style="width:24px;height:24px;border-width:2px;margin:0 auto 8px"></div>Loading messages…</div>';
 
-  // Fetch conversation between this employer and worker
+  loadWorkerPresence(workerId);
+
   var r = await sb.from('messages')
     .select('*')
     .eq('employer_id', currentUser.id)
     .eq('receiver_worker_id', workerId)
+    .is('deleted_by_employer', null)
     .order('created_at',{ascending:true});
 
   if(r.error){
     thread.innerHTML='<div class="msg-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load messages.</p></div>';
     return;
+  }
+
+  // Mark delivered messages as seen
+  var unread = (r.data||[]).filter(function(m){return m.sender_type==='worker'&&m.delivery_status!=='seen';});
+  if(unread.length){
+    var ids = unread.map(function(m){return m.id;});
+    await sb.from('messages').update({delivery_status:'seen',is_read:true,read_at:new Date().toISOString()}).in('id',ids);
   }
 
   renderMessages(r.data||[]);
@@ -917,7 +1113,85 @@ async function loadMessages(workerId){
       function(payload){
         if(payload.new.receiver_worker_id===workerId) appendMessage(payload.new);
       })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages',filter:'employer_id=eq.'+currentUser.id},
+      function(payload){ updateMessageInThread(payload.new); })
     .subscribe();
+}
+
+function tickIcon(status, isEmployer){
+  if(!isEmployer) return '';
+  if(status==='seen') return '<span class="msg-ticks seen"><i class="bi bi-check2-all"></i></span>';
+  if(status==='delivered') return '<span class="msg-ticks delivered"><i class="bi bi-check2-all"></i></span>';
+  return '<span class="msg-ticks sent"><i class="bi bi-check2"></i></span>';
+}
+
+function buildBubble(m, isEmployer){
+  var d=new Date(m.created_at||Date.now());
+  var time=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+  var wrapClass='msg-wrap '+(isEmployer?'from-employer':'from-worker');
+  var bubbleClass='msg-bubble '+(isEmployer?'from-employer':'from-worker');
+
+  var bodyContent='';
+  // Check deleted
+  if(isEmployer && m.deleted_by_employer){
+    bodyContent='<em>🚫 You deleted this message</em>';
+    bubbleClass+=' deleted';
+  } else if(!isEmployer && m.deleted_by_worker){
+    bodyContent='<em>🚫 This message was deleted</em>';
+    bubbleClass+=' deleted';
+  } else if(m.is_flagged){
+    bodyContent='<em>⚠ This message was blocked: contains restricted keywords</em>';
+    bubbleClass+=' flagged';
+  } else if(m.msg_type==='interview_invite'){
+    bodyContent=buildInterviewCard(m);
+  } else {
+    bodyContent=escHtml(m.body||m.message||m.content||'');
+    if(m.is_edited) bodyContent+=' <span class="msg-edited-tag">(edited)</span>';
+  }
+
+  // Actions (only for non-deleted, non-flagged)
+  var actionsHtml='';
+  var isDel = (isEmployer && m.deleted_by_employer) || (!isEmployer && m.deleted_by_worker);
+  if(!isDel && !m.is_flagged){
+    actionsHtml='<div class="msg-actions">';
+    if(isEmployer && !m.is_edited && m.msg_type!=='interview_invite'){
+      actionsHtml+='<button class="msg-act-btn" onclick="startEdit(\''+m.id+'\',\''+escHtml(m.body||m.message||m.content||'').replace(/'/g,"&#39;")+'\')"><i class="bi bi-pencil"></i></button>';
+    }
+    if(isEmployer){
+      actionsHtml+='<button class="msg-act-btn danger" onclick="deleteMsg(\''+m.id+'\')" title="Delete for all"><i class="bi bi-trash"></i></button>';
+    }
+    actionsHtml+='<button class="msg-act-btn danger" onclick="openReport(\''+m.id+'\')" title="Report"><i class="bi bi-flag"></i></button>';
+    actionsHtml+='</div>';
+  }
+
+  return '<div class="'+wrapClass+'" data-msg-id="'+m.id+'">'+
+    actionsHtml+
+    '<div class="'+bubbleClass+'">'+bodyContent+'</div>'+
+    '<div class="msg-meta">'+
+      '<span class="msg-time">'+time+'</span>'+
+      tickIcon(m.delivery_status, isEmployer)+
+    '</div>'+
+  '</div>';
+}
+
+function buildInterviewCard(m){
+  var dt = m.interview_date && m.interview_time
+    ? new Date(m.interview_date+'T'+m.interview_time).toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' at '+m.interview_time
+    : '';
+  var statusBadge='';
+  if(m.interview_status==='confirmed') statusBadge='<span style="color:var(--brand);font-size:11px;font-weight:700"><i class="bi bi-check-circle-fill"></i> Confirmed</span>';
+  else if(m.interview_status==='declined') statusBadge='<span style="color:var(--danger);font-size:11px;font-weight:700"><i class="bi bi-x-circle-fill"></i> Declined</span>';
+  return '<div class="iv-card">'+
+    '<div class="iv-title"><i class="bi bi-calendar-check-fill"></i> Interview Invitation</div>'+
+    (dt?'<div class="iv-row"><i class="bi bi-clock" style="color:var(--brand)"></i>'+escHtml(dt)+'</div>':'')+
+    (m.interview_format?'<div class="iv-row"><i class="bi bi-camera-video" style="color:var(--brand)"></i>'+escHtml(m.interview_format)+'</div>':'')+
+    (m.interview_location?'<div class="iv-row"><i class="bi bi-geo-alt" style="color:var(--brand)"></i>'+escHtml(m.interview_location)+'</div>':'')+
+    (statusBadge?'<div style="margin-top:6px">'+statusBadge+'</div>':
+      '<div class="iv-actions">'+
+        '<button class="iv-btn iv-btn-confirm" onclick="respondInterview(\''+m.id+'\',\'confirmed\')">✓ Confirm</button>'+
+        '<button class="iv-btn iv-btn-decline" onclick="respondInterview(\''+m.id+'\',\'declined\')">✗ Decline</button>'+
+      '</div>')+
+  '</div>';
 }
 
 function renderMessages(msgs){
@@ -926,7 +1200,7 @@ function renderMessages(msgs){
     thread.innerHTML='<div class="msg-empty"><i class="bi bi-chat-dots"></i><p>No messages yet. Start the conversation!</p></div>';
     return;
   }
-  var html='';var lastDate='';
+  var html=''; var lastDate='';
   msgs.forEach(function(m){
     var d=new Date(m.created_at);
     var dateStr=d.toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'});
@@ -935,10 +1209,7 @@ function renderMessages(msgs){
       lastDate=dateStr;
     }
     var isEmployer=m.sender_id===currentUser.id||m.sender_type==='employer';
-    var time=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-    html+='<div class="msg-bubble '+(isEmployer?'from-employer':'from-worker')+'">'+
-      escHtml(m.body||m.message||m.content||'')+'<span class="msg-time">'+time+'</span>'+
-    '</div>';
+    html+=buildBubble(m, isEmployer);
   });
   thread.innerHTML=html;
   thread.scrollTop=thread.scrollHeight;
@@ -948,41 +1219,63 @@ function appendMessage(m){
   var thread=document.getElementById('msg-thread');
   var empty=thread.querySelector('.msg-empty');
   if(empty)empty.remove();
-  var d=new Date(m.created_at||Date.now());
   var isEmployer=m.sender_id===currentUser.id||m.sender_type==='employer';
-  var time=d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-  var el=document.createElement('div');
-  el.className='msg-bubble '+(isEmployer?'from-employer':'from-worker');
-  el.innerHTML=escHtml(m.body||m.message||m.content||'')+'<span class="msg-time">'+time+'</span>';
-  thread.appendChild(el);
+  thread.insertAdjacentHTML('beforeend', buildBubble(m, isEmployer));
   thread.scrollTop=thread.scrollHeight;
+  // mark delivered if worker message
+  if(!isEmployer){
+    sb.from('messages').update({delivery_status:'seen',is_read:true,read_at:new Date().toISOString()}).eq('id',m.id).then(function(){});
+  }
+}
+
+function updateMessageInThread(m){
+  var wrap = document.querySelector('[data-msg-id="'+m.id+'"]');
+  if(!wrap) return;
+  var isEmployer=m.sender_id===currentUser.id||m.sender_type==='employer';
+  wrap.outerHTML = buildBubble(m, isEmployer);
+  // scroll only if near bottom
+  var thread=document.getElementById('msg-thread');
+  if(thread.scrollHeight - thread.scrollTop < thread.clientHeight + 120) thread.scrollTop=thread.scrollHeight;
 }
 
 async function sendMessage(){
   var input=document.getElementById('msg-input');
   var body=(input.value||'').trim();
   if(!body||!activeWorkerId||!currentUser)return;
+
+  // Keyword check
+  var hit = containsBlockedKeyword(body);
+  if(hit){
+    showToast('err','bi-shield-fill-exclamation','Blocked','Your message contains restricted content: "'+hit+'". Sharing personal contacts is not allowed.',6000);
+    // still insert but flag it
+    var btn2=document.getElementById('btn-send'); btn2.disabled=true; input.value='';
+    var r2 = await sb.from('messages').insert({
+      employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
+      receiver_worker_id: activeWorkerId, body: body, message: body,
+      created_at: new Date().toISOString(), is_read: false,
+      delivery_status: 'sent', msg_type: 'text',
+      is_flagged: true, flag_reason: 'blocked_keyword:'+hit
+    }).select().single();
+    if(!r2.error) appendMessage(r2.data);
+    btn2.disabled=false;
+    return;
+  }
+
   var btn=document.getElementById('btn-send');
-  btn.disabled=true;
-  input.value='';
+  btn.disabled=true; input.value='';
 
   var r = await sb.from('messages').insert({
-    employer_id:    currentUser.id,
-    sender_id:      currentUser.id,
-    sender_type:    'employer',
-    receiver_worker_id: activeWorkerId,
-    body:           body,
-    message:        body,
-    created_at:     new Date().toISOString(),
-    is_read:        false,
+    employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
+    receiver_worker_id: activeWorkerId, body: body, message: body,
+    created_at: new Date().toISOString(), is_read: false,
+    delivery_status: 'sent', msg_type: 'text'
   }).select().single();
 
   if(r.error){
     showToast('err','bi-exclamation-circle','Send Failed',r.error.message,5000);
-    input.value=body; // restore
+    input.value=body;
   } else {
     appendMessage(r.data);
-    // update panel stats
     renderAcctPanel();
   }
   btn.disabled=false;
@@ -990,6 +1283,66 @@ async function sendMessage(){
 
 function handleMsgKey(e){
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+}
+
+/* ── EDIT ── */
+function startEdit(id, currentBody){
+  editingMessageId = id;
+  document.getElementById('edit-input').value = currentBody;
+  document.getElementById('edit-modal').style.display='flex';
+}
+async function saveEdit(){
+  var newBody = (document.getElementById('edit-input').value||'').trim();
+  if(!newBody||!editingMessageId) return;
+  document.getElementById('edit-modal').style.display='none';
+  var r = await sb.from('messages').update({
+    body: newBody, message: newBody, is_edited: true, edited_at: new Date().toISOString()
+  }).eq('id', editingMessageId).select().single();
+  if(!r.error) updateMessageInThread(r.data);
+  else showToast('err','bi-exclamation-circle','Edit Failed',r.error.message,4000);
+  editingMessageId=null;
+}
+
+/* ── DELETE ── */
+async function deleteMsg(id){
+  if(!confirm('Delete this message for everyone?')) return;
+  var r = await sb.from('messages').update({
+    deleted_by_employer: {deleted_at: new Date().toISOString(), by: currentUser.id}
+  }).eq('id', id).select().single();
+  if(!r.error) updateMessageInThread(r.data);
+  else showToast('err','bi-exclamation-circle','Delete Failed',r.error.message,4000);
+}
+
+/* ── REPORT ── */
+function openReport(id){
+  reportingMessageId = id;
+  document.getElementById('report-reason').value='';
+  document.getElementById('report-detail').value='';
+  document.getElementById('report-modal').classList.add('open');
+}
+async function submitReport(){
+  var reason = document.getElementById('report-reason').value;
+  if(!reason){showToast('err','bi-exclamation-circle','Required','Please select a reason.',3000);return;}
+  var detail = document.getElementById('report-detail').value.trim();
+  document.getElementById('report-modal').classList.remove('open');
+  var r = await sb.from('messages').update({
+    reported_by_employer: true,
+    report_reason_employer: reason+(detail?' – '+detail:'')
+  }).eq('id', reportingMessageId);
+  if(!r.error) showToast('ok','bi-flag-fill','Report Submitted','Our team will review this message.',4000);
+  else showToast('err','bi-exclamation-circle','Failed',r.error.message,4000);
+  reportingMessageId=null;
+}
+
+/* ── INTERVIEW RESPONSE ── */
+async function respondInterview(msgId, status){
+  var r = await sb.from('messages').update({interview_status: status}).eq('id', msgId).select().single();
+  if(!r.error){
+    updateMessageInThread(r.data);
+    // also update interviews table
+    await sb.from('interviews').update({status: status}).eq('message_id', msgId);
+    showToast('ok','bi-calendar-check','Interview '+(status==='confirmed'?'Confirmed':'Declined'),'',3000);
+  }
 }
 
 function toggleScheduler(){
@@ -1012,20 +1365,38 @@ async function sendInterviewInvite(){
   if(!date||!time)return showToast('err','bi-exclamation-circle','Missing Details','Please select a date and time.',4000);
 
   var empName=(employerProfile&&employerProfile.full_name)||(currentUser.user_metadata&&currentUser.user_metadata.full_name)||'The employer';
-  var d=new Date(date+'T'+time);
-  var readable=d.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' at '+d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-  var body='📅 Interview Invitation\n\nYou have been invited for an interview by '+empName+'.\n\n📆 '+readable+'\n📋 Format: '+format+(loc?'\n📍 '+loc:'')+'\n\nPlease reply to confirm or request a different time.';
-
-  document.getElementById('msg-input').value=body;
   document.getElementById('interview-scheduler-wrap').style.display='none';
-  await sendMessage();
-  // update interview map
-  interviewMap[activeWorkerId]=new Date().toISOString();
-  renderWorkers(allWorkers.filter(function(x){
-    var q=(document.getElementById('globalSearch').value||'').toLowerCase();
-    if(q){var h=(x._name+' '+(x.preferred_role||'')+' '+x._loc).toLowerCase();if(!h.includes(q))return false;}
-    return true;
-  }));
+
+  var r = await sb.from('messages').insert({
+    employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
+    receiver_worker_id: activeWorkerId,
+    msg_type: 'interview_invite',
+    body: '📅 Interview Invitation from '+empName,
+    message: '📅 Interview Invitation from '+empName,
+    interview_date: date,
+    interview_time: time,
+    interview_format: format,
+    interview_location: loc||null,
+    interview_status: 'pending',
+    created_at: new Date().toISOString(),
+    delivery_status: 'sent', is_read: false
+  }).select().single();
+
+  if(!r.error){
+    appendMessage(r.data);
+    // Save to interviews table
+    await sb.from('interviews').insert({
+      employer_id: currentUser.id, worker_id: activeWorkerId,
+      message_id: r.data.id,
+      interview_date: date, interview_time: time,
+      format: format, location_or_link: loc||null, status: 'pending'
+    });
+    interviewMap[activeWorkerId]=new Date().toISOString();
+    showToast('ok','bi-calendar-check','Invite Sent','The worker will see your interview invitation.',4000);
+    renderAcctPanel();
+  } else {
+    showToast('err','bi-exclamation-circle','Failed',r.error.message,5000);
+  }
 }
 
 /* ═════════════════════════════════════
