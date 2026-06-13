@@ -1317,12 +1317,19 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ── TABLE NAME CONSTANTS (matches actual DB) ── */
+const T_WORKERS   = 'worker_profiles';   // worker_profiles table
+const T_EMPLOYERS = 'employer_profiles'; // employer_profiles table
+const T_USERS     = 'users';             // users table (public.users)
+
 let EMPLOYER_ID  = null;
 let CURRENT_USER = null;
 let CURRENT_PROFILE = null;
 let _allFindWorkers   = [];
 let _allJobseekers    = [];
 let _allNewEmployers  = [];
+let _activeConvoId    = null;
+let _msgRealtimeSub   = null;
 
 /* ── HELPERS ── */
 const AVATAR_COLORS = [
@@ -1403,38 +1410,40 @@ document.addEventListener('keydown', e => {
   const h = new Date().getHours();
   document.getElementById('greeting-time').textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 
-  const { data: { user } } = await db.auth.getUser();
+  /* ── Session Guard: redirect to login if no session ── */
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+  const user = session.user;
   CURRENT_USER = user;
 
-  if (user) {
-    /* Load profile from profiles table */
-    const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
-    /* Load employer record */
-    const { data: employer } = await db.from('employers').select('*').eq('user_id', user.id).single();
+  /* Load from public.users (main user record) */
+  const { data: userRow } = await db.from(T_USERS).select('*').eq('id', user.id).maybeSingle();
+  /* Load employer_profiles record */
+  const { data: employer } = await db.from(T_EMPLOYERS).select('*').eq('user_id', user.id).maybeSingle();
 
-    CURRENT_PROFILE = profile;
-    if (employer) EMPLOYER_ID = employer.id;
+  CURRENT_PROFILE = userRow;
+  if (employer) EMPLOYER_ID = employer.id;
 
-    const name = profile?.full_name || user.email?.split('@')[0] || 'Employer';
-    const ini  = initials(name);
-    const [bg,fg] = avatarColor(name);
+  const name = userRow?.full_name || userRow?.name || user.email?.split('@')[0] || 'Employer';
+  const ini  = initials(name);
+  const [bg,fg] = avatarColor(name);
 
-    document.getElementById('welcome-name').textContent  = `Welcome back, ${name.split(' ')[0]} 👋`;
-    document.getElementById('topbar-title').textContent  = `${name.split(' ')[0]}'s Dashboard`;
-    document.getElementById('sidebar-name').textContent  = name;
-    document.getElementById('sidebar-av').textContent    = ini;
-    document.getElementById('topbar-av').textContent     = ini;
-    document.getElementById('sidebar-av').style.background = bg;
-    document.getElementById('sidebar-av').style.color      = fg;
-    document.getElementById('topbar-av').style.background  = `linear-gradient(135deg,${bg},${fg})`;
-  } else {
-    document.getElementById('welcome-name').textContent = 'Welcome to Sounds Care 👋';
-  }
+  document.getElementById('welcome-name').textContent  = `Welcome back, ${name.split(' ')[0]} 👋`;
+  document.getElementById('topbar-title').textContent  = `${name.split(' ')[0]}'s Dashboard`;
+  document.getElementById('sidebar-name').textContent  = name;
+  document.getElementById('sidebar-av').textContent    = ini;
+  document.getElementById('topbar-av').textContent     = ini;
+  document.getElementById('sidebar-av').style.background = bg;
+  document.getElementById('sidebar-av').style.color      = fg;
+  document.getElementById('topbar-av').style.background  = `linear-gradient(135deg,${bg},${fg})`;
 
   await Promise.all([
     loadStats(), loadSavedWorkers(), loadHires(),
     loadActivity(), loadNewEmployersPreview(), loadJobseekersPreview(),
-    loadNewRegTicker()
+    loadNewRegTicker(), loadUnreadMsgCount()
   ]);
 })();
 
@@ -1449,8 +1458,8 @@ async function loadStats() {
   const [a,b,c,d] = await Promise.allSettled([
     db.from('searches').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
     db.from('saved_workers').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
-    db.from('contacts').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
-    db.from('hires').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID).eq('status','active'),
+    db.from('conversations').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID),
+    db.from('job_applications').select('id',{count:'exact',head:true}).eq('employer_id',EMPLOYER_ID).eq('status','hired'),
   ]);
   document.getElementById('stat-searches').textContent  = a.status==='fulfilled' ? (a.value.count??0) : '—';
   document.getElementById('stat-saved').textContent     = b.status==='fulfilled' ? (b.value.count??0) : '—';
@@ -1463,18 +1472,19 @@ async function loadStats() {
 ══════════════════════════════════════ */
 async function loadNewRegTicker() {
   const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-  const { data } = await db.from('workers').select('id,full_name,name,role,created_at')
-    .gte('created_at', since).order('created_at',{ascending:false}).limit(20);
+  const { data } = await db.from(T_WORKERS)
+    .select('id,full_name,job_title,submitted_at')
+    .eq('status','approved').neq('is_deleted', true)
+    .gte('submitted_at', since).order('submitted_at',{ascending:false}).limit(20);
   if (!data?.length) return;
 
   document.getElementById('reg-ticker').style.display = 'flex';
-  // Duplicate items for seamless loop
   const items = [...data, ...data].map(w => {
-    const name = w.full_name||w.name||'Worker';
+    const name = w.full_name||'Worker';
     const [bg,fg] = avatarColor(name);
     return `<span class="ticker-item" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
       <span class="ticker-av" style="background:${bg};color:${fg}">${initials(name)}</span>
-      <strong>${name}</strong> · ${w.role||'Worker'}
+      <strong>${name}</strong> · ${w.job_title||'Worker'}
     </span>`;
   }).join('');
   document.getElementById('ticker-inner').innerHTML = items;
@@ -1487,18 +1497,20 @@ async function loadSavedWorkers() {
   const tbody = document.getElementById('saved-body');
   if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
   tbody.innerHTML = '<tr class="loading-row"><td colspan="4"><span class="spinner"></span>Loading…</td></tr>';
-  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
+  const { data, error } = await db.from('saved_workers')
+    .select(`*, ${T_WORKERS}(*)`)
+    .eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
   if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No saved workers yet.</td></tr>'; return; }
   tbody.innerHTML = data.map(row => {
-    const w = row.workers||{};
-    const name = w.full_name||w.name||'Worker';
+    const w = row[T_WORKERS]||{};
+    const name = w.full_name||'Worker';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
+    const isV = w.id_verified || w.is_verified;
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
         <strong>${name}</strong></div></td>
-      <td style="color:var(--text-muted)">${w.role||'—'}</td>
+      <td style="color:var(--text-muted)">${w.job_title||w.role||'—'}</td>
       <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'check-circle-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
       <td><button class="action-btn primary" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button></td>
     </tr>`;
@@ -1506,26 +1518,42 @@ async function loadSavedWorkers() {
 }
 
 /* ══════════════════════════════════════
-   HIRES (inline)
+   HIRES (inline) — uses job_applications
 ══════════════════════════════════════ */
 async function loadHires() {
   const tbody = document.getElementById('hires-body');
   if (!EMPLOYER_ID) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires yet.</td></tr>'; return; }
   tbody.innerHTML = '<tr class="loading-row"><td colspan="3"><span class="spinner"></span>Loading…</td></tr>';
-  const { data, error } = await db.from('hires').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(6);
-  if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>'; return; }
+  const { data, error } = await db.from('job_applications')
+    .select(`*, ${T_WORKERS}(id,full_name,job_title)`)
+    .eq('employer_id',EMPLOYER_ID)
+    .in('status',['hired','active'])
+    .order('created_at',{ascending:false}).limit(6);
+  if (error || !data?.length) {
+    // fallback: any applications from employer's job postings
+    const { data: d2 } = await db.from('job_applications')
+      .select(`*, ${T_WORKERS}(id,full_name,job_title), job_postings(employer_id)`)
+      .order('created_at',{ascending:false}).limit(6);
+    const filtered = (d2||[]).filter(a=>a.job_postings?.employer_id===EMPLOYER_ID && ['hired','active'].includes(a.status));
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--text-muted)">No hires recorded yet.</td></tr>'; return; }
+    renderHireRows(tbody, filtered);
+    return;
+  }
+  renderHireRows(tbody, data);
+}
+function renderHireRows(tbody, data) {
   tbody.innerHTML = data.map(h => {
-    const w = h.workers||{};
-    const name = w.full_name||w.name||'Worker';
+    const w = h[T_WORKERS]||{};
+    const name = w.full_name||'Worker';
     const [bg,fg] = avatarColor(name);
     const st = h.status||'active';
-    const cls = st==='active'?'hire-active':st==='pending'?'hire-pending':'hire-ended';
-    const dotCls = st==='active'?'dot-green':st==='pending'?'dot-amber':'dot-gray';
+    const cls = st==='active'||st==='hired'?'hire-active':st==='pending'?'hire-pending':'hire-ended';
+    const dotCls = st==='active'||st==='hired'?'dot-green':st==='pending'?'dot-amber':'dot-gray';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
         <strong>${name}</strong></div></td>
-      <td style="color:var(--text-muted)">${w.role||h.role||'—'}</td>
+      <td style="color:var(--text-muted)">${w.job_title||h.role||'—'}</td>
       <td><span class="hire-badge ${cls}"><span class="dot ${dotCls}"></span> ${st.charAt(0).toUpperCase()+st.slice(1)}</span></td>
     </tr>`;
   }).join('');
@@ -1536,17 +1564,28 @@ async function loadHires() {
 ══════════════════════════════════════ */
 async function loadActivity() {
   const div = document.getElementById('activity-body');
-  if (!EMPLOYER_ID) { div.innerHTML = '<div class="empty-state"><i class="bi bi-clock-history"></i><p>No activity yet. Start by searching for workers.</p></div>'; return; }
-  const { data, error } = await db.from('activity_log').select('*').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(10);
+  if (!CURRENT_USER) { div.innerHTML = '<div class="empty-state"><i class="bi bi-clock-history"></i><p>No activity yet. Start by searching for workers.</p></div>'; return; }
+
+  // Try activity_log; if it doesn't exist, show a helpful default
+  const { data, error } = await db.from('activity_log')
+    .select('*').eq('employer_id', EMPLOYER_ID || CURRENT_USER.id)
+    .order('created_at',{ascending:false}).limit(10);
+
   if (error || !data?.length) {
     div.innerHTML = `<div class="activity-item"><div class="act-icon" style="background:var(--brand-light)"><i class="bi bi-search" style="color:var(--brand);font-size:14px"></i></div><div><div class="activity-text">Get started by searching for workers</div><div class="activity-time">Now</div></div></div>`;
     return;
   }
-  const iconMap = { saved:'bi-heart-fill', contacted:'bi-chat-fill', hired:'bi-person-check-fill', searched:'bi-search', viewed:'bi-eye-fill' };
-  const bgMap   = { saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)' };
+  const iconMap = { saved:'bi-heart-fill', contacted:'bi-chat-fill', hired:'bi-person-check-fill', searched:'bi-search', viewed:'bi-eye-fill', payment:'bi-credit-card-fill' };
+  const bgMap   = { saved:'var(--brand-light)', contacted:'var(--accent-light)', hired:'var(--purple-light)', searched:'var(--info-light)', viewed:'var(--bg)', payment:'var(--brand-light)' };
   div.innerHTML = data.map(a => {
     const icon = iconMap[a.action_type]||'bi-activity';
     const bg   = bgMap[a.action_type]||'var(--bg)';
+    return `<div class="activity-item">
+      <div class="act-icon" style="background:${bg}"><i class="bi ${icon}" style="color:var(--brand);font-size:14px"></i></div>
+      <div><div class="activity-text">${a.description||a.action_type}</div><div class="activity-time">${timeAgo(a.created_at)}</div></div>
+    </div>`;
+  }).join('');
+}
     return `<div class="activity-item">
       <div class="act-icon" style="background:${bg}"><i class="bi ${icon}" style="color:var(--brand);font-size:14px"></i></div>
       <div><div class="activity-text">${a.description||a.action_type}</div><div class="activity-time">${timeAgo(a.created_at)}</div></div>
@@ -1561,36 +1600,32 @@ async function loadNewEmployersPreview() {
   const wrap = document.getElementById('new-employers-preview');
   const since = new Date(Date.now() - 14*24*60*60*1000).toISOString();
 
-  // Try employers table first, fallback to profiles with role=employer
-  let data = null;
-  const { data: empData } = await db.from('employers').select('*, profiles(full_name,email,phone,location,avatar_url)')
+  const { data: empData } = await db.from(T_EMPLOYERS)
+    .select('id,created_at,company_name,location,user_id')
     .gte('created_at', since).order('created_at',{ascending:false}).limit(6);
-  data = empData;
 
-  if (!data?.length) {
-    // Fallback: query profiles with role column
-    const { data: profileData } = await db.from('profiles')
-      .select('*').eq('role','employer').gte('created_at', since)
-      .order('created_at',{ascending:false}).limit(6);
-    data = profileData;
+  // Fetch user names
+  let uMap = {};
+  if (empData?.length) {
+    const uids = empData.map(e=>e.user_id).filter(Boolean);
+    const { data: uRows } = await db.from(T_USERS).select('id,full_name').in('id', uids);
+    (uRows||[]).forEach(u => uMap[u.id] = u);
   }
 
-  if (!data?.length) {
+  const data = (empData||[]).map(e=>({...e, _user: uMap[e.user_id]||{}}));
+
+  if (!data.length) {
     wrap.innerHTML = '<div class="empty-state"><i class="bi bi-building"></i><p>No new employer registrations in the last 2 weeks.</p></div>';
     return;
   }
 
-  // Update badge
-  if (data.length > 0) {
-    const badge = document.getElementById('new-emp-badge');
-    badge.textContent = data.length > 9 ? '9+' : data.length;
-    badge.style.display = 'inline';
-  }
+  const badge = document.getElementById('new-emp-badge');
+  badge.textContent = data.length > 9 ? '9+' : data.length;
+  badge.style.display = 'inline';
 
   wrap.innerHTML = `<div class="three-col">` + data.map(row => {
-    const p = row.profiles || row;
-    const name = p.full_name || row.company_name || 'Employer';
-    const loc  = p.location || row.location || 'Kenya';
+    const name = row._user.full_name || row.company_name || 'Employer';
+    const loc  = row.location || 'Kenya';
     const [bg,fg] = avatarColor(name);
     return `<div class="new-emp-card">
       <div class="new-emp-av" style="background:${bg};color:${fg}">${initials(name)}</div>
@@ -1609,23 +1644,25 @@ async function loadNewEmployersPreview() {
 ══════════════════════════════════════ */
 async function loadJobseekersPreview() {
   const tbody = document.getElementById('jobseekers-preview-body');
-  const { data, error } = await db.from('workers').select('*').order('created_at',{ascending:false}).limit(8);
+  const { data, error } = await db.from(T_WORKERS)
+    .select('id,full_name,job_title,preferred_location,salary_expectation,submitted_at,id_verified,status')
+    .eq('status','approved').neq('is_deleted', true)
+    .order('submitted_at',{ascending:false}).limit(8);
   if (error || !data?.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No job seekers found.</td></tr>';
     return;
   }
   tbody.innerHTML = data.map(w => {
-    const name = w.full_name||w.name||'Unknown';
+    const name = w.full_name||'Unknown';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
         <strong>${name}</strong></div></td>
-      <td>${w.role||'—'}</td>
-      <td>${w.location||'—'}</td>
-      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
-      <td>${fmtDate(w.created_at)}</td>
+      <td>${w.job_title||'—'}</td>
+      <td>${w.preferred_location||'—'}</td>
+      <td>${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</td>
+      <td>${fmtDate(w.submitted_at)}</td>
       <td><div class="action-row">
         <button class="action-btn primary" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
         <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
@@ -1640,7 +1677,10 @@ async function loadJobseekersPreview() {
 async function loadAllJobseekers() {
   const tbody = document.getElementById('all-js-tbody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr>';
-  const { data, error } = await db.from('workers').select('*').order('created_at',{ascending:false}).limit(200);
+  const { data, error } = await db.from(T_WORKERS)
+    .select('id,full_name,job_title,preferred_location,salary_expectation,submitted_at,id_verified,status')
+    .eq('status','approved').neq('is_deleted', true)
+    .order('submitted_at',{ascending:false}).limit(200);
   _allJobseekers = data || [];
   document.getElementById('js-count-label').textContent = `${_allJobseekers.length} job seeker${_allJobseekers.length!==1?'s':''} registered`;
   renderJobseekers(_allJobseekers);
@@ -1650,21 +1690,21 @@ function renderJobseekers(list) {
   const tbody = document.getElementById('all-js-tbody');
   if (!list?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">No job seekers found.</td></tr>'; return; }
   tbody.innerHTML = list.map(w => {
-    const name = w.full_name||w.name||'Unknown';
+    const name = w.full_name||'Unknown';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
+    const isV = w.id_verified;
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
         <strong>${name}</strong></div></td>
-      <td>${w.role||'—'}</td>
-      <td>${w.location||'—'}</td>
-      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td>${w.job_title||'—'}</td>
+      <td>${w.preferred_location||'—'}</td>
+      <td>${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</td>
       <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
-      <td style="color:var(--text-muted)">${fmtDate(w.created_at)}</td>
+      <td style="color:var(--text-muted)">${fmtDate(w.submitted_at)}</td>
       <td><div class="action-row">
         <button class="action-btn primary" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
-        <button class="action-btn" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+        <button class="action-btn" onclick="openMessages(null,'${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Message</button>
         <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
       </div></td>
     </tr>`;
@@ -1675,8 +1715,8 @@ function filterJobseekers() {
   const q    = (document.getElementById('js-search')?.value||'').toLowerCase();
   const role = (document.getElementById('js-role-filter')?.value||'').toLowerCase();
   let list = _allJobseekers;
-  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
-  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
+  if (q)    list = list.filter(w => (w.full_name||'').toLowerCase().includes(q) || (w.job_title||'').toLowerCase().includes(q) || (w.preferred_location||'').toLowerCase().includes(q));
+  if (role) list = list.filter(w => (w.job_title||'').toLowerCase().includes(role));
   document.getElementById('js-count-label').textContent = `${list.length} result${list.length!==1?'s':''}`;
   renderJobseekers(list);
 }
@@ -1688,22 +1728,21 @@ async function loadNewEmployersModal() {
   const tbody = document.getElementById('new-emp-tbody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr>';
 
-  let data = null;
-  const { data: empData } = await db.from('employers')
-    .select('id,created_at,company_name,location,profiles(full_name,email,phone,location),employer_payments(status)')
+  const { data } = await db.from(T_EMPLOYERS)
+    .select('id,created_at,company_name,location,user_id')
     .order('created_at',{ascending:false}).limit(100);
-  data = empData;
 
-  if (!data?.length) {
-    // fallback: profiles with employer role
-    const { data: pData } = await db.from('profiles').select('*').eq('role','employer')
-      .order('created_at',{ascending:false}).limit(100);
-    data = pData;
+  // Fetch linked user rows for names/emails
+  let userMap = {};
+  if (data?.length) {
+    const uids = data.map(e=>e.user_id).filter(Boolean);
+    const { data: uRows } = await db.from(T_USERS).select('id,full_name,email,phone').in('id', uids);
+    (uRows||[]).forEach(u => userMap[u.id] = u);
   }
 
-  _allNewEmployers = data || [];
+  _allNewEmployers = (data||[]).map(e => ({ ...e, _user: userMap[e.user_id]||{} }));
 
-  if (!data?.length) {
+  if (!_allNewEmployers.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No employer registrations found.</td></tr>';
     return;
   }
@@ -1714,13 +1753,11 @@ function renderNewEmployers(list) {
   const tbody = document.getElementById('new-emp-tbody');
   if (!list?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No results.</td></tr>'; return; }
   tbody.innerHTML = list.map(row => {
-    const p = row.profiles || row;
-    const name  = p.full_name || row.company_name || 'Employer';
-    const email = p.email || row.email || '—';
-    const phone = p.phone || row.phone || '—';
-    const loc   = p.location || row.location || '—';
-    const pmt   = row.employer_payments;
-    const hasPaid = Array.isArray(pmt) ? pmt.some(x=>x.status==='paid') : false;
+    const u = row._user || {};
+    const name  = u.full_name || row.company_name || 'Employer';
+    const email = u.email || '—';
+    const phone = u.phone || '—';
+    const loc   = row.location || '—';
     const [bg,fg] = avatarColor(name);
     const isNew = (Date.now() - new Date(row.created_at)) < 7*24*60*60*1000;
     return `<tr>
@@ -1735,11 +1772,7 @@ function renderNewEmployers(list) {
       <td>${phone}</td>
       <td>${loc}</td>
       <td style="color:var(--text-muted)">${fmtDate(row.created_at)}</td>
-      <td>
-        <span style="font-size:11px;font-weight:600;color:${hasPaid?'var(--brand)':'#7A5010'}">
-          <i class="bi bi-${hasPaid?'check-circle-fill':'clock'}"></i> ${hasPaid?'Paid':'Pending'}
-        </span>
-      </td>
+      <td><span style="font-size:11px;font-weight:600;color:var(--brand)"><i class="bi bi-check-circle-fill"></i> Registered</span></td>
     </tr>`;
   }).join('');
 }
@@ -1748,9 +1781,9 @@ function filterNewEmployers() {
   const q = (document.getElementById('ne-search')?.value||'').toLowerCase();
   let list = _allNewEmployers;
   if (q) list = list.filter(row => {
-    const p = row.profiles||row;
-    return (p.full_name||row.company_name||'').toLowerCase().includes(q)
-        || (p.email||row.email||'').toLowerCase().includes(q);
+    const u = row._user||{};
+    return (u.full_name||row.company_name||'').toLowerCase().includes(q)
+        || (u.email||'').toLowerCase().includes(q);
   });
   renderNewEmployers(list);
 }
@@ -1769,16 +1802,16 @@ async function loadMyProfile() {
   }
 
   // Re-fetch fresh data
-  const { data: profile } = await db.from('profiles').select('*').eq('id', CURRENT_USER.id).single();
+  const { data: userRow } = await db.from(T_USERS).select('*').eq('id', CURRENT_USER.id).maybeSingle();
   const { data: employer } = EMPLOYER_ID
-    ? await db.from('employers').select('*').eq('id', EMPLOYER_ID).single()
+    ? await db.from(T_EMPLOYERS).select('*').eq('id', EMPLOYER_ID).maybeSingle()
     : { data: null };
 
-  const name  = profile?.full_name || CURRENT_USER.email?.split('@')[0] || 'Employer';
+  const name  = userRow?.full_name || userRow?.name || CURRENT_USER.email?.split('@')[0] || 'Employer';
   const email = CURRENT_USER.email || '—';
-  const phone = profile?.phone || '';
-  const loc   = profile?.location || '';
-  const bio   = profile?.bio || '';
+  const phone = userRow?.phone || '';
+  const loc   = userRow?.location || '';
+  const bio   = userRow?.bio || '';
   const [bg,fg] = avatarColor(name);
 
   // Banner
@@ -1789,7 +1822,6 @@ async function loadMyProfile() {
       <div style="font-size:12.5px;color:rgba(255,255,255,.65);margin-top:3px"><i class="bi bi-envelope" style="font-size:11px"></i> ${email}</div>
       <div style="margin-top:.75rem;display:flex;gap:8px;flex-wrap:wrap">
         <span style="background:rgba(255,255,255,.12);color:#fff;font-size:11px;padding:3px 10px;border-radius:50px;border:1px solid rgba(255,255,255,.2)"><i class="bi bi-building"></i> Employer Account</span>
-        ${profile?.is_verified ? '<span style="background:rgba(34,197,94,.2);color:#d1fae5;font-size:11px;padding:3px 10px;border-radius:50px;border:1px solid rgba(34,197,94,.3)"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
       </div>
     </div>`;
 
@@ -1840,7 +1872,7 @@ async function loadMyProfile() {
       </div>
       <div class="profile-field">
         <label>Member Since</label>
-        <span>${fmtDate(CURRENT_USER.created_at||profile?.created_at)}</span>
+        <span>${fmtDate(CURRENT_USER.created_at||userRow?.created_at)}</span>
       </div>
     </div>
     <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border)">
@@ -1860,13 +1892,13 @@ async function saveProfile() {
     bio:       document.getElementById('pf-bio')?.value.trim(),
   };
 
-  const { error } = await db.from('profiles').update(updates).eq('id', CURRENT_USER.id);
+  const { error } = await db.from(T_USERS).update(updates).eq('id', CURRENT_USER.id);
 
-  // Also update employer table if it exists
+  // Also update employer_profiles if it exists
   const companyName = document.getElementById('pf-company')?.value.trim();
   const companyAddr = document.getElementById('pf-company-addr')?.value.trim();
   if (EMPLOYER_ID && (companyName || companyAddr)) {
-    await db.from('employers').update({ company_name: companyName, address: companyAddr }).eq('id', EMPLOYER_ID);
+    await db.from(T_EMPLOYERS).update({ company_name: companyName, address: companyAddr }).eq('id', EMPLOYER_ID);
   }
 
   btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Save Changes';
@@ -1897,13 +1929,11 @@ async function signOut() {
 ══════════════════════════════════════ */
 async function loadFindWorkers() {
   const grid = document.getElementById('fw-grid');
-  const { data, error } = await db.from('workers').select('*').eq('is_verified', true).order('created_at',{ascending:false}).limit(24);
-  if (error || !data?.length) {
-    const { data: all } = await db.from('workers').select('*').limit(24);
-    _allFindWorkers = all || [];
-  } else {
-    _allFindWorkers = data;
-  }
+  const { data, error } = await db.from(T_WORKERS)
+    .select('id,full_name,job_title,preferred_location,salary_expectation,id_verified,photo_url,submitted_at')
+    .eq('status','approved').neq('is_deleted', true)
+    .order('submitted_at',{ascending:false}).limit(24);
+  _allFindWorkers = data || [];
   renderFindWorkers(_allFindWorkers);
 }
 
@@ -1911,16 +1941,19 @@ function renderFindWorkers(list) {
   const grid = document.getElementById('fw-grid');
   if (!list?.length) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="bi bi-people"></i><p>No workers found.</p></div>`; return; }
   grid.innerHTML = list.map(w => {
-    const name = w.full_name||w.name||'Worker';
+    const name = w.full_name||'Worker';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
+    const isV = w.id_verified;
+    const photo = w.photo_url;
     return `<div class="worker-card" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')">
-      <div class="wc-av" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div class="wc-av" style="background:${bg};color:${fg};${photo?'padding:0;overflow:hidden':''}">
+        ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${initials(name)}'">` : initials(name)}
+      </div>
       <div class="wc-name">${name}</div>
-      <div class="wc-role">${w.role||'—'}</div>
+      <div class="wc-role">${w.job_title||'—'}</div>
       ${isV ? '<span class="badge badge-verified" style="font-size:10px;margin-bottom:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
-      <div class="wc-loc"><i class="bi bi-geo-alt" style="font-size:11px"></i> ${w.location||'Kenya'}</div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
+      <div class="wc-loc"><i class="bi bi-geo-alt" style="font-size:11px"></i> ${w.preferred_location||'Kenya'}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</div>
     </div>`;
   }).join('');
 }
@@ -1929,8 +1962,8 @@ function filterFindWorkers() {
   const q    = (document.getElementById('fw-search')?.value||'').toLowerCase();
   const role = (document.getElementById('fw-role')?.value||'').toLowerCase();
   let list = _allFindWorkers;
-  if (q)    list = list.filter(w => (w.full_name||w.name||'').toLowerCase().includes(q) || (w.role||'').toLowerCase().includes(q) || (w.location||'').toLowerCase().includes(q));
-  if (role) list = list.filter(w => (w.role||'').toLowerCase().includes(role));
+  if (q)    list = list.filter(w => (w.full_name||'').toLowerCase().includes(q) || (w.job_title||'').toLowerCase().includes(q) || (w.preferred_location||'').toLowerCase().includes(q));
+  if (role) list = list.filter(w => (w.job_title||'').toLowerCase().includes(role));
   renderFindWorkers(list);
 }
 
@@ -1940,27 +1973,29 @@ function filterFindWorkers() {
 async function loadSavedModal() {
   const list = document.getElementById('saved-modal-list');
   if (!EMPLOYER_ID) { list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>Log in to see your saved workers.</p></div>'; return; }
-  const { data, error } = await db.from('saved_workers').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(20);
+  const { data, error } = await db.from('saved_workers')
+    .select(`*, ${T_WORKERS}(*)`)
+    .eq('employer_id',EMPLOYER_ID).order('created_at',{ascending:false}).limit(20);
   if (error || !data?.length) {
     list.innerHTML = '<div class="empty-state"><i class="bi bi-heart"></i><p>You haven\'t saved any workers yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal(\'saved-modal\');openModal(\'find-modal\')"><i class="bi bi-search"></i> Find Workers</button></div>';
     return;
   }
   list.innerHTML = data.map(row => {
-    const w = row.workers||{};
-    const name = w.full_name||w.name||'Worker';
+    const w = row[T_WORKERS]||{};
+    const name = w.full_name||'Worker';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
+    const isV = w.id_verified;
     return `<div class="saved-card">
       <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13.5px;font-weight:600">${name}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${w.role||'—'} &nbsp;·&nbsp; ${w.location||'Kenya'}</div>
-        <div style="font-size:11.5px;color:var(--text-light);margin-top:1px">KES ${formatSalary(w.salary_min,w.salary_max)}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${w.job_title||'—'} &nbsp;·&nbsp; ${w.preferred_location||'Kenya'}</div>
+        <div style="font-size:11.5px;color:var(--text-light);margin-top:1px">${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
         ${isV ? '<span class="badge badge-verified" style="font-size:10px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
         <div style="display:flex;gap:4px">
-          <button class="action-btn primary" style="padding:4px 10px;font-size:11px" onclick="contactWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+          <button class="action-btn primary" style="padding:4px 10px;font-size:11px" onclick="openMessages(null,'${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Message</button>
           <button class="action-btn" style="padding:4px 9px;font-size:11px" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i></button>
         </div>
       </div>
@@ -1969,34 +2004,173 @@ async function loadSavedModal() {
 }
 
 /* ══════════════════════════════════════
-   MESSAGES MODAL
+   MESSAGES — Real conversations + Realtime
 ══════════════════════════════════════ */
+async function loadUnreadMsgCount() {
+  if (!CURRENT_USER) return;
+  const { count } = await db.from('messages')
+    .select('id',{count:'exact',head:true})
+    .eq('receiver_id', CURRENT_USER.id)
+    .eq('is_read', false)
+    .catch(()=>({count:0}));
+  const badge = document.getElementById('msg-badge');
+  if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.style.display = 'inline'; }
+  else { badge.style.display = 'none'; }
+}
+
 async function loadMessagesModal() {
-  const list = document.getElementById('messages-list');
-  if (!EMPLOYER_ID) { list.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>Log in to view messages.</p></div>'; return; }
-  const { data, error } = await db.from('contacts').select('*, workers(*)').eq('employer_id',EMPLOYER_ID).order('contacted_at',{ascending:false}).limit(15);
-  if (error || !data?.length) {
-    list.innerHTML = `<div class="empty-state"><i class="bi bi-chat-square-dots"></i><p>No messages yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal('messages-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find Workers</button></div>`;
+  const el = document.getElementById('messages-list');
+  if (!CURRENT_USER) { el.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>Log in to view messages.</p></div>'; return; }
+  el.innerHTML = '<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>';
+
+  // Load conversations where this user is a participant
+  const { data: convos, error } = await db.from('conversations')
+    .select(`id, worker_id, employer_id, created_at, updated_at,
+      messages(id, body, sender_id, created_at, is_read)`)
+    .or(`employer_id.eq.${CURRENT_USER.id},worker_id.eq.${CURRENT_USER.id}`)
+    .order('updated_at',{ascending:false}).limit(20);
+
+  if (error || !convos?.length) {
+    el.innerHTML = `<div class="empty-state"><i class="bi bi-chat-square-dots"></i><p>No conversations yet.</p><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="closeModal('messages-modal');openModal('find-modal')"><i class="bi bi-search"></i> Find Workers</button></div>`;
     return;
   }
-  list.innerHTML = '<div class="msg-list">'+data.map((c,i) => {
-    const w = c.workers||{};
-    const name = w.full_name||w.name||'Worker';
-    const [bg,fg] = avatarColor(name);
-    return `<div class="msg-item" onclick="viewWorker('${w.id||''}','${name.replace(/'/g,"\\'")}')">
-      <div class="msg-avatar" style="background:${bg};color:${fg};font-size:13px;font-weight:700">${initials(name)}</div>
-      <div style="flex:1;min-width:0">
-        <div class="msg-name">${name}</div>
-        <div class="msg-preview">Contact request sent — awaiting response</div>
-      </div>
-      ${i<2 ? '<div class="msg-unread"></div>' : ''}
-      <div class="msg-time">${timeAgo(c.contacted_at)}</div>
-    </div>`;
-  }).join('')+'</div>';
 
-  const newCount = Math.min(data.length,2);
-  const badge = document.getElementById('msg-badge');
-  if (newCount>0) { badge.textContent=newCount; badge.style.display='inline'; }
+  // Fetch worker names for each conversation
+  const workerIds = [...new Set(convos.map(c => c.worker_id).filter(Boolean))];
+  let wMap = {};
+  if (workerIds.length) {
+    const { data: wRows } = await db.from(T_WORKERS).select('id,full_name,job_title,photo_url').in('id', workerIds);
+    (wRows||[]).forEach(w => wMap[w.id] = w);
+  }
+
+  el.innerHTML = '<div class="msg-list">' + convos.map(c => {
+    const w = wMap[c.worker_id] || {};
+    const name = w.full_name || 'Worker';
+    const [bg,fg] = avatarColor(name);
+    const msgs = Array.isArray(c.messages) ? c.messages : [];
+    const last = msgs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0];
+    const unreadCount = msgs.filter(m => m.receiver_id === CURRENT_USER.id && !m.is_read).length;
+    const preview = last?.body ? (last.body.length > 50 ? last.body.slice(0,50)+'…' : last.body) : 'Start a conversation';
+    return `<div class="msg-item" onclick="openThread('${c.id}','${c.worker_id}','${name.replace(/'/g,"\\'")}')">
+      <div class="msg-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="msg-name">${name} <span style="font-size:10.5px;color:var(--text-muted);font-weight:400">${w.job_title||''}</span></div>
+        <div class="msg-preview">${preview}</div>
+      </div>
+      ${unreadCount>0 ? `<div class="msg-unread" title="${unreadCount} unread"></div>` : ''}
+      <div class="msg-time">${last ? timeAgo(last.created_at) : ''}</div>
+    </div>`;
+  }).join('') + '</div>';
+
+  // Subscribe to new messages via Realtime
+  if (_msgRealtimeSub) _msgRealtimeSub.unsubscribe();
+  _msgRealtimeSub = db.channel('employer-msgs')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`receiver_id=eq.${CURRENT_USER.id}`},
+      ()=>{ loadMessagesModal(); loadUnreadMsgCount(); })
+    .subscribe();
+}
+
+/* Open a message thread */
+async function openThread(convoId, workerId, workerName) {
+  _activeConvoId = convoId;
+  const el = document.getElementById('messages-list');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;padding:.75rem 0;border-bottom:1px solid var(--border);margin-bottom:.75rem">
+      <button class="action-btn" onclick="loadMessagesModal();_activeConvoId=null" style="padding:4px 10px"><i class="bi bi-arrow-left"></i> Back</button>
+      <strong>${workerName}</strong>
+    </div>
+    <div id="thread-msgs" style="display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:340px;overflow-y:auto;padding-bottom:.5rem">
+      <div style="text-align:center;padding:1rem"><span class="spinner"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:.75rem">
+      <input id="msg-input" type="text" placeholder="Type a message…" class="form-control" style="border-radius:50px"
+        onkeydown="if(event.key==='Enter')sendMessage('${convoId}','${workerId}')">
+      <button class="btn btn-primary btn-sm" onclick="sendMessage('${convoId}','${workerId}')"><i class="bi bi-send-fill"></i></button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+      <button class="action-btn" onclick="scheduleInterview('${workerId}','${workerName.replace(/'/g,"\\'")}');closeModal('messages-modal')"><i class="bi bi-calendar-check"></i> Schedule Interview</button>
+      <button class="action-btn" onclick="viewWorker('${workerId}','${workerName.replace(/'/g,"\\'")}');closeModal('messages-modal')"><i class="bi bi-person-badge"></i> View Profile</button>
+    </div>`;
+  await loadThreadMessages(convoId);
+
+  // Realtime for this thread
+  if (_msgRealtimeSub) _msgRealtimeSub.unsubscribe();
+  _msgRealtimeSub = db.channel('thread-'+convoId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`conversation_id=eq.${convoId}`},
+      ()=>loadThreadMessages(convoId))
+    .subscribe();
+}
+
+async function loadThreadMessages(convoId) {
+  const container = document.getElementById('thread-msgs');
+  if (!container) return;
+  const { data: msgs } = await db.from('messages')
+    .select('id,body,sender_id,created_at,is_read')
+    .eq('conversation_id', convoId)
+    .order('created_at',{ascending:true}).limit(60);
+
+  if (!msgs?.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:1rem">No messages yet. Say hello!</div>'; return; }
+
+  // Mark received messages as read
+  const unread = msgs.filter(m=>m.sender_id!==CURRENT_USER.id && !m.is_read).map(m=>m.id);
+  if (unread.length) await db.from('messages').update({is_read:true}).in('id',unread).catch(()=>{});
+
+  container.innerHTML = msgs.map(m => {
+    const mine = m.sender_id === CURRENT_USER.id;
+    return `<div style="display:flex;justify-content:${mine?'flex-end':'flex-start'}">
+      <div style="max-width:75%;padding:8px 12px;border-radius:${mine?'14px 14px 4px 14px':'14px 14px 14px 4px'};
+        background:${mine?'var(--brand)':'var(--bg)'};color:${mine?'#fff':'var(--text)'};
+        font-size:13px;line-height:1.45">
+        ${m.body}
+        <div style="font-size:9.5px;opacity:.6;margin-top:3px;text-align:right">${timeAgo(m.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+  loadUnreadMsgCount();
+}
+
+async function sendMessage(convoId, receiverId) {
+  const inp = document.getElementById('msg-input');
+  const body = inp?.value.trim();
+  if (!body || !CURRENT_USER) return;
+  inp.value = '';
+  const { error } = await db.from('messages').insert({
+    conversation_id: convoId,
+    sender_id: CURRENT_USER.id,
+    receiver_id: receiverId,
+    body, is_read: false,
+    created_at: new Date().toISOString()
+  });
+  if (error) { toast('Could not send: '+error.message,'error'); inp.value = body; return; }
+  // Update conversation timestamp
+  await db.from('conversations').update({updated_at:new Date().toISOString()}).eq('id',convoId).catch(()=>{});
+  loadThreadMessages(convoId);
+}
+
+/* Open messages with a worker — create conversation if none exists */
+async function openMessages(convoId, workerId, workerName) {
+  if (!CURRENT_USER) { toast('Please log in','error'); return; }
+  closeModal('saved-modal'); closeModal('all-jobseekers-modal'); closeModal('worker-modal');
+  openModal('messages-modal');
+  _loadedModals['messages-modal'] = true;
+
+  if (!convoId) {
+    // Find or create conversation
+    const { data: existing } = await db.from('conversations')
+      .select('id').eq('employer_id',CURRENT_USER.id).eq('worker_id',workerId).maybeSingle();
+    if (existing?.id) {
+      convoId = existing.id;
+    } else {
+      const { data: newC, error } = await db.from('conversations').insert({
+        employer_id: CURRENT_USER.id, worker_id: workerId,
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      }).select('id').single();
+      if (error) { toast('Could not start conversation','error'); return; }
+      convoId = newC.id;
+    }
+  }
+  openThread(convoId, workerId, workerName);
 }
 
 /* ══════════════════════════════════════
@@ -2008,7 +2182,7 @@ async function viewWorker(id, knownName) {
 
   if (!id) { document.getElementById('modal-content').innerHTML = '<p style="color:var(--danger);padding:1rem">Could not load profile.</p>'; return; }
 
-  const { data: w, error } = await db.from('workers').select('*').eq('id', id).single();
+  const { data: w, error } = await db.from(T_WORKERS).select('*').eq('id', id).maybeSingle();
   if (error || !w) {
     const name = knownName||'Worker';
     const [bg,fg] = avatarColor(name);
@@ -2018,59 +2192,169 @@ async function viewWorker(id, knownName) {
         <div><div style="font-size:16px;font-weight:600">${name}</div><div style="font-size:13px;color:var(--text-muted)">Profile details not available</div></div>
       </div>
       <p style="font-size:13px;color:var(--text-muted)">Full profile could not be loaded.</p>`;
-    document.getElementById('modal-contact-btn').onclick = ()=>toast('Contact feature requires full profile');
-    document.getElementById('modal-save-btn').onclick    = ()=>toast('Save feature requires full profile');
+    document.getElementById('modal-contact-btn').style.display='none';
+    document.getElementById('modal-save-btn').onclick = ()=>toast('Save feature requires full profile');
     return;
   }
 
-  const name = w.full_name||w.name||'Worker';
+  const name = w.full_name||'Worker';
   const [bg,fg] = avatarColor(name);
-  const isV = w.is_verified||w.verified;
+  const isV = w.id_verified;
+  const photo = w.photo_url;
 
   document.getElementById('modal-content').innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
-      <div style="width:56px;height:56px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">${initials(name)}</div>
+      <div style="width:64px;height:64px;border-radius:50%;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden;flex-shrink:0">
+        ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : initials(name)}
+      </div>
       <div>
         <div style="font-size:16px;font-weight:600">${name}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${w.role||'—'}</div>
-        ${isV ? '<span class="badge badge-verified" style="margin-top:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-pending">Pending</span>'}
+        <div style="font-size:13px;color:var(--text-muted);margin:2px 0">${w.job_title||'—'}</div>
+        ${isV ? '<span class="badge badge-verified" style="margin-top:4px"><i class="bi bi-patch-check-fill"></i> ID Verified</span>' : '<span class="badge badge-pending">Unverified</span>'}
       </div>
     </div>
     <div class="detail-grid">
-      <div class="detail-item"><label>Location</label><span>${w.location||w.area||'—'}</span></div>
-      <div class="detail-item"><label>Salary Expectation</label><span>KES ${formatSalary(w.salary_min,w.salary_max)}</span></div>
-      <div class="detail-item"><label>Experience</label><span>${w.experience_years ? w.experience_years+' years' : '—'}</span></div>
+      <div class="detail-item"><label>Location</label><span>${w.preferred_location||w.location||'—'}</span></div>
+      <div class="detail-item"><label>Salary Expectation</label><span>${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</span></div>
+      <div class="detail-item"><label>Experience</label><span>${w.experience_years ? w.experience_years+' yrs' : (w.years_of_experience ? w.years_of_experience+' yrs' : '—')}</span></div>
       <div class="detail-item"><label>Languages</label><span>${Array.isArray(w.languages)?w.languages.join(', '):(w.languages||'English, Swahili')}</span></div>
       <div class="detail-item"><label>Availability</label><span>${w.availability||'Immediate'}</span></div>
       <div class="detail-item"><label>Live-in</label><span>${w.live_in?'Available':'No'}</span></div>
-      <div class="detail-item"><label>Joined</label><span>${fmtDate(w.created_at)}</span></div>
+      <div class="detail-item"><label>Phone</label><span>${w.phone||'—'}</span></div>
+      <div class="detail-item"><label>Joined</label><span>${fmtDate(w.submitted_at||w.created_at)}</span></div>
     </div>
-    ${w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm);margin-top:.5rem"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${w.bio}</div>` : ''}
+    ${w.about||w.bio ? `<div style="font-size:13px;color:var(--text-muted);line-height:1.6;padding:.75rem;background:var(--bg);border-radius:var(--radius-sm);margin-top:.5rem"><i class="bi bi-quote" style="margin-right:4px;opacity:.5"></i>${w.about||w.bio}</div>` : ''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:1rem">
+      <button class="btn btn-primary btn-sm" onclick="openMessages(null,'${id}','${name.replace(/'/g,"\\'")}');closeModal('worker-modal')"><i class="bi bi-chat-dots"></i> Message</button>
+      <button class="btn btn-outline btn-sm" onclick="scheduleInterview('${id}','${name.replace(/'/g,"\\'")}');closeModal('worker-modal')"><i class="bi bi-calendar-check"></i> Schedule Interview</button>
+    </div>
   `;
 
-  document.getElementById('modal-contact-btn').onclick = ()=>contactWorker(w.id, name);
-  document.getElementById('modal-save-btn').onclick    = ()=>saveWorker(w.id, name);
+  document.getElementById('modal-contact-btn').style.display='none';
+  document.getElementById('modal-save-btn').onclick = ()=>saveWorker(w.id, name);
 }
 
 /* ══════════════════════════════════════
-   CONTACT / SAVE
+   CONTACT / SAVE / INTERVIEW
 ══════════════════════════════════════ */
 async function contactWorker(workerId, workerName) {
-  if (!EMPLOYER_ID) { toast('Please log in to contact workers', 'error'); return; }
-  const { error } = await db.from('contacts').insert({ employer_id: EMPLOYER_ID, worker_id: workerId, contacted_at: new Date().toISOString() });
-  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'contacted', description: `You contacted ${workerName}`, worker_id: workerId }).catch(()=>{});
-  toast(error ? `Could not send: ${error.message}` : `Contact request sent to ${workerName}`);
-  closeModal('worker-modal');
-  loadStats(); loadActivity();
+  // Legacy alias — now opens a real message thread
+  openMessages(null, workerId, workerName);
 }
 
 async function saveWorker(workerId, workerName) {
   if (!EMPLOYER_ID) { toast('Please log in to save workers', 'error'); return; }
   const { error } = await db.from('saved_workers').upsert({ employer_id: EMPLOYER_ID, worker_id: workerId }, { onConflict: 'employer_id,worker_id' });
-  await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'saved', description: `Saved ${workerName} to shortlist`, worker_id: workerId }).catch(()=>{});
   toast(error ? `Could not save: ${error.message}` : `${workerName} saved to your list`);
   _loadedModals['saved-modal'] = false;
   loadStats(); loadSavedWorkers();
+}
+
+function scheduleInterview(workerId, workerName) {
+  // Build the interview scheduler modal inline
+  const existing = document.getElementById('interview-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'interview-modal';
+  modal.className = 'modal-overlay open';
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-drag"></div>
+      <div class="modal-header">
+        <span class="modal-title"><i class="bi bi-calendar-check"></i> Schedule Interview — ${workerName}</span>
+        <button class="modal-close" onclick="document.getElementById('interview-modal').remove()"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Interview Date *</label>
+            <input type="date" id="iv-date" class="form-control" min="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div class="form-group"><label>Time *</label>
+            <input type="time" id="iv-time" class="form-control" value="09:00">
+          </div>
+          <div class="form-group"><label>Format</label>
+            <select id="iv-format" class="form-control">
+              <option value="in_person">In-Person</option>
+              <option value="phone">Phone Call</option>
+              <option value="video">Video Call</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Location / Link</label>
+            <input type="text" id="iv-location" class="form-control" placeholder="e.g. Karen Estate or Zoom link">
+          </div>
+          <div class="form-group" style="grid-column:1/-1"><label>Notes to Worker</label>
+            <textarea id="iv-notes" class="form-control" rows="2" placeholder="Bring ID, dress code, topics to discuss…"></textarea>
+          </div>
+        </div>
+        <div id="iv-msg" style="display:none;margin-top:.75rem;padding:10px 14px;border-radius:8px;font-size:13px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('interview-modal').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmInterview('${workerId}','${workerName.replace(/'/g,"\\'")}')" id="iv-btn">
+          <i class="bi bi-send-fill"></i> Confirm & Notify Worker
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function confirmInterview(workerId, workerName) {
+  const date = document.getElementById('iv-date').value;
+  const time = document.getElementById('iv-time').value;
+  if (!date || !time) { alert('Please select a date and time.'); return; }
+
+  const btn = document.getElementById('iv-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Scheduling…';
+
+  const format   = document.getElementById('iv-format').value;
+  const location = document.getElementById('iv-location').value.trim();
+  const notes    = document.getElementById('iv-notes').value.trim();
+  const scheduledAt = new Date(`${date}T${time}`).toISOString();
+
+  const employerName = CURRENT_PROFILE?.full_name || CURRENT_USER?.email?.split('@')[0] || 'Employer';
+  const interviewMsg = `📅 Interview Scheduled\n\nHi ${workerName},\n\nYou have been invited for an interview with ${employerName}.\n\n📆 Date & Time: ${new Date(scheduledAt).toLocaleString('en-KE',{dateStyle:'full',timeStyle:'short'})}\n📍 Format: ${format.replace('_',' ')}\n${location ? `📌 Location: ${location}\n` : ''}${notes ? `📝 Notes: ${notes}` : ''}`;
+
+  // Store interview in job_applications or as a message
+  const { error: appErr } = await db.from('job_applications').insert({
+    worker_id: workerId,
+    employer_id: CURRENT_USER.id,
+    status: 'interview_scheduled',
+    interview_date: scheduledAt,
+    interview_format: format,
+    interview_location: location || null,
+    notes: notes || null,
+    created_at: new Date().toISOString()
+  }).catch(()=>({error:null}));
+
+  // Also send as a message via conversations
+  await openMessages(null, workerId, workerName);
+  setTimeout(async()=>{
+    const inp = document.getElementById('msg-input');
+    if (inp) {
+      const convoId = _activeConvoId;
+      if (convoId) {
+        await db.from('messages').insert({
+          conversation_id: convoId, sender_id: CURRENT_USER.id,
+          receiver_id: workerId, body: interviewMsg,
+          is_read: false, created_at: new Date().toISOString()
+        });
+        await db.from('conversations').update({updated_at:new Date().toISOString()}).eq('id',convoId).catch(()=>{});
+        loadThreadMessages(convoId);
+      }
+    }
+  }, 500);
+
+  const msg = document.getElementById('iv-msg');
+  if (msg) {
+    msg.style.display='block'; msg.style.background='var(--brand-light)'; msg.style.color='var(--brand)';
+    msg.innerHTML='<i class="bi bi-check-circle-fill"></i> Interview scheduled! Worker has been notified.';
+  }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-check-circle"></i> Scheduled!';
+  setTimeout(()=>document.getElementById('interview-modal')?.remove(), 2000);
+  toast(`Interview with ${workerName} scheduled!`);
+  loadStats();
 }
 
 /* ══════════════════════════════════════
@@ -2083,9 +2367,8 @@ async function runSearch() {
   let min, max;
   if (sal) [min, max] = sal.split('-').map(Number);
 
-  if (EMPLOYER_ID) {
-    await db.from('searches').insert({ employer_id: EMPLOYER_ID, role: role||null, location: loc||null, searched_at: new Date().toISOString() }).catch(()=>{});
-    await db.from('activity_log').insert({ employer_id: EMPLOYER_ID, action_type: 'searched', description: `Searched for ${role||'workers'}${loc?' in '+loc:''}` }).catch(()=>{});
+  if (CURRENT_USER) {
+    await db.from('searches').insert({ employer_id: CURRENT_USER.id, role: role||null, location: loc||null, searched_at: new Date().toISOString() }).catch(()=>{});
   }
   loadWorkers({ role, location: loc, salaryMin: min, salaryMax: max });
   loadStats();
@@ -2098,28 +2381,30 @@ async function loadWorkers(filters) {
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><span class="spinner"></span>Searching…</td></tr>';
 
-  let q = db.from('workers').select('*').limit(20);
-  if (filters?.role)      q = q.ilike('role', `%${filters.role}%`);
-  if (filters?.location)  q = q.ilike('location', `%${filters.location}%`);
-  if (filters?.salaryMin) q = q.gte('salary_min', filters.salaryMin);
-  if (filters?.salaryMax) q = q.lte('salary_max', filters.salaryMax);
+  let q = db.from(T_WORKERS)
+    .select('id,full_name,job_title,preferred_location,salary_expectation,id_verified')
+    .eq('status','approved').neq('is_deleted',true).limit(20);
+  if (filters?.role)      q = q.ilike('job_title', `%${filters.role}%`);
+  if (filters?.location)  q = q.ilike('preferred_location', `%${filters.location}%`);
+  if (filters?.salaryMin) q = q.gte('salary_expectation', filters.salaryMin);
+  if (filters?.salaryMax) q = q.lte('salary_expectation', filters.salaryMax);
 
   const { data, error } = await q;
   if (error || !data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No workers found matching your criteria.</td></tr>'; return; }
   tbody.innerHTML = data.map(w => {
-    const name = w.full_name||w.name||'Unknown';
+    const name = w.full_name||'Unknown';
     const [bg,fg] = avatarColor(name);
-    const isV = w.is_verified||w.verified;
+    const isV = w.id_verified;
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px">
         <div class="worker-avatar" style="background:${bg};color:${fg}">${initials(name)}</div>
         <strong>${name}</strong></div></td>
-      <td>${w.role||'—'}</td>
-      <td>${w.location||'—'}</td>
-      <td>KES ${formatSalary(w.salary_min,w.salary_max)}</td>
+      <td>${w.job_title||'—'}</td>
+      <td>${w.preferred_location||'—'}</td>
+      <td>${w.salary_expectation ? 'KES '+Number(w.salary_expectation).toLocaleString() : '—'}</td>
       <td><span class="badge ${isV?'badge-verified':'badge-pending'}"><i class="bi bi-${isV?'patch-check-fill':'clock'}"></i> ${isV?'Verified':'Pending'}</span></td>
       <td><div class="action-row">
-        <button class="action-btn primary" onclick="contactWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Contact</button>
+        <button class="action-btn primary" onclick="openMessages(null,'${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-chat"></i> Message</button>
         <button class="action-btn" onclick="viewWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-eye"></i> View</button>
         <button class="action-btn" onclick="saveWorker('${w.id}','${name.replace(/'/g,"\\'")}')"><i class="bi bi-heart"></i></button>
       </div></td>
@@ -2228,7 +2513,7 @@ async function submitJobPosting() {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Posting…';
 
   const payload = {
-    employer_id: EMPLOYER_ID, title, job_role: role, location: loc,
+    employer_id: EMPLOYER_ID || CURRENT_USER?.id, title, job_role: role, location: loc,
     salary_min: parseInt(document.getElementById('pj-salary-min').value)||null,
     salary_max: parseInt(document.getElementById('pj-salary-max').value)||null,
     work_type:  document.getElementById('pj-work-type').value||null,
