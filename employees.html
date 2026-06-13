@@ -1249,7 +1249,9 @@ async function sendMessage(){
     showToast('err','bi-shield-fill-exclamation','Blocked','Your message contains restricted content: "'+hit+'". Sharing personal contacts is not allowed.',6000);
     // still insert but flag it
     var btn2=document.getElementById('btn-send'); btn2.disabled=true; input.value='';
+    var convId2 = await getOrCreateConversation(activeWorkerId);
     var r2 = await sb.from('messages').insert({
+      conversation_id: convId2,
       employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
       receiver_worker_id: activeWorkerId, body: body, message: body,
       created_at: new Date().toISOString(), is_read: false,
@@ -1264,7 +1266,9 @@ async function sendMessage(){
   var btn=document.getElementById('btn-send');
   btn.disabled=true; input.value='';
 
+  var convId = await getOrCreateConversation(activeWorkerId);
   var r = await sb.from('messages').insert({
+    conversation_id: convId,
     employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
     receiver_worker_id: activeWorkerId, body: body, message: body,
     created_at: new Date().toISOString(), is_read: false,
@@ -1367,7 +1371,9 @@ async function sendInterviewInvite(){
   var empName=(employerProfile&&employerProfile.full_name)||(currentUser.user_metadata&&currentUser.user_metadata.full_name)||'The employer';
   document.getElementById('interview-scheduler-wrap').style.display='none';
 
+  var convIdInvite = await getOrCreateConversation(activeWorkerId);
   var r = await sb.from('messages').insert({
+    conversation_id: convIdInvite,
     employer_id: currentUser.id, sender_id: currentUser.id, sender_type: 'employer',
     receiver_worker_id: activeWorkerId,
     msg_type: 'interview_invite',
@@ -1397,6 +1403,27 @@ async function sendInterviewInvite(){
   } else {
     showToast('err','bi-exclamation-circle','Failed',r.error.message,5000);
   }
+}
+
+/* ── GET OR CREATE CONVERSATION ── */
+async function getOrCreateConversation(workerId){
+  // Try to find existing conversation between this employer and worker
+  var r = await sb.from('conversations')
+    .select('id')
+    .eq('employer_id', currentUser.id)
+    .eq('employee_id', workerId)
+    .single();
+  if(r.data) return r.data.id;
+
+  // Create a new conversation
+  var c = await sb.from('conversations').insert({
+    employer_id: currentUser.id,
+    employee_id: workerId,
+    created_at: new Date().toISOString(),
+    last_msg_at: new Date().toISOString()
+  }).select('id').single();
+  if(c.error) return null;
+  return c.data.id;
 }
 
 /* ═════════════════════════════════════
