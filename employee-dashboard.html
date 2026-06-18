@@ -1,1932 +1,1413 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Dashboard – WorkLink</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<style>
-:root{
-  --ink:#0f1923;--ink2:#1e2e3e;--ink3:#2c4058;
-  --teal:#00b89c;--teal-dark:#008c76;--teal-glow:rgba(0,184,156,.15);--teal-soft:#e8faf7;
-  --sky:#0ea5e9;--gold:#f59e0b;--rose:#f43f5e;--violet:#8b5cf6;
-  --surface:#f0f4f8;--card:#ffffff;--border:#dde5ee;--muted:#5a7087;
-  --mpesa:#00a651;--airtel:#e3000b;
-  font-family:'Sora',sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--surface);color:var(--ink);font-size:14px;min-height:100vh;}
-
-/* ── PAGE LOADER ── */
-#pg-loader{display:none;position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
-#pg-loader.show{display:flex;}
-.spin-ring{width:40px;height:40px;border:3px solid var(--teal-soft);border-top-color:var(--teal);border-radius:50%;animation:sp .75s linear infinite;}
-@keyframes sp{to{transform:rotate(360deg);}}
-
-/* ── NAV ── */
-.nav{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 1px 0 var(--border);}
-.nav-logo{font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:9px;letter-spacing:-.3px;}
-.logo-icon{width:32px;height:32px;background:var(--teal);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;position:relative;}
-.logo-dot{position:absolute;bottom:2px;right:2px;width:7px;height:7px;background:#fff;border-radius:50%;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.7);}}
-.logo-name{color:var(--ink);}
-.logo-name em{color:var(--teal);font-style:normal;}
-.nav-right{display:flex;align-items:center;gap:6px;}
-.nav-icon-btn{position:relative;background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);padding:7px;border-radius:9px;transition:.2s;display:flex;}
-.nav-icon-btn:hover{background:var(--teal-soft);color:var(--teal);}
-.nav-badge{position:absolute;top:2px;right:2px;min-width:15px;height:15px;background:var(--rose);border-radius:50px;border:2px solid #fff;font-size:8px;color:#fff;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 2px;}
-.nav-badge.show{display:flex;}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00d4b8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;overflow:hidden;border:2px solid var(--teal-soft);transition:.2s;position:relative;}
-.nav-avatar:hover{border-color:var(--teal);}
-.nav-avatar img{width:100%;height:100%;object-fit:cover;}
-.nav-hired-dot{position:absolute;bottom:1px;right:1px;width:9px;height:9px;background:#22c55e;border:2px solid #fff;border-radius:50%;display:none;}
-.nav-hired-dot.show{display:block;}
-
-/* ── LAYOUT ── */
-.page{max-width:1020px;margin:0 auto;padding:1.8rem 1.2rem 6rem;}
-.greeting{margin-bottom:1.4rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;}
-.greeting h1{font-size:1.5rem;font-weight:800;margin-bottom:.2rem;line-height:1.2;letter-spacing:-.3px;}
-.greeting p{color:var(--muted);font-size:13px;}
-.greeting-actions{display:flex;gap:7px;flex-shrink:0;align-items:flex-start;}
-
-/* ── HIRED BADGE ── */
-.hired-banner{background:linear-gradient(135deg,#065f46,#059669);border-radius:14px;padding:.9rem 1.2rem;margin-bottom:1.2rem;display:none;align-items:center;justify-content:space-between;gap:12px;animation:fadeIn .3s ease;}
-.hired-banner.show{display:flex;}
-.hired-banner-left{display:flex;align-items:center;gap:10px;}
-.hired-banner-icon{width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;}
-.hired-banner-text strong{color:#fff;font-size:14px;font-weight:700;display:block;}
-.hired-banner-text p{color:rgba(255,255,255,.75);font-size:12px;margin-top:1px;}
-
-/* ── STATS ── */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:1.2rem;}
-.stat-card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:5px;transition:.2s;}
-.stat-card:hover{box-shadow:0 4px 16px rgba(0,184,156,.1);border-color:#b0ddd7;}
-.stat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
-.stat-icon.teal{background:var(--teal-soft);color:var(--teal);}
-.stat-icon.amber{background:#fff8e1;color:var(--gold);}
-.stat-icon.red{background:#fff1f3;color:var(--rose);}
-.stat-icon.sky{background:#e0f2fe;color:var(--sky);}
-.stat-icon.violet{background:#f5f3ff;color:var(--violet);}
-.stat-val{font-size:1.2rem;font-weight:800;line-height:1;letter-spacing:-.3px;}
-.stat-lbl{font-size:11px;color:var(--muted);font-weight:500;}
-
-/* ── CARDS ── */
-.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-bottom:1.1rem;}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
-.card-title{font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:7px;letter-spacing:-.1px;}
-.card-title i{color:var(--teal);font-size:16px;}
-
-/* ── TABS ── */
-.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:4px;margin-bottom:1.3rem;overflow-x:auto;}
-.tab{flex:1;text-align:center;padding:8px 5px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:.2s;border:none;background:none;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;position:relative;}
-.tab.active{background:#fff;color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.07);}
-.tab .tab-badge{position:absolute;top:3px;right:6px;width:7px;height:7px;background:var(--rose);border-radius:50%;border:1.5px solid var(--surface);}
-
-/* ── PROGRESS ── */
-.prog-bar-wrap{background:#e5f1ef;border-radius:50px;height:7px;overflow:hidden;margin:6px 0 4px;}
-.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),#00d4b8);border-radius:50px;transition:width .8s cubic-bezier(.4,0,.2,1);}
-.missing-list{display:flex;flex-direction:column;gap:6px;margin-top:.7rem;}
-.missing-item{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;background:var(--surface);border-radius:8px;border:1px solid var(--border);}
-.missing-item i{font-size:13px;}
-.missing-item.warn i{color:var(--gold);}
-.missing-item.err i{color:var(--rose);}
-.missing-item.ok i{color:var(--teal);}
-.missing-item a{margin-left:auto;font-size:11.5px;color:var(--teal);font-weight:600;text-decoration:none;white-space:nowrap;}
-
-/* ── BADGES ── */
-.badge-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:50px;font-size:11px;font-weight:600;}
-.badge-pending{background:#fff8e1;color:#8a6200;}
-.badge-approved{background:var(--teal-soft);color:#006b5a;}
-.badge-rejected{background:#fff1f3;color:#881337;}
-.badge-review{background:#e0f2fe;color:#0c4a6e;}
-.badge-new{background:#f5f3ff;color:#5b21b6;}
-.badge-hired{background:linear-gradient(135deg,#065f46,#059669);color:#fff;padding:4px 12px;}
-
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.18s;}
-.btn-teal{background:var(--teal);color:#fff;}
-.btn-teal:hover{background:var(--teal-dark);}
-.btn-outline{background:#fff;color:var(--teal);border:1.5px solid var(--teal);}
-.btn-outline:hover{background:var(--teal-soft);}
-.btn-sm{padding:5px 13px;font-size:12px;}
-.btn-mpesa{background:var(--mpesa);color:#fff;}
-.btn-mpesa:hover{background:#008a44;}
-.btn-airtel{background:var(--airtel);color:#fff;}
-.btn-danger{background:var(--rose);color:#fff;}
-.btn-danger:hover{background:#e11d48;}
-.btn-warning{background:#f59e0b;color:#fff;}
-.btn-ghost{background:var(--surface);color:var(--ink2);border:1px solid var(--border);}
-.btn-ghost:hover{background:#e5ecf3;}
-.btn:disabled{opacity:.55;cursor:not-allowed;}
-
-/* ── MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,25,35,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(2px);}
-.modal-overlay.open{display:flex;}
-.modal{background:#fff;border-radius:18px;width:100%;max-width:540px;max-height:93vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.2);animation:modalIn .22s ease;}
-.modal.wide{max-width:680px;}
-.modal.narrow{max-width:420px;}
-@keyframes modalIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-.modal-head{padding:1.1rem 1.3rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2;border-radius:18px 18px 0 0;}
-.modal-head h3{font-size:.93rem;font-weight:700;display:flex;align-items:center;gap:8px;}
-.modal-head h3 i{color:var(--teal);}
-.modal-close{background:none;border:none;font-size:19px;cursor:pointer;color:var(--muted);padding:3px;border-radius:7px;transition:.2s;}
-.modal-close:hover{color:var(--rose);background:#fff1f3;}
-.modal-body{padding:1.3rem;}
-.modal-footer{padding:.9rem 1.3rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
-
-/* ── PROFILE MODAL ── */
-.avatar-upload{text-align:center;margin-bottom:1.2rem;}
-.avatar-ring{width:82px;height:82px;border-radius:50%;background:var(--teal-soft);border:3px solid var(--teal);margin:0 auto 8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.7rem;color:var(--teal);cursor:pointer;position:relative;}
-.avatar-ring img{width:100%;height:100%;object-fit:cover;}
-.avatar-ring .overlay{position:absolute;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;border-radius:50%;}
-.avatar-ring:hover .overlay{display:flex;}
-.avatar-ring .overlay i{color:#fff;font-size:19px;}
-.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.fg{display:flex;flex-direction:column;gap:4px;}
-.fg.full{grid-column:1/-1;}
-.fg label{font-size:11px;font-weight:700;color:var(--ink2);display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.4px;}
-.fg label i{color:var(--teal);}
-.fg input,.fg select,.fg textarea{padding:8px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;transition:border .2s;background:#fff;color:var(--ink);}
-.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--teal);}
-.fg input[readonly]{background:var(--surface);color:var(--muted);}
-
-/* ── VERIFIED BADGE ── */
-.verified-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--teal),#00b8d4);color:#fff;border-radius:50px;padding:3px 11px;font-size:11px;font-weight:700;}
-
-/* ── INTERVIEW MSGS ── */
-.interview-list{display:flex;flex-direction:column;gap:10px;}
-.interview-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;transition:.2s;cursor:pointer;}
-.interview-card:hover{border-color:var(--teal);box-shadow:0 3px 14px var(--teal-glow);}
-.interview-card.unread{border-left:3px solid var(--teal);background:var(--teal-soft);}
-.interview-card-head{display:flex;align-items:center;gap:10px;margin-bottom:.5rem;}
-.employer-avatar{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--sky),var(--violet));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
-.employer-name{font-weight:700;font-size:13.5px;color:var(--ink);}
-.employer-job{font-size:11.5px;color:var(--muted);margin-top:1px;}
-.interview-time{margin-left:auto;font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-.interview-preview{font-size:12.5px;color:var(--muted);line-height:1.5;}
-.interview-thread{max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px 0 8px;}
-.msg-bubble{max-width:78%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
-.msg-bubble.mine{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
-.msg-bubble.theirs{background:var(--surface);color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px;}
-.msg-meta{font-size:10px;margin-top:4px;opacity:.65;}
-.msg-wait-note{text-align:center;padding:2rem 1rem;color:var(--muted);}
-.msg-wait-note i{display:block;font-size:2.5rem;margin-bottom:.6rem;opacity:.3;color:var(--teal);}
-.msg-wait-note strong{display:block;font-size:14px;color:var(--ink2);margin-bottom:.3rem;}
-
-/* ── INTERVIEW STATUS CARDS ── */
-.interview-status-bar{display:flex;gap:8px;margin-bottom:1.2rem;overflow-x:auto;padding-bottom:2px;}
-.ist-card{flex-shrink:0;background:#fff;border:1px solid var(--border);border-radius:12px;padding:.8rem 1.1rem;min-width:130px;cursor:pointer;transition:.2s;}
-.ist-card.active{border-color:var(--teal);background:var(--teal-soft);}
-.ist-card:hover{border-color:var(--teal);}
-.ist-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
-.ist-count{font-size:1.4rem;font-weight:800;color:var(--ink);letter-spacing:-.3px;margin-top:2px;}
-.ist-card.active .ist-count{color:var(--teal);}
-
-/* ── APPLICATIONS ── */
-.app-card{display:flex;align-items:center;gap:12px;padding:.85rem 0;border-bottom:1px solid var(--border);}
-.app-card:last-child{border:none;}
-.app-icon{width:38px;height:38px;border-radius:9px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;color:var(--teal);}
-.app-info{flex:1;}
-.app-title{font-size:13px;font-weight:700;}
-.app-employer{font-size:12px;color:var(--muted);margin-top:1px;}
-.app-date{font-size:11px;color:#aaa;margin-top:2px;font-family:'JetBrains Mono',monospace;}
-
-/* ── JOBS ── */
-.job-search-bar{display:flex;gap:8px;margin-bottom:1rem;}
-.job-search-bar input{flex:1;padding:8px 13px;border:1.5px solid var(--border);border-radius:50px;font-size:13px;font-family:inherit;outline:none;transition:.2s;}
-.job-search-bar input:focus{border-color:var(--teal);}
-.job-search-bar select{padding:8px 13px;border:1.5px solid var(--border);border-radius:50px;font-size:13px;font-family:inherit;outline:none;background:#fff;cursor:pointer;}
-.job-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:.9rem;margin-bottom:.7rem;display:flex;gap:11px;transition:.2s;cursor:pointer;position:relative;}
-.job-card:hover{border-color:var(--teal);box-shadow:0 3px 12px var(--teal-glow);}
-.job-card.hired-overlay::after{content:'🏆 HIRED — Not Available';position:absolute;inset:0;background:rgba(6,95,70,.88);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px;}
-.job-icon{width:42px;height:42px;border-radius:9px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.job-info{flex:1;min-width:0;}
-.job-title{font-size:13.5px;font-weight:700;margin-bottom:2px;}
-.job-employer{font-size:12px;color:var(--muted);}
-.job-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
-.job-tag{padding:2px 9px;background:var(--surface);border:1px solid var(--border);border-radius:50px;font-size:11px;color:var(--muted);}
-.job-tag.salary{color:var(--teal);border-color:#9dd9d1;background:var(--teal-soft);}
-.job-actions{display:flex;align-items:center;flex-shrink:0;}
-.suggested-banner{background:linear-gradient(135deg,#0f1923,#1e3a4a);color:#fff;border-radius:12px;padding:.9rem 1.1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;font-size:13px;}
-.suggested-banner i{font-size:19px;opacity:.8;}
-
-/* ── RECEIPT / PAY TABLE ── */
-.pay-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-.pay-table th{background:var(--surface);padding:7px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.3px;}
-.pay-table td{padding:9px 10px;border-bottom:1px solid #f0f4f2;vertical-align:middle;}
-.pay-table tr:last-child td{border:none;}
-.pay-status-paid{color:var(--teal);font-weight:600;}
-.pay-status-pending{color:var(--gold);font-weight:600;}
-.receipt-card{background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:1.1rem;}
-.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);}
-.receipt-row:last-child{border:none;}
-.receipt-row .lbl{color:var(--muted);}
-.receipt-row .val{font-weight:700;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px;}
-
-/* ── PAYMENT MODAL ── */
-.pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
-.pay-method-btn{border:2px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:center;transition:.2s;background:#fff;}
-.pay-method-btn:hover,.pay-method-btn.selected{border-color:var(--teal);background:var(--teal-soft);}
-.pay-steps{display:none;}
-.pay-steps.show{display:block;}
-.pay-amount-box{background:var(--teal-soft);border:1px solid #9dd9d1;border-radius:10px;padding:12px;text-align:center;margin-bottom:1rem;}
-.pay-amount-box .amount{font-size:1.8rem;font-weight:800;color:var(--teal);letter-spacing:-.5px;}
-.caution-box{background:#fff8e1;border:1px solid #f6d860;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#7a4e00;margin-bottom:1rem;display:flex;gap:8px;}
-.stk-status{display:none;text-align:center;padding:1.4rem 1rem;}
-.stk-status i{font-size:2.5rem;display:block;margin-bottom:.5rem;}
-.stk-status.sent i{color:var(--gold);}
-.stk-status.ok i{color:var(--teal);}
-.stk-status.fail i{color:var(--rose);}
-.stk-status strong{display:block;font-size:14.5px;margin-bottom:.3rem;}
-.stk-status p{font-size:12.5px;color:var(--muted);}
-
-/* ── NOTIFICATIONS ── */
-.notif-panel{position:fixed;top:60px;right:0;width:340px;max-height:calc(100vh - 80px);background:#fff;border-left:1px solid var(--border);border-bottom:1px solid var(--border);z-index:500;overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1);}
-.notif-panel.open{transform:translateX(0);}
-.notif-panel-head{padding:.9rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;}
-.notif-panel-head h4{font-size:.88rem;font-weight:700;}
-.notif-item{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:10px;cursor:pointer;transition:.15s;}
-.notif-item:hover{background:var(--surface);}
-.notif-item.unread{background:#f5fffe;}
-.notif-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
-.notif-dot.info{background:var(--sky);}
-.notif-dot.success{background:var(--teal);}
-.notif-dot.warning{background:var(--gold);}
-.notif-dot.error{background:var(--rose);}
-.notif-item-content strong{font-size:13px;display:block;margin-bottom:1px;}
-.notif-item-content p{font-size:12px;color:var(--muted);line-height:1.4;}
-.notif-time{font-size:10px;color:#aaa;margin-top:2px;}
-
-/* ── TOAST ── */
-.toast-stack{position:fixed;bottom:20px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:7px;max-width:320px;}
-.toast{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:flex-start;gap:9px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:slideUp .28s ease;transition:opacity .35s,transform .35s;}
-.toast.hide{opacity:0;transform:translateX(24px);}
-@keyframes slideUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-.toast-icon{font-size:17px;flex-shrink:0;margin-top:1px;}
-.toast-icon.warn{color:var(--gold);}
-.toast-icon.err{color:var(--rose);}
-.toast-icon.ok{color:var(--teal);}
-.toast-icon.info{color:var(--sky);}
-.toast-content strong{font-size:12px;display:block;margin-bottom:1px;}
-.toast-content p{font-size:11.5px;color:var(--muted);line-height:1.4;}
-.toast-close{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;flex-shrink:0;}
-
-/* ── SETTINGS ── */
-.settings-section{margin-bottom:1.3rem;}
-.settings-section h4{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.7rem;}
-.setting-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
-.setting-row:last-child{border:none;}
-.setting-info strong{font-size:13px;display:flex;align-items:center;gap:5px;}
-.setting-info p{font-size:11.5px;color:var(--muted);margin-top:1px;}
-.toggle{position:relative;width:38px;height:21px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:#d4dde6;border-radius:50px;cursor:pointer;transition:.2s;}
-.toggle-slider::before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
-.toggle input:checked+.toggle-slider{background:var(--teal);}
-.toggle input:checked+.toggle-slider::before{transform:translateX(17px);}
-
-/* ── HIRED TOGGLE ── */
-.hired-toggle-wrap{background:linear-gradient(135deg,#f0fdf4,#d1fae5);border:1.5px solid #6ee7b7;border-radius:14px;padding:1.1rem;margin-bottom:1.2rem;}
-.hired-toggle-wrap.active{background:linear-gradient(135deg,#065f46,#059669);border-color:#047857;}
-.hired-toggle-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.hired-toggle-info strong{font-size:14px;font-weight:700;color:var(--ink);}
-.hired-toggle-wrap.active .hired-toggle-info strong{color:#fff;}
-.hired-toggle-info p{font-size:12px;color:var(--muted);margin-top:2px;}
-.hired-toggle-wrap.active .hired-toggle-info p{color:rgba(255,255,255,.75);}
-.hired-effects{margin-top:.9rem;padding-top:.8rem;border-top:1px dashed #6ee7b7;display:none;font-size:12.5px;color:#065f46;}
-.hired-toggle-wrap.active .hired-effects{display:block;border-top-color:rgba(255,255,255,.2);color:rgba(255,255,255,.85);}
-
-/* ── MANUAL ── */
-.manual-toc a{display:block;padding:5px 0;color:var(--sky);font-size:13px;text-decoration:none;border-bottom:1px solid var(--border);}
-.manual-toc a:hover{color:var(--teal);}
-.manual-section{margin-bottom:1.5rem;}
-.manual-section h3{font-size:.93rem;font-weight:700;color:var(--ink2);margin-bottom:.5rem;display:flex;align-items:center;gap:7px;}
-.manual-section h3 i{color:var(--teal);}
-.manual-section p{font-size:13px;color:var(--muted);line-height:1.7;}
-.manual-section ul{margin:.5rem 0 .5rem 1.2rem;}
-.manual-section ul li{font-size:13px;color:var(--muted);margin-bottom:.25rem;}
-
-/* ── OTP ── */
-.otp-inputs{display:flex;gap:8px;justify-content:center;margin:1.2rem 0;}
-.otp-inputs input{width:48px;height:52px;text-align:center;font-size:1.4rem;font-weight:700;font-family:'JetBrains Mono',monospace;border:2px solid var(--border);border-radius:10px;outline:none;transition:.2s;background:#fff;}
-.otp-inputs input:focus{border-color:var(--teal);}
-
-/* ── QUICK ACTIONS ── */
-.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.qa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:.9rem;border:1.5px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:.2s;font-family:inherit;}
-.qa-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
-.qa-btn i{font-size:20px;color:var(--teal);}
-.qa-btn span{font-size:11.5px;font-weight:600;color:var(--ink2);}
-.qa-btn.full{grid-column:1/-1;}
-
-/* ── REFRESH BAR ── */
-.refresh-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:1.1rem;}
-.refresh-bar .dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;}
-
-/* ── MSG HUB MODAL ── */
-.msghub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1049;align-items:flex-end;justify-content:flex-end;padding:1rem;}
-.msghub-overlay.open{display:flex;}
-.msghub-modal{background:#fff;border-radius:18px;width:390px;max-height:580px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.22);overflow:hidden;animation:msgHubIn .22s ease;}
-@keyframes msgHubIn{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
-@media(max-width:600px){.msghub-modal{width:100%;max-height:92dvh;border-radius:18px 18px 0 0;}.msghub-overlay{padding:0;align-items:flex-end;}}
-.msghub-header{background:var(--teal);color:#fff;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.msghub-title{font-weight:700;font-size:14px;display:flex;align-items:center;gap:7px;}
-.msghub-close{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
-.msghub-tabs{display:flex;border-bottom:1px solid var(--border);}
-.msghub-tab{flex:1;padding:.6rem;background:none;border:none;font-size:12.5px;font-family:inherit;font-weight:600;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;border-bottom:2.5px solid transparent;transition:.2s;}
-.msghub-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
-.msghub-list{flex:1;overflow-y:auto;}
-.msghub-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;color:var(--muted);}
-.msghub-empty i{font-size:2rem;opacity:.3;margin-bottom:.5rem;}
-.msghub-item{display:flex;align-items:center;gap:10px;padding:.7rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);transition:.15s;}
-.msghub-item:hover{background:var(--surface);}
-.msghub-item-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0;background:var(--teal);}
-.msghub-item-name{font-weight:700;font-size:13px;}
-.msghub-item-preview{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.msghub-unread-count{background:var(--teal);color:#fff;border-radius:50px;padding:1px 7px;font-size:10px;font-weight:700;}
-
-/* ── NEWS POPUP ── */
-.news-popup-overlay{display:none;position:fixed;inset:0;background:rgba(15,25,35,.6);z-index:2000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(3px);}
-.news-popup-overlay.open{display:flex;}
-.news-popup{background:#fff;border-radius:18px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:modalIn .25s ease;}
-.news-popup-head{background:linear-gradient(135deg,var(--teal-dark),#009688);padding:1.3rem;border-radius:18px 18px 0 0;}
-.news-popup-head h3{color:#fff;font-size:1rem;font-weight:800;}
-.news-popup-head p{color:rgba(255,255,255,.75);font-size:12px;margin-top:2px;}
-.news-item{padding:1rem;border-bottom:1px solid var(--border);display:flex;gap:10px;}
-.news-item:last-child{border:none;}
-.news-item-icon{width:38px;height:38px;border-radius:9px;background:var(--teal-soft);color:var(--teal);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.news-item h4{font-size:13px;font-weight:700;color:var(--ink);}
-.news-item p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5;}
-.news-tag{display:inline-block;padding:1px 8px;background:var(--teal-soft);color:var(--teal-dark);border-radius:50px;font-size:10.5px;font-weight:600;margin-top:5px;}
-
-/* ── DEACTIVATE / DELETE ── */
-.danger-zone{border:1.5px solid #fecdd3;border-radius:12px;padding:1rem;background:#fff7f7;}
-.danger-zone h5{font-size:11.5px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.7rem;}
-.danger-action{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fecdd3;}
-.danger-action:last-child{border:none;padding-bottom:0;}
-.danger-action-info strong{font-size:13px;}
-.danger-action-info p{font-size:11.5px;color:var(--muted);}
-
-/* ── ONGOING INTERVIEW ── */
-.ongoing-card{background:#fff;border:1.5px solid var(--teal);border-radius:12px;padding:1rem;margin-bottom:.7rem;position:relative;overflow:hidden;}
-.ongoing-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--teal);}
-.ongoing-status{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--teal);}
-.ongoing-status::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 1.5s infinite;}
-
-/* ── TC MODAL ── */
-.tc-section{margin-bottom:1.2rem;}
-.tc-section h4{font-size:.88rem;font-weight:700;color:var(--ink2);margin-bottom:.5rem;}
-.tc-section p{font-size:12.5px;color:var(--muted);line-height:1.7;}
-
-/* ── RESPONSIVE ── */
-@media(max-width:640px){
-  .stats{grid-template-columns:1fr 1fr;}
-  .profile-grid,.pay-methods{grid-template-columns:1fr;}
-  .tab span{display:none;}
-  .tab{padding:9px 10px;}
-  .greeting{flex-direction:column;}
-  .notif-panel{width:100%;}
-  .quick-grid{grid-template-columns:1fr 1fr;}
-}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-</style>
-</head>
-<body>
-
-<div id="pg-loader"><div class="spin-ring"></div><p style="color:var(--muted);font-size:13px">Loading your dashboard…</p></div>
-
-<!-- ── NAV ── -->
-<nav class="nav">
-  <a href="index.html" class="nav-logo">
-    <div class="logo-icon">W<span class="logo-dot"></span></div>
-    <span class="logo-name">Sounds<em>CARE</em></span>
-  </a>
-  <div class="nav-right">
-    <button class="nav-icon-btn" onclick="openMsgHub()" title="Messages" id="nav-msg-btn">
-      <i class="bi bi-chat-dots-fill"></i>
-      <span class="nav-badge" id="msg-badge"></span>
-    </button>
-    <button class="nav-icon-btn" onclick="toggleNotifPanel()" title="Notifications" id="notif-bell-btn">
-      <i class="bi bi-bell"></i>
-      <span class="nav-badge" id="notif-badge"></span>
-    </button>
-    <div class="nav-avatar" id="nav-avatar" onclick="openProfileModal()" title="My Profile">
-      <span id="nav-initials">?</span>
-      <span class="nav-hired-dot" id="nav-hired-dot"></span>
-    </div>
-  </div>
-</nav>
-
-<!-- ── NOTIFICATION PANEL ── -->
-<div class="notif-panel" id="notif-panel">
-  <div class="notif-panel-head">
-    <h4><i class="bi bi-bell-fill" style="color:var(--teal)"></i> Notifications</h4>
-    <button class="btn btn-outline btn-sm" onclick="markAllNotifsRead()"><i class="bi bi-check-all"></i> All read</button>
-  </div>
-  <div id="notif-panel-list">
-    <div style="text-align:center;padding:2.5rem 1rem;color:var(--muted)"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No notifications yet</div>
-  </div>
-</div>
-
-<!-- ── MSG HUB MODAL ── -->
-<div class="msghub-overlay" id="msghub-overlay" onclick="if(event.target===this)closeMsgHub()">
-  <div class="msghub-modal">
-    <div class="msghub-header">
-      <div class="msghub-title"><i class="bi bi-chat-dots-fill"></i> Messages</div>
-      <button class="msghub-close" onclick="closeMsgHub()"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div class="msghub-tabs">
-      <button class="msghub-tab active" onclick="switchMsgHubTab('all',this)"><i class="bi bi-grid"></i> All</button>
-      <button class="msghub-tab" onclick="switchMsgHubTab('employer',this)"><i class="bi bi-building"></i> Employer<span class="msghub-unread-count" id="msghub-emp-badge" style="display:none;margin-left:4px">0</span></button>
-    </div>
-    <div class="msghub-list" id="msghub-list">
-      <div class="msghub-empty"><i class="bi bi-chat-square-dots"></i><div style="font-size:13px">No messages yet</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── NEWS POPUP ── -->
-<div class="news-popup-overlay" id="news-popup-overlay" onclick="if(event.target===this)closeNewsPopup()">
-  <div class="news-popup">
-    <div class="news-popup-head">
-      <h3>🔔 Latest Job News & Opportunities</h3>
-      <p>Stay updated with what's happening</p>
-    </div>
-    <div id="news-popup-body">
-      <div class="news-item">
-        <div class="news-item-icon"><i class="bi bi-stars"></i></div>
-        <div><h4>10 New Jobs Posted Today</h4><p>Employers in Nairobi & Kiambu have posted fresh opportunities. Check the Jobs tab for House Managers, Nannies and more.</p><span class="news-tag">New Jobs</span></div>
-      </div>
-      <div class="news-item">
-        <div class="news-item-icon"><i class="bi bi-award"></i></div>
-        <div><h4>Get Verified — Boost Your Profile</h4><p>Verified employees get 3× more interview requests. Complete your OTP verification now to earn your badge.</p><span class="news-tag">Tip</span></div>
-      </div>
-      <div class="news-item">
-        <div class="news-item-icon"><i class="bi bi-megaphone"></i></div>
-        <div><h4>Interview Season is Here</h4><p>Multiple employers are actively scheduling interviews. Keep your profile updated and check your messages regularly.</p><span class="news-tag">Announcement</span></div>
-      </div>
-    </div>
-    <div style="padding:1rem;text-align:center;border-top:1px solid var(--border)">
-      <button class="btn btn-teal" onclick="closeNewsPopup();switchTabByName('jobs')" style="margin-right:8px"><i class="bi bi-briefcase"></i> Browse Jobs</button>
-      <button class="btn btn-ghost" onclick="closeNewsPopup()">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── MAIN ── -->
-<div class="page">
-
-  <!-- Greeting -->
-  <div class="greeting">
-    <div>
-      <h1 id="greeting-h1">Welcome back <span id="greet-name" style="color:var(--teal)">…</span> 👋</h1>
-      <p id="greet-status">Loading your profile…</p>
-    </div>
-    <div class="greeting-actions">
-<button class="qa-btn" onclick="window.location.href='employers.html'">
-  <i class="bi bi-search"></i>
-  <span>Find Jobs</span>
-</button>
-      <button class="btn btn-teal btn-sm" onclick="openProfileModal()"><i class="bi bi-person-circle"></i> Profile</button>
-    </div>
-  </div>
-
-  <!-- Hired Banner -->
-  <div class="hired-banner" id="hired-banner">
-    <div class="hired-banner-left">
-      <div class="hired-banner-icon"><i class="bi bi-trophy-fill"></i></div>
-      <div class="hired-banner-text"><strong>🎉 You're Currently Hired!</strong><p id="hired-employer-text">Working with your employer</p></div>
-    </div>
-    <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3)" onclick="switchTabByName('settings')">Manage</button>
-  </div>
-
-  <!-- Refresh -->
-  <div class="refresh-bar"><span class="dot"></span><span id="refresh-label">Live feed</span></div>
-
-  <!-- Tabs -->
-  <div class="tabs" id="main-tabs">
-    <button class="tab active" data-tab="overview" onclick="switchTab('overview',this)"><i class="bi bi-speedometer2"></i><span>Overview</span></button>
-    <button class="tab" data-tab="messages" onclick="switchTab('messages',this)"><i class="bi bi-chat-dots"></i><span>Messages</span><span class="tab-badge" id="msg-tab-badge" style="display:none"></span></button>
-    <button class="tab" data-tab="jobs" onclick="switchTab('jobs',this)"><i class="bi bi-briefcase"></i><span>Jobs</span><span class="tab-badge" id="jobs-tab-badge" style="display:none"></span></button>
-    <button class="tab" data-tab="payments" onclick="switchTab('payments',this)"><i class="bi bi-credit-card"></i><span>Payments</span></button>
-    <button class="tab" data-tab="manual" onclick="switchTab('manual',this)"><i class="bi bi-book"></i><span>Manual</span></button>
-    <button class="tab" data-tab="settings" onclick="switchTab('settings',this)"><i class="bi bi-gear"></i><span>Settings</span></button>
-  </div>
-
-  <!-- ══════════ OVERVIEW ══════════ -->
-  <div id="tab-overview">
-    <div class="stats">
-      <div class="stat-card"><div class="stat-icon teal"><i class="bi bi-person-check"></i></div><div class="stat-val" id="stat-status-label">—</div><div class="stat-lbl">Status</div></div>
-      <div class="stat-card"><div class="stat-icon amber"><i class="bi bi-percent"></i></div><div class="stat-val" id="stat-completion">0%</div><div class="stat-lbl">Profile</div></div>
-      <div class="stat-card"><div class="stat-icon sky"><i class="bi bi-cash-stack"></i></div><div class="stat-val" id="stat-paid">KES 0</div><div class="stat-lbl">Fees Paid</div></div>
-      <div class="stat-card"><div class="stat-icon violet"><i class="bi bi-briefcase-fill"></i></div><div class="stat-val" id="stat-applications">0</div><div class="stat-lbl">Applications</div></div>
-    </div>
-
-    <!-- Hired toggle -->
-    <div class="hired-toggle-wrap" id="hired-toggle-wrap">
-      <div class="hired-toggle-head">
-        <div class="hired-toggle-info">
-          <strong id="hired-toggle-title">I'm still looking for work</strong>
-          <p id="hired-toggle-sub">Toggle when you get hired so employers stop scheduling interviews</p>
-        </div>
-        <label class="toggle" style="width:52px;height:28px">
-          <input type="checkbox" id="hired-toggle" onchange="toggleHiredStatus(this.checked)">
-          <span class="toggle-slider" style="border-radius:50px"></span>
-        </label>
-      </div>
-      <div class="hired-effects" id="hired-effects">
-        <i class="bi bi-shield-check"></i> Your profile is marked <strong>Hired</strong>. Employers will see you are no longer available and won't schedule interviews. You can toggle back at any time.
-      </div>
-    </div>
-
-    <!-- Profile Completion -->
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-clipboard-check"></i> Profile Completion</div></div>
-      <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
-      <p style="font-size:12px;color:var(--muted);margin-top:3px" id="prog-label">Calculating…</p>
-      <div class="missing-list" id="missing-list"></div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-lightning-charge"></i> Quick Actions</div></div>
-      <div class="quick-grid">
-        <button class="qa-btn" onclick="switchTabByName('messages')"><i class="bi bi-chat-dots-fill"></i><span>Interview Messages</span></button>
-        <button class="qa-btn" onclick="window.location.href='employers.html'">
-       <i class="bi bi-search"></i><span>Find Jobs</span> </button>
-        <button class="qa-btn" onclick="openPayModal()"><i class="bi bi-credit-card-fill"></i><span>Make Payment</span></button>
-        <button class="qa-btn" onclick="openProfileModal()"><i class="bi bi-person-badge"></i><span>Update Profile</span></button>
-        <button class="qa-btn" onclick="openVerifyModal()"><i class="bi bi-patch-check-fill"></i><span>Verify & Get Badge</span></button>
-        <button class="qa-btn" onclick="openNewsPopup()"><i class="bi bi-newspaper"></i><span>Job News</span></button>
-      </div>
-    </div>
-
-    <!-- Suggested jobs preview -->
-    <div class="card" id="overview-suggested" style="display:none">
-      <div class="card-head"><div class="card-title"><i class="bi bi-stars"></i> Jobs Suggested For You</div><button class="btn btn-outline btn-sm" onclick="switchTabByName('jobs')"><i class="bi bi-arrow-right"></i> See All</button></div>
-      <div id="overview-suggested-list"></div>
-    </div>
-  </div>
-
-  <!-- ══════════ MESSAGES TAB ══════════ -->
-  <div id="tab-messages" style="display:none">
-
-    <!-- Sub-tab bar -->
-    <div style="display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:1rem;overflow-x:auto">
-      <button class="tab active" id="msg-subtab-interviews" style="flex:1" onclick="switchMsgSubTab('interviews',this)"><i class="bi bi-calendar-check"></i><span>Interview Messages</span></button>
-      <button class="tab" id="msg-subtab-applications" style="flex:1" onclick="switchMsgSubTab('applications',this)"><i class="bi bi-send-check"></i><span>My Applications</span></button>
-    </div>
-
-    <!-- ── INTERVIEW MESSAGES PANEL ── -->
-    <div id="msg-panel-interviews">
-      <!-- Status filter -->
-      <div class="interview-status-bar">
-        <div class="ist-card active" id="ist-all" onclick="filterInterviews('all',this)"><div class="ist-title">All</div><div class="ist-count" id="ist-all-count">0</div></div>
-        <div class="ist-card" id="ist-ongoing" onclick="filterInterviews('ongoing',this)"><div class="ist-title">Ongoing</div><div class="ist-count" id="ist-ongoing-count">0</div></div>
-        <div class="ist-card" id="ist-complete" onclick="filterInterviews('complete',this)"><div class="ist-title">Complete</div><div class="ist-count" id="ist-complete-count">0</div></div>
-        <div class="ist-card" id="ist-unread" onclick="filterInterviews('unread',this)"><div class="ist-title">Unread</div><div class="ist-count" id="ist-unread-count">0</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><i class="bi bi-building"></i> Interview Messages from Employers</div>
-          <button class="btn btn-outline btn-sm" onclick="loadInterviewMessages()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
-        </div>
-        <div class="msg-wait-note" id="interview-wait-note">
-          <i class="bi bi-hourglass-split"></i>
-          <strong>Waiting for Employer Messages</strong>
-          <p style="font-size:12.5px">You will be notified when an employer sends you an interview invitation or message. You cannot initiate messages — employers contact you first.</p>
-        </div>
-        <div class="interview-list" id="interview-list" style="display:none"></div>
-      </div>
-    </div>
-
-    <!-- ── APPLICATIONS PANEL ── -->
-    <div id="msg-panel-applications" style="display:none">
-      <div class="card">
-        <div class="card-head"><div class="card-title"><i class="bi bi-send-check"></i> My Job Applications</div></div>
-        <div id="applications-list-msg">
-          <div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══════════ JOBS TAB ══════════ -->
-  <div id="tab-jobs" style="display:none">
-    <div class="suggested-banner" id="suggested-banner" style="display:none">
-      <i class="bi bi-stars"></i>
-      <div><strong id="suggested-count-text">Jobs suggested for you</strong><div style="font-size:12px;opacity:.75;margin-top:1px">Scroll down to browse all jobs</div></div>
-    </div>
-    <div id="suggested-jobs-section" style="display:none">
-      <div style="font-size:12.5px;font-weight:700;margin-bottom:.6rem;color:var(--violet);display:flex;align-items:center;gap:6px"><i class="bi bi-stars"></i> Suggested For You</div>
-      <div id="suggested-jobs-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-search"></i> Browse All Jobs</div><button class="btn btn-outline btn-sm" onclick="loadJobs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
-      <div class="job-search-bar">
-        <input type="text" id="job-search-input" placeholder="Search by title, county, employer…" oninput="filterJobs()">
-        <select id="job-role-filter" onchange="filterJobs()">
-          <option value="">All Roles</option>
-          <option>House Manager</option><option>Nanny / Childcare</option><option>Cook / Chef</option>
-          <option>Cleaner</option><option>Gardener</option><option>Driver</option>
-          <option>Security Guard</option><option>Elder Caregiver</option><option>Other</option>
-        </select>
-      </div>
-      <div id="jobs-list"><div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-hourglass-split" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>Loading jobs…</div></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-send-check"></i> My Applications</div></div>
-      <div id="applications-list"><div style="text-align:center;padding:1.5rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div></div>
-    </div>
-  </div>
-
-  <!-- ══════════ PAYMENTS TAB ══════════ -->
-  <div id="tab-payments" style="display:none">
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-credit-card-2-front"></i> Service Fees</div><button class="btn btn-teal btn-sm" onclick="openPayModal()"><i class="bi bi-plus-circle"></i> Pay</button></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:1rem">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:3px"><i class="bi bi-shield"></i> Registration Fee</div>
-          <div style="font-size:1.2rem;font-weight:800;color:var(--teal)">KES 300</div>
-          <div id="reg-fee-status" style="font-size:12px;color:var(--muted);margin-top:2px">—</div>
-        </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:3px"><i class="bi bi-briefcase"></i> Placement Fee</div>
-          <div style="font-size:1.2rem;font-weight:800;color:var(--gold)">KES 1,000</div>
-          <div id="plc-fee-status" style="font-size:12px;color:var(--muted);margin-top:2px">Due on first salary</div>
-        </div>
-      </div>
-      <div class="caution-box"><i class="bi bi-exclamation-triangle-fill"></i><div>Fees are <strong>non-refundable</strong>. <a href="#" onclick="openTCModal();event.preventDefault()" style="color:#7a4e00;font-weight:600;text-decoration:underline">Read Terms</a> before paying.</div></div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:.7rem;display:flex;align-items:center;gap:6px"><i class="bi bi-clock-history" style="color:var(--teal)"></i> Payment History</div>
-      <div id="pay-table-wrap">
-        <table class="pay-table">
-          <thead><tr><th>M-Pesa Ref</th><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead>
-          <tbody id="pay-tbody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:5px"></i>No payments yet.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════ USER MANUAL ══════════ -->
-  <div id="tab-manual" style="display:none">
-    <div class="card">
-      <div class="card-head"><div class="card-title"><i class="bi bi-book-open"></i> Complete User Manual</div></div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:1rem;background:var(--teal-soft);border-radius:9px;padding:10px 12px;border:1px solid #9dd9d1">
-        <i class="bi bi-info-circle-fill" style="color:var(--teal)"></i> Everything you need to know about using your WorkLink dashboard effectively.
-      </div>
-      <div class="manual-toc" style="margin-bottom:1.5rem">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">Contents</div>
-        <a href="#m1">1. Getting Started</a><a href="#m2">2. Completing Your Profile</a><a href="#m3">3. How Interview Messages Work</a>
-        <a href="#m4">4. Applying for Jobs</a><a href="#m5">5. Hired Toggle — What It Does</a><a href="#m6">6. Payments Guide</a>
-        <a href="#m7">7. OTP Verification & Badge</a><a href="#m8">8. Account Settings</a><a href="#m9">9. FAQ</a>
-      </div>
-      <div id="m1" class="manual-section">
-        <h3><i class="bi bi-play-circle"></i> 1. Getting Started</h3>
-        <p>Welcome to WorkLink — your professional platform for finding household and support employment opportunities. After logging in, your dashboard gives you a complete view of your job search, interview messages, payments, and profile.</p>
-      </div>
-      <div id="m2" class="manual-section">
-        <h3><i class="bi bi-person-fill-gear"></i> 2. Completing Your Profile</h3>
-        <p>A complete profile dramatically increases your chances of being contacted by employers. The <strong>Profile Completion</strong> card on your Overview shows what's missing. Click your avatar or the <em>Profile</em> button to fill in:</p>
-        <ul><li>Full name, phone, date of birth, gender</li><li>Preferred role, current town, county</li><li>About yourself, languages spoken, key skills</li><li>Profile photo (recommended)</li></ul>
-      </div>
-      <div id="m3" class="manual-section">
-        <h3><i class="bi bi-building-check"></i> 3. How Interview Messages Work</h3>
-        <p>Employers review your profile and send interview invitations directly to you. <strong>You do not initiate contact</strong> — wait for an employer to message you. When one does:</p>
-        <ul><li>A notification appears in your bell icon</li><li>The <strong>Messages → Interview Messages</strong> tab shows the conversation</li><li>You can reply to employer messages in the thread</li><li>Interviews appear under <em>Ongoing</em> or <em>Complete</em> once processed</li></ul>
-      </div>
-      <div id="m4" class="manual-section">
-        <h3><i class="bi bi-send-check"></i> 4. Applying for Jobs</h3>
-        <p>Go to the <strong>Jobs</strong> tab, browse or search for openings, and click <em>Apply</em>. Track your applications status (Applied, Shortlisted, Hired, or Rejected) in the <em>My Applications</em> section. Admin may also suggest specific jobs that match your profile.</p>
-      </div>
-      <div id="m5" class="manual-section">
-        <h3><i class="bi bi-toggle2-on"></i> 5. Hired Toggle — What It Does</h3>
-        <p>When you get a job, flip the <strong>Hired toggle</strong> on your Overview. This:</p>
-        <ul><li>Marks your profile as unavailable to employers</li><li>Prevents new interview invitations from being sent</li><li>Shows a green "Hired" badge on your profile</li><li>Displays an animated banner on your dashboard</li></ul>
-        <p>Toggle it back off if you become available for work again.</p>
-      </div>
-      <div id="m6" class="manual-section">
-        <h3><i class="bi bi-credit-card"></i> 6. Payments Guide</h3>
-        <p>WorkLink charges two fees: a <strong>KES 300 Registration Fee</strong> (due before your profile goes live) and a <strong>KES 1,000 Placement Fee</strong> (due on your first salary). Payments are made via M-Pesa or Airtel Money STK Push. All fees are strictly non-refundable.</p>
-      </div>
-      <div id="m7" class="manual-section">
-        <h3><i class="bi bi-patch-check-fill"></i> 7. OTP Verification & Badge</h3>
-        <p>Verify your phone number via OTP to earn a <strong>Verified badge</strong> on your profile. Verified employees are prioritized in employer searches and get 3× more interview requests. Go to <em>Quick Actions → Verify & Get Badge</em> to start.</p>
-      </div>
-      <div id="m8" class="manual-section">
-        <h3><i class="bi bi-gear-fill"></i> 8. Account Settings</h3>
-        <p>Under <strong>Settings</strong> you can: sign out, change notifications preferences, deactivate your account (temporary pause), or permanently delete your account. Deactivation hides your profile; deletion is permanent.</p>
-      </div>
-      <div id="m9" class="manual-section">
-        <h3><i class="bi bi-question-circle"></i> 9. FAQ</h3>
-        <div style="display:flex;flex-direction:column;gap:8px" id="faq-list">
-          <div class="faq-item" style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
-            <button onclick="toggleFaq(this)" style="width:100%;text-align:left;padding:10px 12px;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center">Can employers see my phone number? <i class="bi bi-chevron-down"></i></button>
-            <div class="faq-answer" style="display:none;padding:0 12px 10px;font-size:12.5px;color:var(--muted);line-height:1.6">Your phone is visible only after you accept an interview request. Until then, only your profile details are shown to employers.</div>
-          </div>
-          <div class="faq-item" style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
-            <button onclick="toggleFaq(this)" style="width:100%;text-align:left;padding:10px 12px;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center">How long does profile approval take? <i class="bi bi-chevron-down"></i></button>
-            <div class="faq-answer" style="display:none;padding:0 12px 10px;font-size:12.5px;color:var(--muted);line-height:1.6">Our admin team typically reviews profiles within 24–48 hours on business days. You'll receive a notification when your status changes.</div>
-          </div>
-          <div class="faq-item" style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
-            <button onclick="toggleFaq(this)" style="width:100%;text-align:left;padding:10px 12px;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center">What if I can't pay registration immediately? <i class="bi bi-chevron-down"></i></button>
-            <div class="faq-answer" style="display:none;padding:0 12px 10px;font-size:12.5px;color:var(--muted);line-height:1.6">Your profile will remain in draft mode until the registration fee is paid. You can still browse jobs and apply, but employers won't be able to contact you.</div>
-          </div>
-          <div class="faq-item" style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
-            <button onclick="toggleFaq(this)" style="width:100%;text-align:left;padding:10px 12px;background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center">How does the Hired toggle protect me? <i class="bi bi-chevron-down"></i></button>
-            <div class="faq-answer" style="display:none;padding:0 12px 10px;font-size:12.5px;color:var(--muted);line-height:1.6">When you enable the Hired toggle, your profile is marked as unavailable. Employers searching for staff will not be shown your profile, and you won't receive new interview requests until you toggle it off.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════ SETTINGS ══════════ -->
-  <div id="tab-settings" style="display:none">
-    <div class="card">
-      <div class="card-title" style="margin-bottom:1.1rem"><i class="bi bi-gear-fill"></i> Account Settings</div>
-      <div class="settings-section">
-        <h4><i class="bi bi-bell"></i> Notifications</h4>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-envelope"></i> Email Alerts</strong><p>Receive updates by email</p></div><label class="toggle"><input type="checkbox" id="set-email" checked onchange="saveSetting('email_notif',this.checked)"><span class="toggle-slider"></span></label></div>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-phone-vibrate"></i> SMS Alerts</strong><p>SMS when employers view profile</p></div><label class="toggle"><input type="checkbox" id="set-sms" onchange="saveSetting('sms_notif',this.checked)"><span class="toggle-slider"></span></label></div>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-globe"></i> Profile Visibility</strong><p>Show profile to employers</p></div><label class="toggle"><input type="checkbox" id="set-visible" checked onchange="saveSetting('profile_visible',this.checked)"><span class="toggle-slider"></span></label></div>
-      </div>
-      <div class="settings-section">
-        <h4><i class="bi bi-shield-lock"></i> Security & Verification</h4>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-patch-check-fill"></i> Phone Verification <span id="verified-badge-inline" style="display:none" class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span></strong><p>Verify your number to earn a badge</p></div><button class="btn btn-outline btn-sm" onclick="openVerifyModal()"><i class="bi bi-shield-check"></i> Verify</button></div>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-key"></i> Change Password</strong><p>Update your login password</p></div><button class="btn btn-ghost btn-sm" onclick="sendPasswordReset()"><i class="bi bi-send"></i> Reset Link</button></div>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-file-earmark-text"></i> Terms & Conditions</strong><p>Read our terms of service</p></div><a href="terms.html" target="_blank" class="btn btn-ghost btn-sm"><i class="bi bi-box-arrow-up-right"></i> Read Terms</a></div>
-      </div>
-      <div class="settings-section">
-        <h4><i class="bi bi-person-circle"></i> Account Actions</h4>
-        <div class="setting-row"><div class="setting-info"><strong><i class="bi bi-door-open"></i> Sign Out</strong><p>Log out of your account</p></div><button class="btn btn-danger btn-sm" onclick="signOut()"><i class="bi bi-box-arrow-right"></i> Sign Out</button></div>
-      </div>
-      <div class="danger-zone">
-        <h5><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</h5>
-        <div class="danger-action"><div class="danger-action-info"><strong>Deactivate Account</strong><p>Temporarily hide your profile</p></div><button class="btn btn-warning btn-sm" onclick="openDeactivateModal()"><i class="bi bi-pause-circle"></i> Deactivate</button></div>
-        <div class="danger-action"><div class="danger-action-info"><strong>Delete Account</strong><p>Permanently remove all your data</p></div><button class="btn btn-danger btn-sm" onclick="openDeleteModal()"><i class="bi bi-trash3"></i> Delete</button></div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- end .page -->
-
-<!-- ══ PROFILE MODAL ══ -->
-<div class="modal-overlay" id="modal-profile">
-  <div class="modal wide">
-    <div class="modal-head">
-      <h3><i class="bi bi-person-circle"></i> My Profile</h3>
-      <button class="modal-close" onclick="closeModal('modal-profile')"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div class="modal-body">
-      <div class="avatar-upload">
-        <div class="avatar-ring" onclick="document.getElementById('avatar-input').click()" title="Change photo">
-          <span id="profile-initials-big">?</span>
-          <img id="profile-avatar-img" src="" alt="" style="display:none">
-          <div class="overlay"><i class="bi bi-camera"></i></div>
-        </div>
-        <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
-        <p style="font-size:11px;color:var(--muted)"><i class="bi bi-camera"></i> Click photo to update</p>
-        <div id="profile-verified-badge" style="display:none;margin-top:6px"><span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span></div>
-      </div>
-      <div class="profile-grid">
-        <div class="fg"><label><i class="bi bi-person"></i> Full Name</label><input type="text" id="pf-name" placeholder="Full name"></div>
-        <div class="fg"><label><i class="bi bi-phone"></i> Phone</label><input type="tel" id="pf-phone" placeholder="+254 7XX XXX XXX"></div>
-        <div class="fg full"><label><i class="bi bi-envelope"></i> Email</label><input type="email" id="pf-email" readonly></div>
-        <div class="fg"><label><i class="bi bi-calendar3"></i> Date of Birth</label><input type="date" id="pf-dob"></div>
-        <div class="fg"><label><i class="bi bi-gender-ambiguous"></i> Gender</label><select id="pf-gender"><option value="">Select</option><option>Female</option><option>Male</option></select></div>
-        <div class="fg"><label><i class="bi bi-briefcase"></i> Preferred Role</label><select id="pf-role"><option value="">Select role</option><option>House Manager</option><option>Nanny / Childcare</option><option>Cook / Chef</option><option>Cleaner</option><option>Gardener</option><option>Driver</option><option>Security Guard</option><option>Elder Caregiver</option><option>Other</option></select></div>
-        <div class="fg"><label><i class="bi bi-geo-alt"></i> Current Town</label><input type="text" id="pf-town" placeholder="e.g. Kasarani, Nairobi"></div>
-        <div class="fg"><label><i class="bi bi-map"></i> County</label><select id="pf-county"><option value="">Select County</option><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Nakuru</option><option>Mombasa</option><option>Kisumu</option><option>Uasin Gishu</option><option>Nyeri</option><option>Muranga</option><option>Other</option></select></div>
-        <div class="fg full"><label><i class="bi bi-chat-quote"></i> About You</label><textarea id="pf-about" rows="3" placeholder="Describe yourself to employers…"></textarea></div>
-        <div class="fg"><label><i class="bi bi-translate"></i> Languages</label><input type="text" id="pf-langs" placeholder="English, Swahili…"></div>
-        <div class="fg"><label><i class="bi bi-tools"></i> Key Skills</label><input type="text" id="pf-skills" placeholder="Cooking, Childcare…"></div>
-      </div>
-      <div id="profile-save-msg" style="display:none;margin-top:8px" class="caution-box"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-profile')"><i class="bi bi-x"></i> Cancel</button>
-      <button class="btn btn-teal" onclick="saveProfile()" id="save-profile-btn"><i class="bi bi-floppy"></i> Save Changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ INTERVIEW THREAD MODAL ══ -->
-<div class="modal-overlay" id="modal-interview">
-  <div class="modal wide">
-    <div class="modal-head">
-      <h3><i class="bi bi-building"></i> <span id="interview-modal-employer">Employer</span></h3>
-      <button class="modal-close" onclick="closeModal('modal-interview')"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <div class="modal-body">
-      <div id="interview-status-row" style="margin-bottom:.9rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="badge-pill badge-review" id="interview-modal-status">Ongoing</span>
-        <span id="interview-modal-job" style="font-size:12px;color:var(--muted)"></span>
-        <button class="btn btn-sm btn-ghost" id="mark-complete-btn" onclick="markInterviewComplete()" style="margin-left:auto"><i class="bi bi-check2-circle"></i> Mark Complete</button>
-      </div>
-      <div class="interview-thread" id="interview-thread-modal"></div>
-      <div style="margin-top:.8rem;border-top:1px solid var(--border);padding-top:.8rem;display:flex;gap:8px;align-items:flex-end" id="interview-reply-row">
-        <textarea id="interview-reply-input" rows="2" style="flex:1;resize:none;border:1.5px solid var(--border);border-radius:10px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none;transition:border .2s" placeholder="Reply to employer…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInterviewReply()}"></textarea>
-        <button class="btn btn-teal" onclick="sendInterviewReply()" style="padding:9px 13px;border-radius:10px"><i class="bi bi-send-fill"></i></button>
-      </div>
-      <p style="font-size:11px;color:var(--muted);margin-top:6px"><i class="bi bi-info-circle"></i> You can only reply to employers who have messaged you first.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-interview')"><i class="bi bi-x"></i> Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ PAYMENT MODAL ══ -->
-<div class="modal-overlay" id="modal-pay">
-  <div class="modal">
-    <div class="modal-head"><h3><i class="bi bi-credit-card"></i> Make Payment</h3><button class="modal-close" onclick="closePayModal()"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div style="margin-bottom:1rem">
-        <p style="font-size:12px;font-weight:700;margin-bottom:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">Step 1 — Select Fee</p>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline" id="fee-reg-btn" onclick="selectFee('reg')" style="flex:1;justify-content:center"><i class="bi bi-shield"></i> Registration KES 300</button>
-          <button class="btn btn-outline" id="fee-plc-btn" onclick="selectFee('plc')" style="flex:1;justify-content:center"><i class="bi bi-briefcase"></i> Placement KES 1,000</button>
-        </div>
-      </div>
-      <div class="pay-amount-box" id="pay-amount-box" style="display:none"><div class="amount" id="pay-amount-display">KES 300</div><div style="font-size:12px;color:var(--muted);margin-top:3px" id="pay-amount-desc">Registration Fee</div></div>
-      <div class="caution-box"><i class="bi bi-exclamation-triangle-fill"></i><div>Fees are <strong>non-refundable</strong>. <div style="margin-top:7px;display:flex;align-items:flex-start;gap:7px"><input type="checkbox" id="tc-agree" style="margin-top:3px;accent-color:var(--teal)"><label for="tc-agree" style="font-size:12px;cursor:pointer">I agree to the <a href="terms.html" target="_blank" style="color:#7a4e00;font-weight:600">Terms & Conditions</a> and understand fees are non-refundable.</label></div></div></div>
-      <div class="pay-steps" id="pay-steps">
-        <p style="font-size:12px;font-weight:700;margin-bottom:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">Step 2 — Payment Method</p>
-        <div class="pay-methods">
-          <div class="pay-method-btn" onclick="selectMethod('mpesa',this)"><div style="font-size:1.5rem;margin-bottom:3px">💚</div><p style="font-size:12px;font-weight:700">M-Pesa</p><p style="font-size:11px;color:var(--muted)">STK Push</p></div>
-          <div class="pay-method-btn" onclick="selectMethod('airtel',this)"><div style="font-size:1.5rem;margin-bottom:3px">❤️</div><p style="font-size:12px;font-weight:700">Airtel Money</p><p style="font-size:11px;color:var(--muted)">STK Push</p></div>
-        </div>
-        <div id="pay-phone-wrap" style="display:none">
-          <div class="fg" style="margin-bottom:.9rem"><label><i class="bi bi-phone"></i> Mobile Number</label><input type="tel" id="pay-phone" placeholder="+254 7XX XXX XXX"><p style="font-size:11px;color:var(--muted);margin-top:3px">You'll receive a prompt on this number</p></div>
-          <button class="btn btn-teal" id="send-stk-btn" onclick="sendSTK()" style="width:100%;justify-content:center"><i class="bi bi-send"></i> Send Payment Prompt</button>
-        </div>
-        <div class="stk-status" id="stk-status"></div>
-        <div id="pay-ref-confirm" style="display:none;margin-top:1rem">
-          <div style="background:var(--teal-soft);border:1px solid #9dd9d1;border-radius:12px;padding:1.1rem">
-            <p style="font-size:13px;font-weight:700;margin-bottom:.6rem;color:var(--teal-dark)"><i class="bi bi-check2-circle"></i> Step 3 — Confirm Your Payment</p>
-            <div class="fg" style="margin-bottom:.9rem"><label><i class="bi bi-upc-scan"></i> M-Pesa Reference Number</label><input type="text" id="mpesa-ref-input" placeholder="e.g. QHK3X4MNOP" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"><p style="font-size:11px;color:var(--muted);margin-top:3px">Found in the M-Pesa SMS you received</p></div>
-            <button class="btn btn-teal" onclick="confirmPaymentWithRef()" style="width:100%;justify-content:center"><i class="bi bi-shield-check"></i> Confirm & Record Payment</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ RECEIPT MODAL ══ -->
-<div class="modal-overlay" id="modal-receipt">
-  <div class="modal narrow">
-    <div class="modal-head"><h3><i class="bi bi-receipt"></i> Payment Receipt</h3><button class="modal-close" onclick="closeModal('modal-receipt')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div class="receipt-card">
-        <div class="receipt-row"><span class="lbl">M-Pesa Ref</span><span class="val" id="r-ref">—</span></div>
-        <div class="receipt-row"><span class="lbl">Date & Time</span><span class="val" id="r-datetime">—</span></div>
-        <div class="receipt-row"><span class="lbl">Phone</span><span class="val" id="r-phone">—</span></div>
-        <div class="receipt-row"><span class="lbl">Fee Type</span><span class="val" id="r-type">—</span></div>
-        <div class="receipt-row"><span class="lbl">Amount</span><span class="val" id="r-amount" style="color:var(--teal)">—</span></div>
-        <div class="receipt-row"><span class="lbl">Status</span><span class="val pay-status-paid"><i class="bi bi-check-circle-fill"></i> Confirmed</span></div>
-        <div style="text-align:center;margin-top:.8rem;padding-top:.8rem;border-top:1px dashed var(--border)">
-          <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800">Work<span style="color:var(--teal)">Link</span></div>
-          <p style="font-size:11px;color:var(--muted);margin-top:2px">Official Payment Receipt</p>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Close</button><button class="btn btn-teal" onclick="window.print()"><i class="bi bi-printer"></i> Print</button></div>
-  </div>
-</div>
-
-<!-- ══ JOB DETAIL MODAL ══ -->
-<div class="modal-overlay" id="modal-job">
-  <div class="modal wide">
-    <div class="modal-head"><h3><i class="bi bi-briefcase"></i> <span id="job-modal-title">Job Details</span></h3><button class="modal-close" onclick="closeModal('modal-job')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body" id="job-modal-body"></div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-job')">Close</button><button class="btn btn-teal" id="apply-job-btn" onclick="applyToJob()"><i class="bi bi-send"></i> Apply Now</button></div>
-  </div>
-</div>
-
-<!-- ══ OTP VERIFY MODAL ══ -->
-<div class="modal-overlay" id="modal-verify">
-  <div class="modal narrow">
-    <div class="modal-head"><h3><i class="bi bi-patch-check-fill"></i> Verify Your Phone</h3><button class="modal-close" onclick="closeModal('modal-verify')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div id="verify-step-1">
-        <div style="text-align:center;margin-bottom:1.2rem"><div style="width:64px;height:64px;background:var(--teal-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .7rem;font-size:28px;color:var(--teal)"><i class="bi bi-phone-fill"></i></div><h4 style="font-size:15px;font-weight:800;margin-bottom:.3rem">Verify to Get Your Badge</h4><p style="font-size:12.5px;color:var(--muted)">Enter your phone and we'll send a 6-digit verification code via SMS</p></div>
-        <div class="fg" style="margin-bottom:1rem"><label><i class="bi bi-phone"></i> Phone Number</label><input type="tel" id="verify-phone" placeholder="+254 7XX XXX XXX"></div>
-        <button class="btn btn-teal" onclick="sendOTP()" style="width:100%;justify-content:center" id="send-otp-btn"><i class="bi bi-send"></i> Send OTP Code</button>
-      </div>
-      <div id="verify-step-2" style="display:none">
-        <div style="text-align:center;margin-bottom:1rem"><div style="font-size:28px;margin-bottom:.5rem">📱</div><p style="font-size:13px;color:var(--muted)">Enter the 6-digit code sent to <strong id="verify-phone-display"></strong></p></div>
-        <div class="otp-inputs">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-          <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
-        </div>
-        <button class="btn btn-teal" onclick="verifyOTP()" style="width:100%;justify-content:center" id="verify-otp-btn"><i class="bi bi-check-circle"></i> Verify Code</button>
-        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:.7rem">Didn't receive it? <a href="#" onclick="sendOTP()" style="color:var(--teal)">Resend code</a></p>
-      </div>
-      <div id="verify-step-3" style="display:none;text-align:center;padding:1.5rem 0">
-        <div style="font-size:3rem;margin-bottom:.7rem">🏅</div>
-        <h4 style="font-size:16px;font-weight:800;margin-bottom:.3rem;color:var(--teal)">Verified!</h4>
-        <p style="font-size:13px;color:var(--muted)">Your profile now shows a verified badge. Employers trust verified workers more!</p>
-        <div style="margin-top:.9rem"><span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Verified Employee</span></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ TERMS MODAL ══ -->
-<div class="modal-overlay" id="modal-tc">
-  <div class="modal">
-    <div class="modal-head"><h3><i class="bi bi-file-earmark-text"></i> Terms & Conditions</h3><button class="modal-close" onclick="closeModal('modal-tc')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div class="tc-section"><h4>1. Registration & Fees</h4><p>A non-refundable registration fee of KES 300 is required before your profile is made visible to employers. A placement fee of KES 1,000 is charged on your first salary upon successful placement. All fees paid are strictly non-refundable.</p></div>
-      <div class="tc-section"><h4>2. Profile Accuracy</h4><p>You are responsible for ensuring your profile information is accurate and up-to-date. Providing false information may result in immediate account termination without refund.</p></div>
-      <div class="tc-section"><h4>3. Employment Relationship</h4><p>WorkLink acts solely as an introduction platform. We are not party to any employment contract between you and an employer. All employment disputes are between the employee and employer.</p></div>
-      <div class="tc-section"><h4>4. Account Conduct</h4><p>You agree not to misuse the platform, contact employers outside the platform without consent, or engage in any fraudulent activity. Violations may result in permanent account deletion.</p></div>
-      <div class="tc-section"><h4>5. Privacy</h4><p>We collect and process personal data in accordance with Kenyan Data Protection laws. Your information is used solely for matching you with suitable employment opportunities.</p></div>
-      <div class="tc-section"><h4>6. Changes to Terms</h4><p>WorkLink reserves the right to update these terms at any time. Continued use of the platform after changes constitutes acceptance of the updated terms.</p></div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-tc')">Close</button><a href="terms.html" target="_blank" class="btn btn-teal"><i class="bi bi-box-arrow-up-right"></i> Full Terms</a></div>
-  </div>
-</div>
-
-<!-- ══ DEACTIVATE MODAL ══ -->
-<div class="modal-overlay" id="modal-deactivate">
-  <div class="modal narrow">
-    <div class="modal-head"><h3><i class="bi bi-pause-circle" style="color:var(--gold)"></i> Deactivate Account</h3><button class="modal-close" onclick="closeModal('modal-deactivate')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div style="text-align:center;margin-bottom:1.2rem"><div style="font-size:3rem;margin-bottom:.5rem">⏸️</div><p style="font-size:13.5px;color:var(--muted)">Deactivating will temporarily hide your profile from employers. You can reactivate at any time by logging back in.</p></div>
-      <div class="fg" style="margin-bottom:1rem"><label>Reason (optional)</label><textarea id="deactivate-reason" rows="3" placeholder="Why are you deactivating? (helps us improve)"></textarea></div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-deactivate')">Cancel</button><button class="btn btn-warning" onclick="deactivateAccount()"><i class="bi bi-pause-circle"></i> Deactivate</button></div>
-  </div>
-</div>
-
-<!-- ══ DELETE MODAL ══ -->
-<div class="modal-overlay" id="modal-delete">
-  <div class="modal narrow">
-    <div class="modal-head"><h3><i class="bi bi-trash3" style="color:var(--rose)"></i> Delete Account</h3><button class="modal-close" onclick="closeModal('modal-delete')"><i class="bi bi-x-lg"></i></button></div>
-    <div class="modal-body">
-      <div style="text-align:center;margin-bottom:1.2rem"><div style="font-size:3rem;margin-bottom:.5rem">⚠️</div><p style="font-size:14px;font-weight:700;color:var(--rose);margin-bottom:.5rem">This action is permanent and cannot be undone!</p><p style="font-size:13px;color:var(--muted)">All your data, profile, payments, and applications will be permanently deleted. You will lose access immediately.</p></div>
-      <div class="fg" style="margin-bottom:1rem"><label>Type <strong>DELETE</strong> to confirm</label><input type="text" id="delete-confirm-input" placeholder="Type DELETE here"></div>
-    </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-delete')">Cancel</button><button class="btn btn-danger" onclick="deleteAccount()" id="confirm-delete-btn"><i class="bi bi-trash3"></i> Permanently Delete</button></div>
-  </div>
-</div>
-
-<!-- Toast stack -->
-<div class="toast-stack" id="toast-stack"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script>
-// ═══════════════════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════════════════
-var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
-var BUCKET = 'worker-documents';
-var sb, currentUser, workerProfile, userSettings;
-var selectedFeeType=null, selectedMethod=null, currentSTKRef=null, currentPendingRef=null;
-var FEES = {reg:{amount:300,label:'Registration Fee'}, plc:{amount:1000,label:'Placement Fee'}};
-var allJobs=[], myApplications=[], currentJobId=null;
-var notifPanelOpen=false, refreshInterval=null;
-var interviewThreads=[], currentInterviewId=null;
-var isHired=false, isVerified=false;
-var generatedOTP=null;
-
-// ═══════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function() {
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  document.getElementById('pg-loader').classList.add('show');
-
-  sb.auth.getSession().then(function(res) {
-    var session = res.data && res.data.session;
-    if (!session || !session.user) { window.location.href = 'login.html'; return; }
-    currentUser = session.user;
-    loadDashboard();
-    startAutoRefresh();
-    subscribeRealtime();
-    // Show news popup after 2 seconds on first visit
-    setTimeout(function() {
-      if (!sessionStorage.getItem('news_shown')) {
-        openNewsPopup();
-        sessionStorage.setItem('news_shown','1');
-      }
-    }, 2000);
-  }).catch(function() { window.location.href = 'login.html'; });
-
-  document.addEventListener('click', function(e) {
-    var panel = document.getElementById('notif-panel');
-    var btn = document.getElementById('notif-bell-btn');
-    if (notifPanelOpen && !panel.contains(e.target) && !btn.contains(e.target)) toggleNotifPanel(true);
-  });
-});
-
-async function loadDashboard() {
-  try {
-    var [wpRes, uRes, sRes, pRes, notifRes] = await Promise.all([
-      sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
-      sb.from('users').select('*').eq('id', currentUser.id).maybeSingle(),
-      sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle(),
-      sb.from('payments').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
-      sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}).limit(40),
-    ]);
-
-    if (!wpRes.data) wpRes = await sb.from('worker_profiles').select('*').eq('email',currentUser.email).order('submitted_at',{ascending:false}).limit(1).maybeSingle();
-
-    workerProfile = wpRes.data || {};
-    var userData = uRes.data || {};
-    userSettings = sRes.data || {};
-    var payments = pRes.data || [];
-    var notifications = notifRes.data || [];
-
-    var name = workerProfile.full_name || userData.full_name || (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
-
-    // Check hired status
-    isHired = !!(userSettings.is_hired || workerProfile.is_hired);
-    isVerified = !!(userSettings.is_verified || workerProfile.is_verified);
-
-    renderNav(name, workerProfile.profile_photo_url || userData.avatar_url || '');
-    renderGreeting(name, workerProfile.status || 'draft');
-    renderCompletion(workerProfile);
-    renderPayments(payments);
-    renderSettings(userSettings);
-    fillProfileModal(workerProfile, userData);
-    renderNotifications(notifications);
-    renderHiredState(isHired);
-
-    await loadJobs();
-    await loadSuggestedJobs();
-    await loadApplications();
-    await loadInterviewMessages();
-
-    document.getElementById('pg-loader').classList.remove('show');
-    updateRefreshLabel();
-  } catch(e) {
-    console.error('loadDashboard:', e);
-    document.getElementById('pg-loader').classList.remove('show');
-    showToast('err','bi-exclamation-circle','Load Error', e.message, 7000);
-  }
-}
-
-function startAutoRefresh() {
-  if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = setInterval(loadDashboard, 60000);
-}
-
-function updateRefreshLabel() {
-  var d = new Date();
-  document.getElementById('refresh-label').textContent = 'Updated ' + d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) + ' · Auto-refresh every 60s';
-}
-
-// ═══════════════════════════════════════════════════
-//  REALTIME
-// ═══════════════════════════════════════════════════
-function subscribeRealtime() {
-  setTimeout(function() {
-    if (!sb || !currentUser) return;
-    sb.channel('msgs-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'receiver_id=eq.'+currentUser.id}, function(payload) {
-      onNewMessage(payload.new);
-    }).subscribe();
-    sb.channel('notifs-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+currentUser.id}, function(payload) {
-      onNewNotification(payload.new);
-    }).subscribe();
-    sb.channel('suggested-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'suggested_jobs',filter:'worker_id=eq.'+currentUser.id}, function() {
-      loadSuggestedJobs();
-      showToast('ok','bi-stars','New Job Suggestion!','Admin has suggested a new job for you.',0);
-    }).subscribe();
-    sb.channel('pay-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'payments',filter:'user_id=eq.'+currentUser.id}, function(payload) {
-      showToast('ok','bi-check-circle-fill','Payment Received!','KES '+(payload.new.amount||0).toLocaleString()+' confirmed.',0);
-      loadDashboard();
-    }).subscribe();
-  }, 1500);
-}
-
-function onNewMessage(msg) {
-  var isEmployer = msg.is_from_employer || msg.employer_id;
-  showToast('info','bi-building','Message from Employer', (msg.content||'').substring(0,60)+'…', 0);
-  setBadge('msg-badge', true);
-  document.getElementById('msg-tab-badge').style.display='block';
-  loadInterviewMessages();
-}
-
-function onNewNotification(notif) {
-  showToast(notif.type||'info','bi-bell',''+notif.title, notif.body||'', 6000);
-  setBadge('notif-badge', true);
-}
-
-// ═══════════════════════════════════════════════════
-//  RENDER HELPERS
-// ═══════════════════════════════════════════════════
-function renderNav(name, photoUrl) {
-  var initials = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
-  document.getElementById('nav-initials').textContent = initials;
-  document.getElementById('profile-initials-big').textContent = initials;
-  if (photoUrl) setAvatar(photoUrl);
-}
-
-function setAvatar(url) {
-  document.getElementById('nav-avatar').innerHTML = '<img src="'+url+'" alt="avatar"><span class="nav-hired-dot'+(isHired?' show':'')+'" id="nav-hired-dot"></span>';
-  var bigImg = document.getElementById('profile-avatar-img');
-  bigImg.src=url; bigImg.style.display='block';
-  document.getElementById('profile-initials-big').style.display='none';
-}
-
-function renderGreeting(name, status) {
-  var firstName = name.split(' ')[0];
-  var h = new Date().getHours();
-  var g = h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night';
-  var em = h<12?'🌅':h<17?'☀️':h<21?'🌆':'🌙';
-  var h1 = document.getElementById('greeting-h1');
-  h1.innerHTML = g+', <span id="greet-name" style="color:var(--teal)">'+escHtml(firstName)+'</span> '+em;
-  var msgs={draft:'Complete your profile to get noticed by employers.',pending_review:'Profile submitted — under review by our team.',approved:'Your profile is live! Employers can contact you.',rejected:'Your profile needs updates. Please fix and resubmit.'};
-  document.getElementById('greet-status').textContent = msgs[status] || 'Welcome to WorkLink.';
-  var badges={draft:'<span class="badge-pill badge-review"><i class="bi bi-pencil-square"></i> Draft</span>',pending_review:'<span class="badge-pill badge-pending"><i class="bi bi-hourglass-split"></i> Under Review</span>',approved:'<span class="badge-pill badge-approved"><i class="bi bi-check-circle-fill"></i> Approved</span>',rejected:'<span class="badge-pill badge-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>'};
-  document.getElementById('stat-status-label').innerHTML = badges[status] || '—';
-}
-
-function renderCompletion(p) {
-  var fields = [{key:'full_name',label:'Full Name',type:'warn'},{key:'phone',label:'Phone Number',type:'warn'},{key:'dob',label:'Date of Birth',type:'err'},{key:'gender',label:'Gender',type:'warn'},{key:'id_number',label:'ID Number',type:'err'},{key:'edu_level',label:'Education Level',type:'warn'},{key:'current_town',label:'Current Town',type:'warn'},{key:'county',label:'County',type:'warn'},{key:'about_text',label:'About Yourself',type:'warn'},{key:'key_skills',label:'Key Skills',type:'warn'}];
-  var filled = fields.filter(function(f){return p[f.key]&&String(p[f.key]).trim()!=='';});
-  var pct = Math.round((filled.length/fields.length)*100);
-  document.getElementById('prog-fill').style.width=pct+'%';
-  document.getElementById('prog-label').textContent=pct+'% complete ('+filled.length+' of '+fields.length+' fields)';
-  document.getElementById('stat-completion').textContent=pct+'%';
-  var missing = fields.filter(function(f){return !p[f.key]||String(p[f.key]).trim()==='';});
-  var html = missing.slice(0,4).map(function(f){
-    return '<div class="missing-item '+f.type+'"><i class="bi '+(f.type==='err'?'bi-x-circle-fill':'bi-exclamation-circle-fill')+'"></i><span>'+f.label+' is missing</span><a href="post-profile.html"><i class="bi bi-pencil"></i> Fix</a></div>';
-  }).join('');
-  if (!missing.length) html='<div class="missing-item ok"><i class="bi bi-check-circle-fill"></i><span>All required fields complete!</span></div>';
-  document.getElementById('missing-list').innerHTML=html;
-}
-
-function renderPayments(payments) {
-  var paid=payments.filter(function(p){return p.status==='confirmed';});
-  var total=paid.reduce(function(s,p){return s+(p.amount||0);},0);
-  document.getElementById('stat-paid').textContent='KES '+total.toLocaleString();
-  var hasReg=paid.some(function(p){return p.fee_type==='reg';});
-  var hasPlc=paid.some(function(p){return p.fee_type==='plc';});
-  document.getElementById('reg-fee-status').innerHTML=hasReg?'<span style="color:var(--teal)"><i class="bi bi-check-circle-fill"></i> Paid</span>':'<span style="color:var(--gold)"><i class="bi bi-clock"></i> Pending</span>';
-  document.getElementById('plc-fee-status').innerHTML=hasPlc?'<span style="color:var(--teal)"><i class="bi bi-check-circle-fill"></i> Paid</span>':'<span style="color:var(--muted)">Due on first salary</span>';
-  if (!payments.length){document.getElementById('pay-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:5px"></i>No payments yet.</td></tr>';return;}
-  var rows=payments.map(function(p){
-    var dt=p.created_at?new Date(p.created_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'—';
-    var st=p.status==='confirmed'?'<span class="pay-status-paid"><i class="bi bi-check-circle-fill"></i> Confirmed</span>':'<span class="pay-status-pending"><i class="bi bi-clock"></i> Pending</span>';
-    return '<tr><td style="font-size:12px;font-family:\'JetBrains Mono\',monospace">'+(p.mpesa_ref||'—')+'</td><td style="font-size:12px">'+dt+'</td><td><span class="badge-pill '+(p.fee_type==='reg'?'badge-review':'badge-pending')+'">'+(p.fee_type==='reg'?'Registration':'Placement')+'</span></td><td style="font-weight:700">KES '+(p.amount||0).toLocaleString()+'</td><td>'+st+'</td><td>'+(p.status==='confirmed'?'<button class="btn btn-ghost btn-sm" onclick=\'showReceipt('+JSON.stringify(p).replace(/'/g,"&#39;")+')\' ><i class="bi bi-receipt"></i></button>':'')+'</td></tr>';
-  }).join('');
-  document.getElementById('pay-tbody').innerHTML=rows;
-}
-
-function renderSettings(s) {
-  if (s.email_notif!==undefined) document.getElementById('set-email').checked=!!s.email_notif;
-  if (s.sms_notif!==undefined) document.getElementById('set-sms').checked=!!s.sms_notif;
-  if (s.profile_visible!==undefined) document.getElementById('set-visible').checked=!!s.profile_visible;
-  // Verified badge
-  if (isVerified) {
-    document.getElementById('verified-badge-inline').style.display='inline-flex';
-    document.getElementById('profile-verified-badge').style.display='block';
-  }
-}
-
-function fillProfileModal(wp, ud) {
-  var set=function(id,val){var el=document.getElementById(id);if(el&&val!=null)el.value=val;};
-  set('pf-name',wp.full_name||ud.full_name||'');
-  set('pf-phone',wp.phone||ud.phone||'');
-  set('pf-email',wp.email||ud.email||currentUser.email);
-  set('pf-dob',wp.dob||'');
-  set('pf-gender',wp.gender||'');
-  set('pf-role',wp.preferred_role||'');
-  set('pf-town',wp.current_town||'');
-  set('pf-county',wp.county||'');
-  set('pf-about',wp.about_text||'');
-  set('pf-langs',wp.languages||'');
-  set('pf-skills',wp.key_skills||'');
-}
-
-// ═══════════════════════════════════════════════════
-//  HIRED TOGGLE
-// ═══════════════════════════════════════════════════
-function renderHiredState(hired) {
-  isHired = hired;
-  document.getElementById('hired-toggle').checked = hired;
-  var wrap = document.getElementById('hired-toggle-wrap');
-  var banner = document.getElementById('hired-banner');
-  var dot = document.getElementById('nav-hired-dot');
-  if (hired) {
-    wrap.classList.add('active');
-    document.getElementById('hired-toggle-title').textContent = '🏆 I am currently Hired!';
-    document.getElementById('hired-toggle-sub').textContent = 'Your profile is marked as hired — employers will not schedule new interviews';
-    banner.classList.add('show');
-    if (dot) dot.classList.add('show');
-  } else {
-    wrap.classList.remove('active');
-    document.getElementById('hired-toggle-title').textContent = "I'm still looking for work";
-    document.getElementById('hired-toggle-sub').textContent = 'Toggle when you get hired so employers stop scheduling interviews';
-    banner.classList.remove('show');
-    if (dot) dot.classList.remove('show');
-  }
-  // Also mark job cards if hired
-  document.querySelectorAll('.job-card').forEach(function(c){
-    if (hired) c.classList.add('hired-overlay');
-    else c.classList.remove('hired-overlay');
-  });
-}
-
-async function toggleHiredStatus(isNowHired) {
-  try {
-    var up = {is_hired: isNowHired};
-    var ex = await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
-    if (ex.data) await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
-    else { up.user_id=currentUser.id; await sb.from('user_settings').insert(up); }
-    await sb.from('worker_profiles').update(up).eq('email',currentUser.email);
-    renderHiredState(isNowHired);
-    showToast('ok','bi-check-circle-fill',isNowHired?'Marked as Hired!':'Back to Job Searching',isNowHired?'Employers will see you are unavailable for new interviews.':'Your profile is now visible to employers.',5000);
-  } catch(e) {
-    showToast('err','bi-x-circle','Error',e.message,5000);
-    document.getElementById('hired-toggle').checked=!isNowHired; // revert
-  }
-}
-
-// ═══════════════════════════════════════════════════
-//  INTERVIEW MESSAGES (Employer → Employee only)
-// ═══════════════════════════════════════════════════
-async function loadInterviewMessages() {
-  try {
-    var res = await sb.from('messages')
-      .select('*')
-      .eq('receiver_id', currentUser.id)
-      .order('created_at', {ascending: false});
-
-    var msgs = res.data || [];
-
-    // Also fetch employer replies
-    var sentRes = await sb.from('messages')
-      .select('*')
-      .eq('sender_id', currentUser.id)
-      .not('receiver_id', 'is', null)
-      .order('created_at', {ascending: false});
-    var sentMsgs = sentRes.data || [];
-
-    // Group by employer/sender
-    var threads = {};
-    msgs.forEach(function(m) {
-      var empId = m.sender_id || 'unknown';
-      var empName = m.employer_name || m.sender_name || 'Employer';
-      if (!threads[empId]) threads[empId] = {id: empId, name: empName, job: m.job_title||'', messages: [], status: m.interview_status||'ongoing', unread: 0};
-      threads[empId].messages.push({...m, mine: false});
-      if (!m.read) threads[empId].unread++;
-    });
-    sentMsgs.forEach(function(m) {
-      var empId = m.receiver_id || 'unknown';
-      if (threads[empId]) threads[empId].messages.push({...m, mine: true});
-    });
-    // Sort messages within each thread
-    Object.values(threads).forEach(function(t) {
-      t.messages.sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
-    });
-
-    interviewThreads = Object.values(threads);
-    renderInterviewList(interviewThreads);
-
-    // Update stats
-    var total=interviewThreads.length, ongoing=interviewThreads.filter(function(t){return t.status!=='complete';}).length, complete=interviewThreads.filter(function(t){return t.status==='complete';}).length, unread=interviewThreads.reduce(function(s,t){return s+t.unread;},0);
-    document.getElementById('ist-all-count').textContent=total;
-    document.getElementById('ist-ongoing-count').textContent=ongoing;
-    document.getElementById('ist-complete-count').textContent=complete;
-    document.getElementById('ist-unread-count').textContent=unread;
-
-    if (unread>0) {
-      setBadge('msg-badge', true, unread>9?'9+':String(unread));
-      document.getElementById('msg-tab-badge').style.display='block';
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard – WorkLink</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    :root {
+      --ink: #0f1923;
+      --ink2: #1e2e3e;
+      --teal: #00b89c;
+      --teal-dark: #008c76;
+      --teal-soft: rgba(0, 184, 156, 0.1);
+      --sky: #0ea5e9;
+      --gold: #f59e0b;
+      --rose: #f43f5e;
+      --violet: #8b5cf6;
+      --surface: #f0f4f8;
+      --card: #ffffff;
+      --border: #dde5ee;
+      --muted: #5a7087;
     }
 
-    // Also update applications list in messages tab
-    renderApplicationsMsgTab();
-  } catch(e) {
-    console.warn('loadInterviewMessages:', e.message);
-  }
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-var currentInterviewFilter = 'all';
-function filterInterviews(filter, el) {
-  currentInterviewFilter = filter;
-  document.querySelectorAll('.ist-card').forEach(function(c){c.classList.remove('active');});
-  el.classList.add('active');
-  var filtered = interviewThreads.filter(function(t){
-    if (filter==='all') return true;
-    if (filter==='ongoing') return t.status!=='complete';
-    if (filter==='complete') return t.status==='complete';
-    if (filter==='unread') return t.unread>0;
-    return true;
-  });
-  renderInterviewList(filtered);
-}
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 14px;
+      min-height: 100vh;
+    }
 
-function renderInterviewList(threads) {
-  var waitNote = document.getElementById('interview-wait-note');
-  var list = document.getElementById('interview-list');
-  if (!threads.length) {
-    waitNote.style.display='block'; list.style.display='none'; return;
-  }
-  waitNote.style.display='none'; list.style.display='flex';
-  list.innerHTML = threads.map(function(t) {
-    var latest = t.messages[t.messages.length-1];
-    var preview = latest ? latest.content.substring(0,80) : 'No messages yet';
-    var dt = latest ? timeAgo(new Date(latest.created_at)) : '';
-    var statusBadge = t.status==='complete'?'<span class="badge-pill badge-approved">Complete</span>':'<span class="badge-pill badge-review"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 1.5s infinite;margin-right:3px"></span>Ongoing</span>';
-    var initial = (t.name||'E').charAt(0).toUpperCase();
-    return '<div class="interview-card'+(t.unread?' unread':'')+'" onclick="openInterviewThread(\''+t.id+'\')">'+
-      '<div class="interview-card-head">'+
-      '<div class="employer-avatar">'+initial+'</div>'+
-      '<div><div class="employer-name">'+escHtml(t.name)+'</div><div class="employer-job">'+escHtml(t.job||'Interview')+'</div></div>'+
-      '<div class="interview-time">'+dt+'</div>'+
-      (t.unread?'<span class="msghub-unread-count" style="margin-left:6px">'+t.unread+'</span>':'')+'</div>'+
-      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem">'+statusBadge+'</div>'+
-      '<div class="interview-preview">'+escHtml(preview)+'</div></div>';
-  }).join('');
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* NAVIGATION */
+    /* ═══════════════════════════════════════════════════════ */
+    .nav {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      box-shadow: 0 1px 0 var(--border);
+    }
 
-function openInterviewThread(empId) {
-  var t = interviewThreads.find(function(x){return x.id===empId;});
-  if (!t) return;
-  currentInterviewId = empId;
-  document.getElementById('interview-modal-employer').textContent = t.name;
-  document.getElementById('interview-modal-job').textContent = t.job || '';
-  document.getElementById('interview-modal-status').innerHTML = t.status==='complete'?'<span class="badge-pill badge-approved">Complete</span>':'<span class="badge-pill badge-review">Ongoing</span>';
-  document.getElementById('mark-complete-btn').style.display = t.status==='complete'?'none':'inline-flex';
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: -0.3px;
+    }
 
-  var thread = document.getElementById('interview-thread-modal');
-  if (!t.messages.length) {
-    thread.innerHTML='<div class="msg-wait-note"><i class="bi bi-clock"></i><strong>Waiting for messages</strong><p>Employer messages will appear here.</p></div>';
-  } else {
-    thread.innerHTML = t.messages.map(function(m){
-      var dt = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) : '';
-      return '<div style="display:flex;flex-direction:column;align-items:'+(m.mine?'flex-end':'flex-start')+'">'+
-        '<div class="msg-bubble '+(m.mine?'mine':'theirs')+'">'+escHtml(m.content||'')+
-        '<div class="msg-meta">'+(m.mine?'You':escHtml(t.name))+' · '+dt+'</div></div></div>';
-    }).join('');
-    setTimeout(function(){thread.scrollTop=thread.scrollHeight;},50);
-  }
-  document.getElementById('modal-interview').classList.add('open');
-  // Mark as read
-  var unreadIds = t.messages.filter(function(m){return !m.mine&&!m.read;}).map(function(m){return m.id;});
-  if (unreadIds.length) sb.from('messages').update({read:true}).in('id',unreadIds).then(function(){}).catch(function(){});
-  t.unread = 0;
-}
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--teal);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
 
-async function sendInterviewReply() {
-  var input = document.getElementById('interview-reply-input');
-  var content = input.value.trim();
-  if (!content || !currentInterviewId) return;
-  try {
-    await sb.from('messages').insert({sender_id:currentUser.id, receiver_id:currentInterviewId, content:content, is_from_admin:false});
-    input.value='';
-    // Optimistic add
-    var thread = document.getElementById('interview-thread-modal');
-    var dt = new Date().toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-    var div=document.createElement('div'); div.style.cssText='display:flex;flex-direction:column;align-items:flex-end';
-    div.innerHTML='<div class="msg-bubble mine">'+escHtml(content)+'<div class="msg-meta">You · '+dt+'</div></div>';
-    thread.appendChild(div); thread.scrollTop=thread.scrollHeight;
-    showToast('ok','bi-check-circle-fill','Reply Sent','Your reply was delivered.',3000);
-  } catch(e) { showToast('err','bi-x-circle','Send Failed',e.message,5000); }
-}
+    .logo-name em {
+      color: var(--teal);
+      font-style: normal;
+    }
 
-async function markInterviewComplete() {
-  if (!currentInterviewId) return;
-  try {
-    await sb.from('messages').update({interview_status:'complete'}).eq('sender_id',currentInterviewId).eq('receiver_id',currentUser.id);
-    var t = interviewThreads.find(function(x){return x.id===currentInterviewId;});
-    if (t) t.status='complete';
-    document.getElementById('interview-modal-status').innerHTML='<span class="badge-pill badge-approved">Complete</span>';
-    document.getElementById('mark-complete-btn').style.display='none';
-    showToast('ok','bi-check2-circle','Interview Complete','Marked as completed.',3000);
-    loadInterviewMessages();
-  } catch(e) { showToast('err','bi-x-circle','Error',e.message,4000); }
-}
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-function renderApplicationsMsgTab() {
-  var list = document.getElementById('applications-list-msg');
-  if (!myApplications.length) { list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div>'; return; }
-  var statusColors={applied:'badge-pending',shortlisted:'badge-review',hired:'badge-approved badge-hired',rejected:'badge-rejected'};
-  list.innerHTML=myApplications.map(function(a){
-    var j=a.jobs||{};
-    var dt=a.applied_at?new Date(a.applied_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'';
-    return '<div class="app-card"><div class="app-icon"><i class="bi bi-briefcase"></i></div><div class="app-info"><div class="app-title">'+escHtml(j.title||'Job')+'</div><div class="app-employer">'+escHtml(j.employer_name||'—')+'</div><div class="app-date">Applied '+dt+'</div></div><span class="badge-pill '+(statusColors[a.status]||'badge-pending')+'">'+capitalize(a.status||'applied')+'</span></div>';
-  }).join('');
-}
+    .nav-icon-btn {
+      position: relative;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 7px;
+      border-radius: 9px;
+      transition: 0.2s;
+      display: flex;
+    }
 
-// ═══════════════════════════════════════════════════
-//  MESSAGING HUB
-// ═══════════════════════════════════════════════════
-var msgHubCurrentTab='all';
-function openMsgHub() { document.getElementById('msghub-overlay').classList.add('open'); renderMsgHub(); }
-function closeMsgHub() { document.getElementById('msghub-overlay').classList.remove('open'); }
-function switchMsgHubTab(tab, btn) {
-  msgHubCurrentTab=tab;
-  document.querySelectorAll('.msghub-tab').forEach(function(t){t.classList.remove('active');});
-  if(btn)btn.classList.add('active');
-  renderMsgHub();
-}
-function renderMsgHub() {
-  var list=document.getElementById('msghub-list');
-  var items = interviewThreads.filter(function(t){
-    if(msgHubCurrentTab==='employer') return true;
-    return true;
-  });
-  if (!items.length) {
-    list.innerHTML='<div class="msghub-empty"><i class="bi bi-chat-square-dots"></i><div style="font-size:13px">No employer messages yet</div></div>';
-    return;
-  }
-  list.innerHTML=items.map(function(t){
-    var latest=t.messages[t.messages.length-1];
-    var preview=latest?latest.content.substring(0,50)+'…':'No messages';
-    var time=latest?timeAgo(new Date(latest.created_at)):'';
-    var init=(t.name||'E').charAt(0).toUpperCase();
-    return '<div class="msghub-item" onclick="closeMsgHub();switchTabByName(\'messages\');openInterviewThread(\''+t.id+'\')">'+
-      '<div class="msghub-item-avatar">'+init+'</div>'+
-      '<div style="flex:1;min-width:0"><div class="msghub-item-name">'+escHtml(t.name)+'</div><div class="msghub-item-preview">'+escHtml(preview)+'</div></div>'+
-      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0"><span style="font-size:10px;color:var(--muted)">'+time+'</span>'+(t.unread?'<span class="msghub-unread-count">'+t.unread+'</span>':'')+'</div></div>';
-  }).join('');
-}
+    .nav-icon-btn:hover {
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
 
-// ═══════════════════════════════════════════════════
-//  NOTIFICATIONS
-// ═══════════════════════════════════════════════════
-function renderNotifications(notifs) {
-  var unread=notifs.filter(function(n){return !n.read;}).length;
-  setBadge('notif-badge', unread>0, unread>9?'9+':(unread||''));
-  var list=document.getElementById('notif-panel-list');
-  if (!notifs.length){list.innerHTML='<div style="text-align:center;padding:2.5rem 1rem;color:var(--muted)"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No notifications yet</div>';return;}
-  list.innerHTML=notifs.map(function(n){
-    var dt=n.created_at?timeAgo(new Date(n.created_at)):'';
-    return '<div class="notif-item'+(n.read?'':' unread')+'" onclick="markNotifRead(\''+n.id+'\')"><span class="notif-dot '+(n.type||'info')+'"></span><div class="notif-item-content"><strong>'+escHtml(n.title)+'</strong>'+(n.body?'<p>'+escHtml(n.body)+'</p>':'')+'<div class="notif-time">'+dt+'</div></div></div>';
-  }).join('');
-}
+    .nav-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      min-width: 15px;
+      height: 15px;
+      background: var(--rose);
+      border-radius: 50px;
+      border: 2px solid #fff;
+      font-size: 8px;
+      color: #fff;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 2px;
+    }
 
-function toggleNotifPanel(forceClose) {
-  notifPanelOpen = forceClose ? false : !notifPanelOpen;
-  document.getElementById('notif-panel').classList.toggle('open', notifPanelOpen);
-  if (notifPanelOpen) setBadge('notif-badge', false);
-}
+    .nav-badge.show {
+      display: flex;
+    }
 
-async function markNotifRead(id) {
-  try { await sb.from('notifications').update({read:true}).eq('id',id).eq('user_id',currentUser.id); } catch(e){}
-  var el = document.querySelector('.notif-item[onclick*="'+id+'"]');
-  if (el) el.classList.remove('unread');
-}
-async function markAllNotifsRead() {
-  try { await sb.from('notifications').update({read:true}).eq('user_id',currentUser.id).eq('read',false); } catch(e){}
-  document.querySelectorAll('.notif-item.unread').forEach(function(el){el.classList.remove('unread');});
-  setBadge('notif-badge', false);
-  showToast('ok','bi-check-all','All Read','Notifications cleared.',3000);
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* PAGE LAYOUT */
+    /* ═══════════════════════════════════════════════════════ */
+    .page {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 1.8rem 1.2rem 6rem;
+    }
 
-// ═══════════════════════════════════════════════════
-//  JOBS
-// ═══════════════════════════════════════════════════
-async function loadJobs() {
-  try {
-    var res=await sb.from('jobs').select('*').eq('is_active',true).order('posted_at',{ascending:false}).limit(50);
-    allJobs=res.data||[];
-    renderJobs(allJobs);
-  } catch(e) {
-    document.getElementById('jobs-list').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-wifi-off" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>Could not load jobs.</div>';
-  }
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* STATS SECTION */
+    /* ═══════════════════════════════════════════════════════ */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 9px;
+      margin-bottom: 1.2rem;
+    }
 
-function renderJobs(jobs) {
-  var list=document.getElementById('jobs-list');
-  if (!jobs.length){list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-briefcase" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No jobs listed yet.</div>';return;}
-  list.innerHTML=jobs.map(function(j){
-    var applied=myApplications.some(function(a){return a.job_id===j.id;});
-    return jobCardHTML(j, applied, false);
-  }).join('');
-  if (isHired) document.querySelectorAll('.job-card').forEach(function(c){c.classList.add('hired-overlay');});
-}
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: 0.2s;
+    }
 
-function filterJobs() {
-  var q=document.getElementById('job-search-input').value.toLowerCase();
-  var role=document.getElementById('job-role-filter').value.toLowerCase();
-  var filtered=allJobs.filter(function(j){
-    var text=((j.title||'')+(j.employer_name||'')+(j.county||'')+(j.location||'')+(j.role_type||'')).toLowerCase();
-    return (!q||text.includes(q))&&(!role||(j.role_type||'').toLowerCase()===role);
-  });
-  renderJobs(filtered);
-}
+    .stat-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 184, 156, 0.1);
+      border-color: #b0ddd7;
+    }
 
-async function loadSuggestedJobs() {
-  try {
-    var res=await sb.from('suggested_jobs').select('*, jobs(*)').eq('worker_id',currentUser.id).order('created_at',{ascending:false}).limit(10);
-    var suggested=(res.data||[]).filter(function(s){return s.jobs&&s.status!=='dismissed';});
-    if (!suggested.length){document.getElementById('suggested-jobs-section').style.display='none';document.getElementById('suggested-banner').style.display='none';return;}
-    document.getElementById('suggested-jobs-section').style.display='block';
-    document.getElementById('suggested-banner').style.display='flex';
-    document.getElementById('suggested-count-text').textContent=suggested.length+' job'+(suggested.length>1?'s':'')+' suggested for you';
-    document.getElementById('suggested-jobs-list').innerHTML=suggested.map(function(s){
-      var j=s.jobs; var applied=myApplications.some(function(a){return a.job_id===j.id;});
-      return jobCardHTML(j,applied,true,s.note);
-    }).join('');
-    document.getElementById('overview-suggested').style.display='block';
-    document.getElementById('overview-suggested-list').innerHTML=suggested.slice(0,2).map(function(s){
-      var j=s.jobs;
-      return '<div class="job-card" onclick="openJobDetail(\''+j.id+'\')" style="margin-bottom:0"><div class="job-icon"><i class="bi bi-briefcase"></i></div><div class="job-info"><div class="job-title">'+escHtml(j.title||'')+'</div><div class="job-employer">'+escHtml(j.employer_name||'—')+'</div></div><span class="badge-pill badge-new"><i class="bi bi-stars"></i> Suggested</span></div>';
-    }).join('');
-  } catch(e){console.warn('loadSuggestedJobs:',e.message);}
-}
+    .stat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
 
-function jobCardHTML(j, applied, isSuggested, note) {
-  var icons={'House Manager':'bi-house-heart','Nanny / Childcare':'bi-emoji-smile','Cook / Chef':'bi-egg-fried','Cleaner':'bi-brush','Gardener':'bi-flower1','Driver':'bi-car-front','Security Guard':'bi-shield','Elder Caregiver':'bi-heart-pulse','Other':'bi-briefcase'};
-  var icon=icons[j.role_type]||'bi-briefcase';
-  return '<div class="job-card'+(isHired?' hired-overlay':'')+'" onclick="openJobDetail(\''+j.id+'\')">'+
-    '<div class="job-icon"'+(isSuggested?' style="background:#f5f3ff;color:var(--violet)"':'')+'><i class="bi '+icon+'"></i></div>'+
-    '<div class="job-info"><div class="job-title">'+escHtml(j.title||'Job')+(isSuggested?' <span class="badge-pill badge-new" style="font-size:10px;padding:1px 6px"><i class="bi bi-stars"></i> Suggested</span>':'')+'</div>'+
-    '<div class="job-employer">'+escHtml(j.employer_name||'—')+(j.location?' · '+escHtml(j.location):'')+'</div>'+
-    (note?'<div style="font-size:11px;color:var(--violet);margin-top:2px"><i class="bi bi-chat-quote"></i> '+escHtml(note)+'</div>':'')+
-    '<div class="job-tags">'+(j.role_type?'<span class="job-tag">'+escHtml(j.role_type)+'</span>':'')+(j.county?'<span class="job-tag"><i class="bi bi-geo-alt"></i> '+escHtml(j.county)+'</span>':'')+(j.salary_range?'<span class="job-tag salary"><i class="bi bi-cash"></i> '+escHtml(j.salary_range)+'</span>':'')+'</div></div>'+
-    '<div class="job-actions">'+(applied?'<span class="badge-pill badge-approved" style="font-size:11px"><i class="bi bi-check-circle-fill"></i> Applied</span>':'<button class="btn btn-teal btn-sm" onclick="event.stopPropagation();applyDirect(\''+j.id+'\')"><i class="bi bi-send"></i> Apply</button>')+'</div></div>';
-}
+    .stat-val {
+      font-size: 1.2rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.3px;
+    }
 
-async function loadApplications() {
-  try {
-    var res=await sb.from('job_applications').select('*, jobs(title,employer_name,county)').eq('worker_id',currentUser.id).order('applied_at',{ascending:false});
-    myApplications=res.data||[];
-    document.getElementById('stat-applications').textContent=myApplications.length;
-    var list=document.getElementById('applications-list');
-    if (!myApplications.length){list.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div>';return;}
-    var sc={applied:'badge-pending',shortlisted:'badge-review',hired:'badge-approved',rejected:'badge-rejected'};
-    list.innerHTML=myApplications.map(function(a){
-      var j=a.jobs||{};
-      var dt=a.applied_at?new Date(a.applied_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'';
-      return '<div class="app-card"><div class="app-icon"><i class="bi bi-briefcase"></i></div><div class="app-info"><div class="app-title">'+escHtml(j.title||'Job')+'</div><div class="app-employer">'+escHtml(j.employer_name||'—')+(j.county?' · '+escHtml(j.county):'')+'</div><div class="app-date">Applied '+dt+'</div></div><span class="badge-pill '+(sc[a.status]||'badge-pending')+'">'+capitalize(a.status||'applied')+'</span></div>';
-    }).join('');
-  } catch(e){console.warn('loadApplications:',e.message);}
-}
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+    }
 
-function openJobDetail(jobId) {
-  var j=allJobs.find(function(x){return x.id===jobId;});
-  if (!j) return;
-  currentJobId=jobId;
-  document.getElementById('job-modal-title').textContent=j.title||'Job Details';
-  var applied=myApplications.some(function(a){return a.job_id===jobId;});
-  var btn=document.getElementById('apply-job-btn');
-  btn.disabled=applied||isHired;
-  btn.innerHTML=isHired?'<i class="bi bi-trophy-fill"></i> You are Hired':(applied?'<i class="bi bi-check-circle-fill"></i> Applied':'<i class="bi bi-send"></i> Apply Now');
-  document.getElementById('job-modal-body').innerHTML=
-    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem">'+
-    '<div class="job-icon" style="width:52px;height:52px;font-size:22px"><i class="bi bi-briefcase"></i></div>'+
-    '<div><div style="font-size:15px;font-weight:800">'+escHtml(j.title||'')+'</div>'+
-    '<div style="color:var(--muted);font-size:12.5px">'+escHtml(j.employer_name||'—')+'</div>'+
-    '<div class="job-tags" style="margin-top:5px">'+(j.county?'<span class="job-tag"><i class="bi bi-geo-alt"></i> '+escHtml(j.county)+'</span>':'')+(j.salary_range?'<span class="job-tag salary"><i class="bi bi-cash"></i> '+escHtml(j.salary_range)+'</span>':'')+'</div></div></div>'+
-    (isHired?'<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:11px 13px;font-size:13px;color:#065f46;margin-bottom:1rem;display:flex;gap:8px;align-items:center"><i class="bi bi-trophy-fill"></i> You are currently hired. Toggle the Hired status to apply for new jobs.</div>':'')+
-    (j.description?'<div style="margin-bottom:1rem"><h4 style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">About the Role</h4><p style="font-size:13px;line-height:1.6;color:var(--ink)">'+escHtml(j.description).replace(/\n/g,'<br>')+'</p></div>':'')+
-    (j.requirements?'<div><h4 style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">Requirements</h4><p style="font-size:13px;line-height:1.6;color:var(--ink)">'+escHtml(j.requirements).replace(/\n/g,'<br>')+'</p></div>':'');
-  document.getElementById('modal-job').classList.add('open');
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* PROFILE CARD */
+    /* ═══════════════════════════════════════════════════════ */
+    .profile-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1.1rem;
+    }
 
-async function applyToJob() {
-  if (!currentJobId || isHired) return;
-  var btn=document.getElementById('apply-job-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Applying…';
-  try {
-    var {error}=await sb.from('job_applications').insert({job_id:currentJobId,worker_id:currentUser.id,status:'applied'});
-    if (error&&error.code!=='23505') throw error;
-    showToast('ok','bi-check-circle-fill','Application Sent!','Your application has been submitted.',5000);
-    closeModal('modal-job'); await loadApplications(); renderJobs(allJobs);
-  } catch(e) { showToast('err','bi-x-circle','Error',e.message,5000); btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Apply Now'; }
-}
-async function applyDirect(id){currentJobId=id;await applyToJob();}
+    .profile-header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.5rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
 
-// ═══════════════════════════════════════════════════
-//  TABS
-// ═══════════════════════════════════════════════════
-var TABS=['overview','messages','jobs','payments','manual','settings'];
-function switchTab(name, btn) {
-  TABS.forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'':'none';});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  if (btn) btn.classList.add('active');
-  if (name==='jobs') filterJobs();
-}
-function switchTabByName(name) {
-  var btn=document.querySelector('.tab[data-tab="'+name+'"]');
-  switchTab(name, btn);
-}
+    .profile-avatar {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
 
-function switchMsgSubTab(tab, btn) {
-  ['interviews','applications'].forEach(function(t){
-    var p=document.getElementById('msg-panel-'+t);
-    var b=document.getElementById('msg-subtab-'+t);
-    if(p) p.style.display=t===tab?'':'none';
-    if(b){b.classList.remove('active');if(t===tab)b.classList.add('active');}
-  });
-}
+    .avatar-img,
+    .avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--surface);
+      background: linear-gradient(135deg, var(--teal), #00d4b8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
 
-// ═══════════════════════════════════════════════════
-//  PROFILE MODAL
-// ═══════════════════════════════════════════════════
-function openProfileModal(){document.getElementById('modal-profile').classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+    .verified-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #22c55e;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border: 3px solid var(--card);
+    }
 
-async function saveProfile() {
-  var btn=document.getElementById('save-profile-btn');
-  btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Saving…';
-  var payload={full_name:document.getElementById('pf-name').value.trim(),phone:document.getElementById('pf-phone').value.trim(),dob:document.getElementById('pf-dob').value,gender:document.getElementById('pf-gender').value,preferred_role:document.getElementById('pf-role').value,current_town:document.getElementById('pf-town').value.trim(),county:document.getElementById('pf-county').value,about_text:document.getElementById('pf-about').value.trim(),languages:document.getElementById('pf-langs').value.trim(),key_skills:document.getElementById('pf-skills').value.trim()};
-  try {
-    await sb.from('worker_profiles').update(payload).eq('email',currentUser.email);
-    await sb.from('users').update({full_name:payload.full_name,phone:payload.phone}).eq('id',currentUser.id);
-    showToast('ok','bi-check-circle-fill','Profile Saved','Profile updated successfully.',4000);
-    closeModal('modal-profile'); loadDashboard();
-  } catch(e) {
-    var msg=document.getElementById('profile-save-msg'); msg.style.display='flex'; msg.innerHTML='<i class="bi bi-exclamation-circle-fill"></i> Save failed: '+e.message;
-  }
-  btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy"></i> Save Changes';
-}
+    .verified-badge.show {
+      display: flex;
+    }
 
-async function uploadAvatar(input) {
-  var file=input.files[0]; if (!file) return;
-  if (file.size>3*1024*1024){showToast('err','bi-exclamation-circle','Too Large','Photo must be under 3MB.',5000);return;}
-  showToast('info','bi-arrow-repeat','Uploading…','Uploading photo…',3000);
-  var ext=file.name.split('.').pop();
-  var path=currentUser.id+'/avatar.'+ext;
-  var res=await sb.storage.from(BUCKET).upload(path,file,{upsert:true});
-  if (res.error){showToast('err','bi-x-circle','Upload Failed',res.error.message,5000);return;}
-  var url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-  await sb.from('users').update({avatar_url:url}).eq('id',currentUser.id);
-  await sb.from('worker_profiles').update({profile_photo_url:url}).eq('email',currentUser.email);
-  setAvatar(url);
-  showToast('ok','bi-check-circle-fill','Photo Updated','',4000);
-}
+    .profile-info h2 {
+      font-size: 1.3rem;
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.3px;
+    }
 
-// ═══════════════════════════════════════════════════
-//  PAYMENT MODAL
-// ═══════════════════════════════════════════════════
-function openPayModal(){
-  selectedFeeType=null; selectedMethod=null;
-  document.getElementById('pay-amount-box').style.display='none';
-  document.getElementById('pay-steps').classList.remove('show');
-  document.getElementById('stk-status').style.display='none';
-  document.getElementById('pay-phone-wrap').style.display='none';
-  document.getElementById('pay-ref-confirm').style.display='none';
-  document.querySelectorAll('.pay-method-btn').forEach(function(b){b.classList.remove('selected');});
-  document.getElementById('modal-pay').classList.add('open');
-}
-function closePayModal(){closeModal('modal-pay'); currentSTKRef=null;}
+    .profile-info p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 0.8rem;
+    }
 
-function selectFee(type){
-  selectedFeeType=type;
-  var f=FEES[type];
-  document.getElementById('pay-amount-display').textContent='KES '+f.amount.toLocaleString();
-  document.getElementById('pay-amount-desc').textContent=f.label;
-  document.getElementById('pay-amount-box').style.display='block';
-  document.getElementById('pay-steps').classList.add('show');
-  document.getElementById('fee-reg-btn').style.cssText=type==='reg'?'background:var(--teal-soft);border-color:var(--teal)':'';
-  document.getElementById('fee-plc-btn').style.cssText=type==='plc'?'background:var(--teal-soft);border-color:var(--teal)':'';
-}
+    .profile-status {
+      display: flex;
+      gap: 8px;
+    }
 
-function selectMethod(method,el){
-  selectedMethod=method;
-  document.querySelectorAll('.pay-method-btn').forEach(function(b){b.classList.remove('selected');});
-  el.classList.add('selected');
-  var phone=(workerProfile&&workerProfile.phone)||(currentUser.user_metadata&&currentUser.user_metadata.phone)||'';
-  document.getElementById('pay-phone').value=phone;
-  document.getElementById('pay-phone-wrap').style.display='block';
-  document.getElementById('stk-status').style.display='none';
-}
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--teal-soft);
+      color: var(--teal);
+    }
 
-async function sendSTK(){
-  if (!selectedFeeType||!selectedMethod){showToast('err','bi-exclamation-circle','Select Fee & Method','Please choose both a fee and payment method.',4000);return;}
-  if (!document.getElementById('tc-agree').checked){showToast('err','bi-exclamation-circle','Accept Terms','Please agree to the Terms & Conditions first.',4000);return;}
-  var phone=document.getElementById('pay-phone').value.trim();
-  if (!phone){showToast('err','bi-exclamation-circle','Phone Required','Enter your mobile number.',4000);return;}
-  var btn=document.getElementById('send-stk-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Sending…';
-  var fee=FEES[selectedFeeType];
-  var stk=document.getElementById('stk-status');
-  stk.className='stk-status sent'; stk.style.display='block';
-  stk.innerHTML='<i class="bi bi-phone-vibrate"></i><strong>Check your phone!</strong><p>A prompt for <strong>KES '+fee.amount.toLocaleString()+'</strong> was sent to <strong>'+escHtml(phone)+'</strong>.<br>Enter your M-Pesa PIN to complete.</p>';
-  document.getElementById('pay-phone-wrap').style.display='none';
-  var tempRef='PENDING-'+Date.now();
-  try {
-    var ins=await sb.from('payments').insert({user_id:currentUser.id,fee_type:selectedFeeType,amount:fee.amount,phone:phone,method:selectedMethod,status:'pending',mpesa_ref:tempRef,created_at:new Date().toISOString()}).select().maybeSingle();
-    if (ins.data) currentSTKRef=ins.data.id;
-    currentPendingRef=tempRef;
-  } catch(e){console.warn('Payment insert:',e.message);}
-  document.getElementById('pay-ref-confirm').style.display='block';
-  document.getElementById('mpesa-ref-input').value='';
-  document.getElementById('mpesa-ref-input').focus();
-  btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Send Payment Prompt';
-}
+    .status-badge.hired {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
 
-async function confirmPaymentWithRef(){
-  var ref=document.getElementById('mpesa-ref-input').value.trim().toUpperCase();
-  if (!ref||ref.length<8){showToast('err','bi-exclamation-circle','Ref Required','Enter the M-Pesa reference from your SMS.',4000);return;}
-  var fee=FEES[selectedFeeType];
-  try {
-    if (currentSTKRef){await sb.from('payments').update({mpesa_ref:ref,status:'confirmed'}).eq('id',currentSTKRef).eq('user_id',currentUser.id);}
-    else{await sb.from('payments').insert({user_id:currentUser.id,fee_type:selectedFeeType,amount:fee.amount,method:selectedMethod||'mpesa',status:'confirmed',mpesa_ref:ref,created_at:new Date().toISOString()});}
-  } catch(e){console.warn('confirm update:',e.message);}
-  var stk=document.getElementById('stk-status');
-  stk.className='stk-status ok'; stk.style.display='block';
-  stk.innerHTML='<i class="bi bi-check-circle-fill"></i><strong>Payment Recorded!</strong><p>KES '+fee.amount.toLocaleString()+' confirmed. Ref: <strong style="font-family:\'JetBrains Mono\',monospace">'+escHtml(ref)+'</strong></p>';
-  document.getElementById('pay-ref-confirm').style.display='none';
-  showToast('ok','bi-check-circle-fill','Payment Confirmed!','KES '+fee.amount.toLocaleString()+' • Ref: '+ref, 0);
-  setTimeout(function(){closePayModal();loadDashboard();},2500);
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* BUTTONS */
+    /* ═══════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: 0.18s;
+    }
 
-function showReceipt(p){
-  var dt=p.created_at?new Date(p.created_at).toLocaleString('en-KE',{dateStyle:'long',timeStyle:'short'}):'—';
-  document.getElementById('r-ref').textContent=p.mpesa_ref||'—';
-  document.getElementById('r-datetime').textContent=dt;
-  document.getElementById('r-phone').textContent=p.phone||'—';
-  document.getElementById('r-type').textContent=p.fee_type==='reg'?'Registration Fee':'Placement Fee';
-  document.getElementById('r-amount').textContent='KES '+(p.amount||0).toLocaleString();
-  document.getElementById('modal-receipt').classList.add('open');
-}
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
 
-// ═══════════════════════════════════════════════════
-//  OTP VERIFICATION
-// ═══════════════════════════════════════════════════
-function openVerifyModal(){document.getElementById('modal-verify').classList.add('open');}
+    .btn-primary:hover {
+      background: var(--teal-dark);
+    }
 
-function otpNext(el) {
-  if (el.value.length===1) {
-    var inputs=document.querySelectorAll('.otp-digit');
-    var idx=Array.from(inputs).indexOf(el);
-    if (idx<inputs.length-1) inputs[idx+1].focus();
-  }
-}
-function otpBack(e, el) {
-  if (e.key==='Backspace'&&!el.value) {
-    var inputs=document.querySelectorAll('.otp-digit');
-    var idx=Array.from(inputs).indexOf(el);
-    if (idx>0) inputs[idx-1].focus();
-  }
-}
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
 
-async function sendOTP(){
-  var phone=document.getElementById('verify-phone').value.trim();
-  if (!phone){showToast('err','bi-exclamation-circle','Phone Required','Enter your phone number.',4000);return;}
-  var btn=document.getElementById('send-otp-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Sending…';
-  // Generate mock OTP and store it (in production this would be SMS)
-  generatedOTP = String(Math.floor(100000 + Math.random() * 900000));
-  console.log('OTP (dev mode):', generatedOTP); // Remove in production
-  document.getElementById('verify-phone-display').textContent=phone;
-  document.getElementById('verify-step-1').style.display='none';
-  document.getElementById('verify-step-2').style.display='block';
-  showToast('ok','bi-phone','OTP Sent','A 6-digit code was sent to '+phone,5000);
-  btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Send OTP Code';
-}
+    .btn-secondary:hover {
+      background: #e5ecf3;
+    }
 
-async function verifyOTP(){
-  var digits=document.querySelectorAll('.otp-digit');
-  var entered=Array.from(digits).map(function(d){return d.value;}).join('');
-  if (entered.length!==6){showToast('err','bi-exclamation-circle','Enter Code','Please enter the full 6-digit code.',4000);return;}
-  var btn=document.getElementById('verify-otp-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Verifying…';
-  // In production: verify with backend. Here we accept any 6 digits for demo.
-  var valid=(entered===generatedOTP)||(generatedOTP===null); // null = any code accepted in demo
-  if (valid) {
-    try {
-      var up={is_verified:true};
-      var ex=await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
-      if (ex.data) await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
-      else{up.user_id=currentUser.id; await sb.from('user_settings').insert(up);}
-      await sb.from('worker_profiles').update(up).eq('email',currentUser.email);
-    } catch(e){console.warn('verify save:',e.message);}
-    isVerified=true;
-    document.getElementById('verify-step-2').style.display='none';
-    document.getElementById('verify-step-3').style.display='block';
-    document.getElementById('verified-badge-inline').style.display='inline-flex';
-    document.getElementById('profile-verified-badge').style.display='block';
-    showToast('ok','bi-patch-check-fill','Verified!','You earned your verified badge!',5000);
-  } else {
-    showToast('err','bi-x-circle','Wrong Code','The code you entered is incorrect. Try again.',4000);
-  }
-  btn.disabled=false; btn.innerHTML='<i class="bi bi-check-circle"></i> Verify Code';
-}
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
 
-// ═══════════════════════════════════════════════════
-//  TERMS MODAL
-// ═══════════════════════════════════════════════════
-function openTCModal(){document.getElementById('modal-tc').classList.add('open');}
+    /* ═══════════════════════════════════════════════════════ */
+    /* PROFILE SHARE URL */
+    /* ═══════════════════════════════════════════════════════ */
+    .share-section {
+      border-top: 1px solid var(--border);
+      padding: 1rem 0 0;
+      margin-top: 1rem;
+    }
 
-// ═══════════════════════════════════════════════════
-//  SETTINGS
-// ═══════════════════════════════════════════════════
-async function saveSetting(key,val){
-  try{
-    var up={};up[key]=val;
-    var ex=await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
-    if(ex.data)await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
-    else{up.user_id=currentUser.id;await sb.from('user_settings').insert(up);}
-    showToast('ok','bi-check-circle-fill','Saved','Preference updated.',3000);
-  }catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
-}
+    .share-url {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
 
-async function sendPasswordReset(){
-  try{await sb.auth.resetPasswordForEmail(currentUser.email,{redirectTo:window.location.origin+'/reset-password.html'});showToast('ok','bi-envelope-check','Reset Email Sent','Check your inbox.',6000);}
-  catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
-}
+    .share-url input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: 'Courier New', monospace;
+    }
 
-async function signOut(){
-  if (!confirm('Are you sure you want to sign out?')) return;
-  await sb.auth.signOut();
-  window.location.href='login.html';
-}
+    .share-url button {
+      background: var(--teal);
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
 
-function openDeactivateModal(){document.getElementById('modal-deactivate').classList.add('open');}
-async function deactivateAccount(){
-  try{
-    await sb.from('worker_profiles').update({status:'deactivated'}).eq('email',currentUser.email);
-    await sb.from('user_settings').update({profile_visible:false}).eq('user_id',currentUser.id);
-    showToast('ok','bi-pause-circle','Account Deactivated','Your profile is hidden. Log in anytime to reactivate.',0);
-    closeModal('modal-deactivate');
-    setTimeout(function(){sb.auth.signOut().then(function(){window.location.href='login.html';});},2500);
-  }catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
-}
+    .share-url button:hover {
+      background: var(--teal-dark);
+    }
 
-function openDeleteModal(){document.getElementById('modal-delete').classList.add('open');}
-async function deleteAccount(){
-  var input=document.getElementById('delete-confirm-input').value.trim();
-  if (input!=='DELETE'){showToast('err','bi-exclamation-circle','Type DELETE','Type DELETE in capital letters to confirm.',4000);return;}
-  var btn=document.getElementById('confirm-delete-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Deleting…';
-  try{
-    await sb.from('worker_profiles').delete().eq('email',currentUser.email);
-    await sb.from('job_applications').delete().eq('worker_id',currentUser.id);
-    await sb.from('messages').delete().eq('sender_id',currentUser.id);
-    await sb.from('user_settings').delete().eq('user_id',currentUser.id);
-    showToast('ok','bi-trash3','Account Deleted','All your data has been removed.',0);
-    setTimeout(function(){sb.auth.signOut().then(function(){window.location.href='login.html';});},2000);
-  }catch(e){showToast('err','bi-x-circle','Delete Failed',e.message,5000);btn.disabled=false;btn.innerHTML='<i class="bi bi-trash3"></i> Permanently Delete';}
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* TABS */
+    /* ═══════════════════════════════════════════════════════ */
+    .tabs {
+      display: flex;
+      gap: 3px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 4px;
+      margin-bottom: 1.3rem;
+      overflow-x: auto;
+    }
 
-// ═══════════════════════════════════════════════════
-//  NEWS POPUP
-// ═══════════════════════════════════════════════════
-function openNewsPopup(){document.getElementById('news-popup-overlay').classList.add('open');}
-function closeNewsPopup(){document.getElementById('news-popup-overlay').classList.remove('open');}
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px 5px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: 0.2s;
+      border: none;
+      background: none;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      white-space: nowrap;
+      position: relative;
+    }
 
-// ═══════════════════════════════════════════════════
-//  FAQ TOGGLE
-// ═══════════════════════════════════════════════════
-function toggleFaq(btn){
-  var ans=btn.nextElementSibling;
-  var isOpen=ans.style.display!=='none';
-  var icon=btn.querySelector('i');
-  ans.style.display=isOpen?'none':'block';
-  if(icon){icon.className=isOpen?'bi bi-chevron-down':'bi bi-chevron-up';}
-}
+    .tab.active {
+      background: var(--card);
+      color: var(--teal);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    }
 
-// ═══════════════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════════════
-function showToast(type,icon,title,body,duration){
-  var stack=document.getElementById('toast-stack');
-  var t=document.createElement('div'); t.className='toast';
-  t.innerHTML='<i class="bi '+icon+' toast-icon '+(type==='ok'?'ok':type==='err'?'err':type==='warn'?'warn':'info')+'"></i><div class="toast-content"><strong>'+escHtml(title)+'</strong>'+(body?'<p>'+escHtml(body)+'</p>':'')+'</div><button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
-  stack.appendChild(t);
-  if (duration>0) setTimeout(function(){t.classList.add('hide');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},duration);
-}
+    /* ═══════════════════════════════════════════════════════ */
+    /* DETAIL CARD */
+    /* ═══════════════════════════════════════════════════════ */
+    .detail-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
 
-// ═══════════════════════════════════════════════════
-//  BADGE HELPER
-// ═══════════════════════════════════════════════════
-function setBadge(id,show,text){
-  var el=document.getElementById(id);
-  if (!el) return;
-  if (show){el.classList.add('show');if(text)el.textContent=text;}
-  else{el.classList.remove('show');}
-}
+    .detail-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
 
-// ═══════════════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════════════
-function escHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function capitalize(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
-function timeAgo(d){
-  var diff=(Date.now()-d)/1000;
-  if(diff<60)return 'just now';
-  if(diff<3600)return Math.floor(diff/60)+'m ago';
-  if(diff<86400)return Math.floor(diff/3600)+'h ago';
-  if(diff<604800)return Math.floor(diff/86400)+'d ago';
-  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
-}
-// CSS animation for spinner
-var styleEl=document.createElement('style');
-styleEl.textContent='.spin{animation:sp .75s linear infinite;}';
-document.head.appendChild(styleEl);
-</script>
+    .detail-card p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+    }
 
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
-</script>
-<!--End of Tawk.to Script-->
+    /* ═══════════════════════════════════════════════════════ */
+    /* MODAL */
+    /* ═══════════════════════════════════════════════════════ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 25, 35, 0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(2px);
+    }
 
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 93vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+      animation: modalIn 0.22s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* FORM */
+    /* ═══════════════════════════════════════════════════════ */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .form-group input,
+    .form-group textarea {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px var(--teal-soft);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .checkbox-label input {
+      margin: 0;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* MENU */
+    /* ═══════════════════════════════════════════════════════ */
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .menu-item {
+      width: 100%;
+      padding: 12px 15px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--surface);
+      transition: 0.2s;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .menu-item:hover {
+      background: var(--surface);
+    }
+
+    .menu-item i {
+      font-size: 16px;
+      color: var(--teal);
+      width: 20px;
+    }
+
+    .menu-item.danger {
+      color: var(--rose);
+    }
+
+    .menu-item.danger i {
+      color: var(--rose);
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* VERIFICATION STEPS */
+    /* ═══════════════════════════════════════════════════════ */
+    .verification-steps {
+      margin-bottom: 1.5rem;
+    }
+
+    .step {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .step.active {
+      background: rgba(0, 184, 156, 0.05);
+      border: 2px solid var(--teal);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: var(--teal);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .step-header h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .step-content {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .file-input {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+
+    .file-input:hover {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* TOAST */
+    /* ═══════════════════════════════════════════════════════ */
+    .toast-stack {
+      position: fixed;
+      bottom: 2rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--card);
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      animation: slideIn 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .toast.ok {
+      color: #22c55e;
+      border-left: 4px solid #22c55e;
+    }
+
+    .toast.err {
+      color: var(--rose);
+      border-left: 4px solid var(--rose);
+    }
+
+    .toast.warn {
+      color: var(--gold);
+      border-left: 4px solid var(--gold);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* LOADER */
+    /* ═══════════════════════════════════════════════════════ */
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--teal-soft);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* RESPONSIVE */
+    /* ═══════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .profile-header {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .modal {
+        max-width: 95vw;
+      }
+
+      .nav {
+        padding: 0 1rem;
+      }
+
+      .page {
+        padding: 1rem;
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">
+      <div class="logo-icon">W</div>
+      <span>Work<em>Link</em></span>
+    </a>
+    <div class="nav-right">
+      <button class="nav-icon-btn" onclick="openModal('account-modal')" title="Account">
+        <i class="bi bi-person-circle"></i>
+        <span class="nav-badge" id="nav-account-badge"></span>
+      </button>
+      <button class="nav-icon-btn" onclick="alert('Messages')" title="Messages">
+        <i class="bi bi-chat-left-text"></i>
+        <span class="nav-badge show" id="nav-messages-badge">0</span>
+      </button>
+      <button class="nav-icon-btn" onclick="alert('Notifications')" title="Notifications">
+        <i class="bi bi-bell"></i>
+        <span class="nav-badge show" id="nav-notif-badge">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="page">
+    <!-- STATS -->
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-chat-dots"></i></div>
+        <div class="stat-val" id="stat-interviews">0</div>
+        <div class="stat-lbl">Interview Messages</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-val" id="stat-replied">0</div>
+        <div class="stat-lbl">Replied Messages</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-bell"></i></div>
+        <div class="stat-val" id="stat-notifications">0</div>
+        <div class="stat-lbl">Notifications</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
+        <div class="stat-val" id="stat-jobs">0</div>
+        <div class="stat-lbl">New Jobs</div>
+      </div>
+    </section>
+
+    <!-- PROFILE CARD -->
+    <section class="profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <div class="avatar-placeholder" id="profile-avatar">AS</div>
+          <div class="verified-badge" id="profile-verified-badge">✓</div>
+        </div>
+        <div class="profile-info">
+          <h2 id="profile-name">Your Name</h2>
+          <p id="profile-title">Job Title</p>
+          <div class="profile-status">
+            <span class="status-badge" id="profile-status">🔍 Looking for job</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('edit-profile-modal')">
+          <i class="bi bi-pencil"></i> Edit Profile
+        </button>
+      </div>
+
+      <div class="share-section">
+        <div class="share-url">
+          <input type="text" id="profile-url" readonly value="https://sounds.co.ke/username">
+          <button onclick="copyProfileUrl()"><i class="bi bi-clipboard"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section class="profile-card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('overview')"><i class="bi bi-person"></i> Overview</button>
+        <button class="tab" onclick="switchTab('education')"><i class="bi bi-mortarboard"></i> Education</button>
+        <button class="tab" onclick="switchTab('experience')"><i class="bi bi-briefcase"></i> Experience</button>
+        <button class="tab" onclick="switchTab('referees')"><i class="bi bi-people"></i> Referees</button>
+      </div>
+
+      <div id="overview" class="tab-content">
+        <div class="detail-card">
+          <h3>Overview</h3>
+          <p><strong>Email:</strong> <span id="detail-email">-</span></p>
+          <p><strong>Phone:</strong> <span id="detail-phone">-</span></p>
+          <p><strong>Date of Birth:</strong> <span id="detail-dob">-</span></p>
+          <p><strong>Status:</strong> <span id="detail-status">-</span></p>
+        </div>
+      </div>
+
+      <div id="education" class="tab-content hidden">
+        <div class="detail-card">
+          <h3>Education</h3>
+          <p id="detail-education">Not provided</p>
+          <button class="btn btn-secondary" onclick="openModal('edit-profile-modal')">Edit</button>
+        </div>
+      </div>
+
+      <div id="experience" class="tab-content hidden">
+        <div class="detail-card">
+          <h3>Experience</h3>
+          <p id="detail-experience">Not provided</p>
+          <button class="btn btn-secondary" onclick="openModal('edit-profile-modal')">Edit</button>
+        </div>
+      </div>
+
+      <div id="referees" class="tab-content hidden">
+        <div class="detail-card">
+          <h3>Referees</h3>
+          <p id="detail-referees">Not provided</p>
+          <button class="btn btn-secondary" onclick="openModal('edit-profile-modal')">Edit</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- ACCOUNT MODAL -->
+  <div class="modal-overlay" id="account-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Account</h2>
+        <button class="modal-close" onclick="closeModal('account-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="menu-list">
+          <button class="menu-item" onclick="alert('My Profile')">
+            <i class="bi bi-person-fill"></i>
+            <span>My Profile</span>
+          </button>
+          <button class="menu-item" onclick="openModal('appearance-modal'); closeModal('account-modal')">
+            <i class="bi bi-shield-check"></i>
+            <span>Security</span>
+          </button>
+          <button class="menu-item" onclick="openModal('appearance-modal'); closeModal('account-modal')">
+            <i class="bi bi-palette"></i>
+            <span>Appearance</span>
+          </button>
+          <button class="menu-item" onclick="alert('Help center')">
+            <i class="bi bi-question-circle"></i>
+            <span>Help & Support</span>
+          </button>
+          <button class="menu-item danger" onclick="signOut()">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="edit-profile-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button class="modal-close" onclick="closeModal('edit-profile-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-profile-form" onsubmit="saveProfile(event)">
+          <div class="form-group">
+            <label>First Name *</label>
+            <input type="text" id="form-first-name" required>
+          </div>
+
+          <div class="form-group">
+            <label>Last Name *</label>
+            <input type="text" id="form-last-name" required>
+          </div>
+
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" id="form-dob">
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="form-phone">
+          </div>
+
+          <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" id="form-job-title">
+          </div>
+
+          <div class="form-group">
+            <label>Education</label>
+            <textarea id="form-education"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Experience</label>
+            <textarea id="form-experiences"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Referees</label>
+            <textarea id="form-referees"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="form-looking-job">
+              <span>I'm looking for a job</span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary" onclick="openModal('verification-modal'); closeModal('edit-profile-modal')">
+              Verify Profile
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- VERIFICATION MODAL -->
+  <div class="modal-overlay" id="verification-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Verify Your Profile</h2>
+        <button class="modal-close" onclick="closeModal('verification-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="verification-steps">
+          <div class="step active">
+            <div class="step-header">
+              <div class="step-num">1</div>
+              <h4>Upload ID Card</h4>
+            </div>
+            <div class="step-content">
+              <input type="file" id="file-id" accept="image/*" class="file-input" placeholder="Select ID image">
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-header">
+              <div class="step-num">2</div>
+              <h4>Take Selfie</h4>
+            </div>
+            <div class="step-content">
+              <input type="file" id="file-selfie" accept="image/*" class="file-input" placeholder="Select selfie with ID">
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-header">
+              <div class="step-num">3</div>
+              <h4>Verify Email</h4>
+            </div>
+            <div class="step-content">
+              <p style="color: #666; margin-bottom: 1rem; font-size: 12px;">
+                OTP will be sent to your registered email
+              </p>
+              <input type="text" id="form-otp" placeholder="Enter OTP (6 digits)" maxlength="6">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('verification-modal')">Cancel</button>
+          <button type="button" class="btn btn-primary" id="submit-verification" onclick="submitVerification()">
+            Submit for Verification
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPEARANCE MODAL -->
+  <div class="modal-overlay" id="appearance-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Appearance & Settings</h2>
+        <button class="modal-close" onclick="closeModal('appearance-modal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Theme</label>
+          <div style="display: flex; gap: 10px; margin-top: 0.5rem;">
+            <button class="btn btn-secondary" onclick="saveSetting('theme', 'light')" id="theme-light">Light</button>
+            <button class="btn btn-secondary" onclick="saveSetting('theme', 'dark')" id="theme-dark">Dark</button>
+            <button class="btn btn-secondary" onclick="saveSetting('theme', 'auto')" id="theme-auto">Auto</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setting-notifications" onchange="saveSetting('notifications_enabled', this.checked)">
+            <span>Enable notifications</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="setting-public" onchange="saveSetting('show_profile_public', this.checked)">
+            <span>Show profile publicly</span>
+          </label>
+        </div>
+
+        <button class="btn btn-secondary" onclick="closeModal('appearance-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST STACK -->
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <!-- LOADER -->
+  <div class="loader hidden" id="page-loader">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SUPABASE INITIALIZATION
+    // ═══════════════════════════════════════════════════════════════
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let currentProfile = null;
+
+    // ═══════════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════════════════════
+    async function init() {
+      showLoader(true);
+      try {
+        // Get current user
+        const { data } = await supabase.auth.getSession();
+        if (!data.session?.user) {
+          window.location.href = '/login.html';
+          return;
+        }
+
+        currentUser = data.session.user;
+        await loadProfile(currentUser.id);
+        await loadStats(currentUser.id);
+        loadSettingsUI();
+      } catch (err) {
+        showToast('err', 'Failed to load dashboard: ' + err.message);
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PROFILE FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+    async function loadProfile(userId) {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (data) {
+          currentProfile = data;
+          displayProfile();
+        }
+      } catch (err) {
+        console.log('Profile not found, creating new');
+      }
+    }
+
+    function displayProfile() {
+      if (!currentProfile) return;
+
+      // Avatar
+      const initials = (currentProfile.first_name?.[0] || 'U') + (currentProfile.last_name?.[0] || '');
+      document.getElementById('profile-avatar').textContent = initials.toUpperCase();
+
+      // Name & Title
+      document.getElementById('profile-name').textContent = 
+        `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim();
+      document.getElementById('profile-title').textContent = currentProfile.job_title || 'Job title not set';
+
+      // Status
+      const statusEl = document.getElementById('profile-status');
+      if (currentProfile.looking_for_job) {
+        statusEl.textContent = '🔍 Looking for job';
+        statusEl.className = 'status-badge';
+      } else {
+        statusEl.textContent = '✓ Hired';
+        statusEl.className = 'status-badge hired';
+      }
+
+      // Details
+      document.getElementById('detail-email').textContent = currentProfile.email || '-';
+      document.getElementById('detail-phone').textContent = currentProfile.phone || 'Not set';
+      document.getElementById('detail-dob').textContent = currentProfile.dob || 'Not set';
+      document.getElementById('detail-status').textContent = 
+        currentProfile.looking_for_job ? 'Looking for job' : 'Hired';
+      document.getElementById('detail-education').textContent = currentProfile.education || 'Not provided';
+      document.getElementById('detail-experience').textContent = currentProfile.experiences || 'Not provided';
+      document.getElementById('detail-referees').textContent = currentProfile.referees || 'Not provided';
+
+      // Profile URL
+      if (currentProfile.username) {
+        document.getElementById('profile-url').value = `https://sounds.co.ke/${currentProfile.username}`;
+      }
+
+      // Verified badge
+      if (currentProfile.verified) {
+        document.getElementById('profile-verified-badge').classList.add('show');
+      }
+
+      // Fill form
+      document.getElementById('form-first-name').value = currentProfile.first_name || '';
+      document.getElementById('form-last-name').value = currentProfile.last_name || '';
+      document.getElementById('form-dob').value = currentProfile.dob || '';
+      document.getElementById('form-phone').value = currentProfile.phone || '';
+      document.getElementById('form-job-title').value = currentProfile.job_title || '';
+      document.getElementById('form-education').value = currentProfile.education || '';
+      document.getElementById('form-experiences').value = currentProfile.experiences || '';
+      document.getElementById('form-referees').value = currentProfile.referees || '';
+      document.getElementById('form-looking-job').checked = currentProfile.looking_for_job || false;
+    }
+
+    async function loadStats(userId) {
+      try {
+        const [interviews, replied, notifs, jobs] = await Promise.all([
+          getCount('messages', { type: 'interview', recipient_id: userId }),
+          getCount('messages', { status: 'replied', recipient_id: userId }),
+          getCount('notifications', { user_id: userId, read: false }),
+          getCount('job_posts', { new: true, active: true })
+        ]);
+
+        document.getElementById('stat-interviews').textContent = interviews;
+        document.getElementById('stat-replied').textContent = replied;
+        document.getElementById('stat-notifications').textContent = notifs;
+        document.getElementById('stat-jobs').textContent = jobs;
+        document.getElementById('nav-messages-badge').textContent = interviews;
+        document.getElementById('nav-notif-badge').textContent = notifs;
+      } catch (err) {
+        console.log('Stats error:', err);
+      }
+    }
+
+    async function getCount(table, filters) {
+      let query = supabase.from(table).select('count', { count: 'exact' });
+      for (const [key, value] of Object.entries(filters)) {
+        query = query.eq(key, value);
+      }
+      const { count } = await query;
+      return count || 0;
+    }
+
+    async function saveProfile(e) {
+      e.preventDefault();
+      try {
+        const data = {
+          first_name: document.getElementById('form-first-name').value,
+          last_name: document.getElementById('form-last-name').value,
+          dob: document.getElementById('form-dob').value || null,
+          phone: document.getElementById('form-phone').value || null,
+          job_title: document.getElementById('form-job-title').value || null,
+          education: document.getElementById('form-education').value || null,
+          experiences: document.getElementById('form-experiences').value || null,
+          referees: document.getElementById('form-referees').value || null,
+          looking_for_job: document.getElementById('form-looking-job').checked
+        };
+
+        if (!currentProfile.username) {
+          data.username = await generateUsername(data.first_name);
+        }
+
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ user_id: currentUser.id, ...data })
+          .eq('user_id', currentUser.id);
+
+        if (error) throw error;
+        currentProfile = { ...currentProfile, ...data };
+        displayProfile();
+        closeModal('edit-profile-modal');
+        showToast('ok', 'Profile updated successfully');
+      } catch (err) {
+        showToast('err', err.message);
+      }
+    }
+
+    async function generateUsername(firstName) {
+      const base = firstName.toLowerCase().replace(/\s+/g, '-');
+      let username = base;
+      let counter = 1;
+
+      while (true) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username)
+          .single()
+          .catch(() => ({ data: null }));
+
+        if (!data) return username;
+        username = `${base}${counter++}`;
+      }
+    }
+
+    async function submitVerification() {
+      try {
+        const idFile = document.getElementById('file-id').files[0];
+        const selfieFile = document.getElementById('file-selfie').files[0];
+
+        if (!idFile || !selfieFile) {
+          showToast('err', 'Please upload both ID and selfie');
+          return;
+        }
+
+        const ts = Date.now();
+        const idPath = `verifications/${currentUser.id}/id-${ts}`;
+        const selfiePath = `verifications/${currentUser.id}/selfie-${ts}`;
+
+        await Promise.all([
+          supabase.storage.from('files').upload(idPath, idFile),
+          supabase.storage.from('files').upload(selfiePath, selfieFile)
+        ]);
+
+        const { error } = await supabase
+          .from('verification_requests')
+          .insert({
+            user_id: currentUser.id,
+            email: currentUser.email,
+            id_document: idPath,
+            selfie: selfiePath,
+            status: 'pending'
+          });
+
+        if (error) throw error;
+        closeModal('verification-modal');
+        showToast('ok', 'Verification request submitted. Our team will review it shortly.');
+      } catch (err) {
+        showToast('err', err.message);
+      }
+    }
+
+    function copyProfileUrl() {
+      const url = document.getElementById('profile-url').value;
+      navigator.clipboard.writeText(url);
+      showToast('ok', 'Profile URL copied to clipboard!');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SETTINGS
+    // ═══════════════════════════════════════════════════════════════
+    async function saveSetting(key, value) {
+      try {
+        const { error } = await supabase
+          .from('user_settings')
+          .upsert({ user_id: currentUser.id, [key]: value })
+          .eq('user_id', currentUser.id);
+
+        if (error) throw error;
+        showToast('ok', 'Setting saved');
+      } catch (err) {
+        showToast('err', err.message);
+      }
+    }
+
+    function loadSettingsUI() {
+      // Default theme button highlight
+      document.getElementById('theme-light').classList.add('btn-primary');
+    }
+
+    async function signOut() {
+      if (!confirm('Are you sure you want to sign out?')) return;
+      await supabase.auth.signOut();
+      window.location.href = '/login.html';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // UI FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function switchTab(tabName) {
+      // Hide all
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+      // Show selected
+      document.getElementById(tabName).classList.remove('hidden');
+      event.target.closest('.tab').classList.add('active');
+    }
+
+    function showToast(type, message) {
+      const stack = document.getElementById('toast-stack');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const icon = type === 'ok' ? 'check-circle' : type === 'err' ? 'x-circle' : 'exclamation-circle';
+      toast.innerHTML = `<i class="bi bi-${icon}"></i> <span>${message}</span>`;
+      
+      stack.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showLoader(show) {
+      document.getElementById('page-loader').classList.toggle('hidden', !show);
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('open');
+        }
+      });
+    });
+
+    // Initialize on load
+    window.addEventListener('load', init);
+  </script>
 </body>
 </html>
