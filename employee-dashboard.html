@@ -6,7 +6,6 @@
   <title>Employee Dashboard – WorkLink</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     :root {
@@ -1098,316 +1097,950 @@
     <div class="spinner"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // ═══════════════════════════════════════════════════════════════
-    // SUPABASE INITIALIZATION
-    // ═══════════════════════════════════════════════════════════════
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════
+var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+var BUCKET = 'worker-documents';
+var sb, currentUser, workerProfile, userSettings;
 
-    let currentUser = null;
-    let currentProfile = null;
+var selectedFeeType=null, selectedMethod=null, currentSTKRef=null, currentPendingRef=null;
+var FEES = {reg:{amount:300,label:'Registration Fee'}, plc:{amount:1000,label:'Placement Fee'}};
+var allJobs=[], myApplications=[], currentJobId=null;
+var notifPanelOpen=false, refreshInterval=null;
+var interviewThreads=[], currentInterviewId=null;
+var isHired=false, isVerified=false;
+var generatedOTP=null;
 
-    // ═══════════════════════════════════════════════════════════════
-    // INITIALIZATION
-    // ═══════════════════════════════════════════════════════════════
-    async function init() {
-      showLoader(true);
-      try {
-        // Get current user
-        const { data } = await supabase.auth.getSession();
-        if (!data.session?.user) {
-          window.location.href = '/login.html';
-          return;
-        }
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  document.getElementById('pg-loader').classList.add('show');
 
-        currentUser = data.session.user;
-        await loadProfile(currentUser.id);
-        await loadStats(currentUser.id);
-        loadSettingsUI();
-      } catch (err) {
-        showToast('err', 'Failed to load dashboard: ' + err.message);
-      } finally {
-        showLoader(false);
+  sb.auth.getSession().then(function(res) {
+    var session = res.data && res.data.session;
+    if (!session || !session.user) { window.location.href = 'login.html'; return; }
+    currentUser = session.user;
+    loadDashboard();
+    startAutoRefresh();
+    subscribeRealtime();
+    // Show news popup after 2 seconds on first visit
+    setTimeout(function() {
+      if (!sessionStorage.getItem('news_shown')) {
+        openNewsPopup();
+        sessionStorage.setItem('news_shown','1');
       }
-    }
+    }, 2000);
+  }).catch(function() { window.location.href = 'login.html'; });
 
-    // ═══════════════════════════════════════════════════════════════
-    // PROFILE FUNCTIONS
-    // ═══════════════════════════════════════════════════════════════
-    async function loadProfile(userId) {
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
+  document.addEventListener('click', function(e) {
+    var panel = document.getElementById('notif-panel');
+    var btn = document.getElementById('notif-bell-btn');
+    if (notifPanelOpen && !panel.contains(e.target) && !btn.contains(e.target)) toggleNotifPanel(true);
+  });
+});
 
-        if (data) {
-          currentProfile = data;
-          displayProfile();
-        }
-      } catch (err) {
-        console.log('Profile not found, creating new');
-      }
-    }
+async function loadDashboard() {
+  try {
+    var [wpRes, uRes, sRes, pRes, notifRes] = await Promise.all([
+      sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
+      sb.from('users').select('*').eq('id', currentUser.id).maybeSingle(),
+      sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle(),
+      sb.from('payments').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}),
+      sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at',{ascending:false}).limit(40),
+    ]);
 
-    function displayProfile() {
-      if (!currentProfile) return;
+    if (!wpRes.data) wpRes = await sb.from('worker_profiles').select('*').eq('email',currentUser.email).order('submitted_at',{ascending:false}).limit(1).maybeSingle();
 
-      // Avatar
-      const initials = (currentProfile.first_name?.[0] || 'U') + (currentProfile.last_name?.[0] || '');
-      document.getElementById('profile-avatar').textContent = initials.toUpperCase();
+    workerProfile = wpRes.data || {};
+    var userData = uRes.data || {};
+    userSettings = sRes.data || {};
+    var payments = pRes.data || [];
+    var notifications = notifRes.data || [];
 
-      // Name & Title
-      document.getElementById('profile-name').textContent = 
-        `${currentProfile.first_name || ''} ${currentProfile.last_name || ''}`.trim();
-      document.getElementById('profile-title').textContent = currentProfile.job_title || 'Job title not set';
+    var name = workerProfile.full_name || userData.full_name || (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email.split('@')[0];
 
-      // Status
-      const statusEl = document.getElementById('profile-status');
-      if (currentProfile.looking_for_job) {
-        statusEl.textContent = '🔍 Looking for job';
-        statusEl.className = 'status-badge';
-      } else {
-        statusEl.textContent = '✓ Hired';
-        statusEl.className = 'status-badge hired';
-      }
+    // Check hired status
+    isHired = !!(userSettings.is_hired || workerProfile.is_hired);
+    isVerified = !!(userSettings.is_verified || workerProfile.is_verified);
 
-      // Details
-      document.getElementById('detail-email').textContent = currentProfile.email || '-';
-      document.getElementById('detail-phone').textContent = currentProfile.phone || 'Not set';
-      document.getElementById('detail-dob').textContent = currentProfile.dob || 'Not set';
-      document.getElementById('detail-status').textContent = 
-        currentProfile.looking_for_job ? 'Looking for job' : 'Hired';
-      document.getElementById('detail-education').textContent = currentProfile.education || 'Not provided';
-      document.getElementById('detail-experience').textContent = currentProfile.experiences || 'Not provided';
-      document.getElementById('detail-referees').textContent = currentProfile.referees || 'Not provided';
+    renderNav(name, workerProfile.profile_photo_url || userData.avatar_url || '');
+    renderGreeting(name, workerProfile.status || 'draft');
+    renderCompletion(workerProfile);
+    renderPayments(payments);
+    renderSettings(userSettings);
+    fillProfileModal(workerProfile, userData);
+    renderNotifications(notifications);
+    renderHiredState(isHired);
 
-      // Profile URL
-      if (currentProfile.username) {
-        document.getElementById('profile-url').value = `https://sounds.co.ke/${currentProfile.username}`;
-      }
+    await loadJobs();
+    await loadSuggestedJobs();
+    await loadApplications();
+    await loadInterviewMessages();
 
-      // Verified badge
-      if (currentProfile.verified) {
-        document.getElementById('profile-verified-badge').classList.add('show');
-      }
+    document.getElementById('pg-loader').classList.remove('show');
+    updateRefreshLabel();
+  } catch(e) {
+    console.error('loadDashboard:', e);
+    document.getElementById('pg-loader').classList.remove('show');
+    showToast('err','bi-exclamation-circle','Load Error', e.message, 7000);
+  }
+}
 
-      // Fill form
-      document.getElementById('form-first-name').value = currentProfile.first_name || '';
-      document.getElementById('form-last-name').value = currentProfile.last_name || '';
-      document.getElementById('form-dob').value = currentProfile.dob || '';
-      document.getElementById('form-phone').value = currentProfile.phone || '';
-      document.getElementById('form-job-title').value = currentProfile.job_title || '';
-      document.getElementById('form-education').value = currentProfile.education || '';
-      document.getElementById('form-experiences').value = currentProfile.experiences || '';
-      document.getElementById('form-referees').value = currentProfile.referees || '';
-      document.getElementById('form-looking-job').checked = currentProfile.looking_for_job || false;
-    }
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(loadDashboard, 60000);
+}
 
-    async function loadStats(userId) {
-      try {
-        const [interviews, replied, notifs, jobs] = await Promise.all([
-          getCount('messages', { type: 'interview', recipient_id: userId }),
-          getCount('messages', { status: 'replied', recipient_id: userId }),
-          getCount('notifications', { user_id: userId, read: false }),
-          getCount('job_posts', { new: true, active: true })
-        ]);
+function updateRefreshLabel() {
+  var d = new Date();
+  document.getElementById('refresh-label').textContent = 'Updated ' + d.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) + ' · Auto-refresh every 60s';
+}
 
-        document.getElementById('stat-interviews').textContent = interviews;
-        document.getElementById('stat-replied').textContent = replied;
-        document.getElementById('stat-notifications').textContent = notifs;
-        document.getElementById('stat-jobs').textContent = jobs;
-        document.getElementById('nav-messages-badge').textContent = interviews;
-        document.getElementById('nav-notif-badge').textContent = notifs;
-      } catch (err) {
-        console.log('Stats error:', err);
-      }
-    }
+// ═══════════════════════════════════════════════════
+//  REALTIME
+// ═══════════════════════════════════════════════════
+function subscribeRealtime() {
+  setTimeout(function() {
+    if (!sb || !currentUser) return;
+    sb.channel('msgs-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'receiver_id=eq.'+currentUser.id}, function(payload) {
+      onNewMessage(payload.new);
+    }).subscribe();
+    sb.channel('notifs-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+currentUser.id}, function(payload) {
+      onNewNotification(payload.new);
+    }).subscribe();
+    sb.channel('suggested-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'suggested_jobs',filter:'worker_id=eq.'+currentUser.id}, function() {
+      loadSuggestedJobs();
+      showToast('ok','bi-stars','New Job Suggestion!','Admin has suggested a new job for you.',0);
+    }).subscribe();
+    sb.channel('pay-watch').on('postgres_changes',{event:'INSERT',schema:'public',table:'payments',filter:'user_id=eq.'+currentUser.id}, function(payload) {
+      showToast('ok','bi-check-circle-fill','Payment Received!','KES '+(payload.new.amount||0).toLocaleString()+' confirmed.',0);
+      loadDashboard();
+    }).subscribe();
+  }, 1500);
+}
 
-    async function getCount(table, filters) {
-      let query = supabase.from(table).select('count', { count: 'exact' });
-      for (const [key, value] of Object.entries(filters)) {
-        query = query.eq(key, value);
-      }
-      const { count } = await query;
-      return count || 0;
-    }
+function onNewMessage(msg) {
+  var isEmployer = msg.is_from_employer || msg.employer_id;
+  showToast('info','bi-building','Message from Employer', (msg.content||'').substring(0,60)+'…', 0);
+  setBadge('msg-badge', true);
+  document.getElementById('msg-tab-badge').style.display='block';
+  loadInterviewMessages();
+}
 
-    async function saveProfile(e) {
-      e.preventDefault();
-      try {
-        const data = {
-          first_name: document.getElementById('form-first-name').value,
-          last_name: document.getElementById('form-last-name').value,
-          dob: document.getElementById('form-dob').value || null,
-          phone: document.getElementById('form-phone').value || null,
-          job_title: document.getElementById('form-job-title').value || null,
-          education: document.getElementById('form-education').value || null,
-          experiences: document.getElementById('form-experiences').value || null,
-          referees: document.getElementById('form-referees').value || null,
-          looking_for_job: document.getElementById('form-looking-job').checked
-        };
+function onNewNotification(notif) {
+  showToast(notif.type||'info','bi-bell',''+notif.title, notif.body||'', 6000);
+  setBadge('notif-badge', true);
+}
 
-        if (!currentProfile.username) {
-          data.username = await generateUsername(data.first_name);
-        }
+// ═══════════════════════════════════════════════════
+//  RENDER HELPERS
+// ═══════════════════════════════════════════════════
+function renderNav(name, photoUrl) {
+  var initials = name.split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();
+  document.getElementById('nav-initials').textContent = initials;
+  document.getElementById('profile-initials-big').textContent = initials;
+  if (photoUrl) setAvatar(photoUrl);
+}
 
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({ user_id: currentUser.id, ...data })
-          .eq('user_id', currentUser.id);
+function setAvatar(url) {
+  document.getElementById('nav-avatar').innerHTML = '<img src="'+url+'" alt="avatar"><span class="nav-hired-dot'+(isHired?' show':'')+'" id="nav-hired-dot"></span>';
+  var bigImg = document.getElementById('profile-avatar-img');
+  bigImg.src=url; bigImg.style.display='block';
+  document.getElementById('profile-initials-big').style.display='none';
+}
 
-        if (error) throw error;
-        currentProfile = { ...currentProfile, ...data };
-        displayProfile();
-        closeModal('edit-profile-modal');
-        showToast('ok', 'Profile updated successfully');
-      } catch (err) {
-        showToast('err', err.message);
-      }
-    }
+function renderGreeting(name, status) {
+  var firstName = name.split(' ')[0];
+  var h = new Date().getHours();
+  var g = h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night';
+  var em = h<12?'🌅':h<17?'☀️':h<21?'🌆':'🌙';
+  var h1 = document.getElementById('greeting-h1');
+  h1.innerHTML = g+', <span id="greet-name" style="color:var(--teal)">'+escHtml(firstName)+'</span> '+em;
+  var msgs={draft:'Complete your profile to get noticed by employers.',pending_review:'Profile submitted — under review by our team.',approved:'Your profile is live! Employers can contact you.',rejected:'Your profile needs updates. Please fix and resubmit.'};
+  document.getElementById('greet-status').textContent = msgs[status] || 'Welcome to WorkLink.';
+  var badges={draft:'<span class="badge-pill badge-review"><i class="bi bi-pencil-square"></i> Draft</span>',pending_review:'<span class="badge-pill badge-pending"><i class="bi bi-hourglass-split"></i> Under Review</span>',approved:'<span class="badge-pill badge-approved"><i class="bi bi-check-circle-fill"></i> Approved</span>',rejected:'<span class="badge-pill badge-rejected"><i class="bi bi-x-circle-fill"></i> Rejected</span>'};
+  document.getElementById('stat-status-label').innerHTML = badges[status] || '—';
+}
 
-    async function generateUsername(firstName) {
-      const base = firstName.toLowerCase().replace(/\s+/g, '-');
-      let username = base;
-      let counter = 1;
+function renderCompletion(p) {
+  var fields = [{key:'full_name',label:'Full Name',type:'warn'},{key:'phone',label:'Phone Number',type:'warn'},{key:'dob',label:'Date of Birth',type:'err'},{key:'gender',label:'Gender',type:'warn'},{key:'id_number',label:'ID Number',type:'err'},{key:'edu_level',label:'Education Level',type:'warn'},{key:'current_town',label:'Current Town',type:'warn'},{key:'county',label:'County',type:'warn'},{key:'about_text',label:'About Yourself',type:'warn'},{key:'key_skills',label:'Key Skills',type:'warn'}];
+  var filled = fields.filter(function(f){return p[f.key]&&String(p[f.key]).trim()!=='';});
+  var pct = Math.round((filled.length/fields.length)*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-label').textContent=pct+'% complete ('+filled.length+' of '+fields.length+' fields)';
+  document.getElementById('stat-completion').textContent=pct+'%';
+  var missing = fields.filter(function(f){return !p[f.key]||String(p[f.key]).trim()==='';});
+  var html = missing.slice(0,4).map(function(f){
+    return '<div class="missing-item '+f.type+'"><i class="bi '+(f.type==='err'?'bi-x-circle-fill':'bi-exclamation-circle-fill')+'"></i><span>'+f.label+' is missing</span><a href="post-profile.html"><i class="bi bi-pencil"></i> Fix</a></div>';
+  }).join('');
+  if (!missing.length) html='<div class="missing-item ok"><i class="bi bi-check-circle-fill"></i><span>All required fields complete!</span></div>';
+  document.getElementById('missing-list').innerHTML=html;
+}
 
-      while (true) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', username)
-          .single()
-          .catch(() => ({ data: null }));
+function renderPayments(payments) {
+  var paid=payments.filter(function(p){return p.status==='confirmed';});
+  var total=paid.reduce(function(s,p){return s+(p.amount||0);},0);
+  document.getElementById('stat-paid').textContent='KES '+total.toLocaleString();
+  var hasReg=paid.some(function(p){return p.fee_type==='reg';});
+  var hasPlc=paid.some(function(p){return p.fee_type==='plc';});
+  document.getElementById('reg-fee-status').innerHTML=hasReg?'<span style="color:var(--teal)"><i class="bi bi-check-circle-fill"></i> Paid</span>':'<span style="color:var(--gold)"><i class="bi bi-clock"></i> Pending</span>';
+  document.getElementById('plc-fee-status').innerHTML=hasPlc?'<span style="color:var(--teal)"><i class="bi bi-check-circle-fill"></i> Paid</span>':'<span style="color:var(--muted)">Due on first salary</span>';
+  if (!payments.length){document.getElementById('pay-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:5px"></i>No payments yet.</td></tr>';return;}
+  var rows=payments.map(function(p){
+    var dt=p.created_at?new Date(p.created_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'—';
+    var st=p.status==='confirmed'?'<span class="pay-status-paid"><i class="bi bi-check-circle-fill"></i> Confirmed</span>':'<span class="pay-status-pending"><i class="bi bi-clock"></i> Pending</span>';
+    return '<tr><td style="font-size:12px;font-family:\'JetBrains Mono\',monospace">'+(p.mpesa_ref||'—')+'</td><td style="font-size:12px">'+dt+'</td><td><span class="badge-pill '+(p.fee_type==='reg'?'badge-review':'badge-pending')+'">'+(p.fee_type==='reg'?'Registration':'Placement')+'</span></td><td style="font-weight:700">KES '+(p.amount||0).toLocaleString()+'</td><td>'+st+'</td><td>'+(p.status==='confirmed'?'<button class="btn btn-ghost btn-sm" onclick=\'showReceipt('+JSON.stringify(p).replace(/'/g,"&#39;")+')\' ><i class="bi bi-receipt"></i></button>':'')+'</td></tr>';
+  }).join('');
+  document.getElementById('pay-tbody').innerHTML=rows;
+}
 
-        if (!data) return username;
-        username = `${base}${counter++}`;
-      }
-    }
+function renderSettings(s) {
+  if (s.email_notif!==undefined) document.getElementById('set-email').checked=!!s.email_notif;
+  if (s.sms_notif!==undefined) document.getElementById('set-sms').checked=!!s.sms_notif;
+  if (s.profile_visible!==undefined) document.getElementById('set-visible').checked=!!s.profile_visible;
+  // Verified badge
+  if (isVerified) {
+    document.getElementById('verified-badge-inline').style.display='inline-flex';
+    document.getElementById('profile-verified-badge').style.display='block';
+  }
+}
 
-    async function submitVerification() {
-      try {
-        const idFile = document.getElementById('file-id').files[0];
-        const selfieFile = document.getElementById('file-selfie').files[0];
+function fillProfileModal(wp, ud) {
+  var set=function(id,val){var el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+  set('pf-name',wp.full_name||ud.full_name||'');
+  set('pf-phone',wp.phone||ud.phone||'');
+  set('pf-email',wp.email||ud.email||currentUser.email);
+  set('pf-dob',wp.dob||'');
+  set('pf-gender',wp.gender||'');
+  set('pf-role',wp.preferred_role||'');
+  set('pf-town',wp.current_town||'');
+  set('pf-county',wp.county||'');
+  set('pf-about',wp.about_text||'');
+  set('pf-langs',wp.languages||'');
+  set('pf-skills',wp.key_skills||'');
+}
 
-        if (!idFile || !selfieFile) {
-          showToast('err', 'Please upload both ID and selfie');
-          return;
-        }
+// ═══════════════════════════════════════════════════
+//  HIRED TOGGLE
+// ═══════════════════════════════════════════════════
+function renderHiredState(hired) {
+  isHired = hired;
+  document.getElementById('hired-toggle').checked = hired;
+  var wrap = document.getElementById('hired-toggle-wrap');
+  var banner = document.getElementById('hired-banner');
+  var dot = document.getElementById('nav-hired-dot');
+  if (hired) {
+    wrap.classList.add('active');
+    document.getElementById('hired-toggle-title').textContent = '🏆 I am currently Hired!';
+    document.getElementById('hired-toggle-sub').textContent = 'Your profile is marked as hired — employers will not schedule new interviews';
+    banner.classList.add('show');
+    if (dot) dot.classList.add('show');
+  } else {
+    wrap.classList.remove('active');
+    document.getElementById('hired-toggle-title').textContent = "I'm still looking for work";
+    document.getElementById('hired-toggle-sub').textContent = 'Toggle when you get hired so employers stop scheduling interviews';
+    banner.classList.remove('show');
+    if (dot) dot.classList.remove('show');
+  }
+  // Also mark job cards if hired
+  document.querySelectorAll('.job-card').forEach(function(c){
+    if (hired) c.classList.add('hired-overlay');
+    else c.classList.remove('hired-overlay');
+  });
+}
 
-        const ts = Date.now();
-        const idPath = `verifications/${currentUser.id}/id-${ts}`;
-        const selfiePath = `verifications/${currentUser.id}/selfie-${ts}`;
+async function toggleHiredStatus(isNowHired) {
+  try {
+    var up = {is_hired: isNowHired};
+    var ex = await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
+    if (ex.data) await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
+    else { up.user_id=currentUser.id; await sb.from('user_settings').insert(up); }
+    await sb.from('worker_profiles').update(up).eq('email',currentUser.email);
+    renderHiredState(isNowHired);
+    showToast('ok','bi-check-circle-fill',isNowHired?'Marked as Hired!':'Back to Job Searching',isNowHired?'Employers will see you are unavailable for new interviews.':'Your profile is now visible to employers.',5000);
+  } catch(e) {
+    showToast('err','bi-x-circle','Error',e.message,5000);
+    document.getElementById('hired-toggle').checked=!isNowHired; // revert
+  }
+}
 
-        await Promise.all([
-          supabase.storage.from('files').upload(idPath, idFile),
-          supabase.storage.from('files').upload(selfiePath, selfieFile)
-        ]);
+// ═══════════════════════════════════════════════════
+//  INTERVIEW MESSAGES (Employer → Employee only)
+// ═══════════════════════════════════════════════════
+async function loadInterviewMessages() {
+  try {
+    var res = await sb.from('messages')
+      .select('*')
+      .eq('receiver_id', currentUser.id)
+      .order('created_at', {ascending: false});
 
-        const { error } = await supabase
-          .from('verification_requests')
-          .insert({
-            user_id: currentUser.id,
-            email: currentUser.email,
-            id_document: idPath,
-            selfie: selfiePath,
-            status: 'pending'
-          });
+    var msgs = res.data || [];
 
-        if (error) throw error;
-        closeModal('verification-modal');
-        showToast('ok', 'Verification request submitted. Our team will review it shortly.');
-      } catch (err) {
-        showToast('err', err.message);
-      }
-    }
+    // Also fetch employer replies
+    var sentRes = await sb.from('messages')
+      .select('*')
+      .eq('sender_id', currentUser.id)
+      .not('receiver_id', 'is', null)
+      .order('created_at', {ascending: false});
+    var sentMsgs = sentRes.data || [];
 
-    function copyProfileUrl() {
-      const url = document.getElementById('profile-url').value;
-      navigator.clipboard.writeText(url);
-      showToast('ok', 'Profile URL copied to clipboard!');
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // SETTINGS
-    // ═══════════════════════════════════════════════════════════════
-    async function saveSetting(key, value) {
-      try {
-        const { error } = await supabase
-          .from('user_settings')
-          .upsert({ user_id: currentUser.id, [key]: value })
-          .eq('user_id', currentUser.id);
-
-        if (error) throw error;
-        showToast('ok', 'Setting saved');
-      } catch (err) {
-        showToast('err', err.message);
-      }
-    }
-
-    function loadSettingsUI() {
-      // Default theme button highlight
-      document.getElementById('theme-light').classList.add('btn-primary');
-    }
-
-    async function signOut() {
-      if (!confirm('Are you sure you want to sign out?')) return;
-      await supabase.auth.signOut();
-      window.location.href = '/login.html';
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // UI FUNCTIONS
-    // ═══════════════════════════════════════════════════════════════
-    function openModal(id) {
-      document.getElementById(id).classList.add('open');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('open');
-    }
-
-    function switchTab(tabName) {
-      // Hide all
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-
-      // Show selected
-      document.getElementById(tabName).classList.remove('hidden');
-      event.target.closest('.tab').classList.add('active');
-    }
-
-    function showToast(type, message) {
-      const stack = document.getElementById('toast-stack');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      
-      const icon = type === 'ok' ? 'check-circle' : type === 'err' ? 'x-circle' : 'exclamation-circle';
-      toast.innerHTML = `<i class="bi bi-${icon}"></i> <span>${message}</span>`;
-      
-      stack.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    function showLoader(show) {
-      document.getElementById('page-loader').classList.toggle('hidden', !show);
-    }
-
-    // Close modals on overlay click
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-          overlay.classList.remove('open');
-        }
-      });
+    // Group by employer/sender
+    var threads = {};
+    msgs.forEach(function(m) {
+      var empId = m.sender_id || 'unknown';
+      var empName = m.employer_name || m.sender_name || 'Employer';
+      if (!threads[empId]) threads[empId] = {id: empId, name: empName, job: m.job_title||'', messages: [], status: m.interview_status||'ongoing', unread: 0};
+      threads[empId].messages.push({...m, mine: false});
+      if (!m.read) threads[empId].unread++;
+    });
+    sentMsgs.forEach(function(m) {
+      var empId = m.receiver_id || 'unknown';
+      if (threads[empId]) threads[empId].messages.push({...m, mine: true});
+    });
+    // Sort messages within each thread
+    Object.values(threads).forEach(function(t) {
+      t.messages.sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
     });
 
-    // Initialize on load
-    window.addEventListener('load', init);
-  </script>
+    interviewThreads = Object.values(threads);
+    renderInterviewList(interviewThreads);
+
+    // Update stats
+    var total=interviewThreads.length, ongoing=interviewThreads.filter(function(t){return t.status!=='complete';}).length, complete=interviewThreads.filter(function(t){return t.status==='complete';}).length, unread=interviewThreads.reduce(function(s,t){return s+t.unread;},0);
+    document.getElementById('ist-all-count').textContent=total;
+    document.getElementById('ist-ongoing-count').textContent=ongoing;
+    document.getElementById('ist-complete-count').textContent=complete;
+    document.getElementById('ist-unread-count').textContent=unread;
+
+    if (unread>0) {
+      setBadge('msg-badge', true, unread>9?'9+':String(unread));
+      document.getElementById('msg-tab-badge').style.display='block';
+    }
+
+    // Also update applications list in messages tab
+    renderApplicationsMsgTab();
+  } catch(e) {
+    console.warn('loadInterviewMessages:', e.message);
+  }
+}
+
+var currentInterviewFilter = 'all';
+function filterInterviews(filter, el) {
+  currentInterviewFilter = filter;
+  document.querySelectorAll('.ist-card').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active');
+  var filtered = interviewThreads.filter(function(t){
+    if (filter==='all') return true;
+    if (filter==='ongoing') return t.status!=='complete';
+    if (filter==='complete') return t.status==='complete';
+    if (filter==='unread') return t.unread>0;
+    return true;
+  });
+  renderInterviewList(filtered);
+}
+
+function renderInterviewList(threads) {
+  var waitNote = document.getElementById('interview-wait-note');
+  var list = document.getElementById('interview-list');
+  if (!threads.length) {
+    waitNote.style.display='block'; list.style.display='none'; return;
+  }
+  waitNote.style.display='none'; list.style.display='flex';
+  list.innerHTML = threads.map(function(t) {
+    var latest = t.messages[t.messages.length-1];
+    var preview = latest ? latest.content.substring(0,80) : 'No messages yet';
+    var dt = latest ? timeAgo(new Date(latest.created_at)) : '';
+    var statusBadge = t.status==='complete'?'<span class="badge-pill badge-approved">Complete</span>':'<span class="badge-pill badge-review"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 1.5s infinite;margin-right:3px"></span>Ongoing</span>';
+    var initial = (t.name||'E').charAt(0).toUpperCase();
+    return '<div class="interview-card'+(t.unread?' unread':'')+'" onclick="openInterviewThread(\''+t.id+'\')">'+
+      '<div class="interview-card-head">'+
+      '<div class="employer-avatar">'+initial+'</div>'+
+      '<div><div class="employer-name">'+escHtml(t.name)+'</div><div class="employer-job">'+escHtml(t.job||'Interview')+'</div></div>'+
+      '<div class="interview-time">'+dt+'</div>'+
+      (t.unread?'<span class="msghub-unread-count" style="margin-left:6px">'+t.unread+'</span>':'')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:.4rem">'+statusBadge+'</div>'+
+      '<div class="interview-preview">'+escHtml(preview)+'</div></div>';
+  }).join('');
+}
+
+function openInterviewThread(empId) {
+  var t = interviewThreads.find(function(x){return x.id===empId;});
+  if (!t) return;
+  currentInterviewId = empId;
+  document.getElementById('interview-modal-employer').textContent = t.name;
+  document.getElementById('interview-modal-job').textContent = t.job || '';
+  document.getElementById('interview-modal-status').innerHTML = t.status==='complete'?'<span class="badge-pill badge-approved">Complete</span>':'<span class="badge-pill badge-review">Ongoing</span>';
+  document.getElementById('mark-complete-btn').style.display = t.status==='complete'?'none':'inline-flex';
+
+  var thread = document.getElementById('interview-thread-modal');
+  if (!t.messages.length) {
+    thread.innerHTML='<div class="msg-wait-note"><i class="bi bi-clock"></i><strong>Waiting for messages</strong><p>Employer messages will appear here.</p></div>';
+  } else {
+    thread.innerHTML = t.messages.map(function(m){
+      var dt = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) : '';
+      return '<div style="display:flex;flex-direction:column;align-items:'+(m.mine?'flex-end':'flex-start')+'">'+
+        '<div class="msg-bubble '+(m.mine?'mine':'theirs')+'">'+escHtml(m.content||'')+
+        '<div class="msg-meta">'+(m.mine?'You':escHtml(t.name))+' · '+dt+'</div></div></div>';
+    }).join('');
+    setTimeout(function(){thread.scrollTop=thread.scrollHeight;},50);
+  }
+  document.getElementById('modal-interview').classList.add('open');
+  // Mark as read
+  var unreadIds = t.messages.filter(function(m){return !m.mine&&!m.read;}).map(function(m){return m.id;});
+  if (unreadIds.length) sb.from('messages').update({read:true}).in('id',unreadIds).then(function(){}).catch(function(){});
+  t.unread = 0;
+}
+
+async function sendInterviewReply() {
+  var input = document.getElementById('interview-reply-input');
+  var content = input.value.trim();
+  if (!content || !currentInterviewId) return;
+  try {
+    await sb.from('messages').insert({sender_id:currentUser.id, receiver_id:currentInterviewId, content:content, is_from_admin:false});
+    input.value='';
+    // Optimistic add
+    var thread = document.getElementById('interview-thread-modal');
+    var dt = new Date().toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
+    var div=document.createElement('div'); div.style.cssText='display:flex;flex-direction:column;align-items:flex-end';
+    div.innerHTML='<div class="msg-bubble mine">'+escHtml(content)+'<div class="msg-meta">You · '+dt+'</div></div>';
+    thread.appendChild(div); thread.scrollTop=thread.scrollHeight;
+    showToast('ok','bi-check-circle-fill','Reply Sent','Your reply was delivered.',3000);
+  } catch(e) { showToast('err','bi-x-circle','Send Failed',e.message,5000); }
+}
+
+async function markInterviewComplete() {
+  if (!currentInterviewId) return;
+  try {
+    await sb.from('messages').update({interview_status:'complete'}).eq('sender_id',currentInterviewId).eq('receiver_id',currentUser.id);
+    var t = interviewThreads.find(function(x){return x.id===currentInterviewId;});
+    if (t) t.status='complete';
+    document.getElementById('interview-modal-status').innerHTML='<span class="badge-pill badge-approved">Complete</span>';
+    document.getElementById('mark-complete-btn').style.display='none';
+    showToast('ok','bi-check2-circle','Interview Complete','Marked as completed.',3000);
+    loadInterviewMessages();
+  } catch(e) { showToast('err','bi-x-circle','Error',e.message,4000); }
+}
+
+function renderApplicationsMsgTab() {
+  var list = document.getElementById('applications-list-msg');
+  if (!myApplications.length) { list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div>'; return; }
+  var statusColors={applied:'badge-pending',shortlisted:'badge-review',hired:'badge-approved badge-hired',rejected:'badge-rejected'};
+  list.innerHTML=myApplications.map(function(a){
+    var j=a.jobs||{};
+    var dt=a.applied_at?new Date(a.applied_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'';
+    return '<div class="app-card"><div class="app-icon"><i class="bi bi-briefcase"></i></div><div class="app-info"><div class="app-title">'+escHtml(j.title||'Job')+'</div><div class="app-employer">'+escHtml(j.employer_name||'—')+'</div><div class="app-date">Applied '+dt+'</div></div><span class="badge-pill '+(statusColors[a.status]||'badge-pending')+'">'+capitalize(a.status||'applied')+'</span></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  MESSAGING HUB
+// ═══════════════════════════════════════════════════
+var msgHubCurrentTab='all';
+function openMsgHub() { document.getElementById('msghub-overlay').classList.add('open'); renderMsgHub(); }
+function closeMsgHub() { document.getElementById('msghub-overlay').classList.remove('open'); }
+function switchMsgHubTab(tab, btn) {
+  msgHubCurrentTab=tab;
+  document.querySelectorAll('.msghub-tab').forEach(function(t){t.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderMsgHub();
+}
+function renderMsgHub() {
+  var list=document.getElementById('msghub-list');
+  var items = interviewThreads.filter(function(t){
+    if(msgHubCurrentTab==='employer') return true;
+    return true;
+  });
+  if (!items.length) {
+    list.innerHTML='<div class="msghub-empty"><i class="bi bi-chat-square-dots"></i><div style="font-size:13px">No employer messages yet</div></div>';
+    return;
+  }
+  list.innerHTML=items.map(function(t){
+    var latest=t.messages[t.messages.length-1];
+    var preview=latest?latest.content.substring(0,50)+'…':'No messages';
+    var time=latest?timeAgo(new Date(latest.created_at)):'';
+    var init=(t.name||'E').charAt(0).toUpperCase();
+    return '<div class="msghub-item" onclick="closeMsgHub();switchTabByName(\'messages\');openInterviewThread(\''+t.id+'\')">'+
+      '<div class="msghub-item-avatar">'+init+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="msghub-item-name">'+escHtml(t.name)+'</div><div class="msghub-item-preview">'+escHtml(preview)+'</div></div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0"><span style="font-size:10px;color:var(--muted)">'+time+'</span>'+(t.unread?'<span class="msghub-unread-count">'+t.unread+'</span>':'')+'</div></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════════════
+function renderNotifications(notifs) {
+  var unread=notifs.filter(function(n){return !n.read;}).length;
+  setBadge('notif-badge', unread>0, unread>9?'9+':(unread||''));
+  var list=document.getElementById('notif-panel-list');
+  if (!notifs.length){list.innerHTML='<div style="text-align:center;padding:2.5rem 1rem;color:var(--muted)"><i class="bi bi-bell-slash" style="font-size:2rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No notifications yet</div>';return;}
+  list.innerHTML=notifs.map(function(n){
+    var dt=n.created_at?timeAgo(new Date(n.created_at)):'';
+    return '<div class="notif-item'+(n.read?'':' unread')+'" onclick="markNotifRead(\''+n.id+'\')"><span class="notif-dot '+(n.type||'info')+'"></span><div class="notif-item-content"><strong>'+escHtml(n.title)+'</strong>'+(n.body?'<p>'+escHtml(n.body)+'</p>':'')+'<div class="notif-time">'+dt+'</div></div></div>';
+  }).join('');
+}
+
+function toggleNotifPanel(forceClose) {
+  notifPanelOpen = forceClose ? false : !notifPanelOpen;
+  document.getElementById('notif-panel').classList.toggle('open', notifPanelOpen);
+  if (notifPanelOpen) setBadge('notif-badge', false);
+}
+
+async function markNotifRead(id) {
+  try { await sb.from('notifications').update({read:true}).eq('id',id).eq('user_id',currentUser.id); } catch(e){}
+  var el = document.querySelector('.notif-item[onclick*="'+id+'"]');
+  if (el) el.classList.remove('unread');
+}
+async function markAllNotifsRead() {
+  try { await sb.from('notifications').update({read:true}).eq('user_id',currentUser.id).eq('read',false); } catch(e){}
+  document.querySelectorAll('.notif-item.unread').forEach(function(el){el.classList.remove('unread');});
+  setBadge('notif-badge', false);
+  showToast('ok','bi-check-all','All Read','Notifications cleared.',3000);
+}
+
+// ═══════════════════════════════════════════════════
+//  JOBS
+// ═══════════════════════════════════════════════════
+async function loadJobs() {
+  try {
+    var res=await sb.from('jobs').select('*').eq('is_active',true).order('posted_at',{ascending:false}).limit(50);
+    allJobs=res.data||[];
+    renderJobs(allJobs);
+  } catch(e) {
+    document.getElementById('jobs-list').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-wifi-off" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>Could not load jobs.</div>';
+  }
+}
+
+function renderJobs(jobs) {
+  var list=document.getElementById('jobs-list');
+  if (!jobs.length){list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-briefcase" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No jobs listed yet.</div>';return;}
+  list.innerHTML=jobs.map(function(j){
+    var applied=myApplications.some(function(a){return a.job_id===j.id;});
+    return jobCardHTML(j, applied, false);
+  }).join('');
+  if (isHired) document.querySelectorAll('.job-card').forEach(function(c){c.classList.add('hired-overlay');});
+}
+
+function filterJobs() {
+  var q=document.getElementById('job-search-input').value.toLowerCase();
+  var role=document.getElementById('job-role-filter').value.toLowerCase();
+  var filtered=allJobs.filter(function(j){
+    var text=((j.title||'')+(j.employer_name||'')+(j.county||'')+(j.location||'')+(j.role_type||'')).toLowerCase();
+    return (!q||text.includes(q))&&(!role||(j.role_type||'').toLowerCase()===role);
+  });
+  renderJobs(filtered);
+}
+
+async function loadSuggestedJobs() {
+  try {
+    var res=await sb.from('suggested_jobs').select('*, jobs(*)').eq('worker_id',currentUser.id).order('created_at',{ascending:false}).limit(10);
+    var suggested=(res.data||[]).filter(function(s){return s.jobs&&s.status!=='dismissed';});
+    if (!suggested.length){document.getElementById('suggested-jobs-section').style.display='none';document.getElementById('suggested-banner').style.display='none';return;}
+    document.getElementById('suggested-jobs-section').style.display='block';
+    document.getElementById('suggested-banner').style.display='flex';
+    document.getElementById('suggested-count-text').textContent=suggested.length+' job'+(suggested.length>1?'s':'')+' suggested for you';
+    document.getElementById('suggested-jobs-list').innerHTML=suggested.map(function(s){
+      var j=s.jobs; var applied=myApplications.some(function(a){return a.job_id===j.id;});
+      return jobCardHTML(j,applied,true,s.note);
+    }).join('');
+    document.getElementById('overview-suggested').style.display='block';
+    document.getElementById('overview-suggested-list').innerHTML=suggested.slice(0,2).map(function(s){
+      var j=s.jobs;
+      return '<div class="job-card" onclick="openJobDetail(\''+j.id+'\')" style="margin-bottom:0"><div class="job-icon"><i class="bi bi-briefcase"></i></div><div class="job-info"><div class="job-title">'+escHtml(j.title||'')+'</div><div class="job-employer">'+escHtml(j.employer_name||'—')+'</div></div><span class="badge-pill badge-new"><i class="bi bi-stars"></i> Suggested</span></div>';
+    }).join('');
+  } catch(e){console.warn('loadSuggestedJobs:',e.message);}
+}
+
+function jobCardHTML(j, applied, isSuggested, note) {
+  var icons={'House Manager':'bi-house-heart','Nanny / Childcare':'bi-emoji-smile','Cook / Chef':'bi-egg-fried','Cleaner':'bi-brush','Gardener':'bi-flower1','Driver':'bi-car-front','Security Guard':'bi-shield','Elder Caregiver':'bi-heart-pulse','Other':'bi-briefcase'};
+  var icon=icons[j.role_type]||'bi-briefcase';
+  return '<div class="job-card'+(isHired?' hired-overlay':'')+'" onclick="openJobDetail(\''+j.id+'\')">'+
+    '<div class="job-icon"'+(isSuggested?' style="background:#f5f3ff;color:var(--violet)"':'')+'><i class="bi '+icon+'"></i></div>'+
+    '<div class="job-info"><div class="job-title">'+escHtml(j.title||'Job')+(isSuggested?' <span class="badge-pill badge-new" style="font-size:10px;padding:1px 6px"><i class="bi bi-stars"></i> Suggested</span>':'')+'</div>'+
+    '<div class="job-employer">'+escHtml(j.employer_name||'—')+(j.location?' · '+escHtml(j.location):'')+'</div>'+
+    (note?'<div style="font-size:11px;color:var(--violet);margin-top:2px"><i class="bi bi-chat-quote"></i> '+escHtml(note)+'</div>':'')+
+    '<div class="job-tags">'+(j.role_type?'<span class="job-tag">'+escHtml(j.role_type)+'</span>':'')+(j.county?'<span class="job-tag"><i class="bi bi-geo-alt"></i> '+escHtml(j.county)+'</span>':'')+(j.salary_range?'<span class="job-tag salary"><i class="bi bi-cash"></i> '+escHtml(j.salary_range)+'</span>':'')+'</div></div>'+
+    '<div class="job-actions">'+(applied?'<span class="badge-pill badge-approved" style="font-size:11px"><i class="bi bi-check-circle-fill"></i> Applied</span>':'<button class="btn btn-teal btn-sm" onclick="event.stopPropagation();applyDirect(\''+j.id+'\')"><i class="bi bi-send"></i> Apply</button>')+'</div></div>';
+}
+
+async function loadApplications() {
+  try {
+    var res=await sb.from('job_applications').select('*, jobs(title,employer_name,county)').eq('worker_id',currentUser.id).order('applied_at',{ascending:false});
+    myApplications=res.data||[];
+    document.getElementById('stat-applications').textContent=myApplications.length;
+    var list=document.getElementById('applications-list');
+    if (!myApplications.length){list.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.3"></i>No applications yet.</div>';return;}
+    var sc={applied:'badge-pending',shortlisted:'badge-review',hired:'badge-approved',rejected:'badge-rejected'};
+    list.innerHTML=myApplications.map(function(a){
+      var j=a.jobs||{};
+      var dt=a.applied_at?new Date(a.applied_at).toLocaleDateString('en-KE',{dateStyle:'medium'}):'';
+      return '<div class="app-card"><div class="app-icon"><i class="bi bi-briefcase"></i></div><div class="app-info"><div class="app-title">'+escHtml(j.title||'Job')+'</div><div class="app-employer">'+escHtml(j.employer_name||'—')+(j.county?' · '+escHtml(j.county):'')+'</div><div class="app-date">Applied '+dt+'</div></div><span class="badge-pill '+(sc[a.status]||'badge-pending')+'">'+capitalize(a.status||'applied')+'</span></div>';
+    }).join('');
+  } catch(e){console.warn('loadApplications:',e.message);}
+}
+
+function openJobDetail(jobId) {
+  var j=allJobs.find(function(x){return x.id===jobId;});
+  if (!j) return;
+  currentJobId=jobId;
+  document.getElementById('job-modal-title').textContent=j.title||'Job Details';
+  var applied=myApplications.some(function(a){return a.job_id===jobId;});
+  var btn=document.getElementById('apply-job-btn');
+  btn.disabled=applied||isHired;
+  btn.innerHTML=isHired?'<i class="bi bi-trophy-fill"></i> You are Hired':(applied?'<i class="bi bi-check-circle-fill"></i> Applied':'<i class="bi bi-send"></i> Apply Now');
+  document.getElementById('job-modal-body').innerHTML=
+    '<div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem">'+
+    '<div class="job-icon" style="width:52px;height:52px;font-size:22px"><i class="bi bi-briefcase"></i></div>'+
+    '<div><div style="font-size:15px;font-weight:800">'+escHtml(j.title||'')+'</div>'+
+    '<div style="color:var(--muted);font-size:12.5px">'+escHtml(j.employer_name||'—')+'</div>'+
+    '<div class="job-tags" style="margin-top:5px">'+(j.county?'<span class="job-tag"><i class="bi bi-geo-alt"></i> '+escHtml(j.county)+'</span>':'')+(j.salary_range?'<span class="job-tag salary"><i class="bi bi-cash"></i> '+escHtml(j.salary_range)+'</span>':'')+'</div></div></div>'+
+    (isHired?'<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:11px 13px;font-size:13px;color:#065f46;margin-bottom:1rem;display:flex;gap:8px;align-items:center"><i class="bi bi-trophy-fill"></i> You are currently hired. Toggle the Hired status to apply for new jobs.</div>':'')+
+    (j.description?'<div style="margin-bottom:1rem"><h4 style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">About the Role</h4><p style="font-size:13px;line-height:1.6;color:var(--ink)">'+escHtml(j.description).replace(/\n/g,'<br>')+'</p></div>':'')+
+    (j.requirements?'<div><h4 style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">Requirements</h4><p style="font-size:13px;line-height:1.6;color:var(--ink)">'+escHtml(j.requirements).replace(/\n/g,'<br>')+'</p></div>':'');
+  document.getElementById('modal-job').classList.add('open');
+}
+
+async function applyToJob() {
+  if (!currentJobId || isHired) return;
+  var btn=document.getElementById('apply-job-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Applying…';
+  try {
+    var {error}=await sb.from('job_applications').insert({job_id:currentJobId,worker_id:currentUser.id,status:'applied'});
+    if (error&&error.code!=='23505') throw error;
+    showToast('ok','bi-check-circle-fill','Application Sent!','Your application has been submitted.',5000);
+    closeModal('modal-job'); await loadApplications(); renderJobs(allJobs);
+  } catch(e) { showToast('err','bi-x-circle','Error',e.message,5000); btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Apply Now'; }
+}
+async function applyDirect(id){currentJobId=id;await applyToJob();}
+
+// ═══════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════
+var TABS=['overview','messages','jobs','payments','manual','settings'];
+function switchTab(name, btn) {
+  TABS.forEach(function(t){document.getElementById('tab-'+t).style.display=t===name?'':'none';});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  if (name==='jobs') filterJobs();
+}
+function switchTabByName(name) {
+  var btn=document.querySelector('.tab[data-tab="'+name+'"]');
+  switchTab(name, btn);
+}
+
+function switchMsgSubTab(tab, btn) {
+  ['interviews','applications'].forEach(function(t){
+    var p=document.getElementById('msg-panel-'+t);
+    var b=document.getElementById('msg-subtab-'+t);
+    if(p) p.style.display=t===tab?'':'none';
+    if(b){b.classList.remove('active');if(t===tab)b.classList.add('active');}
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  PROFILE MODAL
+// ═══════════════════════════════════════════════════
+function openProfileModal(){document.getElementById('modal-profile').classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+async function saveProfile() {
+  var btn=document.getElementById('save-profile-btn');
+  btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Saving…';
+  var payload={full_name:document.getElementById('pf-name').value.trim(),phone:document.getElementById('pf-phone').value.trim(),dob:document.getElementById('pf-dob').value,gender:document.getElementById('pf-gender').value,preferred_role:document.getElementById('pf-role').value,current_town:document.getElementById('pf-town').value.trim(),county:document.getElementById('pf-county').value,about_text:document.getElementById('pf-about').value.trim(),languages:document.getElementById('pf-langs').value.trim(),key_skills:document.getElementById('pf-skills').value.trim()};
+  try {
+    await sb.from('worker_profiles').update(payload).eq('email',currentUser.email);
+    await sb.from('users').update({full_name:payload.full_name,phone:payload.phone}).eq('id',currentUser.id);
+    showToast('ok','bi-check-circle-fill','Profile Saved','Profile updated successfully.',4000);
+    closeModal('modal-profile'); loadDashboard();
+  } catch(e) {
+    var msg=document.getElementById('profile-save-msg'); msg.style.display='flex'; msg.innerHTML='<i class="bi bi-exclamation-circle-fill"></i> Save failed: '+e.message;
+  }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-floppy"></i> Save Changes';
+}
+
+async function uploadAvatar(input) {
+  var file=input.files[0]; if (!file) return;
+  if (file.size>3*1024*1024){showToast('err','bi-exclamation-circle','Too Large','Photo must be under 3MB.',5000);return;}
+  showToast('info','bi-arrow-repeat','Uploading…','Uploading photo…',3000);
+  var ext=file.name.split('.').pop();
+  var path=currentUser.id+'/avatar.'+ext;
+  var res=await sb.storage.from(BUCKET).upload(path,file,{upsert:true});
+  if (res.error){showToast('err','bi-x-circle','Upload Failed',res.error.message,5000);return;}
+  var url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  await sb.from('users').update({avatar_url:url}).eq('id',currentUser.id);
+  await sb.from('worker_profiles').update({profile_photo_url:url}).eq('email',currentUser.email);
+  setAvatar(url);
+  showToast('ok','bi-check-circle-fill','Photo Updated','',4000);
+}
+
+// ═══════════════════════════════════════════════════
+//  PAYMENT MODAL
+// ═══════════════════════════════════════════════════
+function openPayModal(){
+  selectedFeeType=null; selectedMethod=null;
+  document.getElementById('pay-amount-box').style.display='none';
+  document.getElementById('pay-steps').classList.remove('show');
+  document.getElementById('stk-status').style.display='none';
+  document.getElementById('pay-phone-wrap').style.display='none';
+  document.getElementById('pay-ref-confirm').style.display='none';
+  document.querySelectorAll('.pay-method-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('modal-pay').classList.add('open');
+}
+function closePayModal(){closeModal('modal-pay'); currentSTKRef=null;}
+
+function selectFee(type){
+  selectedFeeType=type;
+  var f=FEES[type];
+  document.getElementById('pay-amount-display').textContent='KES '+f.amount.toLocaleString();
+  document.getElementById('pay-amount-desc').textContent=f.label;
+  document.getElementById('pay-amount-box').style.display='block';
+  document.getElementById('pay-steps').classList.add('show');
+  document.getElementById('fee-reg-btn').style.cssText=type==='reg'?'background:var(--teal-soft);border-color:var(--teal)':'';
+  document.getElementById('fee-plc-btn').style.cssText=type==='plc'?'background:var(--teal-soft);border-color:var(--teal)':'';
+}
+
+function selectMethod(method,el){
+  selectedMethod=method;
+  document.querySelectorAll('.pay-method-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  var phone=(workerProfile&&workerProfile.phone)||(currentUser.user_metadata&&currentUser.user_metadata.phone)||'';
+  document.getElementById('pay-phone').value=phone;
+  document.getElementById('pay-phone-wrap').style.display='block';
+  document.getElementById('stk-status').style.display='none';
+}
+
+async function sendSTK(){
+  if (!selectedFeeType||!selectedMethod){showToast('err','bi-exclamation-circle','Select Fee & Method','Please choose both a fee and payment method.',4000);return;}
+  if (!document.getElementById('tc-agree').checked){showToast('err','bi-exclamation-circle','Accept Terms','Please agree to the Terms & Conditions first.',4000);return;}
+  var phone=document.getElementById('pay-phone').value.trim();
+  if (!phone){showToast('err','bi-exclamation-circle','Phone Required','Enter your mobile number.',4000);return;}
+  var btn=document.getElementById('send-stk-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Sending…';
+  var fee=FEES[selectedFeeType];
+  var stk=document.getElementById('stk-status');
+  stk.className='stk-status sent'; stk.style.display='block';
+  stk.innerHTML='<i class="bi bi-phone-vibrate"></i><strong>Check your phone!</strong><p>A prompt for <strong>KES '+fee.amount.toLocaleString()+'</strong> was sent to <strong>'+escHtml(phone)+'</strong>.<br>Enter your M-Pesa PIN to complete.</p>';
+  document.getElementById('pay-phone-wrap').style.display='none';
+  var tempRef='PENDING-'+Date.now();
+  try {
+    var ins=await sb.from('payments').insert({user_id:currentUser.id,fee_type:selectedFeeType,amount:fee.amount,phone:phone,method:selectedMethod,status:'pending',mpesa_ref:tempRef,created_at:new Date().toISOString()}).select().maybeSingle();
+    if (ins.data) currentSTKRef=ins.data.id;
+    currentPendingRef=tempRef;
+  } catch(e){console.warn('Payment insert:',e.message);}
+  document.getElementById('pay-ref-confirm').style.display='block';
+  document.getElementById('mpesa-ref-input').value='';
+  document.getElementById('mpesa-ref-input').focus();
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Send Payment Prompt';
+}
+
+async function confirmPaymentWithRef(){
+  var ref=document.getElementById('mpesa-ref-input').value.trim().toUpperCase();
+  if (!ref||ref.length<8){showToast('err','bi-exclamation-circle','Ref Required','Enter the M-Pesa reference from your SMS.',4000);return;}
+  var fee=FEES[selectedFeeType];
+  try {
+    if (currentSTKRef){await sb.from('payments').update({mpesa_ref:ref,status:'confirmed'}).eq('id',currentSTKRef).eq('user_id',currentUser.id);}
+    else{await sb.from('payments').insert({user_id:currentUser.id,fee_type:selectedFeeType,amount:fee.amount,method:selectedMethod||'mpesa',status:'confirmed',mpesa_ref:ref,created_at:new Date().toISOString()});}
+  } catch(e){console.warn('confirm update:',e.message);}
+  var stk=document.getElementById('stk-status');
+  stk.className='stk-status ok'; stk.style.display='block';
+  stk.innerHTML='<i class="bi bi-check-circle-fill"></i><strong>Payment Recorded!</strong><p>KES '+fee.amount.toLocaleString()+' confirmed. Ref: <strong style="font-family:\'JetBrains Mono\',monospace">'+escHtml(ref)+'</strong></p>';
+  document.getElementById('pay-ref-confirm').style.display='none';
+  showToast('ok','bi-check-circle-fill','Payment Confirmed!','KES '+fee.amount.toLocaleString()+' • Ref: '+ref, 0);
+  setTimeout(function(){closePayModal();loadDashboard();},2500);
+}
+
+function showReceipt(p){
+  var dt=p.created_at?new Date(p.created_at).toLocaleString('en-KE',{dateStyle:'long',timeStyle:'short'}):'—';
+  document.getElementById('r-ref').textContent=p.mpesa_ref||'—';
+  document.getElementById('r-datetime').textContent=dt;
+  document.getElementById('r-phone').textContent=p.phone||'—';
+  document.getElementById('r-type').textContent=p.fee_type==='reg'?'Registration Fee':'Placement Fee';
+  document.getElementById('r-amount').textContent='KES '+(p.amount||0).toLocaleString();
+  document.getElementById('modal-receipt').classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════
+//  OTP VERIFICATION
+// ═══════════════════════════════════════════════════
+function openVerifyModal(){document.getElementById('modal-verify').classList.add('open');}
+
+function otpNext(el) {
+  if (el.value.length===1) {
+    var inputs=document.querySelectorAll('.otp-digit');
+    var idx=Array.from(inputs).indexOf(el);
+    if (idx<inputs.length-1) inputs[idx+1].focus();
+  }
+}
+function otpBack(e, el) {
+  if (e.key==='Backspace'&&!el.value) {
+    var inputs=document.querySelectorAll('.otp-digit');
+    var idx=Array.from(inputs).indexOf(el);
+    if (idx>0) inputs[idx-1].focus();
+  }
+}
+
+async function sendOTP(){
+  var phone=document.getElementById('verify-phone').value.trim();
+  if (!phone){showToast('err','bi-exclamation-circle','Phone Required','Enter your phone number.',4000);return;}
+  var btn=document.getElementById('send-otp-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Sending…';
+  // Generate mock OTP and store it (in production this would be SMS)
+  generatedOTP = String(Math.floor(100000 + Math.random() * 900000));
+  console.log('OTP (dev mode):', generatedOTP); // Remove in production
+  document.getElementById('verify-phone-display').textContent=phone;
+  document.getElementById('verify-step-1').style.display='none';
+  document.getElementById('verify-step-2').style.display='block';
+  showToast('ok','bi-phone','OTP Sent','A 6-digit code was sent to '+phone,5000);
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-send"></i> Send OTP Code';
+}
+
+async function verifyOTP(){
+  var digits=document.querySelectorAll('.otp-digit');
+  var entered=Array.from(digits).map(function(d){return d.value;}).join('');
+  if (entered.length!==6){showToast('err','bi-exclamation-circle','Enter Code','Please enter the full 6-digit code.',4000);return;}
+  var btn=document.getElementById('verify-otp-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Verifying…';
+  // In production: verify with backend. Here we accept any 6 digits for demo.
+  var valid=(entered===generatedOTP)||(generatedOTP===null); // null = any code accepted in demo
+  if (valid) {
+    try {
+      var up={is_verified:true};
+      var ex=await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
+      if (ex.data) await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
+      else{up.user_id=currentUser.id; await sb.from('user_settings').insert(up);}
+      await sb.from('worker_profiles').update(up).eq('email',currentUser.email);
+    } catch(e){console.warn('verify save:',e.message);}
+    isVerified=true;
+    document.getElementById('verify-step-2').style.display='none';
+    document.getElementById('verify-step-3').style.display='block';
+    document.getElementById('verified-badge-inline').style.display='inline-flex';
+    document.getElementById('profile-verified-badge').style.display='block';
+    showToast('ok','bi-patch-check-fill','Verified!','You earned your verified badge!',5000);
+  } else {
+    showToast('err','bi-x-circle','Wrong Code','The code you entered is incorrect. Try again.',4000);
+  }
+  btn.disabled=false; btn.innerHTML='<i class="bi bi-check-circle"></i> Verify Code';
+}
+
+// ═══════════════════════════════════════════════════
+//  TERMS MODAL
+// ═══════════════════════════════════════════════════
+function openTCModal(){document.getElementById('modal-tc').classList.add('open');}
+
+// ═══════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════
+async function saveSetting(key,val){
+  try{
+    var up={};up[key]=val;
+    var ex=await sb.from('user_settings').select('id').eq('user_id',currentUser.id).maybeSingle();
+    if(ex.data)await sb.from('user_settings').update(up).eq('user_id',currentUser.id);
+    else{up.user_id=currentUser.id;await sb.from('user_settings').insert(up);}
+    showToast('ok','bi-check-circle-fill','Saved','Preference updated.',3000);
+  }catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
+}
+
+async function sendPasswordReset(){
+  try{await sb.auth.resetPasswordForEmail(currentUser.email,{redirectTo:window.location.origin+'/reset-password.html'});showToast('ok','bi-envelope-check','Reset Email Sent','Check your inbox.',6000);}
+  catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
+}
+
+async function signOut(){
+  if (!confirm('Are you sure you want to sign out?')) return;
+  await sb.auth.signOut();
+  window.location.href='login.html';
+}
+
+function openDeactivateModal(){document.getElementById('modal-deactivate').classList.add('open');}
+async function deactivateAccount(){
+  try{
+    await sb.from('worker_profiles').update({status:'deactivated'}).eq('email',currentUser.email);
+    await sb.from('user_settings').update({profile_visible:false}).eq('user_id',currentUser.id);
+    showToast('ok','bi-pause-circle','Account Deactivated','Your profile is hidden. Log in anytime to reactivate.',0);
+    closeModal('modal-deactivate');
+    setTimeout(function(){sb.auth.signOut().then(function(){window.location.href='login.html';});},2500);
+  }catch(e){showToast('err','bi-x-circle','Error',e.message,5000);}
+}
+
+function openDeleteModal(){document.getElementById('modal-delete').classList.add('open');}
+async function deleteAccount(){
+  var input=document.getElementById('delete-confirm-input').value.trim();
+  if (input!=='DELETE'){showToast('err','bi-exclamation-circle','Type DELETE','Type DELETE in capital letters to confirm.',4000);return;}
+  var btn=document.getElementById('confirm-delete-btn'); btn.disabled=true; btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Deleting…';
+  try{
+    await sb.from('worker_profiles').delete().eq('email',currentUser.email);
+    await sb.from('job_applications').delete().eq('worker_id',currentUser.id);
+    await sb.from('messages').delete().eq('sender_id',currentUser.id);
+    await sb.from('user_settings').delete().eq('user_id',currentUser.id);
+    showToast('ok','bi-trash3','Account Deleted','All your data has been removed.',0);
+    setTimeout(function(){sb.auth.signOut().then(function(){window.location.href='login.html';});},2000);
+  }catch(e){showToast('err','bi-x-circle','Delete Failed',e.message,5000);btn.disabled=false;btn.innerHTML='<i class="bi bi-trash3"></i> Permanently Delete';}
+}
+
+// ═══════════════════════════════════════════════════
+//  NEWS POPUP
+// ═══════════════════════════════════════════════════
+function openNewsPopup(){document.getElementById('news-popup-overlay').classList.add('open');}
+function closeNewsPopup(){document.getElementById('news-popup-overlay').classList.remove('open');}
+
+// ═══════════════════════════════════════════════════
+//  FAQ TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleFaq(btn){
+  var ans=btn.nextElementSibling;
+  var isOpen=ans.style.display!=='none';
+  var icon=btn.querySelector('i');
+  ans.style.display=isOpen?'none':'block';
+  if(icon){icon.className=isOpen?'bi bi-chevron-down':'bi bi-chevron-up';}
+}
+
+// ═══════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════
+function showToast(type,icon,title,body,duration){
+  var stack=document.getElementById('toast-stack');
+  var t=document.createElement('div'); t.className='toast';
+  t.innerHTML='<i class="bi '+icon+' toast-icon '+(type==='ok'?'ok':type==='err'?'err':type==='warn'?'warn':'info')+'"></i><div class="toast-content"><strong>'+escHtml(title)+'</strong>'+(body?'<p>'+escHtml(body)+'</p>':'')+'</div><button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
+  stack.appendChild(t);
+  if (duration>0) setTimeout(function(){t.classList.add('hide');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},duration);
+}
+
+// ═══════════════════════════════════════════════════
+//  BADGE HELPER
+// ═══════════════════════════════════════════════════
+function setBadge(id,show,text){
+  var el=document.getElementById(id);
+  if (!el) return;
+  if (show){el.classList.add('show');if(text)el.textContent=text;}
+  else{el.classList.remove('show');}
+}
+
+// ═══════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════
+function escHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function capitalize(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+function timeAgo(d){
+  var diff=(Date.now()-d)/1000;
+  if(diff<60)return 'just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  if(diff<604800)return Math.floor(diff/86400)+'d ago';
+  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
+}
+// CSS animation for spinner
+var styleEl=document.createElement('style');
+styleEl.textContent='.spin{animation:sp .75s linear infinite;}';
+document.head.appendChild(styleEl);
+</script>
+
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
+</script>
+
 </body>
 </html>
