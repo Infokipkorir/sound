@@ -659,6 +659,20 @@
 <!-- ═══ MAIN PAGE ══════════════════════════════════════════ -->
 <div class="page">
 
+  <!-- GREETING BANNER -->
+  <div id="greeting-banner" style="
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    border-radius: 14px; padding: 1rem 1.3rem;
+    margin-bottom: 1.1rem; color: #fff;
+    display: flex; align-items: center; gap: 10px;
+  ">
+    <span style="font-size: 1.5rem;" id="greeting-emoji">👋</span>
+    <div>
+      <div style="font-size: 1rem; font-weight: 800; letter-spacing:-0.2px;" id="greeting-text">Hello!</div>
+      <div style="font-size: 11.5px; opacity: 0.85;" id="greeting-sub">Welcome back to your dashboard.</div>
+    </div>
+  </div>
+
   <!-- STATS -->
   <section class="stats" id="section-stats">
     <div class="stat-card" onclick="openModal('modal-account')">
@@ -1028,15 +1042,32 @@
           <input type="text" id="edit-job-title" placeholder="e.g. House Manager">
         </div>
         <div class="form-group">
-          <label>ID Number</label>
-          <input type="text" id="edit-id-number" placeholder="National ID">
+          <label>Role Category</label>
+          <select id="edit-role-category">
+            <option value="">Select role</option>
+            <option>House Manager</option>
+            <option>Housekeeper</option>
+            <option>Cook / Chef</option>
+            <option>Nanny / Babysitter</option>
+            <option>Driver</option>
+            <option>Security Guard</option>
+            <option>Gardener</option>
+            <option>Laundry Assistant</option>
+            <option>Home Caregiver</option>
+            <option>General Worker</option>
+            <option>Other</option>
+          </select>
         </div>
       </div>
 
       <div class="form-cols">
         <div class="form-group">
+          <label>ID Number</label>
+          <input type="text" id="edit-id-number" placeholder="National ID">
+        </div>
+        <div class="form-group">
           <label>County</label>
-          <select id="edit-county">
+            <select id="edit-county">
             <option value="">Select county</option>
             <option>Nairobi</option><option>Mombasa</option><option>Kisumu</option>
             <option>Nakuru</option><option>Eldoret</option><option>Kiambu</option>
@@ -1056,7 +1087,9 @@
             <option>Vihiga</option><option>Bungoma</option><option>Busia</option>
           </select>
         </div>
-        <div class="form-group">
+      </div>
+
+      <div class="form-group">
           <label>Education Level</label>
           <select id="edit-education">
             <option value="">Select level</option>
@@ -1065,7 +1098,6 @@
             <option>Bachelor's Degree</option><option>Master's Degree</option>
             <option>PhD / Doctorate</option><option>Vocational Training</option>
           </select>
-        </div>
       </div>
 
       <div class="form-group">
@@ -1150,13 +1182,15 @@
         <div class="vstep-num">3</div>
         <div class="vstep-body">
           <div class="vstep-title">Verify Email</div>
-          <div class="vstep-desc">We'll send a 6-digit code to your registered email</div>
+          <div class="vstep-desc">We'll send an 8-digit code to your registered email</div>
           <div id="otp-section" style="margin-top:10px;">
             <button class="btn btn-ghost btn-sm" onclick="sendVerifOTP()" id="btn-send-otp">
               <i class="bi bi-envelope"></i> Send OTP to Email
             </button>
             <div id="otp-input-row" style="display:none; margin-top:10px;">
               <div class="otp-row">
+                <input class="otp-digit" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
+                <input class="otp-digit" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
                 <input class="otp-digit" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
                 <input class="otp-digit" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
                 <input class="otp-digit" maxlength="1" oninput="otpNext(this)" onkeydown="otpBack(event,this)">
@@ -1312,9 +1346,13 @@
 // ═══════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
-const BUCKET = 'worker-documents';
+// Correct bucket names from Supabase storage
+const BUCKET_ID   = 'id_verification';
+const BUCKET_SELFIE = 'selfie-verification';
+const BUCKET_CERT  = 'Certificate';
+const BUCKET_AVATAR = 'worker-documents';
 
-let sb, currentUser, workerProfile = {}, userSettings = {};
+let sb, currentUser, workerProfile = {};
 let notifPanelOpen = false;
 let generatedOTP = null, otpEmailVerified = false;
 
@@ -1330,6 +1368,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentUser = session.user;
 
   await loadDashboard();
+  renderGreeting();
 
   // Native share button
   if (navigator.share) document.getElementById('share-native-btn').style.display = 'flex';
@@ -1350,16 +1389,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
-    const [wpRes, sRes, notifRes, msgRes, jobRes] = await Promise.all([
+    const [wpRes, notifRes, msgRes, jobRes] = await Promise.all([
       sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
-      sb.from('user_settings').select('*').eq('user_id', currentUser.id).maybeSingle(),
       sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(50),
-      sb.from('messages').select('id, read').eq('receiver_id', currentUser.id),
-      sb.from('jobs').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      sb.from('messages').select('id, is_read, receiver_id').eq('receiver_id', currentUser.id),
+      sb.from('job_postings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     ]);
 
     workerProfile = wpRes.data || {};
-    userSettings = sRes.data || {};
     const notifs = notifRes.data || [];
     const msgs = msgRes.data || [];
     const jobCount = jobRes.count || 0;
@@ -1372,7 +1409,6 @@ async function loadDashboard() {
 
     renderAll(notifs, msgs, jobCount);
     renderNotifList(notifs);
-    renderSettings();
   } catch (e) {
     console.error('loadDashboard:', e);
     showToast('err', 'bi-exclamation-circle', 'Load Error', e.message);
@@ -1439,12 +1475,12 @@ function renderAll(notifs, msgs, jobCount) {
     : `https://www.sounds.co.ke/w/${currentUser.id.slice(0, 8)}`;
   setVal('profile-url', profileUrl);
 
-  // Hired toggle
-  const isHired = !!(userSettings.is_hired || wp.is_hired);
+  // Hired toggle — uses is_currently_hired column
+  const isHired = !!(wp.is_currently_hired || wp.is_hired);
   renderHiredState(isHired);
 
-  // Verified
-  const isVerified = wp.verification_status === 'verified' || wp.is_verified;
+  // Verified — uses verification_stage column (approved) or is_verified bool
+  const isVerified = wp.verification_stage === 'approved' || wp.is_verified === true;
   const verifRing = document.getElementById('verified-ring');
   const badgeVerif = document.getElementById('badge-verif');
   if (verifRing) verifRing.classList.toggle('show', isVerified);
@@ -1463,10 +1499,10 @@ function renderAll(notifs, msgs, jobCount) {
   const pct = Math.round(filled.length / fields.length * 100);
   setText('stat-profile-pct', pct + '%');
 
-  // Stats
-  const unreadMsgs = msgs.filter(m => !m.read).length;
-  const repliedMsgs = msgs.filter(m => m.read).length;
-  const unreadNotifs = notifs.filter(n => !n.read).length;
+  // Stats — fix: messages use is_read, notifications use is_read
+  const unreadMsgs = msgs.filter(m => !m.is_read).length;
+  const repliedMsgs = msgs.filter(m => m.is_read).length;
+  const unreadNotifs = notifs.filter(n => !n.is_read).length;
   setText('stat-interviews', unreadMsgs);
   setText('stat-replied', repliedMsgs);
   setText('stat-notifs', unreadNotifs);
@@ -1480,41 +1516,46 @@ function renderAll(notifs, msgs, jobCount) {
 
   // Detail tab — Overview
   setText('detail-email', currentUser.email);
-  setText('detail-phone', wp.phone || '—');
-  setText('detail-dob', wp.dob ? new Date(wp.dob).toLocaleDateString('en-KE', { dateStyle: 'medium' }) : '—');
+  setText('detail-phone', wp.phone || wp.phone_number || '—');
+  setText('detail-dob', (wp.dob || wp.date_of_birth) ? new Date(wp.dob || wp.date_of_birth).toLocaleDateString('en-KE', { dateStyle: 'medium' }) : '—');
   setText('detail-county', wp.county || wp.current_town || '—');
-  setText('detail-idno', wp.id_number ? '••••' + String(wp.id_number).slice(-4) : '—');
-  const verifStatusMap = { verified: '✓ Verified', pending: '⏳ Pending Review', rejected: '✗ Rejected', unverified: 'Not verified' };
-  setText('detail-verif-status', verifStatusMap[wp.verification_status || 'unverified'] || '—');
+  setText('detail-idno', (wp.id_number || wp.national_id) ? '••••' + String(wp.id_number || wp.national_id).slice(-4) : '—');
+  // verification_stage: unverified | submitted | pending_review | approved | rejected
+  const verifStageMap = { approved: '✓ Verified', pending_review: '⏳ Pending Review', submitted: '📤 Submitted', rejected: '✗ Rejected', unverified: 'Not verified' };
+  setText('detail-verif-status', verifStageMap[wp.verification_stage || 'unverified'] || '—');
 
   // Detail tab — Education / Experience / Referees
   setText('detail-education', wp.edu_level || wp.education || 'Not provided');
-  setText('detail-experience', wp.experiences || wp.about_text || 'Not provided');
-  setText('detail-referees', wp.referees || 'Not provided');
+  // experiences can be jsonb or text
+  const expText = typeof wp.experiences === 'string' ? wp.experiences : (Array.isArray(wp.experiences) ? wp.experiences.map(e => `${e.employer_name || ''} – ${e.job_description || ''}`).join('\n') : '');
+  const refText = typeof wp.referees === 'string' ? wp.referees : (Array.isArray(wp.referees) ? wp.referees.map(r => `${r.full_name || ''}, ${r.relationship || ''}, ${r.phone || ''}`).join('\n') : '');
+  setText('detail-experience', expText || wp.about_text || 'Not provided');
+  setText('detail-referees', refText || 'Not provided');
 
-  // ID doc preview
-  renderDocPreview('id-doc-preview', wp.id_document_url, 'National ID');
+  // ID doc preview — use id_front_url (correct DB column)
+  renderDocPreview('id-doc-preview', wp.id_front_url || wp.id_document_url, 'National ID');
   renderDocPreview('selfie-doc-preview', wp.selfie_url, 'Selfie with ID');
 
   // Populate My Profile modal
   populateMyProfile(name, initials, profileUrl);
 
-  // Populate Edit form
+  // Populate Edit form — autofill from DB using current session data
   const fn = wp.full_name ? wp.full_name.split(' ')[0] : '';
   const ln = wp.full_name ? wp.full_name.split(' ').slice(1).join(' ') : '';
   setVal('edit-first-name', wp.first_name || fn);
   setVal('edit-last-name', wp.last_name || ln);
   setVal('edit-email', currentUser.email);
-  setVal('edit-dob', wp.dob || '');
-  setVal('edit-phone', wp.phone || '');
+  setVal('edit-dob', wp.dob || wp.date_of_birth || '');
+  setVal('edit-phone', wp.phone || wp.phone_number || '');
   setVal('edit-job-title', wp.preferred_role || wp.job_title || '');
-  setVal('edit-id-number', wp.id_number || '');
-  setVal('edit-county', wp.county || '');
+  setVal('edit-role-category', wp.preferred_role || wp.job_title || '');
+  setVal('edit-id-number', wp.id_number || wp.national_id || '');
+  setVal('edit-county', wp.county || wp.current_town || '');
   setVal('edit-education', wp.edu_level || wp.education || '');
-  setVal('edit-experiences', wp.experiences || wp.about_text || '');
-  setVal('edit-referees', wp.referees || '');
+  setVal('edit-experiences', expText || wp.about_text || '');
+  setVal('edit-referees', refText || '');
   const lj = document.getElementById('edit-looking-job');
-  if (lj) lj.checked = wp.looking_for_job !== false && !userSettings.is_hired;
+  if (lj) lj.checked = wp.looking_for_job !== false && !wp.is_currently_hired;
 }
 
 function renderDocPreview(containerId, url, label) {
@@ -1547,10 +1588,12 @@ function populateMyProfile(name, initials, profileUrl) {
   setText('mp-dob', wp.dob ? new Date(wp.dob).toLocaleDateString('en-KE', { dateStyle: 'medium' }) : '—');
   setText('mp-county', wp.county || '—');
   setText('mp-education', wp.edu_level || wp.education || 'Not provided');
-  setText('mp-experience', wp.experiences || wp.about_text || 'Not provided');
-  setText('mp-referees', wp.referees || 'Not provided');
+  const expT = typeof wp.experiences === 'string' ? wp.experiences : (Array.isArray(wp.experiences) ? wp.experiences.map(e => `${e.employer_name || ''} – ${e.job_description || ''}`).join('\n') : '');
+  const refT = typeof wp.referees === 'string' ? wp.referees : (Array.isArray(wp.referees) ? wp.referees.map(r => `${r.full_name || ''}, ${r.relationship || ''}, ${r.phone || ''}`).join('\n') : '');
+  setText('mp-experience', expT || wp.about_text || 'Not provided');
+  setText('mp-referees', refT || 'Not provided');
 
-  const isVerified = wp.verification_status === 'verified' || wp.is_verified;
+  const isVerified = wp.verification_stage === 'approved' || wp.is_verified === true;
   const mpVerifBadge = document.getElementById('mp-verif-badge');
   if (mpVerifBadge) mpVerifBadge.style.display = isVerified ? 'inline-flex' : 'none';
 
@@ -1561,22 +1604,25 @@ function populateMyProfile(name, initials, profileUrl) {
     mpStatus.className = 'badge ' + cls; mpStatus.textContent = txt;
   }
 
-  // Verification banner in My Profile
+  // Verification banner in My Profile — uses verification_stage
   const banner = document.getElementById('mp-verif-banner');
   if (banner) {
-    if (wp.verification_status === 'pending') {
+    if (wp.verification_stage === 'pending_review' || wp.verification_stage === 'submitted') {
       banner.style.display = 'flex';
       banner.innerHTML = `<div class="verif-status-banner pending"><i class="bi bi-hourglass-split"></i> Verification pending — our team is reviewing your documents.</div>`;
     } else if (isVerified) {
       banner.style.display = 'flex';
       banner.innerHTML = `<div class="verif-status-banner verified"><i class="bi bi-patch-check-fill"></i> Profile verified! Employers trust verified workers.</div>`;
+    } else if (wp.verification_stage === 'rejected') {
+      banner.style.display = 'flex';
+      banner.innerHTML = `<div class="verif-status-banner rejected"><i class="bi bi-x-circle-fill"></i> Verification rejected. Please re-submit your documents.</div>`;
     } else {
       banner.style.display = 'none';
     }
   }
 
-  // ID preview in My Profile
-  renderDocPreview('mp-id-preview', wp.id_document_url, 'National ID');
+  // ID preview in My Profile — use id_front_url
+  renderDocPreview('mp-id-preview', wp.id_front_url || wp.id_document_url, 'National ID');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1596,14 +1642,9 @@ function renderHiredState(hired) {
 
 async function onHiredToggle(isHired) {
   try {
-    const up = { is_hired: isHired };
-    const existing = await sb.from('user_settings').select('id').eq('user_id', currentUser.id).maybeSingle();
-    if (existing.data) {
-      await sb.from('user_settings').update(up).eq('user_id', currentUser.id);
-    } else {
-      await sb.from('user_settings').insert({ ...up, user_id: currentUser.id });
-    }
-    await sb.from('worker_profiles').update(up).eq('email', currentUser.email);
+    // Use is_currently_hired column in worker_profiles (no user_settings table)
+    await sb.from('worker_profiles').update({ is_currently_hired: isHired, looking_for_job: !isHired }).eq('email', currentUser.email);
+    workerProfile.is_currently_hired = isHired;
     renderHiredState(isHired);
     showToast('ok', 'bi-check-circle-fill', isHired ? 'Marked as Hired!' : 'Back to Job Searching',
       isHired ? 'Employers will see you are unavailable.' : 'Your profile is visible to employers.');
@@ -1635,11 +1676,15 @@ async function saveProfile() {
     first_name: firstName,
     last_name: lastName,
     phone: document.getElementById('edit-phone').value.trim(),
+    phone_number: document.getElementById('edit-phone').value.trim(),
     dob: document.getElementById('edit-dob').value || null,
-    preferred_role: document.getElementById('edit-job-title').value.trim(),
+    date_of_birth: document.getElementById('edit-dob').value || null,
+    preferred_role: document.getElementById('edit-role-category').value || document.getElementById('edit-job-title').value.trim(),
     job_title: document.getElementById('edit-job-title').value.trim(),
     id_number: document.getElementById('edit-id-number').value.trim(),
+    national_id: document.getElementById('edit-id-number').value.trim(),
     county: document.getElementById('edit-county').value,
+    current_town: document.getElementById('edit-county').value,
     edu_level: document.getElementById('edit-education').value,
     education: document.getElementById('edit-education').value,
     experiences: document.getElementById('edit-experiences').value.trim(),
@@ -1682,9 +1727,9 @@ async function uploadAvatar(input) {
   showToast('info', 'bi-arrow-repeat', 'Uploading…', 'Uploading photo…');
   const ext = file.name.split('.').pop();
   const path = currentUser.id + '/avatar.' + ext;
-  const { error } = await sb.storage.from(BUCKET).upload(path, file, { upsert: true });
+  const { error } = await sb.storage.from(BUCKET_AVATAR).upload(path, file, { upsert: true });
   if (error) { showToast('err', 'bi-x-circle', 'Upload Failed', error.message); return; }
-  const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  const url = sb.storage.from(BUCKET_AVATAR).getPublicUrl(path).data.publicUrl;
   await sb.from('worker_profiles').update({ avatar_url: url, profile_photo_url: url }).eq('email', currentUser.email);
   workerProfile.avatar_url = url;
   // Update all avatar elements
@@ -1728,15 +1773,15 @@ async function sendVerifOTP() {
     if (error) throw error;
     document.getElementById('otp-input-row').style.display = 'block';
     btn.style.display = 'none';
-    showToast('ok', 'bi-envelope-check', 'OTP Sent', 'Check your email for the 6-digit code.');
+    showToast('ok', 'bi-envelope-check', 'OTP Sent', 'Check your email for the 8-digit code.');
     document.querySelector('.otp-digit').focus();
   } catch (e) {
-    // Fallback: generate local OTP (dev)
-    generatedOTP = String(Math.floor(100000 + Math.random() * 900000));
+    // Fallback: generate local 8-digit OTP (dev)
+    generatedOTP = String(Math.floor(10000000 + Math.random() * 90000000));
     console.log('[DEV OTP]', generatedOTP);
     document.getElementById('otp-input-row').style.display = 'block';
     btn.style.display = 'none';
-    showToast('ok', 'bi-envelope-check', 'OTP Sent', 'Check your email for the 6-digit code.');
+    showToast('ok', 'bi-envelope-check', 'OTP Sent', 'Check your email for the 8-digit code.');
     document.querySelector('.otp-digit').focus();
   }
   btn.disabled = false;
@@ -1744,7 +1789,7 @@ async function sendVerifOTP() {
 
 async function verifyOTP() {
   const digits = Array.from(document.querySelectorAll('.otp-digit')).map(d => d.value).join('');
-  if (digits.length !== 6) { showToast('warn', 'bi-exclamation-circle', 'Enter Code', 'Enter the full 6-digit code.'); return; }
+  if (digits.length !== 8) { showToast('warn', 'bi-exclamation-circle', 'Enter Code', 'Enter the full 8-digit code.'); return; }
 
   try {
     // Try Supabase email OTP verify
@@ -1784,6 +1829,28 @@ function otpBack(e, el) {
 }
 
 async function submitVerification() {
+  const wp = workerProfile;
+
+  // ── Guard: only allow if unverified OR rejected (not pending/approved) ──
+  const blockStages = ['pending_review', 'submitted', 'approved'];
+  if (blockStages.includes(wp.verification_stage)) {
+    const msgMap = {
+      approved: '✅ Your profile is already verified!',
+      pending_review: '⏳ Verification already submitted — our team is reviewing.',
+      submitted: '📤 Documents already submitted — awaiting review.',
+    };
+    const el = document.getElementById('verif-already');
+    if (el) {
+      el.style.display = 'block';
+      el.innerHTML = `<div class="verif-status-banner ${wp.verification_stage === 'approved' ? 'verified' : 'pending'}" style="margin-bottom:12px">
+        <i class="bi bi-${wp.verification_stage === 'approved' ? 'patch-check-fill' : 'hourglass-split'}"></i>
+        ${msgMap[wp.verification_stage]}
+      </div>`;
+    }
+    document.getElementById('btn-submit-verif').disabled = true;
+    return;
+  }
+
   const idFile = document.getElementById('file-id').files[0];
   const selfieFile = document.getElementById('file-selfie').files[0];
 
@@ -1797,35 +1864,56 @@ async function submitVerification() {
 
   try {
     const ts = Date.now();
-    const idPath = `verifications/${currentUser.id}/id-${ts}`;
-    const selfiePath = `verifications/${currentUser.id}/selfie-${ts}`;
+    const uid = currentUser.id;
+    const idExt = idFile.name.split('.').pop();
+    const selfieExt = selfieFile.name.split('.').pop();
+    const idPath = `${uid}/id-${ts}.${idExt}`;
+    const selfiePath = `${uid}/selfie-${ts}.${selfieExt}`;
 
+    // Upload to correct buckets
     const [idUp, selfieUp] = await Promise.all([
-      sb.storage.from('files').upload(idPath, idFile, { upsert: true }),
-      sb.storage.from('files').upload(selfiePath, selfieFile, { upsert: true }),
+      sb.storage.from(BUCKET_ID).upload(idPath, idFile, { upsert: true }),
+      sb.storage.from(BUCKET_SELFIE).upload(selfiePath, selfieFile, { upsert: true }),
     ]);
 
     if (idUp.error) throw idUp.error;
     if (selfieUp.error) throw selfieUp.error;
 
-    const idUrl = sb.storage.from('files').getPublicUrl(idPath).data.publicUrl;
-    const selfieUrl = sb.storage.from('files').getPublicUrl(selfiePath).data.publicUrl;
+    const idUrl = sb.storage.from(BUCKET_ID).getPublicUrl(idPath).data.publicUrl;
+    const selfieUrl = sb.storage.from(BUCKET_SELFIE).getPublicUrl(selfiePath).data.publicUrl;
 
-    // Save URLs on worker profile
+    // Save URLs on worker profile — use correct column names (id_front_url, selfie_url, verification_stage)
     await sb.from('worker_profiles').update({
-      id_document_url: idUrl,
+      id_front_url: idUrl,
       selfie_url: selfieUrl,
-      verification_status: 'pending',
+      verification_stage: 'pending_review',
+      verification_requested_at: new Date().toISOString(),
+      email_verified: otpEmailVerified,
     }).eq('email', currentUser.email);
 
-    // Insert verification request
-    await sb.from('verification_requests').insert({
-      user_id: currentUser.id,
-      email: currentUser.email,
-      id_document: idPath,
-      selfie: selfiePath,
-      status: 'pending',
+    workerProfile.id_front_url = idUrl;
+    workerProfile.selfie_url = selfieUrl;
+    workerProfile.verification_stage = 'pending_review';
+
+    // Insert to profile_verification_requests (correct table name)
+    await sb.from('profile_verification_requests').insert({
+      user_id: uid,
+      worker_id: wp.id || null,
+      id_front_url: idUrl,
+      selfie_url: selfieUrl,
+      email_otp_verified: otpEmailVerified,
+      status: 'pending_review',
     });
+
+    // Insert notification for the user
+    await sb.from('notifications').insert({
+      user_id: uid,
+      user_email: currentUser.email,
+      type: 'info',
+      title: 'Verification Submitted',
+      message: 'Your documents are under review. We\'ll notify you within 24–48 hours.',
+      is_read: false,
+    }).catch(() => {});
 
     closeModal('modal-verify');
     showToast('ok', 'bi-hourglass-split', 'Submitted!', 'Our team will review your documents within 24–48 hours.');
@@ -1837,28 +1925,33 @@ async function submitVerification() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SETTINGS
+//  SETTINGS — stored in worker_profiles (no user_settings table)
 // ═══════════════════════════════════════════════════════
 function renderSettings() {
-  const s = userSettings;
+  const wp = workerProfile;
   const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
-  setChk('set-email-notif', s.email_notifications !== false);
-  setChk('set-sms-notif', s.sms_notifications);
-  setChk('set-push-notif', s.notifications_enabled !== false);
-  setChk('set-public', s.show_profile_public !== false);
-  setThemeUI(s.theme || 'light');
+  setChk('set-email-notif', wp.notif_email !== false);
+  setChk('set-sms-notif', wp.notif_sms);
+  setChk('set-push-notif', wp.notif_email !== false);
+  setChk('set-public', wp.profile_visible !== false);
+  setThemeUI(wp.theme_pref || 'light');
 }
 
 async function saveSetting(key, val) {
+  // Map legacy setting keys to worker_profiles columns
+  const colMap = {
+    email_notifications: 'notif_email',
+    sms_notifications: 'notif_sms',
+    notifications_enabled: 'notif_email',
+    show_profile_public: 'profile_visible',
+    theme: 'theme_pref',
+    language: null, // no column for this yet
+  };
+  const col = colMap[key] !== undefined ? colMap[key] : key;
+  if (!col) { showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.'); return; }
   try {
-    const up = { [key]: val };
-    const existing = await sb.from('user_settings').select('id').eq('user_id', currentUser.id).maybeSingle();
-    if (existing.data) {
-      await sb.from('user_settings').update(up).eq('user_id', currentUser.id);
-    } else {
-      await sb.from('user_settings').insert({ ...up, user_id: currentUser.id });
-    }
-    userSettings = { ...userSettings, [key]: val };
+    await sb.from('worker_profiles').update({ [col]: val }).eq('email', currentUser.email);
+    workerProfile[col] = val;
     showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.');
   } catch (e) {
     showToast('err', 'bi-x-circle', 'Error', e.message);
@@ -1877,7 +1970,6 @@ async function sendPasswordReset() {
 function setTheme(theme) {
   saveSetting('theme', theme);
   setThemeUI(theme);
-  // Could apply CSS class to body for actual dark mode
 }
 function setThemeUI(theme) {
   ['light','dark','auto'].forEach(t => {
@@ -1903,25 +1995,25 @@ function renderNotifList(notifs) {
     return;
   }
   list.innerHTML = notifs.map(n => `
-    <div class="notif-item${n.read ? '' : ' unread'}" onclick="markNotifRead('${n.id}')">
+    <div class="notif-item${n.is_read ? '' : ' unread'}" onclick="markNotifRead('${n.id}')">
       <div class="notif-dot ${n.type || 'info'}"></div>
       <div style="flex:1">
         <div class="notif-title">${escHtml(n.title || '')}</div>
-        ${n.body ? `<div class="notif-body">${escHtml(n.body)}</div>` : ''}
+        ${(n.message || n.body) ? `<div class="notif-body">${escHtml(n.message || n.body)}</div>` : ''}
         <div class="notif-time">${timeAgo(new Date(n.created_at))}</div>
       </div>
     </div>`).join('');
 }
 
 async function markNotifRead(id) {
-  try { await sb.from('notifications').update({ read: true }).eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
-  document.querySelectorAll(`.notif-item`).forEach(el => {
+  try { await sb.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', currentUser.id); } catch (_) {}
+  document.querySelectorAll('.notif-item').forEach(el => {
     if (el.outerHTML.includes(id)) el.classList.remove('unread');
   });
 }
 
 async function markAllNotifsRead() {
-  try { await sb.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false); } catch (_) {}
+  try { await sb.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id).eq('is_read', false); } catch (_) {}
   document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
   const badge = document.getElementById('badge-notifs');
   if (badge) badge.classList.remove('show');
@@ -1946,7 +2038,7 @@ function subscribeRealtime() {
     sb.channel('emp-notifs').on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id },
       payload => {
-        showToast(payload.new.type || 'info', 'bi-bell', payload.new.title, payload.new.body || '');
+        showToast(payload.new.type || 'info', 'bi-bell', payload.new.title, payload.new.message || payload.new.body || '');
         const badge = document.getElementById('badge-notifs');
         if (badge) { badge.classList.add('show'); badge.textContent = (parseInt(badge.textContent) || 0) + 1; }
       }).subscribe();
@@ -1954,8 +2046,29 @@ function subscribeRealtime() {
     sb.channel('emp-verif').on('postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'worker_profiles', filter: 'session_id=eq.' + currentUser.id },
       payload => {
-        if (payload.new.verification_status === 'verified') {
-          showToast('ok', 'bi-patch-check-fill', 'Profile Verified!', 'Your profile has been verified by our team.', 0);
+        // Listen for verification_stage change to 'approved'
+        if (payload.new.verification_stage === 'approved' || payload.new.is_verified === true) {
+          showToast('ok', 'bi-patch-check-fill', '🎉 Profile Verified!', 'Congratulations! Your profile has been verified by our team.', 0);
+          // Insert a notification so it appears in the panel
+          sb.from('notifications').insert({
+            user_id: currentUser.id,
+            user_email: currentUser.email,
+            type: 'ok',
+            title: '🎉 Profile Verified!',
+            message: 'Your identity has been confirmed. Employers can now see your verified badge.',
+            is_read: false,
+          }).catch(() => {});
+          loadDashboard();
+        } else if (payload.new.verification_stage === 'rejected') {
+          showToast('err', 'bi-x-circle', 'Verification Rejected', 'Your documents were not accepted. Please re-submit.', 0);
+          sb.from('notifications').insert({
+            user_id: currentUser.id,
+            user_email: currentUser.email,
+            type: 'err',
+            title: 'Verification Rejected',
+            message: 'Please re-submit clearer documents for verification.',
+            is_read: false,
+          }).catch(() => {});
           loadDashboard();
         }
       }).subscribe();
@@ -1997,8 +2110,7 @@ async function signOut() {
 
 async function deactivateAccount() {
   try {
-    await sb.from('worker_profiles').update({ status: 'deactivated' }).eq('email', currentUser.email);
-    await sb.from('user_settings').update({ show_profile_public: false }).eq('user_id', currentUser.id);
+    await sb.from('worker_profiles').update({ status: 'deactivated', profile_visible: false }).eq('email', currentUser.email);
     showToast('ok', 'bi-pause-circle', 'Deactivated', 'Your profile is hidden.');
     closeModal('modal-deactivate');
     setTimeout(() => sb.auth.signOut().then(() => window.location.href = 'login.html'), 2500);
@@ -2011,10 +2123,9 @@ async function deleteAccount() {
   }
   try {
     await Promise.allSettled([
-      sb.from('worker_profiles').delete().eq('email', currentUser.email),
-      sb.from('job_applications').delete().eq('worker_id', currentUser.id),
+      sb.from('worker_profiles').update({ is_deleted: true }).eq('email', currentUser.email),
+      sb.from('job_applications').delete().eq('worker_id', workerProfile.id),
       sb.from('messages').delete().eq('sender_id', currentUser.id),
-      sb.from('user_settings').delete().eq('user_id', currentUser.id),
       sb.from('notifications').delete().eq('user_id', currentUser.id),
     ]);
     showToast('ok', 'bi-trash3', 'Account Deleted', 'All your data has been removed.');
@@ -2023,9 +2134,73 @@ async function deleteAccount() {
 }
 
 // ═══════════════════════════════════════════════════════
+//  GREETING
+// ═══════════════════════════════════════════════════════
+function renderGreeting() {
+  const hour = new Date().getHours();
+  let greeting, emoji, sub;
+  if (hour >= 5 && hour < 12) {
+    greeting = 'Good morning'; emoji = '☀️';
+    sub = 'Have a productive day ahead!';
+  } else if (hour >= 12 && hour < 17) {
+    greeting = 'Good afternoon'; emoji = '🌤️';
+    sub = 'Hope your day is going well.';
+  } else if (hour >= 17 && hour < 21) {
+    greeting = 'Good evening'; emoji = '🌇';
+    sub = 'Time to wrap up and review your dashboard.';
+  } else {
+    greeting = 'Good night'; emoji = '🌙';
+    sub = 'Rest well — new opportunities await tomorrow.';
+  }
+
+  const wp = workerProfile;
+  const name = wp.full_name
+    || (currentUser && currentUser.user_metadata && currentUser.user_metadata.full_name)
+    || (currentUser && currentUser.email ? currentUser.email.split('@')[0] : '');
+  const firstName = name.split(' ')[0];
+
+  const greetingEl = document.getElementById('greeting-text');
+  const subEl = document.getElementById('greeting-sub');
+  const emojiEl = document.getElementById('greeting-emoji');
+  if (greetingEl) greetingEl.textContent = `${greeting}, ${firstName}! 👋`;
+  if (subEl) subEl.textContent = sub;
+  if (emojiEl) emojiEl.textContent = emoji;
+}
+
+// ═══════════════════════════════════════════════════════
 //  UI HELPERS
 // ═══════════════════════════════════════════════════════
-function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('open'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+
+  // When opening verify modal — check if already submitted/approved
+  if (id === 'modal-verify') {
+    const wp = workerProfile;
+    const blockStages = ['pending_review', 'submitted', 'approved'];
+    const alreadyEl = document.getElementById('verif-already');
+    const submitBtn = document.getElementById('btn-submit-verif');
+    if (blockStages.includes(wp.verification_stage)) {
+      const msgMap = {
+        approved: { cls: 'verified', icon: 'patch-check-fill', msg: '✅ Your profile is already verified! No action needed.' },
+        pending_review: { cls: 'pending', icon: 'hourglass-split', msg: '⏳ Documents submitted — our team is reviewing within 24–48 hours.' },
+        submitted: { cls: 'pending', icon: 'hourglass-split', msg: '📤 Documents already submitted — awaiting review.' },
+      };
+      const m = msgMap[wp.verification_stage] || msgMap.submitted;
+      if (alreadyEl) {
+        alreadyEl.style.display = 'block';
+        alreadyEl.innerHTML = `<div class="verif-status-banner ${m.cls}" style="margin-bottom:12px"><i class="bi bi-${m.icon}"></i> ${m.msg}</div>`;
+      }
+      if (submitBtn) submitBtn.disabled = true;
+    } else {
+      if (alreadyEl) alreadyEl.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  // When opening settings modal — render current settings
+  if (id === 'modal-settings') renderSettings();
+}
 function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('open'); }
 
 function switchTab(tabId, btn) {
