@@ -1389,23 +1389,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
-    const [wpRes, notifRes, msgRes, jobRes] = await Promise.all([
-      sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
+    // ── Strategy 1: look up by session_id (UUID match) ──
+    let wpData = null;
+    const bySession = await sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle();
+    wpData = bySession.data;
+
+    // ── Strategy 2: fallback to email match ──
+    if (!wpData && currentUser.email) {
+      const byEmail = await sb.from('worker_profiles').select('*').eq('email', currentUser.email).order('submitted_at', { ascending: false }).limit(1).maybeSingle();
+      wpData = byEmail.data;
+    }
+
+    // ── Strategy 3: fallback using auth metadata name/phone if still nothing ──
+    if (!wpData) {
+      const meta = currentUser.user_metadata || {};
+      // Auto-create a minimal profile row so the dashboard is never blank
+      if (meta.full_name || meta.email) {
+        const inserted = await sb.from('worker_profiles').insert({
+          session_id: currentUser.id,
+          email: currentUser.email,
+          full_name: meta.full_name || '',
+          phone: meta.phone || '',
+          looking_for_job: true,
+          verification_stage: 'unverified',
+        }).select().maybeSingle();
+        wpData = inserted.data;
+      }
+    }
+
+    // ── Heal: if found by email but session_id is wrong/null, fix it ──
+    if (wpData && wpData.session_id !== currentUser.id) {
+      await sb.from('worker_profiles').update({ session_id: currentUser.id }).eq('id', wpData.id).catch(() => {});
+      wpData.session_id = currentUser.id;
+    }
+
+    workerProfile = wpData || {};
+
+    const [notifRes, msgRes, jobRes] = await Promise.all([
       sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(50),
       sb.from('messages').select('id, is_read, receiver_id').eq('receiver_id', currentUser.id),
       sb.from('job_postings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     ]);
 
-    workerProfile = wpRes.data || {};
     const notifs = notifRes.data || [];
     const msgs = msgRes.data || [];
     const jobCount = jobRes.count || 0;
-
-    // If profile not found by session_id try email
-    if (!wpRes.data) {
-      const r2 = await sb.from('worker_profiles').select('*').eq('email', currentUser.email).order('submitted_at', { ascending: false }).limit(1).maybeSingle();
-      if (r2.data) workerProfile = r2.data;
-    }
 
     renderAll(notifs, msgs, jobCount);
     renderNotifList(notifs);
@@ -1431,8 +1459,8 @@ function renderAll(notifs, msgs, jobCount) {
   // Nav avatar
   const navImg = document.getElementById('nav-avatar-img');
   const navInit = document.getElementById('nav-avatar-initials');
-  if (wp.avatar_url || wp.profile_photo_url) {
-    navImg.src = wp.avatar_url || wp.profile_photo_url;
+  if (wp.profile_photo_url) {
+    navImg.src = wp.profile_photo_url;
     navImg.style.display = 'block';
     navInit.style.display = 'none';
   } else {
@@ -1442,8 +1470,8 @@ function renderAll(notifs, msgs, jobCount) {
   // Main avatar
   const avatarImg = document.getElementById('avatar-img');
   const avatarInit = document.getElementById('avatar-initials');
-  if (wp.avatar_url || wp.profile_photo_url) {
-    avatarImg.src = wp.avatar_url || wp.profile_photo_url;
+  if (wp.profile_photo_url) {
+    avatarImg.src = wp.profile_photo_url;
     avatarImg.style.display = 'block';
     avatarInit.style.display = 'none';
   } else {
@@ -1453,8 +1481,8 @@ function renderAll(notifs, msgs, jobCount) {
   // Account modal avatar
   const acctImg = document.getElementById('acct-avatar-img');
   const acctInit = document.getElementById('acct-avatar-initials');
-  if (wp.avatar_url || wp.profile_photo_url) {
-    acctImg.src = wp.avatar_url || wp.profile_photo_url;
+  if (wp.profile_photo_url) {
+    acctImg.src = wp.profile_photo_url;
     acctImg.style.display = 'block';
     acctInit.style.display = 'none';
   } else {
@@ -1642,8 +1670,9 @@ function renderHiredState(hired) {
 
 async function onHiredToggle(isHired) {
   try {
-    // Use is_currently_hired column in worker_profiles (no user_settings table)
-    await sb.from('worker_profiles').update({ is_currently_hired: isHired, looking_for_job: !isHired }).eq('email', currentUser.email);
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
+    await sb.from('worker_profiles').update({ is_currently_hired: isHired, looking_for_job: !isHired }).eq(matchCol, matchVal);
     workerProfile.is_currently_hired = isHired;
     renderHiredState(isHired);
     showToast('ok', 'bi-check-circle-fill', isHired ? 'Marked as Hired!' : 'Back to Job Searching',
@@ -1695,7 +1724,10 @@ async function saveProfile() {
   };
 
   try {
-    const { error } = await sb.from('worker_profiles').update(payload).eq('email', currentUser.email);
+    // Update by id (most reliable) with email as fallback
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
+    const { error } = await sb.from('worker_profiles').update(payload).eq(matchCol, matchVal);
     if (error) throw error;
     workerProfile = { ...workerProfile, ...payload };
     closeModal('modal-edit-profile');
@@ -1730,8 +1762,10 @@ async function uploadAvatar(input) {
   const { error } = await sb.storage.from(BUCKET_AVATAR).upload(path, file, { upsert: true });
   if (error) { showToast('err', 'bi-x-circle', 'Upload Failed', error.message); return; }
   const url = sb.storage.from(BUCKET_AVATAR).getPublicUrl(path).data.publicUrl;
-  await sb.from('worker_profiles').update({ avatar_url: url, profile_photo_url: url }).eq('email', currentUser.email);
-  workerProfile.avatar_url = url;
+  const matchCol = workerProfile.id ? 'id' : 'email';
+  const matchVal = workerProfile.id || currentUser.email;
+  await sb.from('worker_profiles').update({ profile_photo_url: url }).eq(matchCol, matchVal);
+  workerProfile.profile_photo_url = url;
   // Update all avatar elements
   ['avatar-img', 'nav-avatar-img', 'acct-avatar-img', 'mp-avatar-img'].forEach(id => {
     const el = document.getElementById(id);
@@ -1882,14 +1916,16 @@ async function submitVerification() {
     const idUrl = sb.storage.from(BUCKET_ID).getPublicUrl(idPath).data.publicUrl;
     const selfieUrl = sb.storage.from(BUCKET_SELFIE).getPublicUrl(selfiePath).data.publicUrl;
 
-    // Save URLs on worker profile — use correct column names (id_front_url, selfie_url, verification_stage)
+    // Save URLs on worker profile — use id (most reliable, matches RLS session_id policy)
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
     await sb.from('worker_profiles').update({
       id_front_url: idUrl,
       selfie_url: selfieUrl,
       verification_stage: 'pending_review',
       verification_requested_at: new Date().toISOString(),
       email_verified: otpEmailVerified,
-    }).eq('email', currentUser.email);
+    }).eq(matchCol, matchVal);
 
     workerProfile.id_front_url = idUrl;
     workerProfile.selfie_url = selfieUrl;
@@ -1950,7 +1986,9 @@ async function saveSetting(key, val) {
   const col = colMap[key] !== undefined ? colMap[key] : key;
   if (!col) { showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.'); return; }
   try {
-    await sb.from('worker_profiles').update({ [col]: val }).eq('email', currentUser.email);
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
+    await sb.from('worker_profiles').update({ [col]: val }).eq(matchCol, matchVal);
     workerProfile[col] = val;
     showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.');
   } catch (e) {
@@ -2110,7 +2148,9 @@ async function signOut() {
 
 async function deactivateAccount() {
   try {
-    await sb.from('worker_profiles').update({ status: 'deactivated', profile_visible: false }).eq('email', currentUser.email);
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
+    await sb.from('worker_profiles').update({ status: 'deactivated', profile_visible: false }).eq(matchCol, matchVal);
     showToast('ok', 'bi-pause-circle', 'Deactivated', 'Your profile is hidden.');
     closeModal('modal-deactivate');
     setTimeout(() => sb.auth.signOut().then(() => window.location.href = 'login.html'), 2500);
