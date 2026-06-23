@@ -27,13 +27,19 @@ a{text-decoration:none;color:inherit}
 .top-nav{background:#fff;border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .top-nav .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700}
 .top-nav .logo span{color:var(--green)}
-.nav-user{font-size:13.5px;color:var(--text-muted)}
+.nav-user{font-size:13.5px;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+.nav-user-avatar{width:32px;height:32px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.nav-session-badge{font-size:11px;background:var(--green-light);color:var(--green-dark);border:1px solid #9FE1CB;border-radius:50px;padding:2px 8px;font-weight:600}
 
 /* ── Page container ── */
 .page-container{max-width:780px;margin:0 auto;padding:2rem 1.2rem 4rem}
 .page-header{margin-bottom:1.8rem}
 .page-header h1{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;margin-bottom:.4rem}
 .page-header p{color:var(--text-muted);font-size:14px;line-height:1.7}
+
+/* ── Session prefill banner ── */
+.prefill-banner{background:linear-gradient(135deg,#e8f5f0,#f0fdf4);border:1px solid #9FE1CB;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--green-dark);margin-bottom:1.4rem;display:none;align-items:center;gap:10px}
+.prefill-banner i{font-size:18px;color:var(--green);flex-shrink:0}
 
 /* ── Progress steps ── */
 .progress-steps{display:flex;gap:0;margin-bottom:2rem;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -54,7 +60,7 @@ a{text-decoration:none;color:inherit}
 .form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;transition:border .2s;color:var(--text)}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green)}
 .form-group input[readonly]{background:var(--surface);color:var(--text-muted)}
-.form-group input.autofilled{background:#f0fdf7;border-color:var(--green);color:var(--green-dark)}
+.form-group input.autofilled,.form-group input.prefilled{background:#f0fdf7;border-color:var(--green);color:var(--green-dark)}
 .hint{font-size:11.5px;color:var(--text-muted)}
 .required{color:var(--red)}
 
@@ -62,8 +68,11 @@ a{text-decoration:none;color:inherit}
 .upload-zone{border:1.5px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:.2s;background:var(--surface);position:relative}
 .upload-zone:hover{border-color:var(--green);background:var(--green-light)}
 .upload-zone.success{border-color:var(--green);background:var(--green-light)}
+.upload-zone.uploading{border-color:var(--amber);background:#fffbeb;cursor:not-allowed}
 .upload-zone span{font-size:24px;display:block;margin-bottom:6px}
 .upload-zone p{font-size:12.5px;color:var(--text-muted);margin:0}
+.upload-zone .upload-progress{margin-top:8px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;display:none}
+.upload-zone .upload-progress-bar{height:100%;background:var(--green);border-radius:2px;transition:width .3s;width:0%}
 .upload-preview{margin-top:10px;max-width:100%;max-height:140px;border-radius:8px;border:1px solid var(--border);object-fit:contain;display:none}
 
 /* ── ID intelligence panel ── */
@@ -100,6 +109,15 @@ a{text-decoration:none;color:inherit}
 /* ── Disclaimer ── */
 .disclaimer-box{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--green-dark);margin-bottom:1.2rem;line-height:1.6}
 
+/* ── Error Box with code ── */
+.error-box{background:#FCEBEB;border:1px solid #F09595;border-radius:10px;padding:12px 16px;margin-bottom:1rem;display:none}
+.error-box-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.error-box-icon{font-size:18px;color:var(--red)}
+.error-box-title{font-size:13px;font-weight:700;color:#A32D2D}
+.error-box-code{font-size:10px;font-family:monospace;background:#f09595;color:#fff;border-radius:4px;padding:1px 6px;margin-left:auto}
+.error-box-msg{font-size:13px;color:#7a2020;line-height:1.6}
+.error-box-hint{font-size:11.5px;color:#a32d2d;margin-top:6px;opacity:.8}
+
 /* ── Buttons ── */
 .btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--green);color:#fff;border:none;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .2s}
 .btn-primary:hover{background:var(--green-dark)}
@@ -108,7 +126,7 @@ a{text-decoration:none;color:inherit}
 .btn-outline:hover{border-color:var(--green);color:var(--green)}
 .step-nav{display:flex;gap:10px;justify-content:flex-end;margin-top:1.2rem}
 
-/* ── Alerts ── */
+/* ── Simple alerts ── */
 .alert-error{background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-bottom:1rem}
 .alert-info{background:#E1F5EE;border:1px solid #9FE1CB;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--green-dark);margin-bottom:1rem}
 .age-warning{display:none;background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-top:6px}
@@ -153,31 +171,33 @@ a{text-decoration:none;color:inherit}
 .intel-spinner{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Custom Calendar ── */
-.cal-wrap{position:relative}
-.cal-input-display{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;transition:border .2s;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
-.cal-input-display.open{border-color:var(--green)}
+/* ── Custom Calendar (fixed) ── */
+.cal-wrap{position:relative;width:100%}
+.cal-input-display{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;transition:border .2s;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;min-height:40px}
+.cal-input-display:hover{border-color:var(--green)}
+.cal-input-display.open{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,94,.1)}
 .cal-placeholder{color:#aaa}
-.cal-popup{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:500;background:#fff;border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.13);width:300px;overflow:hidden}
-.cal-popup.open{display:block}
+.cal-popup{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:9999;background:#fff;border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:300px;overflow:hidden}
+.cal-popup.open{display:block!important}
 .cal-header{background:var(--green);color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
-.cal-header span{font-weight:700;font-size:14px;cursor:pointer}
-.cal-nav{background:none;border:none;color:#fff;cursor:pointer;font-size:18px;padding:2px 6px;border-radius:6px;transition:.15s;line-height:1}
+.cal-header span{font-weight:700;font-size:14px;cursor:pointer;padding:2px 8px;border-radius:6px;transition:.15s}
+.cal-header span:hover{background:rgba(255,255,255,.2)}
+.cal-nav{background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:2px 8px;border-radius:6px;transition:.15s;line-height:1;font-weight:700}
 .cal-nav:hover{background:rgba(255,255,255,.2)}
 .cal-grid{padding:8px 10px 12px}
 .cal-days-head{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
 .cal-days-head span{text-align:center;font-size:10.5px;font-weight:700;color:var(--text-muted);padding:4px 0}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-day{text-align:center;padding:6px 2px;font-size:12.5px;border-radius:7px;cursor:pointer;transition:.15s;border:none;background:none;font-family:inherit;color:var(--text)}
-.cal-day:hover:not(:disabled){background:var(--green-light);color:var(--green)}
+.cal-day{text-align:center;padding:6px 2px;font-size:12.5px;border-radius:7px;cursor:pointer;transition:.15s;border:none;background:none;font-family:inherit;color:var(--text);width:100%}
+.cal-day:hover:not([disabled]){background:var(--green-light);color:var(--green)}
 .cal-day.today{font-weight:700;color:var(--green)}
-.cal-day.selected{background:var(--green);color:#fff !important}
+.cal-day.selected{background:var(--green)!important;color:#fff!important;font-weight:700}
 .cal-day.other-month{color:#ccc}
-.cal-day:disabled{color:#ccc;cursor:default}
+.cal-day[disabled]{color:#ccc;cursor:default;opacity:.5}
 .cal-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px}
 .cal-month-btn{padding:8px 4px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;transition:.15s;text-align:center}
 .cal-month-btn:hover,.cal-month-btn.selected{border-color:var(--green);color:var(--green)}
-.cal-month-btn.selected{background:var(--green);color:#fff}
+.cal-month-btn.selected{background:var(--green);color:#fff!important;border-color:var(--green)}
 .cal-year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px;max-height:200px;overflow-y:auto}
 .cal-year-btn{padding:7px 4px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;transition:.15s;text-align:center}
 .cal-year-btn:hover{border-color:var(--green);color:var(--green)}
@@ -193,8 +213,24 @@ a{text-decoration:none;color:inherit}
 .support-link{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-size:13px;font-weight:600;border:1.5px solid var(--green);border-radius:50px;padding:7px 16px;margin-top:.5rem;transition:.2s}
 .support-link:hover{background:var(--green);color:#fff}
 
+/* ── Auth Gate ── */
+.auth-gate-overlay{position:fixed;inset:0;background:rgba(15,30,24,.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.auth-gate-card{background:#fff;border-radius:16px;padding:2.4rem 2rem;max-width:400px;width:100%;text-align:center}
+.auth-gate-card .ag-icon{font-size:3rem;margin-bottom:1rem;color:var(--green)}
+.auth-gate-card h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:.6rem}
+.auth-gate-card p{color:var(--text-muted);font-size:13.5px;line-height:1.7;margin-bottom:1.4rem}
+
+/* ── Rate limit indicator ── */
+.rate-limit-bar{background:#FFF4E5;border:1px solid #FFCB7D;border-radius:8px;padding:8px 14px;font-size:12px;color:#7A4500;margin-bottom:.8rem;display:none;align-items:center;gap:8px}
+
 /* ── Success ── */
 #form-success{text-align:center;padding:4rem 2rem;background:#fff;border:1px solid var(--border);border-radius:12px}
+
+/* ── Page loading ── */
+.page-loader{position:fixed;inset:0;background:var(--surface);z-index:99998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.page-loader .loader-logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--green)}
+.page-loader .loader-spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite}
+.page-loader .loader-msg{font-size:13px;color:var(--text-muted)}
 
 @media(max-width:600px){
   .top-nav{padding:0 1rem}
@@ -206,15 +242,51 @@ a{text-decoration:none;color:inherit}
 </head>
 <body>
 
+<!-- ══════ PAGE LOADER ══════ -->
+<div id="page-loader" class="page-loader">
+  <div class="loader-logo">SoundsCare</div>
+  <div class="loader-spin"></div>
+  <div class="loader-msg">Loading your profile form…</div>
+</div>
+
+<!-- ══════ AUTH GATE (shown if no session) ══════ -->
+<div class="auth-gate-overlay" id="auth-gate" style="display:none">
+  <div class="auth-gate-card">
+    <div class="ag-icon"><i class="bi bi-shield-lock-fill"></i></div>
+    <h2>Sign In Required</h2>
+    <p>You need to be signed in to post a worker profile. Please log in or create an account to continue.</p>
+    <a href="index.html" class="btn-primary" style="justify-content:center;width:100%;margin-bottom:.8rem">
+      <i class="bi bi-box-arrow-in-right"></i> Sign In / Register
+    </a>
+    <a href="index.html" style="font-size:12.5px;color:var(--text-muted)">← Back to home</a>
+  </div>
+</div>
+
 <div class="top-nav">
   <a href="index.html" class="logo">Sounds<span>Care</span></a>
-  <span class="nav-user">Posting as <strong id="user-name">Loading…</strong></span>
+  <div class="nav-user">
+    <div class="nav-user-avatar" id="nav-avatar">?</div>
+    <span>Posting as <strong id="user-name">Loading…</strong></span>
+    <span class="nav-session-badge" id="session-badge" style="display:none"><i class="bi bi-check-circle-fill"></i> Signed in</span>
+  </div>
 </div>
 
 <div class="page-container">
   <div class="page-header">
     <h1>Post Your Profile</h1>
     <p>Complete all sections carefully. Your profile will be reviewed before going live. <strong>ID details are strictly confidential and never shared publicly.</strong></p>
+  </div>
+
+  <!-- Session prefill banner -->
+  <div class="prefill-banner" id="prefill-banner">
+    <i class="bi bi-person-check-fill"></i>
+    <div><strong>Your details have been pre-filled</strong> from your account. Please review and complete the remaining fields.</div>
+  </div>
+
+  <!-- Rate limit warning -->
+  <div class="rate-limit-bar" id="rate-limit-bar">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span id="rate-limit-msg"></span>
   </div>
 
   <div id="email-exists-banner" class="alert-error" style="display:none">
@@ -274,6 +346,10 @@ a{text-decoration:none;color:inherit}
           </select>
         </div>
         <div class="form-group">
+          <label>Nationality / Country</label>
+          <input type="text" id="country" placeholder="e.g. Kenya" value="Kenya">
+        </div>
+        <div class="form-group">
           <label>Preferred Role <span class="required">*</span></label>
           <select id="preferred-role">
             <option value="">Select your role</option>
@@ -313,7 +389,7 @@ a{text-decoration:none;color:inherit}
         </div>
       </div>
     </div>
-    <div id="step1-error" class="alert-error" style="display:none"></div>
+    <div id="step1-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-primary" onclick="nextStep1()">Next: Identity Verification <i class="bi bi-arrow-right"></i></button>
     </div>
@@ -328,7 +404,6 @@ a{text-decoration:none;color:inherit}
         Your ID documents are strictly confidential and will <em>never</em> be shared with employers or the public. They are used solely for age and identity verification by the Sounds Care admin team.
       </div>
 
-      <!-- ID Upload Panel (primary action) -->
       <div style="background:linear-gradient(135deg,#f0fdf4,#e8f5f0);border:1.5px solid #9FE1CB;border-radius:12px;padding:1.2rem;margin-bottom:1.2rem">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.8rem">
           <i class="bi bi-cpu-fill" style="color:var(--green);font-size:18px"></i>
@@ -344,6 +419,7 @@ a{text-decoration:none;color:inherit}
               <span>🪪</span>
               <p>Click or tap to upload front of ID</p>
               <p style="font-size:11px;margin-top:4px">JPG or PNG – max 5MB</p>
+              <div class="upload-progress"><div class="upload-progress-bar" id="id-front-bar"></div></div>
               <input type="file" id="id-front" accept=".jpg,.jpeg,.png" style="display:none" onchange="onIDImageUpload('front',this)">
             </div>
             <img id="id-front-preview" class="upload-preview" alt="ID Front">
@@ -354,33 +430,23 @@ a{text-decoration:none;color:inherit}
               <span>📋</span>
               <p>Click or tap to upload back of ID</p>
               <p style="font-size:11px;margin-top:4px">JPG or PNG – max 5MB</p>
+              <div class="upload-progress"><div class="upload-progress-bar" id="id-back-bar"></div></div>
               <input type="file" id="id-back" accept=".jpg,.jpeg,.png" style="display:none" onchange="onIDImageUpload('back',this)">
             </div>
             <img id="id-back-preview" class="upload-preview" alt="ID Back">
           </div>
         </div>
 
-        <!-- Intelligence Panel -->
         <div class="id-intel-panel" id="id-intel-panel" style="display:none">
           <div class="id-intel-title"><i class="bi bi-cpu"></i> AI Identity Scanner</div>
-
-          <div class="id-scan-status idle" id="id-scan-front-status">
-            <i class="bi bi-circle"></i> Front side: not yet scanned
-          </div>
-          <div class="id-scan-status idle" id="id-scan-back-status">
-            <i class="bi bi-circle"></i> Back side: not yet scanned
-          </div>
-          <div class="id-scan-status idle" id="id-scan-auth-status">
-            <i class="bi bi-shield"></i> Authenticity check: pending
-          </div>
-
+          <div class="id-scan-status idle" id="id-scan-front-status"><i class="bi bi-circle"></i> Front side: not yet scanned</div>
+          <div class="id-scan-status idle" id="id-scan-back-status"><i class="bi bi-circle"></i> Back side: not yet scanned</div>
+          <div class="id-scan-status idle" id="id-scan-auth-status"><i class="bi bi-shield"></i> Authenticity check: pending</div>
           <div id="id-extracted-data" class="id-extracted-grid" style="display:none"></div>
-
           <div class="fake-alert" id="fake-alert" style="display:none">
             <strong><i class="bi bi-exclamation-octagon-fill"></i> Document Authenticity Warning</strong>
             <span id="fake-alert-msg"></span>
           </div>
-
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:.8rem">
             <button class="btn-autofill" id="btn-autofill" onclick="applyAutofill()" style="display:none">
               <i class="bi bi-magic"></i> Auto-fill Form Fields
@@ -392,7 +458,6 @@ a{text-decoration:none;color:inherit}
         </div>
       </div>
 
-      <!-- Manual / prefilled fields -->
       <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:1rem">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem">
           <i class="bi bi-pencil-square" style="color:var(--text-muted)"></i>
@@ -401,7 +466,7 @@ a{text-decoration:none;color:inherit}
         <div class="form-grid">
           <div class="form-group">
             <label>National ID Number <span class="required">*</span></label>
-            <input type="text" id="id-number" placeholder="Enter your ID number" maxlength="9">
+            <input type="text" id="id-number" placeholder="Enter your ID number" maxlength="9" inputmode="numeric">
             <div class="intel-check" id="id-db-check" style="display:none"></div>
           </div>
           <div class="form-group">
@@ -441,18 +506,18 @@ a{text-decoration:none;color:inherit}
         <div class="intel-check" id="dob-check-result" style="display:none"></div>
       </div>
 
-      <!-- Selfie upload -->
       <div class="form-group" style="margin-top:1rem">
         <label>Selfie Holding Your ID <span class="required">*</span></label>
-        <div class="upload-zone" onclick="this.querySelector('input').click()">
+        <div class="upload-zone" id="selfie-zone" onclick="this.querySelector('input').click()">
           <span>🤳</span>
           <p>Clear selfie holding your open ID card</p>
           <p style="font-size:11px;margin-top:4px">JPG or PNG – max 5MB</p>
+          <div class="upload-progress"><div class="upload-progress-bar" id="selfie-bar"></div></div>
           <input type="file" id="id-selfie" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
         </div>
       </div>
     </div>
-    <div id="step2-error" class="alert-error" style="display:none"></div>
+    <div id="step2-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(1)"><i class="bi bi-arrow-left"></i> Back</button>
       <button class="btn-primary" onclick="nextStep2()">Next: Education <i class="bi bi-arrow-right"></i></button>
@@ -495,12 +560,13 @@ a{text-decoration:none;color:inherit}
         <div class="upload-zone" onclick="this.querySelector('input').click()">
           <span>📜</span><p>Click to upload your certificate</p>
           <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
+          <div class="upload-progress"><div class="upload-progress-bar" id="edu-cert-bar"></div></div>
           <input type="file" id="edu-cert" style="display:none" onchange="showFileName(this);scheduleCertCheck()">
         </div>
         <div class="intel-check" id="cert-check-result" style="display:none"></div>
       </div>
     </div>
-    <div id="step3-error" class="alert-error" style="display:none"></div>
+    <div id="step3-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(2)"><i class="bi bi-arrow-left"></i> Back</button>
       <button class="btn-primary" onclick="nextStep3()">Next: Experience <i class="bi bi-arrow-right"></i></button>
@@ -568,12 +634,10 @@ a{text-decoration:none;color:inherit}
         <div class="form-group">
           <label>Home County</label>
           <input type="text" id="location-home-county" placeholder="e.g. Bomet, Nyeri">
-          <div class="hint">Auto-filled from ID back if scanned</div>
         </div>
         <div class="form-group">
           <label>Sub-location</label>
           <input type="text" id="location-sublocation" placeholder="e.g. Chepalungu">
-          <div class="hint">Auto-filled from ID back if scanned</div>
         </div>
         <div class="form-group">
           <label>Willing to Relocate?</label>
@@ -585,7 +649,7 @@ a{text-decoration:none;color:inherit}
         </div>
       </div>
     </div>
-    <div id="step5-error" class="alert-error" style="display:none"></div>
+    <div id="step5-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(4)"><i class="bi bi-arrow-left"></i> Back</button>
       <button class="btn-primary" onclick="nextStep5()">Next: Referees <i class="bi bi-arrow-right"></i></button>
@@ -601,7 +665,6 @@ a{text-decoration:none;color:inherit}
         You must provide exactly <strong>3 adult referees</strong>. At least one must be a <strong>family member</strong>. All phone numbers must be <strong>active and working</strong>.
       </div>
       <div id="referee-list">
-        <!-- Referee 1 -->
         <div class="referee-block">
           <h4>Referee 1 <span style="color:var(--green);font-size:11px">(Family member)</span></h4>
           <div class="form-grid">
@@ -610,7 +673,7 @@ a{text-decoration:none;color:inherit}
               <select class="ref-rel"><option>Parent</option><option>Sibling</option><option>Aunt/Uncle</option><option>Grandparent</option><option>Other family</option></select>
             </div>
             <div class="form-group"><label>Active Phone Number <span class="required">*</span></label><input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX"></div>
-            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number"></div>
+            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number" inputmode="numeric"></div>
           </div>
           <div class="form-group" style="margin-top:.6rem">
             <label>Upload Referee ID <span class="optional-tag">optional</span></label>
@@ -621,7 +684,6 @@ a{text-decoration:none;color:inherit}
             </div>
           </div>
         </div>
-        <!-- Referee 2 -->
         <div class="referee-block">
           <h4>Referee 2</h4>
           <div class="form-grid">
@@ -630,18 +692,9 @@ a{text-decoration:none;color:inherit}
               <select class="ref-rel"><option>Parent</option><option>Sibling</option><option>Friend</option><option>Former Employer</option><option>Community Leader</option><option>Other</option></select>
             </div>
             <div class="form-group"><label>Active Phone Number <span class="required">*</span></label><input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX"></div>
-            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number"></div>
-          </div>
-          <div class="form-group" style="margin-top:.6rem">
-            <label>Upload Referee ID <span class="optional-tag">optional</span></label>
-            <div class="upload-zone" onclick="this.querySelector('input').click()">
-              <span>📄</span><p>Click to upload referee's ID (optional)</p>
-              <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-              <input type="file" class="ref-id-file" style="display:none" onchange="showFileName(this)">
-            </div>
+            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number" inputmode="numeric"></div>
           </div>
         </div>
-        <!-- Referee 3 -->
         <div class="referee-block">
           <h4>Referee 3</h4>
           <div class="form-grid">
@@ -650,20 +703,12 @@ a{text-decoration:none;color:inherit}
               <select class="ref-rel"><option>Parent</option><option>Sibling</option><option>Friend</option><option>Former Employer</option><option>Community Leader</option><option>Other</option></select>
             </div>
             <div class="form-group"><label>Active Phone Number <span class="required">*</span></label><input type="tel" class="ref-phone" placeholder="+254 7XX XXX XXX"></div>
-            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number"></div>
-          </div>
-          <div class="form-group" style="margin-top:.6rem">
-            <label>Upload Referee ID <span class="optional-tag">optional</span></label>
-            <div class="upload-zone" onclick="this.querySelector('input').click()">
-              <span>📄</span><p>Click to upload referee's ID (optional)</p>
-              <p style="font-size:11px;margin-top:4px">JPG, PNG or PDF – max 5MB</p>
-              <input type="file" class="ref-id-file" style="display:none" onchange="showFileName(this)">
-            </div>
+            <div class="form-group"><label>National ID Number <span class="required">*</span></label><input type="text" class="ref-id-num" placeholder="Referee's ID number" inputmode="numeric"></div>
           </div>
         </div>
       </div>
     </div>
-    <div id="step6-error" class="alert-error" style="display:none"></div>
+    <div id="step6-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(5)"><i class="bi bi-arrow-left"></i> Back</button>
       <button class="btn-primary" onclick="nextStep6()">Next: About You <i class="bi bi-arrow-right"></i></button>
@@ -711,11 +756,12 @@ a{text-decoration:none;color:inherit}
           <span>📸</span>
           <p>A clear, professional-looking photo of yourself</p>
           <p style="font-size:11px;margin-top:4px">JPG or PNG – max 3MB</p>
+          <div class="upload-progress"><div class="upload-progress-bar" id="photo-bar"></div></div>
           <input type="file" id="profile-photo" accept=".jpg,.jpeg,.png" style="display:none" onchange="showFileName(this)">
         </div>
       </div>
     </div>
-    <div id="step7-error" class="alert-error" style="display:none"></div>
+    <div id="step7-error" class="error-box"></div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(6)"><i class="bi bi-arrow-left"></i> Back</button>
       <button class="btn-primary" onclick="nextStep7()">Next: Declaration <i class="bi bi-arrow-right"></i></button>
@@ -736,7 +782,7 @@ a{text-decoration:none;color:inherit}
         <div class="checkbox-group"><input type="checkbox" id="decl-privacy"><label for="decl-privacy">I have read and understood Sounds Care's <a href="#" style="color:var(--green)">Privacy Policy</a>. I consent to my information being stored securely.</label></div>
         <div class="checkbox-group"><input type="checkbox" id="decl-refs"><label for="decl-refs">I confirm that all referees I have listed are real adults who have agreed to be my referees and their phone numbers are working.</label></div>
       </div>
-      <div id="submit-error" class="alert-error" style="display:none"></div>
+      <div id="submit-error" class="error-box"></div>
     </div>
     <div class="step-nav">
       <button class="btn-outline" onclick="goStep(7)"><i class="bi bi-arrow-left"></i> Back</button>
@@ -754,59 +800,36 @@ a{text-decoration:none;color:inherit}
     <a href="employee-dashboard.html" class="btn-primary" style="padding:12px 32px;font-size:15px">Go to My Dashboard →</a>
   </div>
 
-</div><!-- /page-container -->
+</div>
 
-<!-- ══════════════════════ OVERLAYS ══════════════════════ -->
-
-<!-- Already registered (active account) -->
+<!-- ══════ OVERLAYS ══════ -->
 <div class="reg-overlay" id="already-registered-overlay" style="display:none">
   <div class="reg-overlay-card">
     <div class="reg-icon">✅</div>
     <h2>Profile Already Exists</h2>
-    <p>You have already submitted a worker profile on Sounds Care. You cannot submit a second profile.<br><br>Head to your dashboard to view your status, edit details, or manage your account.</p>
+    <p>You have already submitted a worker profile on Sounds Care. You cannot submit a second profile.</p>
     <a href="employee-dashboard.html" class="btn-primary" style="padding:11px 28px;font-size:14px;display:inline-flex">Go to My Dashboard →</a>
     <div style="margin-top:.9rem"><a href="index.html" style="font-size:12.5px;color:var(--text-muted)">← Back to home</a></div>
   </div>
 </div>
-
-<!-- Banned account overlay -->
 <div class="reg-overlay" id="banned-overlay" style="display:none">
   <div class="reg-overlay-card">
     <div class="reg-icon">🚫</div>
     <h2 style="color:var(--red)">Account Suspended</h2>
-    <p>The ID number or account associated with this registration has been <strong>suspended or banned</strong> from Sounds Care.<br><br>If you believe this is an error, please contact our support team for assistance.</p>
+    <p>The ID number or account associated with this registration has been <strong>suspended or banned</strong> from Sounds Care. If you believe this is an error, please contact our support team.</p>
     <a href="https://tawk.to/soundscare" target="_blank" class="support-link"><i class="bi bi-chat-dots-fill"></i> Chat with Support (Live)</a>
-    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-      <p style="font-size:12px;color:var(--text-muted);margin:0">Support is available Mon–Sat, 8AM–8PM EAT</p>
-    </div>
   </div>
 </div>
-
-<!-- ID already registered overlay -->
 <div class="reg-overlay" id="id-registered-overlay" style="display:none">
   <div class="reg-overlay-card">
     <div class="reg-icon">🪪</div>
     <h2>ID Already Registered</h2>
-    <p>This National ID number is <strong>already linked to an existing Sounds Care account</strong>.<br><br>If this is your ID, please log in to your existing account. If someone else registered using your ID, contact our support team immediately.</p>
-    <a href="employee-dashboard.html" class="btn-primary" style="padding:11px 28px;font-size:14px;display:inline-flex;margin-bottom:.8rem">Log In to My Account →</a>
-    <br>
+    <p>This National ID number is <strong>already linked to an existing Sounds Care account</strong>. If this is your ID, please log in. If someone else used your ID, contact support immediately.</p>
+    <a href="employee-dashboard.html" class="btn-primary" style="padding:11px 28px;font-size:14px;display:inline-flex;margin-bottom:.8rem">Log In to My Account →</a><br>
     <a href="https://tawk.to/soundscare" target="_blank" class="support-link"><i class="bi bi-chat-dots-fill"></i> Report Fraud via Live Chat</a>
     <div style="margin-top:.8rem"><a href="index.html" style="font-size:12.5px;color:var(--text-muted)">← Back to home</a></div>
   </div>
 </div>
-
-<!-- ══════════════════════ TAWK.TO LIVE CHAT ══════════════════════ -->
-<script>
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-  s1.async=true;
-  s1.src='https://embed.tawk.to/YOUR_TAWK_PROPERTY_ID/default'; /* Replace YOUR_TAWK_PROPERTY_ID */
-  s1.charset='UTF-8';
-  s1.setAttribute('crossorigin','*');
-  s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
 
 <script>
 // ════════════════════════════════════════════════════════════════
@@ -816,92 +839,259 @@ const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ANTH_URL = 'https://api.anthropic.com/v1/messages';
+const BUCKET = 'worker-documents';
+
+// ════════════════════════════════════════════════════════════════
+// ERROR CODE SYSTEM
+// ════════════════════════════════════════════════════════════════
+const ERROR_CODES = {
+  // Database errors
+  'DB_DUPLICATE':    { code: 'ERR-DB-001', title: 'Duplicate Record',       icon: 'bi-files',              hint: 'A profile with this email or ID already exists.' },
+  'DB_BANNED':       { code: 'ERR-DB-002', title: 'Account Suspended',      icon: 'bi-slash-circle',       hint: 'Contact support to resolve this issue.' },
+  'DB_WRITE':        { code: 'ERR-DB-003', title: 'Database Write Error',   icon: 'bi-database-x',        hint: 'Please try again. If the issue persists, contact support.' },
+  'DB_READ':         { code: 'ERR-DB-004', title: 'Database Read Error',    icon: 'bi-database-exclamation', hint: 'Check your connection and try again.' },
+  'DB_PERMISSION':   { code: 'ERR-DB-005', title: 'Permission Denied',      icon: 'bi-shield-x',          hint: 'You may not be signed in. Refresh the page.' },
+  // Storage/upload errors
+  'UPLOAD_SIZE':     { code: 'ERR-UP-001', title: 'File Too Large',         icon: 'bi-file-earmark-x',    hint: 'Maximum file size is 5MB. Please compress your file.' },
+  'UPLOAD_TYPE':     { code: 'ERR-UP-002', title: 'Unsupported File Type',  icon: 'bi-file-earmark-break', hint: 'Only JPG, PNG and PDF files are accepted.' },
+  'UPLOAD_FAIL':     { code: 'ERR-UP-003', title: 'Upload Failed',          icon: 'bi-cloud-slash',        hint: 'Check your internet connection and try again.' },
+  'UPLOAD_BUCKET':   { code: 'ERR-UP-004', title: 'Storage Unavailable',    icon: 'bi-hdd-x',             hint: 'Our storage service is temporarily unavailable. Try later.' },
+  // Network errors
+  'NET_OFFLINE':     { code: 'ERR-NET-001', title: 'No Internet Connection', icon: 'bi-wifi-off',          hint: 'Please check your internet connection and try again.' },
+  'NET_TIMEOUT':     { code: 'ERR-NET-002', title: 'Request Timed Out',      icon: 'bi-clock-history',     hint: 'Your connection may be slow. Please try again.' },
+  'NET_SERVER':      { code: 'ERR-NET-003', title: 'Server Error',           icon: 'bi-server',            hint: 'Our servers are having issues. Please try again in a moment.' },
+  // Browser/client errors
+  'BR_UNSUPPORTED':  { code: 'ERR-BR-001', title: 'Unsupported Browser',    icon: 'bi-browser-safari',    hint: 'Please use Chrome, Firefox, or Edge for best results.' },
+  'BR_STORAGE':      { code: 'ERR-BR-002', title: 'Browser Storage Error',  icon: 'bi-device-ssd',        hint: 'Your browser storage may be full. Clear cache and retry.' },
+  'BR_FILEREADER':   { code: 'ERR-BR-003', title: 'File Read Error',        icon: 'bi-file-earmark-x',    hint: 'Could not read the file. Please try a different file.' },
+  // Auth errors
+  'AUTH_REQUIRED':   { code: 'ERR-AUTH-001', title: 'Sign In Required',     icon: 'bi-lock',              hint: 'Please sign in to continue.' },
+  'AUTH_EXPIRED':    { code: 'ERR-AUTH-002', title: 'Session Expired',      icon: 'bi-clock',             hint: 'Your session has expired. Please sign in again.' },
+  // Security
+  'SEC_RATELIMIT':   { code: 'ERR-SEC-001', title: 'Too Many Attempts',     icon: 'bi-shield-exclamation', hint: 'Please wait a moment before trying again.' },
+  'SEC_FAKE_ID':     { code: 'ERR-SEC-002', title: 'ID Authenticity Failed', icon: 'bi-shield-x',         hint: 'Upload a clear photo of your original physical ID card.' },
+  // Validation
+  'VAL_AGE':         { code: 'ERR-VAL-001', title: 'Age Requirement',       icon: 'bi-calendar-x',        hint: 'You must be at least 19 years old to register.' },
+  'VAL_INCOMPLETE':  { code: 'ERR-VAL-002', title: 'Incomplete Fields',     icon: 'bi-input-cursor-text', hint: 'Please fill in all required fields.' },
+};
+
+function showError(containerId, errorKey, customMsg = null) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const def = ERROR_CODES[errorKey] || { code: 'ERR-UNK', title: 'Error', icon: 'bi-exclamation-triangle', hint: '' };
+  const msg = customMsg || def.title;
+  container.innerHTML = `
+    <div class="error-box-header">
+      <i class="${def.icon} error-box-icon"></i>
+      <span class="error-box-title">${def.title}</span>
+      <span class="error-box-code">${def.code}</span>
+    </div>
+    <div class="error-box-msg">${msg}</div>
+    ${def.hint ? `<div class="error-box-hint"><i class="bi bi-lightbulb"></i> ${def.hint}</div>` : ''}
+  `;
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function clearError(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+function classifyNetworkError(err) {
+  if (!navigator.onLine) return 'NET_OFFLINE';
+  if (err?.message?.includes('timeout') || err?.code === 'PGRST_NETWORK_TIMEOUT') return 'NET_TIMEOUT';
+  if (err?.status >= 500) return 'NET_SERVER';
+  return 'NET_TIMEOUT';
+}
+
+function classifyDBError(err) {
+  const msg = err?.message || '';
+  const code = err?.code || '';
+  if (code === '42501' || msg.includes('permission')) return 'DB_PERMISSION';
+  if (code === '23505' || msg.includes('duplicate') || msg.includes('unique')) return 'DB_DUPLICATE';
+  if (!navigator.onLine) return 'NET_OFFLINE';
+  return 'DB_WRITE';
+}
+
+// ════════════════════════════════════════════════════════════════
+// SECURITY: Rate limiting & CSRF-lite token
+// ════════════════════════════════════════════════════════════════
+const _rateLimits = {};
+function checkRateLimit(action, maxAttempts = 5, windowMs = 60000) {
+  const now = Date.now();
+  if (!_rateLimits[action]) _rateLimits[action] = [];
+  _rateLimits[action] = _rateLimits[action].filter(t => now - t < windowMs);
+  if (_rateLimits[action].length >= maxAttempts) {
+    const waitSec = Math.ceil((windowMs - (now - _rateLimits[action][0])) / 1000);
+    showRateLimit(`Too many attempts. Please wait ${waitSec} seconds before trying again.`);
+    return false;
+  }
+  _rateLimits[action].push(now);
+  return true;
+}
+function showRateLimit(msg) {
+  const bar = document.getElementById('rate-limit-bar');
+  document.getElementById('rate-limit-msg').textContent = msg;
+  bar.style.display = 'flex';
+  setTimeout(() => { bar.style.display = 'none'; }, 8000);
+}
+
+// Session CSRF token (single-page use)
+const _pageToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36);
+
+// Sanitize inputs before submitting
+function sanitize(str) {
+  if (!str) return '';
+  return String(str).replace(/[<>]/g, '').trim().slice(0, 500);
+}
+
+// File validation
+function validateFile(file, maxMB = 5, allowedTypes = ['image/jpeg','image/png','image/jpg']) {
+  if (!file) return null;
+  if (file.size > maxMB * 1024 * 1024) return 'UPLOAD_SIZE';
+  if (allowedTypes.length && !allowedTypes.includes(file.type)) return 'UPLOAD_TYPE';
+  return null;
+}
 
 // ════════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════════
 let expCountNum = 1;
 let certCheckTimer = null;
-let idScanData = null; // { front: {...}, back: {...}, authentic: bool, isFake: bool, isCopy: bool }
+let idScanData = null;
 let idScanState = { frontDone: false, backDone: false };
+const calState = {};
+let _currentSession = null;
+let _userProfile = null; // supabase auth user metadata
 
 // ════════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
-  const { data: { session } } = await sb.auth.getSession();
-
-  const regData = {
-    fullname: localStorage.getItem('soundscare_reg_name') || localStorage.getItem('reg_fullname') || '',
-    email:    localStorage.getItem('soundscare_reg_email') || localStorage.getItem('reg_email') || '',
-    phone:    localStorage.getItem('soundscare_reg_phone') || localStorage.getItem('reg_phone') || '',
-    gender:   localStorage.getItem('soundscare_reg_gender') || localStorage.getItem('reg_gender') || '',
-    role:     localStorage.getItem('soundscare_reg_role') || localStorage.getItem('reg_preferred_role') || '',
-    dob:      localStorage.getItem('soundscare_reg_dob') || localStorage.getItem('reg_dob') || '',
-  };
-
-  if (session?.user?.email) {
-    regData.email = session.user.email;
-    if (session.user.user_metadata?.full_name && !regData.fullname)
-      regData.fullname = session.user.user_metadata.full_name;
+  // Browser capability check
+  if (!window.FileReader || !window.fetch) {
+    document.getElementById('page-loader').innerHTML =
+      '<div style="text-align:center;padding:2rem"><i class="bi bi-browser-safari" style="font-size:2.5rem;color:var(--amber)"></i><p style="margin-top:1rem;color:var(--text-muted)">Your browser is not fully supported. Please upgrade to Chrome, Firefox, or Edge.</p></div>';
+    return;
   }
 
-  // Auth gate: email check
-  if (regData.email) {
-    try {
-      const { data: existing } = await sb.from('worker_profiles')
-        .select('id, status').eq('email', regData.email.toLowerCase().trim()).maybeSingle();
-      if (existing) {
-        if (existing.status === 'banned') showBannedOverlay();
-        else showAlreadyRegisteredOverlay();
-        return;
-      }
-    } catch(e) { /* proceed */ }
-  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    _currentSession = session;
 
-  // Prefill from localStorage / session
-  if (regData.fullname) setVal('fullname', regData.fullname);
-  if (regData.email) {
-    setVal('email', regData.email);
-    if (session) document.getElementById('email').readOnly = true;
-  }
-  if (regData.phone) setVal('phone', regData.phone);
-  if (regData.dob) {
-    setVal('dob', regData.dob);
-    const d = new Date(regData.dob);
-    if (!isNaN(d)) {
-      const el = document.getElementById('dob-display-text');
-      el.textContent = d.toLocaleDateString('en-KE', { dateStyle: 'medium' });
-      el.classList.remove('cal-placeholder');
-      calState['dob'] = { view:'days', month:d.getMonth(), year:d.getFullYear(), selected:d };
+    // Security: require authentication
+    if (!session) {
+      document.getElementById('page-loader').style.display = 'none';
+      document.getElementById('auth-gate').style.display = 'flex';
+      return;
     }
+
+    _userProfile = session.user;
+
+    // Build prefill data — session first, then localStorage fallback
+    const meta = session.user.user_metadata || {};
+    const regData = {
+      fullname: meta.full_name || meta.name ||
+                localStorage.getItem('soundscare_reg_name') || localStorage.getItem('reg_fullname') || '',
+      email:    session.user.email ||
+                localStorage.getItem('soundscare_reg_email') || localStorage.getItem('reg_email') || '',
+      phone:    meta.phone || meta.phone_number ||
+                localStorage.getItem('soundscare_reg_phone') || localStorage.getItem('reg_phone') || '',
+      gender:   meta.gender ||
+                localStorage.getItem('soundscare_reg_gender') || localStorage.getItem('reg_gender') || '',
+      role:     meta.preferred_role ||
+                localStorage.getItem('soundscare_reg_role') || localStorage.getItem('reg_preferred_role') || '',
+      dob:      meta.dob ||
+                localStorage.getItem('soundscare_reg_dob') || localStorage.getItem('reg_dob') || '',
+      country:  meta.country || 'Kenya',
+    };
+
+    // Check for existing profile / ban
+    if (regData.email) {
+      try {
+        const { data: existing, error: existErr } = await sb.from('worker_profiles')
+          .select('id,status').eq('email', regData.email.toLowerCase().trim()).maybeSingle();
+        if (!existErr && existing) {
+          if (existing.status === 'banned') { showBannedOverlay(); document.getElementById('page-loader').style.display = 'none'; return; }
+          showAlreadyRegisteredOverlay(); document.getElementById('page-loader').style.display = 'none'; return;
+        }
+      } catch (e) { /* non-critical, proceed */ }
+    }
+
+    // Prefill form fields from session
+    let prefillCount = 0;
+    const prefillField = (id, val, readonly = false) => {
+      const el = document.getElementById(id);
+      if (!el || !val) return;
+      el.value = val;
+      el.classList.add('prefilled');
+      if (readonly) el.readOnly = true;
+      prefillCount++;
+    };
+    const prefillSelect = (id, val) => {
+      const sel = document.getElementById(id);
+      if (!sel || !val) return;
+      for (let o of sel.options) {
+        if (o.text.toLowerCase() === String(val).toLowerCase() || o.value === val) {
+          sel.value = o.value; prefillCount++; return;
+        }
+      }
+    };
+
+    prefillField('fullname', regData.fullname);
+    prefillField('email', regData.email, true); // readonly – from auth
+    prefillField('phone', regData.phone);
+    prefillField('country', regData.country);
+    prefillSelect('gender', regData.gender);
+    prefillSelect('preferred-role', regData.role);
+
+    if (regData.dob) {
+      setVal('dob', regData.dob);
+      const d = new Date(regData.dob);
+      if (!isNaN(d)) {
+        const el = document.getElementById('dob-display-text');
+        el.textContent = d.toLocaleDateString('en-KE', { dateStyle: 'medium' });
+        el.classList.remove('cal-placeholder');
+        calState['dob'] = { view:'days', month:d.getMonth(), year:d.getFullYear(), selected:d };
+        prefillCount++;
+      }
+    }
+
+    // Show banner if we prefilled anything
+    if (prefillCount > 0) {
+      document.getElementById('prefill-banner').style.display = 'flex';
+    }
+
+    // Nav display
+    const displayName = regData.fullname
+      ? regData.fullname.split(' ').slice(0,2).map((p,i) => i===1 ? p[0]+'.' : p).join(' ')
+      : regData.email.split('@')[0];
+    document.getElementById('user-name').textContent = displayName;
+    document.getElementById('nav-avatar').textContent = displayName.charAt(0).toUpperCase();
+    document.getElementById('session-badge').style.display = 'inline-flex';
+
+    // Email blur → DB check
+    document.getElementById('email').addEventListener('blur', e => {
+      const v = e.target.value.trim();
+      if (v && v.includes('@')) checkEmailInDB(v);
+    });
+
+    // ID number → DB check
+    document.getElementById('id-number').addEventListener('input', () => {
+      clearTimeout(window._idNumTimer);
+      window._idNumTimer = setTimeout(checkIDNumberInDB, 900);
+    });
+
+    goStep(1);
+  } catch (e) {
+    console.error('Init error:', e);
+    // Show form anyway but warn
+    goStep(1);
+  } finally {
+    document.getElementById('page-loader').style.display = 'none';
   }
-  if (regData.gender) setSelectByText('gender', regData.gender);
-  if (regData.role)   setSelectByText('preferred-role', regData.role);
-
-  const displayName = regData.fullname
-    ? regData.fullname.split(' ').slice(0,2).map((p,i) => i===1 ? p[0]+'.' : p).join(' ')
-    : (regData.email || 'Guest');
-  document.getElementById('user-name').textContent = displayName;
-
-  document.getElementById('email').addEventListener('blur', e => {
-    if (e.target.value.trim()) checkEmailInDB(e.target.value.trim());
-  });
-
-  document.getElementById('id-number').addEventListener('input', () => {
-    clearTimeout(window._idNumTimer);
-    window._idNumTimer = setTimeout(checkIDNumberInDB, 900);
-  });
-
-  goStep(1);
 });
-
-function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
-function setSelectByText(id, txt) {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  for (let o of sel.options) if (o.text === txt || o.value === txt) { sel.value = o.value; break; }
-}
 
 // ════════════════════════════════════════════════════════════════
 // OVERLAYS
@@ -922,11 +1112,12 @@ function showIDRegisteredOverlay() {
 // EMAIL + ID DB CHECKS
 // ════════════════════════════════════════════════════════════════
 async function checkEmailInDB(email) {
-  if (!email || !email.includes('@')) return;
+  if (!checkRateLimit('email-check', 10, 60000)) return;
   const el = document.getElementById('email-status');
   el.className = 'email-status checking'; el.style.display = 'block'; el.textContent = 'Checking email…';
   try {
-    const { data } = await sb.from('worker_profiles').select('id, status').eq('email', email.toLowerCase().trim()).maybeSingle();
+    const { data, error } = await sb.from('worker_profiles').select('id,status').eq('email', email.toLowerCase().trim()).maybeSingle();
+    if (error) { el.style.display = 'none'; return; }
     if (data) {
       if (data.status === 'banned') { showBannedOverlay(); return; }
       el.className = 'email-status exists';
@@ -941,11 +1132,13 @@ async function checkEmailInDB(email) {
 async function checkIDNumberInDB() {
   const idNum = document.getElementById('id-number').value.trim();
   if (idNum.length < 6) return;
+  if (!checkRateLimit('id-check', 8, 60000)) return;
   const el = document.getElementById('id-db-check');
   el.className = 'intel-check checking'; el.style.display = 'flex';
-  el.innerHTML = '<span class="intel-spinner"></span> Checking ID number in database…';
+  el.innerHTML = '<span class="intel-spinner"></span> Checking ID number…';
   try {
-    const { data } = await sb.from('worker_profiles').select('id, status').eq('id_number', idNum).maybeSingle();
+    const { data, error } = await sb.from('worker_profiles').select('id,status').eq('id_number', idNum).maybeSingle();
+    if (error) { el.style.display = 'none'; return; }
     if (data) {
       if (data.status === 'banned') {
         el.className = 'intel-check mismatch';
@@ -953,14 +1146,61 @@ async function checkIDNumberInDB() {
         showBannedOverlay();
       } else {
         el.className = 'intel-check mismatch';
-        el.innerHTML = '<i class="bi bi-x-circle-fill"></i> This ID number is already registered. Please log in.';
+        el.innerHTML = '<i class="bi bi-x-circle-fill"></i> This ID number is already registered.';
         showIDRegisteredOverlay();
       }
     } else {
       el.className = 'intel-check match';
-      el.innerHTML = '<i class="bi bi-check-circle-fill"></i> ID number is available — not registered';
+      el.innerHTML = '<i class="bi bi-check-circle-fill"></i> ID number available — not registered';
     }
   } catch(e) { el.style.display = 'none'; }
+}
+
+// ════════════════════════════════════════════════════════════════
+// FILE UPLOAD TO BUCKET
+// ════════════════════════════════════════════════════════════════
+async function uploadFileToBucket(fileInput, folder, progressBarId = null) {
+  if (!fileInput?.files?.[0]) return null;
+  const file = fileInput.files[0];
+
+  // Validate
+  const allowedTypes = folder === 'education'
+    ? ['image/jpeg','image/png','image/jpg','application/pdf']
+    : ['image/jpeg','image/png','image/jpg'];
+  const maxMB = folder === 'photos' ? 3 : 5;
+  const valErr = validateFile(file, maxMB, allowedTypes);
+  if (valErr) throw { type: valErr, message: `File validation failed: ${valErr}` };
+
+  // Sanitize filename
+  const ext = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const safeExt = ['jpg','jpeg','png','pdf'].includes(ext) ? ext : 'jpg';
+  const userId = _currentSession?.user?.id || 'anon';
+  const path = `${folder}/${userId}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${safeExt}`;
+
+  // Animate progress bar
+  const bar = progressBarId ? document.getElementById(progressBarId) : null;
+  if (bar) {
+    bar.parentElement.style.display = 'block';
+    let prog = 10;
+    const interval = setInterval(() => {
+      prog = Math.min(prog + Math.random() * 15, 85);
+      bar.style.width = prog + '%';
+    }, 200);
+
+    const { data, error } = await sb.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type });
+    clearInterval(interval);
+    bar.style.width = '100%';
+    setTimeout(() => { if(bar) bar.parentElement.style.display = 'none'; }, 600);
+
+    if (error) throw { type: 'UPLOAD_FAIL', message: error.message, supabaseError: error };
+    const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  } else {
+    const { data, error } = await sb.storage.from(BUCKET).upload(path, file, { upsert: false, contentType: file.type });
+    if (error) throw { type: 'UPLOAD_FAIL', message: error.message };
+    const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -970,7 +1210,14 @@ async function onIDImageUpload(side, inputEl) {
   const file = inputEl.files?.[0];
   if (!file) return;
 
-  // Show preview
+  // Validate file
+  const valErr = validateFile(file, 5, ['image/jpeg','image/png','image/jpg']);
+  if (valErr) {
+    showError('step2-error', valErr);
+    return;
+  }
+
+  // Preview
   const preview = document.getElementById(`id-${side}-preview`);
   const zone = document.getElementById(`id-${side}-zone`);
   const reader = new FileReader();
@@ -980,20 +1227,21 @@ async function onIDImageUpload(side, inputEl) {
     zone.querySelector('p').textContent = '✔ ' + file.name;
     zone.classList.add('success');
   };
+  reader.onerror = () => showError('step2-error', 'BR_FILEREADER');
   reader.readAsDataURL(file);
 
-  // Show intelligence panel
   document.getElementById('id-intel-panel').style.display = 'block';
-
-  // Update scan status
   setStatus(`id-scan-${side}-status`, 'scanning',
     `<span class="intel-spinner"></span> Scanning ${side} of ID…`);
 
+  if (!checkRateLimit('ai-scan', 12, 60000)) {
+    setStatus(`id-scan-${side}-status`, 'warn', '<i class="bi bi-exclamation-triangle-fill"></i> Too many scan attempts. Please wait.');
+    return;
+  }
+
   try {
     const base64 = await fileToBase64(file);
-    const mediaType = file.type || 'image/jpeg';
-    const result = await callIDScanner(base64, mediaType, side);
-
+    const result = await callIDScanner(base64, file.type || 'image/jpeg', side);
     if (!idScanData) idScanData = {};
     idScanData[side] = result;
     idScanState[side + 'Done'] = true;
@@ -1001,77 +1249,36 @@ async function onIDImageUpload(side, inputEl) {
     if (side === 'front') {
       const ok = result && !result.is_fake && !result.is_photocopy;
       setStatus('id-scan-front-status', ok ? 'done' : 'danger',
-        ok
-          ? `<i class="bi bi-check-circle-fill"></i> Front scanned — ID number: <strong>${result.id_number || '–'}</strong>`
-          : `<i class="bi bi-exclamation-octagon-fill"></i> Front scan warning — see details below`
-      );
+        ok ? `<i class="bi bi-check-circle-fill"></i> Front scanned — ID: <strong>${result.id_number || '–'}</strong>`
+           : `<i class="bi bi-exclamation-octagon-fill"></i> Front scan warning`);
     }
-
     if (side === 'back') {
       const ok = result && !result.is_fake && !result.is_photocopy;
       setStatus('id-scan-back-status', ok ? 'done' : 'danger',
-        ok
-          ? `<i class="bi bi-check-circle-fill"></i> Back scanned — location data extracted`
-          : `<i class="bi bi-exclamation-octagon-fill"></i> Back scan warning — see details below`
-      );
+        ok ? `<i class="bi bi-check-circle-fill"></i> Back scanned — location data extracted`
+           : `<i class="bi bi-exclamation-octagon-fill"></i> Back scan warning`);
     }
 
-    // If both sides done, run combined analysis
-    if (idScanState.frontDone && idScanState.backDone) {
-      runCombinedIDAnalysis();
-    } else {
-      renderExtractedData();
-    }
+    if (idScanState.frontDone && idScanState.backDone) runCombinedIDAnalysis();
+    else renderExtractedData();
 
     document.getElementById('btn-rescan').style.display = 'inline-flex';
-
   } catch(e) {
+    const errKey = !navigator.onLine ? 'NET_OFFLINE' : (e?.status === 429 ? 'SEC_RATELIMIT' : 'NET_SERVER');
     setStatus(`id-scan-${side}-status`, 'warn',
-      `<i class="bi bi-exclamation-triangle-fill"></i> Could not scan ${side} — please ensure image is clear and try again`);
-    console.warn('ID scan error:', e.message);
+      `<i class="bi bi-exclamation-triangle-fill"></i> Could not scan ${side} — ${e.message || 'try again'}`);
   }
 }
 
 async function callIDScanner(base64, mediaType, side) {
   const isFront = side === 'front';
   const prompt = isFront
-    ? `This is the FRONT of a Kenya National Identity Card (Kitambulisho cha Taifa). 
-Carefully extract all visible information. Also assess authenticity.
-
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "id_number": "<8-digit number or null>",
-  "surname": "<surname/last name or null>",
-  "first_name": "<first name or null>",
-  "other_names": "<other names or null>",
-  "date_of_birth": "<DD.MM.YYYY or null>",
-  "gender": "<Male|Female|null>",
-  "date_of_issue": "<DD.MM.YYYY or null>",
-  "nationality": "<e.g. KEN or null>",
-  "mrz_line1": "<machine readable zone line 1 or null>",
-  "mrz_line2": "<machine readable zone line 2 or null>",
-  "is_fake": <true if this appears to be a fake or digitally altered ID, false otherwise>,
-  "is_photocopy": <true if this appears to be a photocopy or screenshot of an ID rather than an original, false otherwise>,
-  "authenticity_notes": "<brief notes about document authenticity>",
-  "confidence": <0.0 to 1.0>
-}`
-    : `This is the BACK of a Kenya National Identity Card. 
-Extract all visible text fields from the back side.
-
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "county": "<county name or null>",
-  "sub_county": "<sub-county or null>",
-  "division": "<division or null>",
-  "location": "<location or null>",
-  "sub_location": "<sub-location or null>",
-  "village": "<village or null>",
-  "place_of_birth": "<place of birth or null>",
-  "is_fake": <true if this appears to be a fake or photocopy, false otherwise>,
-  "is_photocopy": <true if this appears to be a photocopy or screenshot, false otherwise>,
-  "authenticity_notes": "<brief notes>",
-  "confidence": <0.0 to 1.0>
-}`;
+    ? `This is the FRONT of a Kenya National Identity Card. Extract all visible information and assess authenticity.
+Return ONLY valid JSON (no markdown):
+{"id_number":"<8-digit or null>","surname":"<or null>","first_name":"<or null>","other_names":"<or null>","date_of_birth":"<DD.MM.YYYY or null>","gender":"<Male|Female|null>","date_of_issue":"<DD.MM.YYYY or null>","nationality":"<or null>","is_fake":<bool>,"is_photocopy":<bool>,"authenticity_notes":"<brief>","confidence":<0-1>}`
+    : `This is the BACK of a Kenya National Identity Card. Extract all visible fields.
+Return ONLY valid JSON (no markdown):
+{"county":"<or null>","sub_county":"<or null>","division":"<or null>","location":"<or null>","sub_location":"<or null>","village":"<or null>","place_of_birth":"<or null>","is_fake":<bool>,"is_photocopy":<bool>,"authenticity_notes":"<brief>","confidence":<0-1>}`;
 
   const res = await fetch(ANTH_URL, {
     method: 'POST',
@@ -1083,28 +1290,26 @@ Return ONLY valid JSON (no markdown, no explanation):
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 800,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-          { type: 'text', text: prompt }
-        ]
-      }]
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: prompt }
+      ]}]
     })
   });
-
-  if (!res.ok) throw new Error('API ' + res.status);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw { status: res.status, message: errBody?.error?.message || `HTTP ${res.status}` };
+  }
   const data = await res.json();
-  const text = (data.content?.[0]?.text || '{}').replace(/```json|```/g, '').trim();
+  const text = (data.content?.[0]?.text || '{}').replace(/```json|```/g,'').trim();
   return JSON.parse(text);
 }
 
 function runCombinedIDAnalysis() {
   const front = idScanData?.front || {};
   const back  = idScanData?.back  || {};
-
-  const isFake    = front.is_fake    || back.is_fake    || false;
-  const isCopy    = front.is_photocopy || back.is_photocopy || false;
+  const isFake = front.is_fake || back.is_fake || false;
+  const isCopy = front.is_photocopy || back.is_photocopy || false;
 
   if (isFake || isCopy) {
     setStatus('id-scan-auth-status', 'danger',
@@ -1114,20 +1319,17 @@ function runCombinedIDAnalysis() {
     msg.style.display = 'block';
     let warnings = [];
     if (isFake) warnings.push('This ID may be <strong>digitally altered or fake</strong>.');
-    if (isCopy) warnings.push('This appears to be a <strong>photocopy or digital image</strong> of an ID, not an original.');
+    if (isCopy) warnings.push('This appears to be a <strong>photocopy or digital image</strong>, not an original.');
     if (front.authenticity_notes) warnings.push(front.authenticity_notes);
     if (back.authenticity_notes && back.authenticity_notes !== front.authenticity_notes) warnings.push(back.authenticity_notes);
-    msgTxt.innerHTML = warnings.join('<br>') + '<br><br>Please upload a photo of your original physical ID card. Photocopies and fake IDs will be rejected and may result in a permanent ban.';
+    msgTxt.innerHTML = warnings.join('<br>') + '<br><br>Please upload a clear photo of your original physical ID card.';
     document.getElementById('btn-autofill').style.display = 'none';
   } else {
     setStatus('id-scan-auth-status', 'done',
       `<i class="bi bi-shield-check-fill"></i> Document appears authentic — ready to auto-fill`);
     document.getElementById('btn-autofill').style.display = 'inline-flex';
   }
-
   renderExtractedData();
-
-  // Auto check ID number in DB if extracted
   if (front.id_number) {
     document.getElementById('id-number').value = front.id_number;
     checkIDNumberInDB();
@@ -1139,41 +1341,28 @@ function renderExtractedData() {
   const back  = idScanData?.back  || {};
   const container = document.getElementById('id-extracted-data');
   container.style.display = 'grid';
-
   const fields = [];
   if (front.id_number)    fields.push(['ID Number', front.id_number, !front.is_fake]);
   if (front.surname)      fields.push(['Surname', front.surname, true]);
   if (front.first_name)   fields.push(['First Name', front.first_name, true]);
-  if (front.other_names)  fields.push(['Other Names', front.other_names, true]);
   if (front.date_of_birth) fields.push(['Date of Birth', front.date_of_birth, true]);
   if (front.gender)       fields.push(['Gender', front.gender, true]);
   if (front.date_of_issue) fields.push(['Date of Issue', front.date_of_issue, true]);
   if (back.county)        fields.push(['County (ID)', back.county, true]);
-  if (back.sub_location)  fields.push(['Sub-location', back.sub_location, true]);
-  if (back.division)      fields.push(['Division', back.division, true]);
   if (back.village)       fields.push(['Village', back.village, true]);
-
   container.innerHTML = fields.map(([label, val, ok]) => `
     <div class="id-extracted-field">
       <div class="idf-label">${label}</div>
-      <div class="idf-value ${ok ? 'verified' : 'warning'}">${val}</div>
+      <div class="idf-value ${ok?'verified':'warning'}">${val}</div>
     </div>`).join('');
 }
 
 function applyAutofill() {
   const front = idScanData?.front || {};
   const back  = idScanData?.back  || {};
-
-  // Step 1: Personal fields
   const fullName = [front.surname, front.first_name, front.other_names].filter(Boolean).join(' ');
-  if (fullName) {
-    markAutofilled('fullname', fullName);
-    markAutofilled('id-fname', front.first_name || '');
-    markAutofilled('id-sname', front.surname || '');
-  }
-
+  if (fullName) { markAutofilled('fullname', fullName); markAutofilled('id-fname', front.first_name||''); markAutofilled('id-sname', front.surname||''); }
   if (front.date_of_birth) {
-    // Parse DD.MM.YYYY to YYYY-MM-DD
     const parts = front.date_of_birth.split('.');
     if (parts.length === 3) {
       const iso = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
@@ -1187,25 +1376,18 @@ function applyAutofill() {
       }
     }
   }
-
-  if (front.gender) setSelectByText('gender', front.gender);
-  if (front.id_number) markAutofilled('id-number', front.id_number);
+  if (front.gender) {
+    const sel = document.getElementById('gender');
+    for (let o of sel.options) if (o.text.toLowerCase() === front.gender.toLowerCase()) { sel.value = o.value; break; }
+  }
+  if (front.id_number)    markAutofilled('id-number', front.id_number);
   if (front.date_of_issue) markAutofilled('id-issue-date', front.date_of_issue);
-
-  // ID back fields
-  if (back.county)       markAutofilled('id-county', back.county);
-  if (back.sub_location) markAutofilled('id-sublocation', back.sub_location);
-  if (back.division)     markAutofilled('id-division', back.division);
-
-  // Location step prefill
-  if (back.county)       markAutofilled('location-home-county', back.county);
-  if (back.sub_location) markAutofilled('location-sublocation', back.sub_location);
-  if (back.village)      markAutofilled('location-village', back.village);
-
+  if (back.county)        { markAutofilled('id-county', back.county); markAutofilled('location-home-county', back.county); }
+  if (back.sub_location)  { markAutofilled('id-sublocation', back.sub_location); markAutofilled('location-sublocation', back.sub_location); }
+  if (back.division)      markAutofilled('id-division', back.division);
+  if (back.village)       markAutofilled('location-village', back.village);
   document.getElementById('btn-autofill').innerHTML = '<i class="bi bi-check2-all"></i> Fields Auto-filled!';
   document.getElementById('btn-autofill').disabled = true;
-
-  // Run DB check on ID number
   if (front.id_number) checkIDNumberInDB();
 }
 
@@ -1263,6 +1445,7 @@ async function runCertificateCheck() {
     certEl.innerHTML = '<i class="bi bi-info-circle-fill"></i> PDF uploaded — name check only works on image files';
     return;
   }
+  if (!checkRateLimit('cert-check', 5, 60000)) return;
   certEl.className = 'intel-check checking'; certEl.style.display = 'flex';
   certEl.innerHTML = '<span class="intel-spinner"></span> Checking certificate name…';
   try {
@@ -1274,9 +1457,7 @@ async function runCertificateCheck() {
         model: 'claude-sonnet-4-6', max_tokens: 300,
         messages: [{ role:'user', content:[
           { type:'image', source:{ type:'base64', media_type: certFile.type, data: base64 } },
-          { type:'text', text:`This is an education certificate. Applicant's name is: "${fullName}". 
-Check if name on certificate matches. Respond ONLY with JSON:
-{"name_on_cert":"<name or null>","name_match":"match|close|mismatch|unreadable","note":"<brief>"}` }
+          { type:'text', text:`Education certificate. Applicant's name: "${fullName}". Does the name match? Respond ONLY with JSON: {"name_on_cert":"<name or null>","name_match":"match|close|mismatch|unreadable","note":"<brief>"}` }
         ]}]
       })
     });
@@ -1284,7 +1465,7 @@ Check if name on certificate matches. Respond ONLY with JSON:
     const result = JSON.parse((data.content?.[0]?.text || '{}').replace(/```json|```/g,'').trim());
     if (result.name_match === 'match') {
       certEl.className = 'intel-check match';
-      certEl.innerHTML = `<i class="bi bi-check-circle-fill"></i> Name on certificate matches (${result.name_on_cert || ''})`;
+      certEl.innerHTML = `<i class="bi bi-check-circle-fill"></i> Certificate name matches (${result.name_on_cert || ''})`;
     } else if (result.name_match === 'close') {
       certEl.className = 'intel-check warn';
       certEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> Approximately matches (${result.name_on_cert || ''}) — verify`;
@@ -1308,6 +1489,7 @@ async function aiCorrectAbout() {
   const statusEl = document.getElementById('ai-status-msg');
   const suggestionsEl = document.getElementById('ai-suggestions');
   if (text.length < 30) { statusEl.style.display='inline'; statusEl.textContent='⚠ Please write more before using AI correction.'; return; }
+  if (!checkRateLimit('ai-about', 5, 60000)) return;
   btn.disabled = true;
   btn.innerHTML = '<span class="intel-spinner" style="border-color:rgba(255,255,255,.4);border-top-color:#fff"></span> Improving…';
   statusEl.style.display = 'none'; suggestionsEl.style.display = 'none';
@@ -1317,7 +1499,7 @@ async function aiCorrectAbout() {
       headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:800,
-        messages:[{ role:'user', content:`You are helping a domestic worker in Kenya write a professional job profile. Improve this "About Yourself" text: fix spelling errors, grammar mistakes, unclear sentences and make it sound professional and confident while keeping the person's authentic voice. Keep it in first person. Do not add fictional details. Aim for 200-400 characters. Return ONLY the corrected text, nothing else.\n\n"${text}"` }]
+        messages:[{ role:'user', content:`You are helping a domestic worker in Kenya write a professional job profile. Improve this "About Yourself" text: fix spelling, grammar, make it sound professional and confident while keeping the person's authentic voice. First person, no fictional details, 200-400 characters. Return ONLY the corrected text, nothing else.\n\n"${text}"` }]
       })
     });
     const data = await res.json();
@@ -1328,7 +1510,10 @@ async function aiCorrectAbout() {
     } else {
       statusEl.style.display = 'inline'; statusEl.textContent = '✓ Your text looks great!';
     }
-  } catch(e) { statusEl.style.display='inline'; statusEl.textContent='⚠ AI correction unavailable.'; }
+  } catch(e) {
+    statusEl.style.display='inline';
+    statusEl.textContent = !navigator.onLine ? '⚠ No internet connection.' : '⚠ AI correction unavailable.';
+  }
   btn.disabled = false;
   btn.innerHTML = '<i class="bi bi-magic"></i> AI Auto-Correct';
 }
@@ -1345,8 +1530,6 @@ function dismissAiSuggestion() { document.getElementById('ai-suggestions').style
 // ════════════════════════════════════════════════════════════════
 // STEP NAVIGATION
 // ════════════════════════════════════════════════════════════════
-const calState = {};
-
 function goStep(step) {
   document.querySelectorAll('.step-content').forEach(s => s.style.display = 'none');
   const el = document.getElementById('form-step-' + step);
@@ -1356,103 +1539,98 @@ function goStep(step) {
     if (i+1 < step) t.classList.add('done');
     else if (i+1 === step) t.classList.add('active');
   });
-  window.scrollTo({ top:0, behavior:'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-function showErr(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg; el.style.display = 'block';
-  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-function clearErr(id) { document.getElementById(id).style.display = 'none'; }
 
 function nextStep1() {
-  clearErr('step1-error');
-  const fullname   = document.getElementById('fullname').value.trim();
-  const phone      = document.getElementById('phone').value.trim();
-  const email      = document.getElementById('email').value.trim();
-  const dob        = document.getElementById('dob').value;
-  const gender     = document.getElementById('gender').value;
-  const role       = document.getElementById('preferred-role').value;
-  const salary     = document.getElementById('salary-range').value;
-  const avail      = document.getElementById('availability').value;
+  clearError('step1-error');
+  const fullname = document.getElementById('fullname').value.trim();
+  const phone    = document.getElementById('phone').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const dob      = document.getElementById('dob').value;
+  const gender   = document.getElementById('gender').value;
+  const role     = document.getElementById('preferred-role').value;
+  const salary   = document.getElementById('salary-range').value;
+  const avail    = document.getElementById('availability').value;
   const disability = document.getElementById('disability').value;
 
-  if (!fullname)   return showErr('step1-error','Please enter your full name.');
-  if (!phone)      return showErr('step1-error','Please enter your phone number.');
-  if (!email)      return showErr('step1-error','Please enter your email address.');
-  if (!dob)        return showErr('step1-error','Please select your date of birth.');
-  if (!gender)     return showErr('step1-error','Please select your gender.');
-  if (!role)       return showErr('step1-error','Please select your preferred role.');
-  if (!salary)     return showErr('step1-error','Please select your expected salary range.');
-  if (!avail)      return showErr('step1-error','Please select your availability.');
-  if (!disability) return showErr('step1-error','Please answer the disability field.');
+  if (!fullname)   return showError('step1-error','VAL_INCOMPLETE','Please enter your full name.');
+  if (!phone)      return showError('step1-error','VAL_INCOMPLETE','Please enter your phone number.');
+  if (!email || !email.includes('@')) return showError('step1-error','VAL_INCOMPLETE','Please enter a valid email address.');
+  if (!dob)        return showError('step1-error','VAL_INCOMPLETE','Please select your date of birth.');
+  if (!gender)     return showError('step1-error','VAL_INCOMPLETE','Please select your gender.');
+  if (!role)       return showError('step1-error','VAL_INCOMPLETE','Please select your preferred role.');
+  if (!salary)     return showError('step1-error','VAL_INCOMPLETE','Please select your expected salary range.');
+  if (!avail)      return showError('step1-error','VAL_INCOMPLETE','Please select your availability.');
+  if (!disability) return showError('step1-error','VAL_INCOMPLETE','Please answer the disability field.');
 
   const age = Math.floor((Date.now() - new Date(dob)) / (365.25*24*60*60*1000));
-  if (age < 19) return showErr('step1-error','You must be at least 19 years old to register.');
+  if (age < 19) return showError('step1-error','VAL_AGE','You must be at least 19 years old to register on Sounds Care.');
 
   if (document.getElementById('email-status').classList.contains('exists'))
-    return showErr('step1-error','A profile already exists with this email address.');
+    return showError('step1-error','DB_DUPLICATE','A profile already exists with this email address.');
 
   goStep(2);
 }
 
 function nextStep2() {
-  clearErr('step2-error');
-  const idNum   = document.getElementById('id-number').value.trim();
+  clearError('step2-error');
+  const idNum  = document.getElementById('id-number').value.trim();
   const idFront = document.getElementById('id-front').files?.[0];
   const idBack  = document.getElementById('id-back').files?.[0];
   const selfie  = document.getElementById('id-selfie').files?.[0];
 
-  if (!idNum)    return showErr('step2-error','Please enter your National ID number.');
-  if (!idFront)  return showErr('step2-error','Please upload the front of your ID.');
-  if (!idBack)   return showErr('step2-error','Please upload the back of your ID.');
-  if (!selfie)   return showErr('step2-error','Please upload a selfie holding your ID.');
+  if (!idNum)   return showError('step2-error','VAL_INCOMPLETE','Please enter your National ID number.');
+  if (!idFront) return showError('step2-error','VAL_INCOMPLETE','Please upload the front of your ID.');
+  if (!idBack)  return showError('step2-error','VAL_INCOMPLETE','Please upload the back of your ID.');
+  if (!selfie)  return showError('step2-error','VAL_INCOMPLETE','Please upload a selfie holding your ID.');
 
   if (idScanData?.front?.is_fake || idScanData?.back?.is_fake ||
       idScanData?.front?.is_photocopy || idScanData?.back?.is_photocopy) {
-    return showErr('step2-error','⚠ Your uploaded ID failed the authenticity check. Please upload a clear photo of your original physical ID card.');
+    return showError('step2-error','SEC_FAKE_ID','Your uploaded ID failed the authenticity check. Please upload a clear photo of your original physical ID card.');
   }
-
   goStep(3);
 }
 
 function nextStep3() {
-  clearErr('step3-error');
-  if (!document.getElementById('edu-level').value) return showErr('step3-error','Please select your highest education level.');
+  clearError('step3-error');
+  if (!document.getElementById('edu-level').value)
+    return showError('step3-error','VAL_INCOMPLETE','Please select your highest education level.');
+  const yr = document.getElementById('edu-year').value;
+  if (!yr) return showError('step3-error','VAL_INCOMPLETE','Please enter the year you completed your education.');
   goStep(4);
 }
 
 function nextStep5() {
-  clearErr('step5-error');
+  clearError('step5-error');
   const town    = document.getElementById('location-town').value.trim();
   const county  = document.getElementById('location-county').value;
   const address = document.getElementById('location-address').value.trim();
   const village = document.getElementById('location-village').value.trim();
-  if (!town)    return showErr('step5-error','Please enter your current town/estate.');
-  if (!county)  return showErr('step5-error','Please select your county.');
-  if (!address) return showErr('step5-error','Please enter your home/physical address.');
-  if (!village) return showErr('step5-error','Please enter your home village.');
+  if (!town)    return showError('step5-error','VAL_INCOMPLETE','Please enter your current town/estate.');
+  if (!county)  return showError('step5-error','VAL_INCOMPLETE','Please select your county.');
+  if (!address) return showError('step5-error','VAL_INCOMPLETE','Please enter your home/physical address.');
+  if (!village) return showError('step5-error','VAL_INCOMPLETE','Please enter your home village.');
   goStep(6);
 }
 
 function nextStep6() {
-  clearErr('step6-error');
+  clearError('step6-error');
   const names  = document.querySelectorAll('#referee-list .ref-name');
   const phones = document.querySelectorAll('#referee-list .ref-phone');
   const idNums = document.querySelectorAll('#referee-list .ref-id-num');
   for (let i = 0; i < names.length; i++) {
-    if (!names[i].value.trim())  return showErr('step6-error',`Please enter the full name for Referee ${i+1}.`);
-    if (!phones[i].value.trim()) return showErr('step6-error',`Please enter the phone number for Referee ${i+1}.`);
-    if (!idNums[i].value.trim()) return showErr('step6-error',`Please enter the ID number for Referee ${i+1}.`);
+    if (!names[i].value.trim())  return showError('step6-error','VAL_INCOMPLETE',`Please enter the full name for Referee ${i+1}.`);
+    if (!phones[i].value.trim()) return showError('step6-error','VAL_INCOMPLETE',`Please enter the phone number for Referee ${i+1}.`);
+    if (!idNums[i].value.trim()) return showError('step6-error','VAL_INCOMPLETE',`Please enter the ID number for Referee ${i+1}.`);
   }
   goStep(7);
 }
 
 function nextStep7() {
-  clearErr('step7-error');
+  clearError('step7-error');
   const text = document.getElementById('about-text').value.trim();
-  if (text.length < 200) return showErr('step7-error',`Your description is too short (${text.length}/200 characters).`);
+  if (text.length < 200) return showError('step7-error','VAL_INCOMPLETE',`Your description is too short (${text.length}/200 characters). Please write at least 200 characters.`);
   goStep(8);
 }
 
@@ -1475,9 +1653,11 @@ function countChars() {
 function showFileName(input) {
   if (input.files?.[0]) {
     const zone = input.closest('.upload-zone');
-    zone.querySelector('p').textContent = '✔ ' + input.files[0].name;
-    zone.style.borderColor = 'var(--green)';
-    zone.style.background = 'var(--green-light)';
+    if (zone) {
+      zone.querySelector('p').textContent = '✔ ' + input.files[0].name;
+      zone.style.borderColor = 'var(--green)';
+      zone.style.background = 'var(--green-light)';
+    }
   }
 }
 
@@ -1498,42 +1678,28 @@ function addExperience() {
 function collectReferees() {
   const blocks = document.querySelectorAll('#referee-list .referee-block');
   return Array.from(blocks).map(b => ({
-    name:         b.querySelector('.ref-name')?.value.trim() || '',
-    relationship: b.querySelector('.ref-rel')?.value || '',
-    phone:        b.querySelector('.ref-phone')?.value.trim() || '',
-    id_number:    b.querySelector('.ref-id-num')?.value.trim() || '',
+    name:         sanitize(b.querySelector('.ref-name')?.value || ''),
+    relationship: sanitize(b.querySelector('.ref-rel')?.value || ''),
+    phone:        sanitize(b.querySelector('.ref-phone')?.value || ''),
+    id_number:    sanitize(b.querySelector('.ref-id-num')?.value || ''),
   }));
 }
 
 function collectExperiences() {
   const blocks = document.querySelectorAll('#exp-list .referee-block');
   return Array.from(blocks).map(b => {
-    const inputs = b.querySelectorAll('input, select');
-    return { role: inputs[0]?.value.trim()||'', duration: inputs[1]?.value.trim()||'',
-             contact: inputs[2]?.value.trim()||'', employer: inputs[3]?.value.trim()||'',
-             location: inputs[4]?.value.trim()||'' };
+    const inputs = b.querySelectorAll('input,select');
+    return {
+      role:     sanitize(inputs[0]?.value||''),
+      duration: sanitize(inputs[1]?.value||''),
+      contact:  sanitize(inputs[2]?.value||''),
+      employer: sanitize(inputs[3]?.value||''),
+      location: sanitize(inputs[4]?.value||''),
+    };
   }).filter(e => e.role || e.duration);
 }
 
-async function uploadFile(fileInput, folder) {
-  if (!fileInput?.files?.[0]) return null;
-  const file = fileInput.files[0];
-  const ext = file.name.split('.').pop();
-  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data, error } = await sb.storage.from('worker-documents').upload(path, file, { upsert:false });
-  if (error) { console.warn('Upload error:', error.message); return null; }
-  const { data: urlData } = sb.storage.from('worker-documents').getPublicUrl(path);
-  return urlData?.publicUrl || null;
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
 function parseSalary(rangeStr) {
   if (!rangeStr) return { min:null, max:null };
@@ -1544,61 +1710,124 @@ function parseSalary(rangeStr) {
   return { min:null, max:null };
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// ADMIN NOTIFICATION
+// ════════════════════════════════════════════════════════════════
+async function notifyAdminOfNewProfile(profileId, workerName, workerEmail) {
+  try {
+    // Insert into admin_notifications table
+    await sb.from('admin_notifications').insert({
+      type:        'new_profile_pending',
+      title:       'New Worker Profile Submitted',
+      message:     `${workerName} (${workerEmail}) has submitted a new profile and is awaiting approval.`,
+      reference_id: profileId,
+      reference_type: 'worker_profile',
+      is_read:     false,
+      created_at:  new Date().toISOString(),
+    });
+  } catch(e) {
+    // Non-critical — don't block submission
+    console.warn('Admin notification failed (non-critical):', e.message);
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 // SUBMIT
 // ════════════════════════════════════════════════════════════════
 async function submitProfile() {
-  const checks = ['decl-adult','decl-correct','decl-privacy','decl-refs'];
-  const allChecked = checks.every(id => document.getElementById(id).checked);
-  const errEl = document.getElementById('submit-error');
-
-  if (!allChecked) {
-    errEl.style.display = 'block';
-    errEl.textContent = 'Please check all declaration boxes before submitting.';
+  // Check online status first
+  if (!navigator.onLine) {
+    showError('submit-error','NET_OFFLINE','You appear to be offline. Please check your internet connection and try again.');
     return;
   }
-  errEl.style.display = 'none';
 
+  const checks = ['decl-adult','decl-correct','decl-privacy','decl-refs'];
+  const allChecked = checks.every(id => document.getElementById(id).checked);
+  if (!allChecked) {
+    showError('submit-error','VAL_INCOMPLETE','Please check all declaration boxes before submitting.');
+    return;
+  }
+
+  // Rate limit guard
+  if (!checkRateLimit('submit', 3, 120000)) return;
+
+  clearError('submit-error');
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
-  const email  = document.getElementById('email').value.trim().toLowerCase();
-  const idNum  = document.getElementById('id-number').value.trim();
+  // Verify session still valid
+  const { data: { session: freshSession } } = await sb.auth.getSession();
+  if (!freshSession) {
+    showError('submit-error','AUTH_EXPIRED','Your session has expired. Please refresh the page and sign in again.');
+    btn.disabled = false; btn.innerHTML = 'Submit Profile for Review ✓';
+    return;
+  }
 
-  // Re-check email and ID number before submit
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const idNum = document.getElementById('id-number').value.trim();
+
+  // Final duplicate check
   try {
-    const { data: existEmail } = await sb.from('worker_profiles').select('id,status').eq('email', email).maybeSingle();
+    const { data: existEmail, error: eErr } = await sb.from('worker_profiles')
+      .select('id,status').eq('email', email).maybeSingle();
+    if (eErr && eErr.code !== 'PGRST116') throw eErr;
     if (existEmail) {
       if (existEmail.status === 'banned') { showBannedOverlay(); btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return; }
       showAlreadyRegisteredOverlay(); btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return;
     }
     if (idNum) {
-      const { data: existID } = await sb.from('worker_profiles').select('id,status').eq('id_number', idNum).maybeSingle();
+      const { data: existID, error: iErr } = await sb.from('worker_profiles')
+        .select('id,status').eq('id_number', idNum).maybeSingle();
+      if (iErr && iErr.code !== 'PGRST116') throw iErr;
       if (existID) {
         if (existID.status === 'banned') { showBannedOverlay(); btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return; }
         showIDRegisteredOverlay(); btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return;
       }
     }
-  } catch(e) { /* proceed */ }
+  } catch(e) {
+    const errKey = classifyDBError(e);
+    showError('submit-error', errKey, 'Could not verify your details. Please try again.');
+    btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return;
+  }
 
-  // Upload files
-  const idFrontUrl = await uploadFile(document.getElementById('id-front'),  'identity');
-  const idBackUrl  = await uploadFile(document.getElementById('id-back'),   'identity');
-  const selfieUrl  = await uploadFile(document.getElementById('id-selfie'), 'identity');
-  const eduCertUrl = await uploadFile(document.getElementById('edu-cert'),  'education');
-  const photoUrl   = await uploadFile(document.getElementById('profile-photo'), 'photos');
+  // Upload all files to bucket
+  btn.innerHTML = '<span class="spinner"></span> Uploading files…';
+  let idFrontUrl = null, idBackUrl = null, selfieUrl = null, eduCertUrl = null, photoUrl = null;
 
-  const { data: { session: currentSession } } = await sb.auth.getSession();
-  const salary = parseSalary(document.getElementById('salary-range').value);
+  try {
+    idFrontUrl = await uploadFileToBucket(document.getElementById('id-front'), 'identity', 'id-front-bar');
+    idBackUrl  = await uploadFileToBucket(document.getElementById('id-back'),  'identity', 'id-back-bar');
+    selfieUrl  = await uploadFileToBucket(document.getElementById('id-selfie'), 'identity', 'selfie-bar');
+    eduCertUrl = await uploadFileToBucket(document.getElementById('edu-cert'),  'education', 'edu-cert-bar');
+    photoUrl   = await uploadFileToBucket(document.getElementById('profile-photo'), 'photos', 'photo-bar');
+  } catch(e) {
+    const errKey = e.type || classifyNetworkError(e);
+    showError('submit-error', errKey, `File upload failed: ${e.message || 'Unknown error'}. Please try again.`);
+    btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓'; return;
+  }
+
+  btn.innerHTML = '<span class="spinner"></span> Saving profile…';
 
   const front = idScanData?.front || {};
   const back  = idScanData?.back  || {};
+  const salary = parseSalary(document.getElementById('salary-range').value);
+  const fullName = sanitize(document.getElementById('fullname').value.trim());
 
   const profileData = {
-    full_name:           document.getElementById('fullname').value.trim(),
-    email,
-    phone:               document.getElementById('phone').value.trim(),
+    full_name:           fullName,
+    email:               sanitize(email),
+    phone:               sanitize(document.getElementById('phone').value.trim()),
+    country:             sanitize(document.getElementById('country').value.trim()),
     dob:                 document.getElementById('dob').value || null,
     gender:              document.getElementById('gender').value,
     preferred_role:      document.getElementById('preferred-role').value,
@@ -1609,42 +1838,40 @@ async function submitProfile() {
     disability:          document.getElementById('disability').value,
 
     // Identity
-    id_number:           idNum,
+    id_number:           sanitize(idNum),
     id_type:             document.getElementById('id-type').value,
     id_front_url:        idFrontUrl,
     id_back_url:         idBackUrl,
     selfie_url:          selfieUrl,
-
-    // ID scan data (for admin review)
     id_scan_data:        idScanData ? JSON.stringify(idScanData) : null,
-    id_is_authentic:     idScanData ? !(front.is_fake || back.is_fake || front.is_photocopy || back.is_photocopy) : null,
+    id_is_authentic:     idScanData ? !(front.is_fake||back.is_fake||front.is_photocopy||back.is_photocopy) : null,
 
     // Education
     edu_level:           document.getElementById('edu-level').value,
     edu_year:            document.getElementById('edu-year').value || null,
-    edu_institution:     document.getElementById('edu-institution').value.trim() || null,
-    edu_field:           document.getElementById('edu-field').value.trim() || null,
+    edu_institution:     sanitize(document.getElementById('edu-institution').value.trim()) || null,
+    edu_field:           sanitize(document.getElementById('edu-field').value.trim()) || null,
     edu_cert_url:        eduCertUrl,
 
     // Experience
     work_experience:     collectExperiences(),
 
     // Location
-    current_town:        document.getElementById('location-town').value.trim(),
+    current_town:        sanitize(document.getElementById('location-town').value.trim()),
     county:              document.getElementById('location-county').value,
-    address:             document.getElementById('location-address').value.trim(),
-    home_village:        document.getElementById('location-village').value.trim(),
-    home_county:         document.getElementById('location-home-county').value.trim() || null,
-    sub_location:        document.getElementById('location-sublocation').value.trim() || null,
+    address:             sanitize(document.getElementById('location-address').value.trim()),
+    home_village:        sanitize(document.getElementById('location-village').value.trim()),
+    home_county:         sanitize(document.getElementById('location-home-county').value.trim()) || null,
+    sub_location:        sanitize(document.getElementById('location-sublocation').value.trim()) || null,
     willing_to_relocate: document.getElementById('relocate').value,
 
     // Referees
     referees:            collectReferees(),
 
     // About
-    about_text:          document.getElementById('about-text').value.trim(),
-    languages:           document.getElementById('languages').value.trim() || null,
-    key_skills:          document.getElementById('key-skills').value.trim() || null,
+    about_text:          sanitize(document.getElementById('about-text').value.trim()),
+    languages:           sanitize(document.getElementById('languages').value.trim()) || null,
+    key_skills:          sanitize(document.getElementById('key-skills').value.trim()) || null,
     profile_photo_url:   photoUrl,
 
     // Meta
@@ -1652,47 +1879,65 @@ async function submitProfile() {
     submitted_at:        new Date().toISOString(),
     created_at:          new Date().toISOString(),
     is_verified:         false,
-    session_id:          currentSession?.user?.id || null,
+    session_id:          freshSession.user.id,
+    submission_token:    _pageToken, // CSRF-lite
   };
 
   const { data, error } = await sb.from('worker_profiles').insert(profileData).select().single();
 
   if (error) {
-    errEl.style.display = 'block';
-    errEl.textContent = 'Submission failed: ' + error.message + '. Please try again or contact support.';
-    btn.disabled = false;
-    btn.innerHTML = 'Submit Profile for Review ✓';
+    const errKey = classifyDBError(error);
+    showError('submit-error', errKey, `Submission failed: ${error.message}`);
+    btn.disabled=false; btn.innerHTML='Submit Profile for Review ✓';
     return;
   }
 
-  localStorage.setItem('soundscare_worker_id', data.id);
-  localStorage.setItem('soundscare_worker_email', email);
+  // Clear localStorage registration keys
   ['soundscare_reg_name','soundscare_reg_email','soundscare_reg_phone',
    'soundscare_reg_gender','soundscare_reg_role','soundscare_reg_dob',
    'reg_fullname','reg_email','reg_phone','reg_gender','reg_preferred_role','reg_dob']
   .forEach(k => localStorage.removeItem(k));
 
+  // ── Trigger admin notification ──
+  await notifyAdminOfNewProfile(data.id, fullName, email);
+
+  // Show success
   document.getElementById('form-step-8').style.display = 'none';
   document.querySelector('.progress-steps').style.display = 'none';
   document.getElementById('form-success').style.display = 'block';
-  window.scrollTo({ top:0, behavior:'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ════════════════════════════════════════════════════════════════
-// CUSTOM CALENDAR
+// CUSTOM CALENDAR (fixed)
 // ════════════════════════════════════════════════════════════════
 function toggleCalendar(id) {
   const popup = document.getElementById(id + '-cal-popup');
   const display = document.getElementById(id + '-display');
+  if (!popup || !display) return;
   const isOpen = popup.classList.contains('open');
+
+  // Close all open calendars
   document.querySelectorAll('.cal-popup.open').forEach(p => p.classList.remove('open'));
   document.querySelectorAll('.cal-input-display.open').forEach(d => d.classList.remove('open'));
+
   if (!isOpen) {
+    // Initialize state if needed
     if (!calState[id]) {
       const today = new Date();
       calState[id] = { view:'days', month:today.getMonth(), year:today.getFullYear(), selected:null };
-      const hiddenVal = document.getElementById(id).value;
-      if (hiddenVal) { const d = new Date(hiddenVal); calState[id] = { view:'days', month:d.getMonth(), year:d.getFullYear(), selected:d }; }
+      const hiddenVal = document.getElementById(id)?.value;
+      if (hiddenVal) {
+        const d = new Date(hiddenVal);
+        if (!isNaN(d)) calState[id] = { view:'days', month:d.getMonth(), year:d.getFullYear(), selected:d };
+      }
+    }
+    // For DOB: start at a reasonable default year (30 years ago)
+    if (id === 'dob' && !calState[id].selected) {
+      const def = new Date();
+      def.setFullYear(def.getFullYear() - 30);
+      calState[id].year = def.getFullYear();
+      calState[id].month = def.getMonth();
     }
     popup.classList.add('open');
     display.classList.add('open');
@@ -1702,75 +1947,159 @@ function toggleCalendar(id) {
 
 function renderCalendar(id) {
   const s = calState[id];
+  if (!s) return;
   const popup = document.getElementById(id + '-cal-popup');
-  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  if (!popup) return;
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
   const today = new Date();
 
   if (s.view === 'years') {
-    const startYear = s.year - 6;
-    let html = `<div class="cal-header"><button class="cal-nav" onclick="calYearNav('${id}',-12)">‹</button><span onclick="calSetView('${id}','days')">${startYear}–${startYear+11}</span><button class="cal-nav" onclick="calYearNav('${id}',12)">›</button></div><div class="cal-year-grid">`;
-    for (let y=startYear;y<=startYear+11;y++) html += `<button class="cal-year-btn${s.year===y?' selected':''}" onclick="calSelectYear('${id}',${y})">${y}</button>`;
-    html += `</div>`; popup.innerHTML = html; return;
+    const base = Math.floor(s.year / 12) * 12;
+    let html = `<div class="cal-header">
+      <button class="cal-nav" onclick="event.stopPropagation();calYearNav('${id}',-12)">‹</button>
+      <span onclick="event.stopPropagation();calSetView('${id}','days')">${base} – ${base+11}</span>
+      <button class="cal-nav" onclick="event.stopPropagation();calYearNav('${id}',12)">›</button>
+    </div><div class="cal-year-grid">`;
+    for (let y = base; y <= base+11; y++) {
+      const sel = s.year === y ? ' selected' : '';
+      html += `<button class="cal-year-btn${sel}" onclick="event.stopPropagation();calSelectYear('${id}',${y})">${y}</button>`;
+    }
+    html += `</div>`;
+    popup.innerHTML = html;
+    return;
   }
+
   if (s.view === 'months') {
-    let html = `<div class="cal-header"><button class="cal-nav" onclick="calYearNav('${id}',-1)">‹</button><span onclick="calSetView('${id}','years')">${s.year}</span><button class="cal-nav" onclick="calYearNav('${id}',1)">›</button></div><div class="cal-month-grid">`;
-    months.forEach((m,i) => html += `<button class="cal-month-btn${s.month===i?' selected':''}" onclick="calSelectMonth('${id}',${i})">${m.slice(0,3)}</button>`);
-    html += `</div>`; popup.innerHTML = html; return;
+    let html = `<div class="cal-header">
+      <button class="cal-nav" onclick="event.stopPropagation();calYearNav('${id}',-1)">‹</button>
+      <span onclick="event.stopPropagation();calSetView('${id}','years')">${s.year}</span>
+      <button class="cal-nav" onclick="event.stopPropagation();calYearNav('${id}',1)">›</button>
+    </div><div class="cal-month-grid">`;
+    MONTHS.forEach((m,i) => {
+      const sel = s.month === i ? ' selected' : '';
+      html += `<button class="cal-month-btn${sel}" onclick="event.stopPropagation();calSelectMonth('${id}',${i})">${m.slice(0,3)}</button>`;
+    });
+    html += `</div>`;
+    popup.innerHTML = html;
+    return;
   }
-  const firstDay = new Date(s.year,s.month,1).getDay();
-  const daysInMonth = new Date(s.year,s.month+1,0).getDate();
-  const daysInPrev = new Date(s.year,s.month,0).getDate();
-  let html = `<div class="cal-header"><button class="cal-nav" onclick="calMonthNav('${id}',-1)">‹</button><span onclick="calSetView('${id}','months')">${months[s.month]} ${s.year}</span><button class="cal-nav" onclick="calMonthNav('${id}',1)">›</button></div><div class="cal-grid"><div class="cal-days-head">`;
-  days.forEach(d => html += `<span>${d}</span>`);
-  html += `</div><div class="cal-days">`;
-  for (let i=0;i<firstDay;i++) html += `<button class="cal-day other-month" disabled>${daysInPrev-firstDay+i+1}</button>`;
-  for (let d=1;d<=daysInMonth;d++) {
-    const thisDate = new Date(s.year,s.month,d);
-    const isToday = today.toDateString()===thisDate.toDateString();
-    const isSel = s.selected && s.selected.toDateString()===thisDate.toDateString();
-    let disabled = '';
-    if (id==='dob') {
+
+  // Days view
+  const firstDay = new Date(s.year, s.month, 1).getDay();
+  const daysInMonth = new Date(s.year, s.month+1, 0).getDate();
+  const daysInPrev  = new Date(s.year, s.month, 0).getDate();
+
+  let html = `<div class="cal-header">
+    <button class="cal-nav" onclick="event.stopPropagation();calMonthNav('${id}',-1)">‹</button>
+    <span onclick="event.stopPropagation();calSetView('${id}','months')">${MONTHS[s.month]} ${s.year}</span>
+    <button class="cal-nav" onclick="event.stopPropagation();calMonthNav('${id}',1)">›</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-days-head">${DAYS.map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="cal-days">`;
+
+  // Prev month fill
+  for (let i = 0; i < firstDay; i++) {
+    html += `<button class="cal-day other-month" disabled>${daysInPrev - firstDay + i + 1}</button>`;
+  }
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const thisDate = new Date(s.year, s.month, d);
+    const isToday  = today.toDateString() === thisDate.toDateString();
+    const isSel    = s.selected && s.selected.toDateString() === thisDate.toDateString();
+    let disabled = false;
+    if (id === 'dob') {
       const maxDob = new Date(); maxDob.setFullYear(maxDob.getFullYear()-19);
       const minDob = new Date(); minDob.setFullYear(minDob.getFullYear()-80);
-      if (thisDate>maxDob||thisDate<minDob) disabled=' disabled';
+      if (thisDate > maxDob || thisDate < minDob) disabled = true;
     }
-    html += `<button class="cal-day${isToday?' today':''}${isSel?' selected':''}${disabled}" onclick="calSelectDay('${id}',${s.year},${s.month},${d})"${disabled}>${d}</button>`;
+    const cls = [
+      'cal-day',
+      isToday ? 'today' : '',
+      isSel   ? 'selected' : '',
+    ].filter(Boolean).join(' ');
+    html += `<button class="${cls}" ${disabled ? 'disabled' : ''} onclick="event.stopPropagation();calSelectDay('${id}',${s.year},${s.month},${d})">${d}</button>`;
   }
-  const rem = (firstDay+daysInMonth)%7===0?0:7-(firstDay+daysInMonth)%7;
-  for (let i=1;i<=rem;i++) html += `<button class="cal-day other-month" disabled>${i}</button>`;
+  // Next month fill
+  const rem = (firstDay + daysInMonth) % 7;
+  if (rem > 0) {
+    for (let i = 1; i <= 7 - rem; i++) {
+      html += `<button class="cal-day other-month" disabled>${i}</button>`;
+    }
+  }
   html += `</div></div>`;
-  if (s.selected) html += `<div class="cal-footer"><span style="font-size:11.5px;color:var(--text-muted)">${s.selected.toLocaleDateString('en-KE',{dateStyle:'medium'})}</span><button class="btn-outline" style="font-size:11px;padding:3px 10px;border-radius:6px" onclick="calClear('${id}')">Clear</button></div>`;
+
+  if (s.selected) {
+    html += `<div class="cal-footer">
+      <span style="font-size:11.5px;color:var(--text-muted)">${s.selected.toLocaleDateString('en-KE',{dateStyle:'medium'})}</span>
+      <button class="btn-outline" style="font-size:11px;padding:3px 10px;border-radius:6px" onclick="event.stopPropagation();calClear('${id}')">Clear</button>
+    </div>`;
+  }
+
   popup.innerHTML = html;
 }
 
-function calSetView(id,view){calState[id].view=view;renderCalendar(id);}
-function calMonthNav(id,d){const s=calState[id];s.month+=d;if(s.month>11){s.month=0;s.year++;}if(s.month<0){s.month=11;s.year--;}renderCalendar(id);}
-function calYearNav(id,d){calState[id].year+=d;renderCalendar(id);}
-function calSelectYear(id,y){calState[id].year=y;calState[id].view='months';renderCalendar(id);}
-function calSelectMonth(id,m){calState[id].month=m;calState[id].view='days';renderCalendar(id);}
-function calSelectDay(id,y,m,d){
-  const date=new Date(y,m,d);
-  calState[id].selected=date;
-  const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  document.getElementById(id).value=iso;
-  const display=document.getElementById(id+'-display-text');
-  if(display){display.textContent=date.toLocaleDateString('en-KE',{dateStyle:'medium'});display.classList.remove('cal-placeholder');}
-  document.getElementById(id+'-cal-popup').classList.remove('open');
-  document.getElementById(id+'-display').classList.remove('open');
-  if(id==='dob') checkAge();
-}
-function calClear(id){
-  calState[id].selected=null;
-  document.getElementById(id).value='';
-  const display=document.getElementById(id+'-display-text');
-  if(display){display.textContent='Select your date of birth';display.classList.add('cal-placeholder');}
+function calSetView(id, view) { if(calState[id]) { calState[id].view = view; renderCalendar(id); } }
+function calMonthNav(id, d) {
+  if(!calState[id]) return;
+  calState[id].month += d;
+  if(calState[id].month > 11) { calState[id].month = 0; calState[id].year++; }
+  if(calState[id].month < 0)  { calState[id].month = 11; calState[id].year--; }
   renderCalendar(id);
 }
-document.addEventListener('click',function(e){
-  if(!e.target.closest('.cal-wrap')){
-    document.querySelectorAll('.cal-popup.open').forEach(p=>p.classList.remove('open'));
-    document.querySelectorAll('.cal-input-display.open').forEach(d=>d.classList.remove('open'));
+function calYearNav(id, d) { if(calState[id]) { calState[id].year += d; renderCalendar(id); } }
+function calSelectYear(id, y) { if(calState[id]) { calState[id].year = y; calState[id].view = 'months'; renderCalendar(id); } }
+function calSelectMonth(id, m) { if(calState[id]) { calState[id].month = m; calState[id].view = 'days'; renderCalendar(id); } }
+
+function calSelectDay(id, y, m, d) {
+  const date = new Date(y, m, d);
+  if (!calState[id]) calState[id] = {};
+  calState[id].selected = date;
+  const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const hidden = document.getElementById(id);
+  if (hidden) hidden.value = iso;
+  const displayText = document.getElementById(id + '-display-text');
+  if (displayText) {
+    displayText.textContent = date.toLocaleDateString('en-KE', { dateStyle: 'medium' });
+    displayText.classList.remove('cal-placeholder');
+  }
+  // Close popup
+  const popup = document.getElementById(id + '-cal-popup');
+  const display = document.getElementById(id + '-display');
+  if (popup)   popup.classList.remove('open');
+  if (display) display.classList.remove('open');
+  if (id === 'dob') checkAge();
+}
+
+function calClear(id) {
+  if (!calState[id]) return;
+  calState[id].selected = null;
+  const hidden = document.getElementById(id);
+  if (hidden) hidden.value = '';
+  const displayText = document.getElementById(id + '-display-text');
+  if (displayText) {
+    const placeholderText = id === 'dob' ? 'Select your date of birth' : 'Select date';
+    displayText.textContent = placeholderText;
+    displayText.classList.add('cal-placeholder');
+  }
+  renderCalendar(id);
+}
+
+// Close calendar on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.cal-wrap')) {
+    document.querySelectorAll('.cal-popup.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.cal-input-display.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// Close calendar on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.cal-popup.open').forEach(p => p.classList.remove('open'));
+    document.querySelectorAll('.cal-input-display.open').forEach(d => d.classList.remove('open'));
   }
 });
 </script>
