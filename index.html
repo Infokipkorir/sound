@@ -3,47 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Sounds Care – Find Verified Domestic Workers in East Africa</title>
   <meta name="description" content="East Africa's trusted platform for verified domestic workers. Free or premium posting, ID-verified profiles, OTP security.">
-  
-  <!-- FONTS & ICONS -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  
-  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
-    /* ══════════════════════════════════════════════════════════════ */
-    /* DESIGN TOKENS & VARIABLES */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════════ */
     :root {
-      --green: #1A7A5E;
-      --green-dark: #145c47;
-      --green-light: #e8f5f0;
-      --blue: #3B8ED4;
-      --blue-dark: #2574b8;
-      --blue-light: #EBF4FC;
-      --surface: #f9faf8;
-      --surface-alt: #f0f4f2;
-      --border: #d8e3de;
-      --text: #1a2e27;
-      --text-muted: #6b7c75;
-      --red: #E24B4A;
-      --amber: #E9A23B;
+      --green:        #1A7A5E;
+      --green-dark:   #145c47;
+      --green-light:  #e8f5f0;
+      --green-mid:    #2DB877;
+      --blue:         #3B8ED4;
+      --blue-dark:    #2574b8;
+      --blue-light:   #EBF4FC;
+      --surface:      #f7f9f8;
+      --surface-alt:  #f0f4f2;
+      --border:       #dae3de;
+      --text:         #18281f;
+      --text-muted:   #6b7c75;
+      --red:          #E24B4A;
+      --amber:        #E9A23B;
+      --dark-bg:      #0d2118;
+      --dark-bg2:     #142b1e;
     }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* BASE STYLES */
-    /* ══════════════════════════════════════════════════════════════ */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'DM Sans', sans-serif;
@@ -53,20 +45,12 @@
       line-height: 1.6;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
+    a { color: inherit; text-decoration: none; transition: all 0.2s; }
+    img { max-width: 100%; height: auto; }
 
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-
-    /* ══════════════════════════════════════════════════════════════ */
-    /* NAVBAR */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       NAVBAR
+    ═══════════════════════════════════════════════════════════ */
     .navbar {
       background: #fff;
       border-bottom: 1px solid var(--border);
@@ -77,7 +61,7 @@
       position: sticky;
       top: 0;
       z-index: 900;
-      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
     }
 
     .logo {
@@ -87,28 +71,23 @@
       color: var(--green);
       margin-right: auto;
     }
-
-    .logo span {
-      color: var(--amber);
-    }
+    .logo span { color: var(--amber); }
 
     .nav-links {
       display: flex;
       list-style: none;
-      gap: 0.5rem;
+      gap: 0.3rem;
     }
 
     .nav-links a {
-      padding: 6px 12px;
+      padding: 6px 13px;
       border-radius: 7px;
       font-size: 13.5px;
       font-weight: 500;
       color: var(--text);
       transition: all 0.18s;
     }
-
-    .nav-links a:hover,
-    .nav-links a.active {
+    .nav-links a:hover, .nav-links a.active {
       background: var(--green-light);
       color: var(--green);
     }
@@ -119,68 +98,72 @@
       margin-left: 1rem;
     }
 
-    .btn-outline,
-    .btn-primary {
+    .btn-outline, .btn-primary {
       border: none;
       border-radius: 8px;
-      padding: 7px 16px;
+      padding: 7px 18px;
       font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       transition: all 0.18s;
     }
-
     .btn-outline {
       border: 1.5px solid var(--border);
       background: #fff;
       color: var(--text);
     }
+    .btn-outline:hover { border-color: var(--green); color: var(--green); }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-dark); }
 
-    .btn-outline:hover {
-      border-color: var(--green);
-      color: var(--green);
+    @media (max-width: 680px) {
+      .nav-links { display: none; }
     }
 
-    .btn-primary {
-      background: var(--green);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: var(--green-dark);
-    }
-
-    /* ══════════════════════════════════════════════════════════════ */
-    /* HERO SECTION */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════════════════════ */
     .hero {
       position: relative;
-      min-height: 500px;
+      min-height: 480px;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
     }
 
-    .hero::before {
-      content: '';
+    .hero-bg {
       position: absolute;
       inset: 0;
-      background: url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80');
-      background-size: cover;
-      background-position: center;
-      filter: blur(4px) brightness(0.5);
-      z-index: -1;
+      background: url('https://images.unsplash.com/photo-1556909172-54557c7e4fb7?auto=format&fit=crop&w=1400&q=80') center/cover no-repeat;
+      filter: blur(3px) brightness(0.42);
+      z-index: 0;
     }
 
     .hero-content {
       position: relative;
       z-index: 1;
-      max-width: 800px;
+      max-width: 760px;
       text-align: center;
       color: #fff;
-      padding: 2rem;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50px;
+      padding: 5px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #78d9b4;
+      margin-bottom: 1.2rem;
     }
 
     .hero h1 {
@@ -190,143 +173,257 @@
       margin-bottom: 1rem;
       line-height: 1.2;
     }
-
-    .hero h1 span {
+    .hero h1 em {
+      font-style: normal;
       color: #78d9b4;
     }
 
     .hero p {
-      font-size: clamp(14px, 2vw, 16px);
-      margin-bottom: 1.5rem;
-      opacity: 0.95;
+      font-size: clamp(14px, 2vw, 15.5px);
+      opacity: 0.92;
+      margin-bottom: 1.8rem;
+      line-height: 1.7;
+      max-width: 580px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .hero .btn-primary {
+    .hero-ctas {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-hero-primary {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      transition: all 0.2s;
     }
+    .btn-hero-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* STATS BAR */
-    /* ══════════════════════════════════════════════════════════════ */
+    .btn-hero-outline {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 9px;
+      padding: 11px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-hero-outline:hover { background: rgba(255,255,255,0.2); }
+
+    /* ═══════════════════════════════════════════════════════════
+       STATS BAR
+    ═══════════════════════════════════════════════════════════ */
     .stats-bar {
-      background: linear-gradient(90deg, #0F2D23, #1A4332);
-      padding: 2rem;
+      background: linear-gradient(90deg, var(--dark-bg), var(--dark-bg2));
+      padding: 2rem 1.5rem;
       display: flex;
       justify-content: center;
-      gap: 3rem;
+      gap: 0;
       flex-wrap: wrap;
     }
 
     .stat {
       text-align: center;
       color: #fff;
+      padding: 0.5rem 2.5rem;
+      position: relative;
+    }
+    .stat + .stat::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 1px;
+      background: rgba(255,255,255,0.15);
+    }
+    @media (max-width: 500px) {
+      .stat + .stat::before { display: none; }
+      .stat { padding: 0.5rem 1.5rem; }
     }
 
     .stat-number {
       display: block;
       font-family: 'Playfair Display', serif;
-      font-size: 2rem;
+      font-size: 2.1rem;
       font-weight: 700;
       color: #78d9b4;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.2rem;
     }
+    .stat-label { font-size: 11.5px; opacity: 0.75; letter-spacing: 0.03em; }
 
-    .stat-label {
-      font-size: 11.5px;
-      opacity: 0.8;
+    /* ═══════════════════════════════════════════════════════════
+       TRUST BADGES
+    ═══════════════════════════════════════════════════════════ */
+    .trust-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
     }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .trust-item i { color: var(--green); font-size: 14px; }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* MAIN CONTAINER */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       CONTAINER & SECTION
+    ═══════════════════════════════════════════════════════════ */
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 3rem 1.5rem;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
     .section-title {
       font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      margin-bottom: 2rem;
+      font-size: 1.6rem;
+      font-weight: 700;
       color: var(--text);
+      line-height: 1.2;
+    }
+    .section-title small {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
     }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* FEED SECTION */
-    /* ══════════════════════════════════════════════════════════════ */
+    .view-all-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      white-space: nowrap;
+    }
+    .view-all-link:hover { color: var(--green-dark); }
+
+    /* ═══════════════════════════════════════════════════════════
+       FEED GRID
+    ═══════════════════════════════════════════════════════════ */
     .feed-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2rem;
     }
-
     @media (max-width: 900px) {
-      .feed-section {
-        grid-template-columns: 1fr;
-      }
+      .feed-section { grid-template-columns: 1fr; }
     }
 
     .feed-column {
       background: #fff;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      min-height: 500px;
     }
 
     .feed-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 0.7rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
       padding-bottom: 1rem;
       border-bottom: 1px solid var(--border);
     }
 
+    .feed-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
     .feed-header h3 {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--text);
     }
 
-    .feed-header i {
-      font-size: 1.3rem;
+    .feed-badge {
+      display: inline-block;
+      background: var(--green-light);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .feed-badge.blue {
+      background: var(--blue-light);
+      color: var(--blue-dark);
     }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* CARDS */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       CARDS
+    ═══════════════════════════════════════════════════════════ */
     .card {
       padding: 1rem;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 1rem;
-      background: var(--surface-alt);
+      border-radius: 11px;
+      margin-bottom: 0.9rem;
+      background: var(--surface);
       transition: all 0.2s;
-      cursor: pointer;
     }
-
+    .card:last-child { margin-bottom: 0; }
     .card:hover {
       border-color: var(--green);
-      box-shadow: 0 4px 12px rgba(26, 122, 94, 0.1);
-      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(26,122,94,0.1);
+      transform: translateY(-1px);
     }
 
     .card-header {
       display: flex;
       align-items: flex-start;
-      gap: 0.7rem;
-      margin-bottom: 0.8rem;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
     }
 
     .card-avatar {
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
       background: linear-gradient(135deg, #1A7A5E, #2DB877);
       color: #fff;
@@ -334,513 +431,1242 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       flex-shrink: 0;
       overflow: hidden;
     }
-
-    .card-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .card-avatar.job {
-      border-radius: 8px;
+      border-radius: 9px;
       background: linear-gradient(135deg, #3B8ED4, #2574b8);
     }
 
+    .card-meta { flex: 1; min-width: 0; }
     .card-title {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 13.5px;
       color: var(--text);
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.15rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-
     .card-subtitle {
       font-size: 11.5px;
       color: var(--text-muted);
     }
 
+    .card-verified {
+      width: 18px;
+      height: 18px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .card-verified i { color: #fff; font-size: 10px; }
+
     .card-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.4rem;
-      margin: 0.8rem 0;
+      gap: 0.35rem;
+      margin: 0.6rem 0;
     }
-
     .tag {
       display: inline-block;
       background: var(--green-light);
       color: var(--green-dark);
-      padding: 3px 8px;
+      padding: 3px 9px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 500;
+    }
+    .tag.blue { background: var(--blue-light); color: var(--blue-dark); }
+    .tag.urgent { background: #FFF0EB; color: #C04A1A; }
+
+    .card-salary {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
     .card-footer {
       display: flex;
       gap: 0.5rem;
       margin-top: 0.8rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
     }
 
     .btn-small {
       flex: 1;
-      padding: 6px 10px;
+      padding: 7px 10px;
       border: none;
-      border-radius: 6px;
-      font-size: 11.5px;
+      border-radius: 7px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
     }
-
-    .btn-small.green {
-      background: var(--green);
-      color: #fff;
-    }
-
-    .btn-small.green:hover {
-      background: var(--green-dark);
-    }
-
+    .btn-small.green { background: var(--green); color: #fff; }
+    .btn-small.green:hover { background: var(--green-dark); }
+    .btn-small.blue { background: var(--blue); color: #fff; }
+    .btn-small.blue:hover { background: var(--blue-dark); }
     .btn-small.outline {
       border: 1.5px solid var(--border);
       background: transparent;
       color: var(--text);
     }
+    .btn-small.outline:hover { border-color: var(--green); color: var(--green); }
 
-    .btn-small.outline:hover {
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    /* ══════════════════════════════════════════════════════════════ */
-    /* LOADING STATE */
-    /* ══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════
+       SKELETON LOADING
+    ═══════════════════════════════════════════════════════════ */
     .skeleton {
       background: linear-gradient(90deg, var(--surface-alt) 25%, #fff 50%, var(--surface-alt) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
+      border-radius: 11px;
     }
-
     @keyframes shimmer {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
 
     .empty-message {
-      padding: 2rem 1rem;
+      padding: 3rem 1rem;
       text-align: center;
       color: var(--text-muted);
       font-size: 13px;
     }
+    .empty-message i {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+      opacity: 0.4;
+    }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* MODAL */
-    /* ══════════════════════════════════════════════════════════════ */
+    .error-message {
+      padding: 1rem;
+      background: #fff5f5;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      color: #991b1b;
+      font-size: 12.5px;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MODALS
+    ═══════════════════════════════════════════════════════════ */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0,0,0,0.55);
       z-index: 1000;
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      backdrop-filter: blur(2px);
     }
-
-    .modal-overlay.open {
-      display: flex;
-    }
+    .modal-overlay.open { display: flex; }
 
     .modal {
       background: #fff;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 100%;
-      max-width: 500px;
+      max-width: 480px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.3s ease;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+      animation: slideUp 0.28s ease;
+      position: relative;
     }
-
     @keyframes slideUp {
-      from {
-        transform: translateY(20px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      from { transform: translateY(24px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
     }
 
+    .modal-header {
+      padding: 1.5rem 1.5rem 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 2;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+    }
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
     .modal-close {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
       width: 32px;
       height: 32px;
+      flex-shrink: 0;
       border: none;
       background: var(--surface-alt);
       border-radius: 50%;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      transition: all 0.18s;
+    }
+    .modal-close:hover { background: #fee2e2; color: var(--red); }
+
+    .modal-body { padding: 1.5rem; }
+
+    /* Worker Preview in hiring modal */
+    .modal-worker-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--green-light);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .modal-worker-preview .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), var(--green-mid));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .modal-worker-preview .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-worker-preview .info strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-worker-preview .info span {
+      font-size: 12px;
+      color: var(--text-muted);
     }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* FOOTER */
-    /* ══════════════════════════════════════════════════════════════ */
-    .footer {
-      background: var(--text);
+    /* Job Preview in apply modal */
+    .modal-job-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--blue-light);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .modal-job-preview .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-dark));
       color: #fff;
-      padding: 2rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .modal-job-preview .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-job-preview .info strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-job-preview .info span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Account Gate Panel */
+    .account-gate {
+      border: 1.5px dashed var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 1.2rem;
+    }
+    .account-gate i {
+      font-size: 2.2rem;
+      color: var(--green);
+      margin-bottom: 0.8rem;
+    }
+    .account-gate h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .account-gate p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+    }
+    .gate-buttons {
+      display: flex;
+      gap: 0.6rem;
+    }
+    .gate-buttons a, .gate-buttons button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.18s;
+      border: none;
+    }
+    .gate-btn-primary { background: var(--green); color: #fff; }
+    .gate-btn-primary:hover { background: var(--green-dark); }
+    .gate-btn-outline { border: 1.5px solid var(--border) !important; background: #fff !important; color: var(--text) !important; }
+    .gate-btn-outline:hover { border-color: var(--green) !important; color: var(--green) !important; }
+
+    /* Form styles inside modal */
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.18s;
+      margin-bottom: 1rem;
+    }
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+    .form-textarea { resize: vertical; min-height: 90px; }
+    .form-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: -0.7rem;
+      margin-bottom: 1rem;
+    }
+
+    .modal-action-row {
+      display: flex;
+      gap: 0.7rem;
+      margin-top: 0.5rem;
+    }
+    .modal-action-row button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 9px;
+      font-size: 13.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .modal-btn-primary { background: var(--green); color: #fff; }
+    .modal-btn-primary:hover { background: var(--green-dark); }
+    .modal-btn-cancel { background: var(--surface-alt); color: var(--text); }
+    .modal-btn-cancel:hover { background: var(--border); }
+    .modal-btn-blue { background: var(--blue); color: #fff; }
+    .modal-btn-blue:hover { background: var(--blue-dark); }
+
+    .success-state {
+      text-align: center;
+      padding: 1rem 0;
+    }
+    .success-state .checkmark {
+      width: 64px;
+      height: 64px;
+      background: var(--green-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .success-state .checkmark i { font-size: 2rem; color: var(--green); }
+    .success-state h4 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .success-state p { font-size: 13px; color: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════════════ */
+    .footer {
+      background: var(--dark-bg);
+      color: #fff;
+      padding: 2.5rem 1.5rem;
       text-align: center;
       margin-top: 3rem;
     }
-
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #78d9b4;
+      margin-bottom: 0.5rem;
+    }
     .footer p {
       font-size: 13px;
-      opacity: 0.8;
-      margin-top: 0.5rem;
+      opacity: 0.7;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 1.2rem 0;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      font-size: 12.5px;
+      opacity: 0.6;
+      color: #fff;
+      transition: opacity 0.18s;
+    }
+    .footer-links a:hover { opacity: 1; }
+    .footer-copy {
+      font-size: 11.5px;
+      opacity: 0.4;
+      margin-top: 1.5rem !important;
     }
   </style>
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- NAVBAR -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <nav class="navbar">
-    <div class="logo">Sounds<span>Care</span></div>
-    <div class="nav-links">
-      <a href="#" class="active">Home</a>
-      <a href="#workers">Workers</a>
-      <a href="#jobs">Jobs</a>
-      <a href="#about">About</a>
-    </div>
-    <div class="nav-buttons">
-      <button class="btn-outline">Login</button>
-      <button class="btn-primary">Sign Up</button>
-    </div>
-  </nav>
+<!-- ══════════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="logo">Sounds<span>Care</span></div>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Home</a></li>
+    <li><a href="#workers-section">Workers</a></li>
+    <li><a href="#jobs-section">Jobs</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <div class="nav-buttons">
+    <button class="btn-outline" onclick="window.location.href='login.html'">Log in</button>
+    <button class="btn-primary" onclick="window.location.href='register.html'">Sign up</button>
+  </div>
+</nav>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- HERO SECTION (with blurred background image) -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <section class="hero">
-    <div class="hero-content">
-      <h1>Find <span>Verified</span> Domestic Workers</h1>
-      <p>East Africa's most trusted platform connecting families with ID-verified, background-checked domestic workers. Hire instantly or post your profile free.</p>
-      <button class="btn-primary" onclick="document.getElementById('search-section').scrollIntoView()">
-        <i class="bi bi-search"></i> Browse Now
+<!-- ══════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <i class="bi bi-shield-check-fill"></i> ID-Verified Workers · East Africa
+    </div>
+    <h1>Hire <em>Trusted</em> Domestic Workers</h1>
+    <p>Connect with background-checked, ID-verified domestic staff across Kenya, Uganda, Tanzania and beyond. Post a job or browse worker profiles — free to start.</p>
+    <div class="hero-ctas">
+      <button class="btn-hero-primary" onclick="document.getElementById('main-feed').scrollIntoView({behavior:'smooth'})">
+        <i class="bi bi-search"></i> Browse Workers
+      </button>
+      <button class="btn-hero-outline" onclick="window.location.href='post-job.html'">
+        <i class="bi bi-plus-circle-fill"></i> Post a Job
       </button>
     </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- STATS BAR -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="stats-bar">
-    <div class="stat">
-      <span class="stat-number" data-count="0" id="stat-workers">0</span>
-      <span class="stat-label">Verified Workers</span>
-    </div>
-    <div class="stat">
-      <span class="stat-number" data-count="0" id="stat-jobs">0</span>
-      <span class="stat-label">Active Jobs</span>
-    </div>
-    <div class="stat">
-      <span class="stat-number" data-count="0" id="stat-employers">0</span>
-      <span class="stat-label">Trusted Employers</span>
-    </div>
   </div>
+</section>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- MAIN FEEDS SECTION -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <div class="container" id="search-section">
-    <h2 class="section-title">📍 Live Workers & Job Posts</h2>
+<!-- ══════════════════════════════════════════════
+     STATS BAR
+══════════════════════════════════════════════ -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-number" id="stat-workers">0</span>
+    <span class="stat-label">Verified Workers</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number" id="stat-jobs">0</span>
+    <span class="stat-label">Active Jobs</span>
+  </div>
+  <div class="stat">
+    <span class="stat-number" id="stat-employers">0</span>
+    <span class="stat-label">Trusted Employers</span>
+  </div>
+</div>
 
-    <div class="feed-section">
-      <!-- WORKERS FEED -->
-      <div class="feed-column">
-        <div class="feed-header">
-          <i class="bi bi-person-lines-fill" style="color: var(--green); font-size: 1.4rem;"></i>
+<!-- ══════════════════════════════════════════════
+     TRUST BADGES
+══════════════════════════════════════════════ -->
+<div class="trust-bar">
+  <div class="trust-item"><i class="bi bi-patch-check-fill"></i> ID Verified Profiles</div>
+  <div class="trust-item"><i class="bi bi-shield-lock-fill"></i> OTP Secured</div>
+  <div class="trust-item"><i class="bi bi-phone-fill"></i> M-Pesa Payments</div>
+  <div class="trust-item"><i class="bi bi-star-fill"></i> Rated & Reviewed</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN FEED
+══════════════════════════════════════════════ -->
+<div class="container" id="main-feed">
+
+  <!-- DB Debug Panel (remove in production) -->
+  <div id="debug-panel" style="display:none; background:#1e293b; color:#94a3b8; border-radius:10px; padding:1rem; font-family:monospace; font-size:11.5px; margin-bottom:1.5rem; white-space:pre-wrap; max-height:200px; overflow-y:auto;"></div>
+
+  <div class="feed-section">
+
+    <!-- WORKERS FEED -->
+    <div class="feed-column" id="workers-section">
+      <div class="feed-header">
+        <div class="feed-header-left">
+          <i class="bi bi-person-lines-fill" style="color:var(--green); font-size:1.3rem;"></i>
           <h3>Worker Profiles</h3>
         </div>
-        <div id="workers-feed">
-          <div class="card skeleton" style="height: 140px;"></div>
-          <div class="card skeleton" style="height: 140px;"></div>
-          <div class="card skeleton" style="height: 140px;"></div>
+        <span class="feed-badge" id="workers-badge">Loading…</span>
+      </div>
+      <div id="workers-feed">
+        <div class="skeleton" style="height:130px; margin-bottom:.9rem;"></div>
+        <div class="skeleton" style="height:130px; margin-bottom:.9rem;"></div>
+        <div class="skeleton" style="height:130px;"></div>
+      </div>
+      <a href="employees.html" class="view-all-link" style="margin-top:1.2rem; justify-content:flex-end;">
+        View all workers <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+    <!-- JOBS FEED -->
+    <div class="feed-column" id="jobs-section">
+      <div class="feed-header">
+        <div class="feed-header-left">
+          <i class="bi bi-briefcase-fill" style="color:var(--blue); font-size:1.3rem;"></i>
+          <h3>Job Postings</h3>
+        </div>
+        <span class="feed-badge blue" id="jobs-badge">Loading…</span>
+      </div>
+      <div id="jobs-feed">
+        <div class="skeleton" style="height:130px; margin-bottom:.9rem;"></div>
+        <div class="skeleton" style="height:130px; margin-bottom:.9rem;"></div>
+        <div class="skeleton" style="height:130px;"></div>
+      </div>
+      <a href="jobs.html" class="view-all-link" style="margin-top:1.2rem; justify-content:flex-end;">
+        View all jobs <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ -->
+<footer class="footer" id="about">
+  <div class="footer-logo">SoundsCare</div>
+  <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda and Ethiopia.</p>
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="post-profile.html">List as Worker</a>
+    <a href="employers.html">Employer Portal</a>
+    <a href="#">Contact Us</a>
+  </div>
+  <p class="footer-copy">© 2026 Sounds Care. All rights reserved.</p>
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     HIRING MODAL (employer hires a worker)
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="hire-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Send Hire Request</div>
+        <div class="modal-subtitle" id="hire-modal-subtitle">Contact this worker</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('hire-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Worker preview -->
+      <div class="modal-worker-preview">
+        <div class="avatar" id="hire-worker-avatar"></div>
+        <div class="info">
+          <strong id="hire-worker-name"></strong>
+          <span id="hire-worker-role"></span>
         </div>
       </div>
 
-      <!-- JOBS FEED -->
-      <div class="feed-column">
-        <div class="feed-header">
-          <i class="bi bi-briefcase-fill" style="color: var(--blue); font-size: 1.4rem;"></i>
-          <h3>Job Postings</h3>
+      <!-- Account gate (shown when not logged in) -->
+      <div class="account-gate" id="hire-gate">
+        <i class="bi bi-lock-fill"></i>
+        <h4>Create an account to hire</h4>
+        <p>You need an employer account to contact workers and send hire requests. Sign up free — it takes 2 minutes.</p>
+        <div class="gate-buttons">
+          <a href="register.html?role=employer" class="gate-btn-primary">
+            <i class="bi bi-person-plus-fill"></i> Create Account
+          </a>
+          <a href="login.html" class="gate-btn-outline">
+            Log in
+          </a>
         </div>
-        <div id="jobs-feed">
-          <div class="card skeleton" style="height: 140px;"></div>
-          <div class="card skeleton" style="height: 140px;"></div>
-          <div class="card skeleton" style="height: 140px;"></div>
+      </div>
+
+      <!-- Hire form (shown when logged in) -->
+      <div id="hire-form" style="display:none;">
+        <label class="form-label">Your message to the worker</label>
+        <textarea class="form-textarea" id="hire-message" placeholder="Hi, I'm looking for a live-in nanny starting next month. Your profile looks like a great fit…"></textarea>
+        <label class="form-label">Proposed start date</label>
+        <input type="date" class="form-input" id="hire-start-date">
+        <label class="form-label">Your phone number</label>
+        <input type="tel" class="form-input" id="hire-phone" placeholder="+254 7XX XXX XXX">
+        <div class="form-hint">The worker will use this to confirm and call you back.</div>
+        <div class="modal-action-row">
+          <button class="modal-btn-cancel" onclick="closeModal('hire-modal')">Cancel</button>
+          <button class="modal-btn-primary" onclick="submitHireRequest()">
+            <i class="bi bi-send-fill"></i> Send Request
+          </button>
         </div>
+      </div>
+
+      <!-- Success state -->
+      <div id="hire-success" style="display:none;" class="success-state">
+        <div class="checkmark"><i class="bi bi-check-lg"></i></div>
+        <h4>Request Sent!</h4>
+        <p id="hire-success-msg">Your hire request has been sent. The worker will be in touch via WhatsApp or phone.</p>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- FOOTER -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <footer class="footer" id="about">
-    <h3 style="margin-bottom: 1rem;">Sounds Care</h3>
-    <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda & Ethiopia.</p>
-    <p style="margin-top: 1.5rem; font-size: 12px; opacity: 0.6;">© 2026 Sounds Care. All rights reserved.</p>
-  </footer>
+<!-- ══════════════════════════════════════════════
+     APPLY MODAL (worker applies to a job)
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="apply-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Apply for this Job</div>
+        <div class="modal-subtitle" id="apply-modal-subtitle">Submit your application</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('apply-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Job preview -->
+      <div class="modal-job-preview">
+        <div class="avatar" id="apply-job-avatar"></div>
+        <div class="info">
+          <strong id="apply-job-title"></strong>
+          <span id="apply-job-company"></span>
+        </div>
+      </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- SCRIPTS -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <script>
-    /* ══════════════════════════════════════════════════════════════ */
-    /* INITIALIZE SUPABASE */
-    /* ══════════════════════════════════════════════════════════════ */
-    const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc3MzcwODcsImV4cCI6MjA0MzMxMzA4N30.kCNNXS3sH5O5E6PGqrDHWqLxmhAQR-6N1XscYFN6PoE';
-    
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      <!-- Account gate (shown when not logged in) -->
+      <div class="account-gate" id="apply-gate">
+        <i class="bi bi-person-badge-fill"></i>
+        <h4>Create a worker account to apply</h4>
+        <p>Register your profile to apply for jobs, get hired, and receive interview requests directly from employers.</p>
+        <div class="gate-buttons">
+          <a href="post-profile.html" class="gate-btn-primary">
+            <i class="bi bi-person-plus-fill"></i> Register as Worker
+          </a>
+          <a href="login.html" class="gate-btn-outline">
+            Log in
+          </a>
+        </div>
+      </div>
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* UTILITY FUNCTIONS */
-    /* ══════════════════════════════════════════════════════════════ */
-    function getInitials(fullName) {
-      if (!fullName) return '?';
-      return fullName
-        .split(' ')
-        .slice(0, 2)
-        .map(n => n[0])
-        .join('')
-        .toUpperCase();
-    }
+      <!-- Apply form (shown when logged in) -->
+      <div id="apply-form" style="display:none;">
+        <label class="form-label">Cover message</label>
+        <textarea class="form-textarea" id="apply-message" placeholder="Tell the employer why you're a great fit for this role…"></textarea>
+        <label class="form-label">Your expected salary (KES/month)</label>
+        <input type="number" class="form-input" id="apply-salary" placeholder="e.g. 15000">
+        <label class="form-label">When can you start?</label>
+        <input type="date" class="form-input" id="apply-start-date">
+        <div class="modal-action-row">
+          <button class="modal-btn-cancel" onclick="closeModal('apply-modal')">Cancel</button>
+          <button class="modal-btn-blue" onclick="submitApplication()">
+            <i class="bi bi-send-fill"></i> Submit Application
+          </button>
+        </div>
+      </div>
 
-    function formatSalary(min, max) {
-      if (!min && !max) return 'Negotiable';
-      if (min && max) return `KES ${min.toLocaleString()} - ${max.toLocaleString()}`;
-      if (min) return `From KES ${min.toLocaleString()}`;
-      return `Up to KES ${max.toLocaleString()}`;
-    }
+      <!-- Success state -->
+      <div id="apply-success" style="display:none;" class="success-state">
+        <div class="checkmark"><i class="bi bi-check-lg"></i></div>
+        <h4>Application Submitted!</h4>
+        <p id="apply-success-msg">Your application has been sent to the employer. You'll hear back via the platform or phone.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-    function timeAgo(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const seconds = Math.floor((now - date) / 1000);
-      
-      if (seconds < 60) return 'Now';
-      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-      return `${Math.floor(seconds / 86400)}d ago`;
-    }
 
-    function animateCounter(elementId, targetNumber) {
-      const element = document.getElementById(elementId);
-      if (!element) return;
-      
-      let current = 0;
-      const increment = Math.ceil(targetNumber / 30);
-      
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= targetNumber) {
-          current = targetNumber;
-          clearInterval(timer);
-        }
-        element.textContent = current.toLocaleString();
-      }, 30);
-    }
+<!-- ══════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════ -->
+<script>
+/* ══════════════════════════════
+   SUPABASE INIT
+══════════════════════════════ */
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc3MzcwODcsImV4cCI6MjA0MzMxMzA4N30.kCNNXS3sH5O5E6PGqrDHWqLxmhAQR-6N1XscYFN6PoE';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* DATA LOADING */
-    /* ══════════════════════════════════════════════════════════════ */
-    async function loadAndRenderData() {
-      try {
-        console.log('Loading data from Supabase...');
+/* ══════════════════════════════
+   DEBUG LOGGER
+══════════════════════════════ */
+const DEBUG = false; // Set true locally to see raw Supabase responses
+function debugLog(label, data) {
+  if (!DEBUG) return;
+  const panel = document.getElementById('debug-panel');
+  panel.style.display = 'block';
+  panel.textContent += `\n[${label}]\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(40)}`;
+}
 
-        // Fetch workers
-        const { data: workersData, error: workersError } = await supabase
-          .from('worker_profiles')
-          .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at')
-          .eq('status', 'approved')
-          .eq('is_deleted', false)
-          .order('submitted_at', { ascending: false })
-          .limit(4);
+/* ══════════════════════════════
+   UTILITIES
+══════════════════════════════ */
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase();
+}
 
-        // Fetch jobs
-        const { data: jobsData, error: jobsError } = await supabase
-          .from('job_postings')
-          .select('id, title, location, county, salary_min, salary_max, job_role, work_type, is_urgent, created_at, employer_profiles(company_name, logo_url, is_verified)')
-          .eq('status', 'open')
-          .order('created_at', { ascending: false })
-          .limit(4);
+function formatSalary(min, max) {
+  if (!min && !max) return 'Negotiable';
+  const fmt = n => `KES ${Number(n).toLocaleString()}`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  if (min) return `From ${fmt(min)}`;
+  return `Up to ${fmt(max)}`;
+}
 
-        // Get counts
-        const { count: workersCount } = await supabase
-          .from('worker_profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'approved')
-          .eq('is_deleted', false);
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)    return 'Just now';
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
 
-        const { count: jobsCount } = await supabase
-          .from('job_postings')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'open');
+function animateCounter(id, target) {
+  const el = document.getElementById(id);
+  if (!el || !target) return;
+  let val = 0;
+  const step = Math.max(1, Math.ceil(target / 40));
+  const t = setInterval(() => {
+    val = Math.min(val + step, target);
+    el.textContent = val.toLocaleString();
+    if (val >= target) clearInterval(t);
+  }, 25);
+}
 
-        const { count: employersCount } = await supabase
-          .from('employer_profiles')
-          .select('id', { count: 'exact', head: true });
+/* ══════════════════════════════
+   KEY_SKILLS NORMALIZER
+   Handles: array, CSV string, null
+══════════════════════════════ */
+function normalizeSkills(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  if (typeof raw === 'string') {
+    return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
 
-        if (workersError) console.error('Workers error:', workersError);
-        if (jobsError) console.error('Jobs error:', jobsError);
+/* ══════════════════════════════
+   STATUS NORMALIZER
+   Maps any variant to canonical set
+══════════════════════════════ */
+function buildWorkerFilter(query) {
+  // Try all known approved-status values with OR
+  return query.or('status.eq.approved,status.eq.active,status.eq.verified,status.eq.published');
+}
 
-        // Render feeds
-        renderWorkers(workersData || []);
-        renderJobs(jobsData || []);
+function buildJobFilter(query) {
+  // Try all known open-status values
+  return query.or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published');
+}
 
-        // Animate counters
-        animateCounter('stat-workers', workersCount || 0);
-        animateCounter('stat-jobs', jobsCount || 0);
-        animateCounter('stat-employers', employersCount || 0);
+/* ══════════════════════════════
+   AUTH STATE CHECK
+══════════════════════════════ */
+let currentUser = null;
+let currentUserRole = null; // 'employer' | 'worker' | null
 
-      } catch (error) {
-        console.error('Error loading data:', error);
-        showEmptyState('workers-feed', 'Unable to load workers');
-        showEmptyState('jobs-feed', 'Unable to load jobs');
-      }
-    }
+async function checkAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  currentUser = session?.user || null;
 
-    function showEmptyState(elementId, message) {
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.innerHTML = `<div class="empty-message">${message}</div>`;
-      }
-    }
+  if (currentUser) {
+    // Try to determine role from profiles tables
+    const { data: emp } = await supabase
+      .from('employer_profiles')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (emp) { currentUserRole = 'employer'; return; }
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* RENDER WORKERS */
-    /* ══════════════════════════════════════════════════════════════ */
-    function renderWorkers(workers) {
-      const container = document.getElementById('workers-feed');
-      
-      if (!workers || workers.length === 0) {
-        showEmptyState('workers-feed', 'No worker profiles yet');
-        return;
-      }
+    const { data: wrk } = await supabase
+      .from('worker_profiles')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (wrk) { currentUserRole = 'worker'; return; }
 
-      container.innerHTML = workers.map(worker => `
-        <div class="card">
-          <div class="card-header">
-            <div class="card-avatar">
-              ${worker.profile_photo_url 
-                ? `<img src="${worker.profile_photo_url}" alt="${worker.full_name}">` 
-                : getInitials(worker.full_name)
-              }
-            </div>
-            <div style="flex: 1;">
-              <div class="card-title">${worker.full_name || 'Worker'}</div>
-              <div class="card-subtitle">${worker.preferred_role || 'Domestic Worker'} · ${worker.county || 'Kenya'}</div>
-            </div>
-          </div>
-          
-          <div class="card-tags">
-            ${(worker.key_skills || []).slice(0, 2).map(skill => 
-              `<span class="tag">${skill}</span>`
-            ).join('')}
-            <span class="tag">${worker.availability || 'Available'}</span>
-          </div>
-          
-          <div style="font-size: 12px; color: var(--text-muted); margin: 0.8rem 0;">
-            <i class="bi bi-cash-stack"></i> ${formatSalary(worker.salary_min, worker.salary_max)}
-          </div>
-          
-          <div class="card-footer">
-            <button class="btn-small green">
-              <i class="bi bi-eye-fill"></i> View
-            </button>
-            <button class="btn-small outline">
-              <i class="bi bi-chat-fill"></i> Contact
-            </button>
+    currentUserRole = 'user'; // logged in but no role yet
+  }
+}
+
+/* ══════════════════════════════
+   LOAD DATA
+══════════════════════════════ */
+async function loadAndRenderData() {
+  debugLog('Auth', { user: currentUser?.id, role: currentUserRole });
+
+  /* --- WORKERS --- */
+  let workerQuery = supabase
+    .from('worker_profiles')
+    .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at, status, is_deleted');
+
+  // Flexible status filter
+  workerQuery = buildWorkerFilter(workerQuery);
+
+  // Handle possible NULL is_deleted — use neq to avoid filtering out NULLs
+  workerQuery = workerQuery
+    .neq('is_deleted', true)
+    .order('submitted_at', { ascending: false })
+    .limit(4);
+
+  const { data: workersData, error: workersError } = await workerQuery;
+
+  debugLog('workersData', workersData);
+  debugLog('workersError', workersError);
+
+  /* --- JOBS --- */
+  // Try with employer_profiles join first; gracefully fall back
+  let { data: jobsData, error: jobsError } = await supabase
+    .from('job_postings')
+    .select(`id, title, location, county, salary_min, salary_max, job_role, work_type, is_urgent, created_at,
+             employer_profiles(company_name, logo_url, is_verified)`)
+    .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published')
+    .order('created_at', { ascending: false })
+    .limit(4);
+
+  debugLog('jobsData (with join)', jobsData);
+  debugLog('jobsError', jobsError);
+
+  // If join fails (no FK), fall back to flat query
+  if (jobsError && jobsError.message?.includes('employer_profiles')) {
+    console.warn('employer_profiles join failed, falling back to flat query');
+    const fb = await supabase
+      .from('job_postings')
+      .select('id, title, location, county, salary_min, salary_max, job_role, work_type, is_urgent, created_at')
+      .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published')
+      .order('created_at', { ascending: false })
+      .limit(4);
+    jobsData = fb.data;
+    jobsError = fb.error;
+    debugLog('jobsData (flat fallback)', jobsData);
+  }
+
+  /* --- COUNTS --- */
+  const { count: wCount } = await supabase
+    .from('worker_profiles')
+    .select('id', { count: 'exact', head: true })
+    .or('status.eq.approved,status.eq.active,status.eq.verified,status.eq.published')
+    .neq('is_deleted', true);
+
+  const { count: jCount } = await supabase
+    .from('job_postings')
+    .select('id', { count: 'exact', head: true })
+    .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published');
+
+  const { count: eCount } = await supabase
+    .from('employer_profiles')
+    .select('id', { count: 'exact', head: true });
+
+  debugLog('Counts', { wCount, jCount, eCount });
+
+  /* --- RENDER --- */
+  renderWorkers(workersData, workersError);
+  renderJobs(jobsData, jobsError);
+
+  document.getElementById('workers-badge').textContent =
+    wCount != null ? `${wCount} workers` : 'Live';
+  document.getElementById('jobs-badge').textContent =
+    jCount != null ? `${jCount} open` : 'Live';
+
+  animateCounter('stat-workers',   wCount || 0);
+  animateCounter('stat-jobs',      jCount || 0);
+  animateCounter('stat-employers', eCount || 0);
+}
+
+/* ══════════════════════════════
+   RENDER WORKERS
+══════════════════════════════ */
+function renderWorkers(workers, error) {
+  const container = document.getElementById('workers-feed');
+
+  if (error) {
+    container.innerHTML = `
+      <div class="error-message">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        Workers couldn't load right now. Error: ${error.message}
+      </div>
+      <div class="empty-message"><i class="bi bi-person-x"></i>Check back soon.</div>`;
+    console.error('[Workers Error]', error);
+    return;
+  }
+
+  if (!workers || workers.length === 0) {
+    container.innerHTML = `<div class="empty-message">
+      <i class="bi bi-person-lines-fill"></i>
+      No verified worker profiles yet.<br>
+      <a href="post-profile.html" style="color:var(--green); font-weight:600;">Register as a worker →</a>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = workers.map(w => {
+    const skills = normalizeSkills(w.key_skills).slice(0, 3);
+    const photoUrl = buildStorageUrl(w.profile_photo_url);
+
+    return `
+    <div class="card" onclick="openHireModal('${w.id}', '${esc(w.full_name)}', '${esc(w.preferred_role)}', '${photoUrl}')">
+      <div class="card-header">
+        <div class="card-avatar">
+          ${photoUrl
+            ? `<img src="${photoUrl}" alt="${esc(w.full_name)}" onerror="this.parentNode.textContent='${getInitials(w.full_name)}'">`
+            : getInitials(w.full_name)
+          }
+        </div>
+        <div class="card-meta">
+          <div class="card-title">${w.full_name || 'Worker'}</div>
+          <div class="card-subtitle">
+            ${w.preferred_role || 'Domestic Worker'} &middot; ${w.county || 'Kenya'}
           </div>
         </div>
-      `).join('');
-    }
+        <div class="card-verified"><i class="bi bi-check"></i></div>
+      </div>
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* RENDER JOBS */
-    /* ══════════════════════════════════════════════════════════════ */
-    function renderJobs(jobs) {
-      const container = document.getElementById('jobs-feed');
-      
-      if (!jobs || jobs.length === 0) {
-        showEmptyState('jobs-feed', 'No job postings yet');
-        return;
-      }
+      <div class="card-tags">
+        ${skills.map(s => `<span class="tag">${s}</span>`).join('')}
+        ${w.availability ? `<span class="tag">${w.availability}</span>` : ''}
+      </div>
 
-      container.innerHTML = jobs.map(job => {
-        const employer = job.employer_profiles || {};
-        return `
-          <div class="card">
-            <div class="card-header">
-              <div class="card-avatar job">
-                ${employer.logo_url 
-                  ? `<img src="${employer.logo_url}" alt="${employer.company_name}">` 
-                  : getInitials(employer.company_name || 'Employer')
-                }
-              </div>
-              <div style="flex: 1;">
-                <div class="card-title">${job.title || 'Job Opening'}</div>
-                <div class="card-subtitle">${employer.company_name || 'Employer'} · ${job.location || job.county || 'East Africa'}</div>
-              </div>
-            </div>
-            
-            <div class="card-tags">
-              <span class="tag">${job.job_role || 'Role'}</span>
-              <span class="tag">${job.work_type || 'Full Time'}</span>
-              ${job.is_urgent ? '<span class="tag" style="background: #FFF0EB; color: #C04A1A;">🔥 Urgent</span>' : ''}
-            </div>
-            
-            <div style="font-size: 12px; color: var(--text-muted); margin: 0.8rem 0;">
-              <i class="bi bi-cash-stack"></i> ${formatSalary(job.salary_min, job.salary_max)}
-            </div>
-            
-            <div class="card-footer">
-              <button class="btn-small green">
-                <i class="bi bi-eye-fill"></i> View
-              </button>
-              <button class="btn-small outline">
-                <i class="bi bi-send-fill"></i> Apply
-              </button>
-            </div>
+      <div class="card-salary">
+        <i class="bi bi-cash-stack"></i> ${formatSalary(w.salary_min, w.salary_max)}
+        <span style="margin-left:auto; opacity:0.6;">${timeAgo(w.submitted_at)}</span>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn-small green" onclick="event.stopPropagation(); openHireModal('${w.id}', '${esc(w.full_name)}', '${esc(w.preferred_role)}', '${photoUrl}')">
+          <i class="bi bi-person-check-fill"></i> Hire
+        </button>
+        <button class="btn-small outline" onclick="event.stopPropagation(); openHireModal('${w.id}', '${esc(w.full_name)}', '${esc(w.preferred_role)}', '${photoUrl}')">
+          <i class="bi bi-chat-fill"></i> Contact
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════
+   RENDER JOBS
+══════════════════════════════ */
+function renderJobs(jobs, error) {
+  const container = document.getElementById('jobs-feed');
+
+  if (error) {
+    container.innerHTML = `
+      <div class="error-message">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        Jobs couldn't load right now. Error: ${error.message}
+      </div>
+      <div class="empty-message"><i class="bi bi-briefcase"></i>Check back soon.</div>`;
+    console.error('[Jobs Error]', error);
+    return;
+  }
+
+  if (!jobs || jobs.length === 0) {
+    container.innerHTML = `<div class="empty-message">
+      <i class="bi bi-briefcase"></i>
+      No open jobs right now.<br>
+      <a href="post-job.html" style="color:var(--blue); font-weight:600;">Post a job →</a>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = jobs.map(job => {
+    const emp = job.employer_profiles || {};
+    const logoUrl = buildStorageUrl(emp.logo_url);
+    const companyName = emp.company_name || 'Employer';
+
+    return `
+    <div class="card" onclick="openApplyModal('${job.id}', '${esc(job.title)}', '${esc(companyName)}', '${logoUrl}')">
+      <div class="card-header">
+        <div class="card-avatar job">
+          ${logoUrl
+            ? `<img src="${logoUrl}" alt="${esc(companyName)}" onerror="this.parentNode.textContent='${getInitials(companyName)}'">`
+            : getInitials(companyName)
+          }
+        </div>
+        <div class="card-meta">
+          <div class="card-title">${job.title || 'Job Opening'}</div>
+          <div class="card-subtitle">
+            ${companyName}
+            ${emp.is_verified ? ' <i class="bi bi-patch-check-fill" style="color:var(--blue);font-size:11px;"></i>' : ''}
+            &middot; ${job.location || job.county || 'East Africa'}
           </div>
-        `;
-      }).join('');
-    }
+        </div>
+        ${job.is_urgent ? '<span class="tag urgent" style="flex-shrink:0;">🔥 Urgent</span>' : ''}
+      </div>
 
-    /* ══════════════════════════════════════════════════════════════ */
-    /* INITIALIZATION */
-    /* ══════════════════════════════════════════════════════════════ */
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('Page loaded, fetching data...');
-      loadAndRenderData();
-    });
-  </script>
+      <div class="card-tags">
+        <span class="tag blue">${job.job_role || 'Role'}</span>
+        <span class="tag">${job.work_type || 'Full Time'}</span>
+      </div>
+
+      <div class="card-salary">
+        <i class="bi bi-cash-stack"></i> ${formatSalary(job.salary_min, job.salary_max)}
+        <span style="margin-left:auto; opacity:0.6;">${timeAgo(job.created_at)}</span>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn-small blue" onclick="event.stopPropagation(); openApplyModal('${job.id}', '${esc(job.title)}', '${esc(companyName)}', '${logoUrl}')">
+          <i class="bi bi-send-fill"></i> Apply Now
+        </button>
+        <button class="btn-small outline" onclick="event.stopPropagation(); openApplyModal('${job.id}', '${esc(job.title)}', '${esc(companyName)}', '${logoUrl}')">
+          <i class="bi bi-eye-fill"></i> View Job
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════
+   STORAGE URL HELPER
+══════════════════════════════ */
+function buildStorageUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/Media/${path}`;
+}
+
+function esc(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+/* ══════════════════════════════
+   MODAL LOGIC – HIRE
+══════════════════════════════ */
+let activeWorkerId = null;
+
+function openHireModal(workerId, name, role, photoUrl) {
+  activeWorkerId = workerId;
+
+  // Populate preview
+  const avatarEl = document.getElementById('hire-worker-avatar');
+  avatarEl.innerHTML = photoUrl
+    ? `<img src="${photoUrl}" alt="${name}" onerror="this.parentNode.textContent='${getInitials(name)}'">`
+    : getInitials(name);
+  document.getElementById('hire-worker-name').textContent = name;
+  document.getElementById('hire-worker-role').textContent = role || 'Domestic Worker';
+  document.getElementById('hire-modal-subtitle').textContent = `Hire · ${name}`;
+
+  // Reset form state
+  document.getElementById('hire-success').style.display = 'none';
+  document.getElementById('hire-message').value = '';
+  document.getElementById('hire-phone').value = '';
+  document.getElementById('hire-start-date').value = '';
+
+  // Show gate or form based on auth
+  const isLoggedIn = !!currentUser;
+  document.getElementById('hire-gate').style.display  = isLoggedIn ? 'none'  : '';
+  document.getElementById('hire-form').style.display  = isLoggedIn ? ''      : 'none';
+
+  openModal('hire-modal');
+}
+
+async function submitHireRequest() {
+  if (!currentUser) return;
+
+  const message    = document.getElementById('hire-message').value.trim();
+  const phone      = document.getElementById('hire-phone').value.trim();
+  const startDate  = document.getElementById('hire-start-date').value;
+
+  if (!message) { alert('Please add a message for the worker.'); return; }
+
+  // Save to messages table
+  const { error } = await supabase.from('messages').insert({
+    sender_id:   currentUser.id,
+    receiver_id: activeWorkerId,
+    content:     message,
+    type:        'hire_request',
+    metadata:    { phone, start_date: startDate },
+    created_at:  new Date().toISOString()
+  });
+
+  if (error) {
+    console.error('Hire request error:', error);
+    alert('Could not send request. Please try again.');
+    return;
+  }
+
+  document.getElementById('hire-form').style.display = 'none';
+  document.getElementById('hire-success').style.display = '';
+  document.getElementById('hire-success-msg').textContent =
+    `Your hire request has been sent to ${document.getElementById('hire-worker-name').textContent}. They'll be notified and contact you soon.`;
+}
+
+/* ══════════════════════════════
+   MODAL LOGIC – APPLY
+══════════════════════════════ */
+let activeJobId = null;
+
+function openApplyModal(jobId, title, company, logoUrl) {
+  activeJobId = jobId;
+
+  // Populate preview
+  const avatarEl = document.getElementById('apply-job-avatar');
+  avatarEl.innerHTML = logoUrl
+    ? `<img src="${logoUrl}" alt="${company}" onerror="this.parentNode.textContent='${getInitials(company)}'">`
+    : getInitials(company);
+  document.getElementById('apply-job-title').textContent = title;
+  document.getElementById('apply-job-company').textContent = company;
+  document.getElementById('apply-modal-subtitle').textContent = `Apply · ${title}`;
+
+  // Reset
+  document.getElementById('apply-success').style.display = 'none';
+  document.getElementById('apply-message').value = '';
+  document.getElementById('apply-salary').value = '';
+  document.getElementById('apply-start-date').value = '';
+
+  // Show gate or form
+  const isLoggedIn = !!currentUser;
+  document.getElementById('apply-gate').style.display  = isLoggedIn ? 'none'  : '';
+  document.getElementById('apply-form').style.display  = isLoggedIn ? ''      : 'none';
+
+  openModal('apply-modal');
+}
+
+async function submitApplication() {
+  if (!currentUser) return;
+
+  const message   = document.getElementById('apply-message').value.trim();
+  const salary    = document.getElementById('apply-salary').value;
+  const startDate = document.getElementById('apply-start-date').value;
+
+  if (!message) { alert('Please add a cover message.'); return; }
+
+  // Check if worker profile exists for this user
+  const { data: workerProfile } = await supabase
+    .from('worker_profiles')
+    .select('id')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  const { error } = await supabase.from('messages').insert({
+    sender_id:   currentUser.id,
+    receiver_id: activeJobId,
+    content:     message,
+    type:        'job_application',
+    metadata:    {
+      salary_expectation: salary,
+      start_date: startDate,
+      worker_profile_id: workerProfile?.id
+    },
+    created_at: new Date().toISOString()
+  });
+
+  if (error) {
+    console.error('Application error:', error);
+    alert('Could not submit application. Please try again.');
+    return;
+  }
+
+  document.getElementById('apply-form').style.display = 'none';
+  document.getElementById('apply-success').style.display = '';
+  document.getElementById('apply-success-msg').textContent =
+    `Your application for "${document.getElementById('apply-job-title').textContent}" was submitted. The employer will review it and get back to you.`;
+}
+
+/* ══════════════════════════════
+   MODAL HELPERS
+══════════════════════════════ */
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+
+// Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+  }
+});
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkAuth();
+  await loadAndRenderData();
+});
+</script>
 </body>
 </html>
