@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundsCare Admin — Control Centre</title>
+<meta name="description" content="Secure Admin Dashboard">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --brand:#1B6B45;--brand-d:#0F4D30;--brand-l:#E6F5EE;--brand-m:#C9E8D4;
+  --accent:#E8A040;--accent-l:#FAEEDA;
+  --sidebar:#0A1F14;--sidebar-t:#7FB89A;
+  --bg:#F0F4F2;--surface:#fff;--border:#E2EBE6;
+  --text:#0F1C14;--muted:#5A7A68;--light:#9BB5A5;
+  --danger:#C0392B;--danger-l:#FDECEA;
+  --info:#1A6BB5;--info-l:#E6F1FB;
+  --purple:#6B52C8;--purple-l:#EEE9FB;
+  --gold:#E8A040;--gold-l:#FEF3E2;
+  --green:#16a34a;--green-l:#DCFCE7;
+  --r:10px;--rs:7px;
+  --sh:0 2px 12px rgba(27,107,69,.08);--sh-lg:0 8px 32px rgba(27,107,69,.15);
+  --nav-w:236px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13.5px;min-height:100vh;display:flex;overflow-x:hidden}
+a{color:var(--brand);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* SECURITY LAYER - PROTECT FROM PUBLIC */
+#auth-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:.95;z-index:1000;display:flex;align-items:center;justify-content:center}
+#auth-overlay.hidden{display:none}
+.auth-box{background:#fff;border-radius:12px;padding:40px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.auth-box h1{font-size:24px;font-weight:800;margin-bottom:8px;color:var(--brand)}
+.auth-box p{color:var(--muted);margin-bottom:24px;font-size:13px}
+.auth-input-group{margin-bottom:16px}
+.auth-input-group label{display:block;font-weight:600;margin-bottom:6px;font-size:12px}
+.auth-input-group input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit}
+.auth-input-group input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.btn-auth{width:100%;padding:12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-weight:600;cursor:pointer;font-size:13px;transition:.2s}
+.btn-auth:hover{background:var(--brand-d)}
+.auth-error{color:var(--danger);font-size:12px;margin-top:12px;text-align:center}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--nav-w);background:var(--sidebar);color:var(--sidebar-t);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .25s;overflow-y:auto;scrollbar-width:none}
+.sidebar::-webkit-scrollbar{display:none}
+.sidebar.collapsed{transform:translateX(-100%)}
+.sb-logo{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-logo-inner{display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),#2DB877);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+.sb-logo-text{font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:#fff}
+.sb-logo-text span{color:var(--accent)}
+.sb-badge{font-size:9px;font-weight:700;background:var(--accent);color:#fff;padding:2px 6px;border-radius:20px;margin-top:2px;display:inline-block}
+.sb-user{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
+.sb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2DB877);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:10px;color:var(--sidebar-t);margin-top:1px}
+.sb-nav{flex:1;padding:8px 0}
+.sb-section{padding:8px 16px 3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:4px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:8px 16px;color:var(--sidebar-t);cursor:pointer;border-radius:0;transition:all .15s;position:relative;text-decoration:none;border:none;background:none;width:100%;font-size:12.5px;font-family:inherit}
+.sb-link i{font-size:14px;flex-shrink:0}
+.sb-link:hover{color:#fff;background:rgba(255,255,255,.06)}
+.sb-link.active{color:#fff;background:rgba(27,107,69,.35);border-right:3px solid var(--accent)}
+.sb-link .sb-count{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center}
+.sb-link .sb-count.green{background:var(--green)}
+.sb-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:8px}
+.sb-logout-btn{flex:1;padding:6px;background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;transition:.15s}
+.sb-logout-btn:hover{background:var(--danger);color:#fff}
+
+/* ── MAIN ── */
+.main{margin-left:var(--nav-w);flex:1;display:flex;flex-direction:column;min-height:100vh;transition:margin .25s}
+.main.full{margin-left:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 22px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:var(--sh)}
+.topbar-title{font-size:14px;font-weight:700;color:var(--text);flex:1}
+.topbar-title span{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px}
+.topbar-actions{display:flex;align-items:center;gap:7px}
+.icon-btn{width:33px;height:33px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--muted);transition:.15s;position:relative}
+.icon-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-l)}
+.notif-dot{position:absolute;top:3px;right:3px;width:7px;height:7px;background:var(--danger);border-radius:50%;border:2px solid #fff;display:none}
+.content{flex:1;padding:22px;overflow-y:auto}
+
+/* ── CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:13px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px;display:flex;align-items:flex-start;gap:13px;box-shadow:var(--sh);transition:box-shadow .2s,transform .2s;cursor:pointer}
+.stat-card:hover{box-shadow:var(--sh-lg);transform:translateY(-2px)}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.stat-body{flex:1;min-width:0}
+.stat-val{font-size:22px;font-weight:800;color:var(--text);line-height:1.1}
+.stat-lbl{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.sec-hd h2{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.sec-hd h2 i{color:var(--brand)}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.tbl-toolbar{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.tbl-search{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:0 10px}
+.tbl-search i{color:var(--muted);font-size:13px}
+.tbl-search input{border:none;outline:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);width:100%;padding:7px 0}
+.tbl-filter{padding:7px 11px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;cursor:pointer}
+.tbl-actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn-sm{padding:6px 12px;font-size:11px;border:none;border-radius:5px;cursor:pointer;font-weight:600;transition:.15s;font-family:inherit}
+.btn-export{background:var(--info);color:#fff}.btn-export:hover{opacity:.9}
+.btn-import{background:var(--purple);color:#fff}.btn-import:hover{opacity:.9}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg)}
+th{padding:8px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12.5px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFCFB}
+.av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2DB877);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.user-cell{display:flex;align-items:center;gap:9px}
+.user-cell-name{font-weight:600;font-size:13px}
+.user-cell-sub{font-size:11px;color:var(--muted)}
+
+/* STATUS BADGES */
+.badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.02em;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.b-approved,.b-active,.b-hired{background:var(--green-l);color:var(--green)}
+.b-pending,.b-pending_review{background:var(--gold-l);color:#92600A}
+.b-banned,.b-suspended,.b-rejected,.b-danger{background:var(--danger-l);color:var(--danger)}
+.b-info,.b-verified{background:var(--info-l);color:var(--info)}
+.b-verified::before{content:'✓ '}
+.b-purple{background:var(--purple-l);color:var(--purple)}
+.b-grey{background:var(--bg);color:var(--muted)}
+
+/* ACTIONS */
+.acts{display:flex;gap:4px;flex-wrap:wrap}
+.act{padding:4px 9px;border-radius:var(--rs);font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid;transition:.14s;font-family:inherit;white-space:nowrap;background:#fff}
+.act-approve{border-color:var(--green);color:var(--green)}.act-approve:hover{background:var(--green);color:#fff}
+.act-ban{border-color:var(--danger);color:var(--danger)}.act-ban:hover{background:var(--danger);color:#fff}
+.act-verify{border-color:var(--info);color:var(--info)}.act-verify:hover{background:var(--info);color:#fff}
+.act-badge{border-color:var(--accent);color:var(--accent)}.act-badge:hover{background:var(--accent);color:#fff}
+.act-doc{border-color:var(--purple);color:var(--purple)}.act-doc:hover{background:var(--purple);color:#fff}
+.act-msg{border-color:#0088cc;color:#0088cc}.act-msg:hover{background:#0088cc;color:#fff}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);max-height:85vh;overflow-y:auto;max-width:600px;width:100%;box-shadow:var(--sh-lg);padding:0}
+.modal-hd{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-hd h3{font-size:14px;font-weight:700}
+.modal-close{width:28px;height:28px;border:none;background:none;cursor:pointer;font-size:20px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn{padding:8px 16px;border:none;border-radius:7px;font-weight:600;cursor:pointer;font-size:12px;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-d)}
+.btn-secondary{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{opacity:.9}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{opacity:.9}
+
+/* FORM */
+.fg{margin-bottom:16px}
+.fg label{display:block;font-weight:600;font-size:12px;margin-bottom:6px;color:var(--text)}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-l)}
+.fg textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:12px 16px;font-weight:600;font-size:13px;cursor:pointer;border:none;background:none;color:var(--muted);transition:.15s;border-bottom:2px solid transparent;position:relative;bottom:-1px}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tab:hover{color:var(--text)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* DETAIL VIEW */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.detail-row{display:flex;gap:12px;align-items:flex-start}
+.detail-lbl{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)}
+.detail-val{font-size:13px;font-weight:500;color:var(--text);margin-top:3px}
+.detail-section{margin-bottom:22px}
+.detail-section-title{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--brand);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* TOAST */
+#toast-stack{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:column;gap:8px;max-width:360px;z-index:9999}
+.toast{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;box-shadow:var(--sh-lg);animation:toast-in .3s ease-out;font-size:12.5px}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--danger)}
+.toast.warn{border-left:3px solid var(--accent)}
+.toast-close{width:20px;height:20px;border:none;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px}
+@keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* PAYMENT TABLE */
+.payment-ref{font-family:'Courier New',monospace;font-size:11px;font-weight:600;color:var(--info)}
+.ref-badge{display:inline-block;background:var(--info-l);color:var(--info);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+
+/* FILE GENERATION */
+.doc-template{background:#fff;padding:40px;font-family:'Arial',sans-serif;line-height:1.6;color:#000}
+.doc-header{border-bottom:3px solid var(--brand);padding-bottom:16px;margin-bottom:24px;text-align:center}
+.doc-logo{font-size:18px;font-weight:800;color:var(--brand)}
+.doc-title{font-size:16px;font-weight:700;margin-top:12px}
+.doc-section{margin-bottom:20px}
+.doc-section-title{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--brand);border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:12px}
+.doc-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px}
+.doc-row-label{font-weight:700}
+.doc-verification-box{border:2px solid var(--brand);padding:12px;margin-top:16px;border-radius:5px;text-align:center}
+
+@media(max-width:768px){
+  .sidebar{width:200px;--nav-w:200px}
+  .stat-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .tbl-toolbar{flex-direction:column}
+  .tbl-search{width:100%;min-width:100%}
+  table{font-size:11px}
+  td,th{padding:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- SECURITY LAYER: AUTH OVERLAY (protects from public access) -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <h1>🔐 Admin Access</h1>
+    <p>Secure dashboard access for authorized administrators only</p>
+    <div class="auth-input-group">
+      <label>Admin Email</label>
+      <input type="email" id="admin-email" placeholder="your@email.com">
+    </div>
+    <div class="auth-input-group">
+      <label>Password</label>
+      <input type="password" id="admin-password" placeholder="••••••••">
+    </div>
+    <button class="btn-auth" onclick="adminLogin()">Sign In to Dashboard</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-inner">
+      <div class="sb-logo-icon">🎵</div>
+      <div>
+        <div class="sb-logo-text">Sounds<span>Care</span></div>
+        <div class="sb-badge">ADMIN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-user">
+    <div class="sb-av" id="sb-av">A</div>
+    <div style="flex:1;min-width:0">
+      <div class="sb-uname" id="sb-uname">Admin User</div>
+      <div class="sb-urole">Administrator</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Dashboard</div>
+    <button class="sb-link active" onclick="switchPage('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</button>
+
+    <div class="sb-section">Management</div>
+    <button class="sb-link" onclick="switchPage('allusers')"><i class="bi bi-people-fill"></i> All Users <span class="sb-count" id="count-users">0</span></button>
+    <button class="sb-link" onclick="switchPage('adminprofile')"><i class="bi bi-person-badge"></i> Admin Profile</button>
+    <button class="sb-link" onclick="switchPage('approvals')"><i class="bi bi-check-circle"></i> Approvals <span class="sb-count" id="count-pending">0</span></button>
+    <button class="sb-link" onclick="switchPage('bans')"><i class="bi bi-exclamation-octagon"></i> Bans & Restrictions</button>
+
+    <div class="sb-section">Verification</div>
+    <button class="sb-link" onclick="switchPage('documents')"><i class="bi bi-file-pdf"></i> Documents & Verification</button>
+    <button class="sb-link" onclick="switchPage('badges')"><i class="bi bi-patch-check"></i> Badge Management</button>
+
+    <div class="sb-section">Operations</div>
+    <button class="sb-link" onclick="switchPage('jobs')"><i class="bi bi-briefcase"></i> Job Postings</button>
+    <button class="sb-link" onclick="switchPage('payments')"><i class="bi bi-credit-card"></i> Payments & Transactions</button>
+    <button class="sb-link" onclick="switchPage('messages')"><i class="bi bi-chat-dots"></i> Messages <span class="sb-count green" id="count-messages">0</span></button>
+    <button class="sb-link" onclick="switchPage('activity')"><i class="bi bi-graph-up"></i> Activity & Insights</button>
+
+    <div class="sb-section">Tools</div>
+    <button class="sb-link" onclick="switchPage('importexport')"><i class="bi bi-cloud-download"></i> Import / Export</button>
+    <button class="sb-link" onclick="switchPage('settings')"><i class="bi bi-gear"></i> Settings</button>
+  </nav>
+
+  <div class="sb-footer">
+    <button class="sb-logout-btn" onclick="adminLogout()"><i class="bi bi-box-arrow-right" style="font-size:12px;margin-right:4px"></i> Logout</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title">
+      <span id="page-title">Dashboard</span>
+      <span id="page-subtitle"></span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="toggleNotifications()" title="Notifications"><i class="bi bi-bell"></i><div class="notif-dot"></div></button>
+      <button class="icon-btn" onclick="toggleSearch()" title="Search"><i class="bi bi-search"></i></button>
+      <button class="icon-btn" onclick="toggleTheme()" title="Theme"><i class="bi bi-moon"></i></button>
+      <button class="icon-btn" onclick="showHelp()" title="Help"><i class="bi bi-question-circle"></i></button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard">
+      <div class="stat-grid" id="stats-grid"></div>
+      <div class="sec-hd"><h2><i class="bi bi-graph-up"></i> Quick Overview</h2></div>
+      <div class="tbl-wrap" style="margin-bottom:22px">
+        <table id="recent-activity-table"><thead><tr><th>User</th><th>Action</th><th>Time</th><th>Status</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- ALL USERS PAGE -->
+    <div id="page-allusers" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-people-fill"></i> User Management</h2>
+        <div class="tbl-actions">
+          <button class="btn-sm btn-export" onclick="exportUsersCSV()"><i class="bi bi-download"></i> Export CSV</button>
+          <button class="btn-sm btn-import" onclick="openImportModal()"><i class="bi bi-upload"></i> Import</button>
+          <input type="file" id="import-file" accept=".csv" style="display:none" onchange="importUsersCSV(event)">
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div class="tbl-search"><i class="bi bi-search"></i><input type="text" id="user-search" placeholder="Search users..."></div>
+          <select class="tbl-filter" id="user-filter" onchange="filterUsers()"><option value="">All Status</option><option value="pending">Pending</option><option value="active">Active</option><option value="banned">Banned</option></select>
+        </div>
+        <table id="users-table"><thead><tr><th>User</th><th>Email</th><th>Status</th><th>Verified</th><th>Activity</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- ADMIN PROFILE PAGE -->
+    <div id="page-adminprofile" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-person-badge"></i> Admin Profile</h2></div>
+      <div class="detail-grid" id="admin-profile-detail"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-primary" onclick="editAdminProfile()">Edit Profile</button>
+        <button class="btn btn-secondary" onclick="changeAdminPassword()">Change Password</button>
+      </div>
+    </div>
+
+    <!-- APPROVALS PAGE -->
+    <div id="page-approvals" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-check-circle"></i> Pending Approvals</h2></div>
+      <div class="tbl-wrap">
+        <table id="approvals-table"><thead><tr><th>User</th><th>Type</th><th>Submitted</th><th>Details</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- BANS & RESTRICTIONS -->
+    <div id="page-bans" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-exclamation-octagon"></i> Banned Users</h2></div>
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div class="tbl-search"><i class="bi bi-search"></i><input type="text" id="ban-search" placeholder="Search banned users..."></div>
+          <select class="tbl-filter" id="ban-filter"><option value="">All Bans</option><option value="permanent">Permanent</option><option value="temporary">Temporary</option></select>
+        </div>
+        <table id="bans-table"><thead><tr><th>User</th><th>Reason</th><th>Ban Type</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS & VERIFICATION -->
+    <div id="page-documents" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-file-pdf"></i> Document Verification</h2></div>
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div class="tbl-search"><i class="bi bi-search"></i><input type="text" id="doc-search" placeholder="Search users..."></div>
+          <select class="tbl-filter" id="doc-filter"><option value="">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+        </div>
+        <table id="docs-table"><thead><tr><th>User</th><th>Doc Type</th><th>Status</th><th>Submitted</th><th>View</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- BADGE MANAGEMENT -->
+    <div id="page-badges" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-patch-check"></i> Badge Management</h2></div>
+      <div class="tbl-wrap">
+        <table id="badges-table"><thead><tr><th>User</th><th>Badge Type</th><th>Status</th><th>Issued</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- JOB POSTINGS -->
+    <div id="page-jobs" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-briefcase"></i> Job Management</h2>
+        <button class="btn btn-primary" onclick="openNewJobModal()">+ New Job</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div class="tbl-search"><i class="bi bi-search"></i><input type="text" id="job-search" placeholder="Search jobs..."></div>
+          <select class="tbl-filter" id="job-filter"><option value="">All Status</option><option value="active">Active</option><option value="paused">Paused</option><option value="closed">Closed</option></select>
+        </div>
+        <table id="jobs-table"><thead><tr><th>Title</th><th>Company</th><th>Status</th><th>Posted</th><th>Views</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- PAYMENTS & TRANSACTIONS -->
+    <div id="page-payments" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-credit-card"></i> Payment Transactions</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:13px;margin-bottom:22px">
+        <div class="stat-card"><div style="flex:1"><div class="stat-lbl">Total Revenue</div><div class="stat-val" id="payment-total">$0</div></div></div>
+        <div class="stat-card"><div style="flex:1"><div class="stat-lbl">This Month</div><div class="stat-val" id="payment-month">$0</div></div></div>
+        <div class="stat-card"><div style="flex:1"><div class="stat-lbl">Pending</div><div class="stat-val" id="payment-pending">$0</div></div></div>
+        <div class="stat-card"><div style="flex:1"><div class="stat-lbl">Completed</div><div class="stat-val" id="payment-complete">$0</div></div></div>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar">
+          <div class="tbl-search"><i class="bi bi-search"></i><input type="text" id="payment-search" placeholder="Search by ref or user..."></div>
+          <select class="tbl-filter" id="payment-filter"><option value="">All Status</option><option value="completed">Completed</option><option value="pending">Pending</option><option value="failed">Failed</option></select>
+        </div>
+        <table id="payments-table"><thead><tr><th>Reference ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="page-messages" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-chat-dots"></i> Messages</h2></div>
+      <div style="display:grid;grid-template-columns:250px 1fr;gap:16px;height:600px">
+        <div class="tbl-wrap" style="overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <input type="text" placeholder="Search conversations..." style="width:100%;padding:6px;border:1.5px solid var(--border);border-radius:5px;font-size:12px">
+          </div>
+          <div id="conversations-list" style="flex:1;overflow-y:auto"></div>
+        </div>
+        <div class="tbl-wrap" style="display:flex;flex-direction:column;overflow:hidden">
+          <div id="message-detail" style="flex:1;padding:16px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY & INSIGHTS -->
+    <div id="page-activity" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-graph-up"></i> Activity & User Insights</h2></div>
+      <div class="detail-grid">
+        <div class="tbl-wrap"><table id="activity-table" style="font-size:12px"><thead><tr><th>User</th><th>Activity Type</th><th>Date</th><th>Details</th></tr></thead><tbody></tbody></table></div>
+        <div class="tbl-wrap"><table id="insights-table" style="font-size:12px"><thead><tr><th>Metric</th><th>Value</th><th>Trend</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- IMPORT/EXPORT -->
+    <div id="page-importexport" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-cloud-download"></i> Import / Export Users</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px">
+        <div class="tbl-wrap" style="padding:22px">
+          <h3 style="font-size:13px;font-weight:700;margin-bottom:12px"><i class="bi bi-download"></i> Export Users</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Download all user data as CSV file</p>
+          <button class="btn btn-primary" onclick="exportUsersCSV()" style="width:100%"><i class="bi bi-download"></i> Export as CSV</button>
+        </div>
+        <div class="tbl-wrap" style="padding:22px">
+          <h3 style="font-size:13px;font-weight:700;margin-bottom:12px"><i class="bi bi-upload"></i> Import Users</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Import users from CSV file</p>
+          <button class="btn btn-primary" onclick="openImportModal()" style="width:100%"><i class="bi bi-upload"></i> Select File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" style="display:none">
+      <div class="sec-hd"><h2><i class="bi bi-gear"></i> Settings</h2></div>
+      <div class="tbl-wrap" style="max-width:600px">
+        <div style="padding:22px">
+          <div class="detail-section">
+            <h3 class="detail-section-title">System Settings</h3>
+            <div class="fg">
+              <label><input type="checkbox" checked> Enable Email Notifications</label>
+            </div>
+            <div class="fg">
+              <label><input type="checkbox" checked> Enable SMS Alerts</label>
+            </div>
+            <div class="fg">
+              <label><input type="checkbox" checked> Auto-approve Verified Users</label>
+            </div>
+          </div>
+          <button class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- USER DETAIL MODAL (with file generation) -->
+<div class="modal-ov" id="userModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="modal-user-title">User Details</h3>
+      <button class="modal-close" onclick="closeModal('userModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs" style="margin:-22px -22px 16px">
+        <button class="tab active" onclick="switchUserTab('info')">Info</button>
+        <button class="tab" onclick="switchUserTab('docs')">Documents</button>
+        <button class="tab" onclick="switchUserTab('activity')">Activity</button>
+        <button class="tab" onclick="switchUserTab('payments')">Payments</button>
+      </div>
+
+      <div id="tab-info" class="tab-content active">
+        <div id="user-detail-content"></div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="editUser()">Edit Details</button>
+          <button class="btn btn-secondary" onclick="resetUserPassword()">Reset Password</button>
+          <button class="btn btn-secondary" onclick="sendNotificationToUser()">Send Notification</button>
+          <button class="btn btn-secondary" onclick="generateUserFile()">Generate File</button>
+          <button class="btn btn-danger" onclick="banUserAction()">Ban User</button>
+        </div>
+      </div>
+
+      <div id="tab-docs" class="tab-content" style="display:none">
+        <div id="user-docs-content"></div>
+      </div>
+
+      <div id="tab-activity" class="tab-content" style="display:none">
+        <div id="user-activity-content"></div>
+      </div>
+
+      <div id="tab-payments" class="tab-content" style="display:none">
+        <div id="user-payments-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-ov" id="editUserModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Edit User Details</h3>
+      <button class="modal-close" onclick="closeModal('editUserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label>Full Name</label><input type="text" id="edit-name" placeholder="Full Name"></div>
+      <div class="form-row">
+        <div class="fg"><label>Email</label><input type="email" id="edit-email" placeholder="Email" readonly></div>
+        <div class="fg"><label>Phone</label><input type="tel" id="edit-phone" placeholder="Phone"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Role</label><select id="edit-role"><option>Employee</option><option>Employer</option><option>Admin</option></select></div>
+        <div class="fg"><label>Status</label><select id="edit-status"><option>pending</option><option>active</option><option>banned</option><option>suspended</option></select></div>
+      </div>
+      <div class="fg"><label>Bio/Notes</label><textarea id="edit-bio" placeholder="Admin notes about this user..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUserChanges()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW JOB MODAL -->
+<div class="modal-ov" id="newJobModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Post New Job</h3>
+      <button class="modal-close" onclick="closeModal('newJobModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label>Job Title</label><input type="text" id="job-title" placeholder="e.g., Software Engineer"></div>
+      <div class="form-row">
+        <div class="fg"><label>Posted By (Company/Employer)</label><select id="job-company"><option>--Select Company--</option></select></div>
+        <div class="fg"><label>Position Open</label><input type="number" id="job-positions" placeholder="1" min="1"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Job Category</label><select id="job-category"><option>--Select--</option><option>Engineering</option><option>Design</option><option>Sales</option><option>Support</option><option>Management</option></select></div>
+        <div class="fg"><label>Salary Range</label><input type="text" id="job-salary" placeholder="e.g., 50k-70k USD"></div>
+      </div>
+      <div class="fg"><label>Description</label><textarea id="job-desc" placeholder="Job description..."></textarea></div>
+      <div class="fg">
+        <label><input type="checkbox" id="job-company-verified"> Company Verified (Blue Badge)</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('newJobModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewJob()">Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-ov" id="importModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Import Users from CSV</h3>
+      <button class="modal-close" onclick="closeModal('importModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Upload a CSV file with user data. Required columns: email, full_name, phone, role</p>
+      <input type="file" id="import-file-input" accept=".csv" onchange="handleImportFile(event)">
+      <div id="import-preview" style="margin-top:16px;max-height:300px;overflow-y:auto;display:none">
+        <table style="width:100%;font-size:11px;border-collapse:collapse"><thead></thead><tbody id="import-table-body"></tbody></table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="processImport()" id="import-btn" disabled>Import Users</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION MODAL -->
+<div class="modal-ov" id="notificationModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Send Notification</h3>
+      <button class="modal-close" onclick="closeModal('notificationModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label>Message Title</label><input type="text" id="notif-title" placeholder="Notification title"></div>
+      <div class="fg"><label>Message Body</label><textarea id="notif-body" placeholder="Your message here..."></textarea></div>
+      <div class="form-row">
+        <div class="fg"><label>Send Via</label><select id="notif-method"><option>All</option><option>Email</option><option>In-App</option><option>SMS</option></select></div>
+        <div class="fg"><label>Priority</label><select id="notif-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('notificationModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="sendNotification()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-ov" id="paymentModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Payment Details</h3>
+      <button class="modal-close" onclick="closeModal('paymentModal')">×</button>
+    </div>
+    <div class="modal-body" id="payment-detail-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('paymentModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-stack"></div>
+
+<script>
+/* ════════════════════════════════════
+   CONFIG & GLOBALS
+════════════════════════════════════ */
+const SUPABASE_URL = 'https://your-supabase-url.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentPage = 'dashboard';
+let allUsers = [];
+let allEmployers = [];
+let allJobs = [];
+let allPayments = [];
+let allMessages = [];
+let allDocuments = [];
+let selectedUserId = null;
+
+/* ════════════════════════════════════
+   SECURITY: AUTHENTICATION
+════════════════════════════════════ */
+async function adminLogin(){
+  const email = document.getElementById('admin-email').value.trim();
+  const password = document.getElementById('admin-password').value.trim();
+  if(!email || !password){
+    showAuthError('Please enter email and password');
+    return;
+  }
+
+  try {
+    const {data:{user},error} = await sb.auth.signInWithPassword({email, password});
+    if(error) throw error;
+
+    const {data:userData} = await sb.from('users').select('*').eq('id',user.id).maybeSingle();
+    if(!userData || userData.role !== 'admin'){
+      await sb.auth.signOut();
+      showAuthError('Unauthorized: Admin role required');
+      return;
+    }
+
+    currentUser = user;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    initDashboard();
+  } catch(e){
+    showAuthError(e.message);
+  }
+}
+
+function showAuthError(msg){
+  document.getElementById('auth-error').textContent = msg;
+  setTimeout(() => document.getElementById('auth-error').textContent = '', 4000);
+}
+
+async function adminLogout(){
+  if(confirm('Logout from admin dashboard?')){
+    await sb.auth.signOut();
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('admin-email').value = '';
+    document.getElementById('admin-password').value = '';
+  }
+}
+
+/* ════════════════════════════════════
+   INIT & LOAD DATA
+════════════════════════════════════ */
+async function initDashboard(){
+  updateAdminProfile();
+  await loadAllData();
+  renderDashboard();
+}
+
+async function loadAllData(){
+  try {
+    const [usersRes, employersRes, jobsRes, paymentsRes, messagesRes, docsRes, activityRes] = await Promise.all([
+      sb.from('users').select('*'),
+      sb.from('employer_profiles').select('*'),
+      sb.from('jobs').select('*'),
+      sb.from('payments').select('*'),
+      sb.from('messages').select('*'),
+      sb.from('documents').select('*'),
+      sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(100)
+    ]);
+
+    allUsers = usersRes.data || [];
+    allEmployers = employersRes.data || [];
+    allJobs = jobsRes.data || [];
+    allPayments = paymentsRes.data || [];
+    allMessages = messagesRes.data || [];
+    allDocuments = docsRes.data || [];
+
+    updateCounters();
+  } catch(e){
+    toast('err','bi-exclamation-circle','Error','Failed to load data: '+e.message,4000);
+  }
+}
+
+function updateCounters(){
+  document.getElementById('count-users').textContent = allUsers.length;
+  document.getElementById('count-pending').textContent = allUsers.filter(u=>u.status==='pending').length;
+  document.getElementById('count-messages').textContent = allMessages.filter(m=>!m.read).length;
+}
+
+function updateAdminProfile(){
+  const name = currentUser?.email?.split('@')[0] || 'Admin';
+  const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('sb-av').textContent = initials;
+  document.getElementById('sb-uname').textContent = name;
+}
+
+/* ════════════════════════════════════
+   PAGE NAVIGATION
+════════════════════════════════════ */
+function switchPage(page){
+  document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
+  event.target.closest('.sb-link').classList.add('active');
+
+  document.querySelectorAll('[id^="page-"]').forEach(p=>p.style.display='none');
+  document.getElementById('page-'+page).style.display='block';
+
+  currentPage = page;
+  const titles = {
+    dashboard:'Dashboard',allusers:'All Users',adminprofile:'Admin Profile',approvals:'Approvals',
+    bans:'Bans & Restrictions',documents:'Documents & Verification',badges:'Badge Management',
+    jobs:'Job Postings',payments:'Payments & Transactions',messages:'Messages',activity:'Activity & Insights',
+    importexport:'Import / Export',settings:'Settings'
+  };
+  document.getElementById('page-title').textContent = titles[page]||page;
+
+  if(page==='dashboard') renderDashboard();
+  else if(page==='allusers') renderAllUsers();
+  else if(page==='approvals') renderApprovals();
+  else if(page==='bans') renderBans();
+  else if(page==='documents') renderDocuments();
+  else if(page==='badges') renderBadges();
+  else if(page==='jobs') renderJobs();
+  else if(page==='payments') renderPayments();
+  else if(page==='messages') renderMessages();
+  else if(page==='activity') renderActivity();
+  else if(page==='adminprofile') renderAdminProfile();
+}
+
+/* ════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════ */
+function renderDashboard(){
+  const stats = [
+    {label:'Total Users',val:allUsers.length,icon:'👥',color:'#1B6B45'},
+    {label:'Active Users',val:allUsers.filter(u=>u.is_active).length,icon:'✓',color:'#16a34a'},
+    {label:'Pending Approval',val:allUsers.filter(u=>u.status==='pending').length,icon:'⏳',color:'#E8A040'},
+    {label:'Banned',val:allUsers.filter(u=>u.status==='banned').length,icon:'⛔',color:'#C0392B'},
+    {label:'Jobs Posted',val:allJobs.length,icon:'💼',color:'#1A6BB5'},
+    {label:'Total Payments',val:'$'+allPayments.reduce((a,p)=>a+(p.amount||0),0).toLocaleString(),icon:'💰',color:'#16a34a'},
+  ];
+
+  let html = '';
+  stats.forEach(s=>{
+    html += `<div class="stat-card"><div class="stat-icon" style="background:#E6F5EE;color:${s.color};font-size:20px">${s.icon}</div><div class="stat-body"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.label}</div></div></div>`;
+  });
+  document.getElementById('stats-grid').innerHTML = html;
+}
+
+/* ════════════════════════════════════
+   USERS MANAGEMENT
+════════════════════════════════════ */
+function renderAllUsers(){
+  let html = '';
+  (allUsers || []).forEach(u=>{
+    const verified = u.is_verified?'<span class="badge b-verified"></span>':'';
+    const activity = u.last_login?fmtDate(u.last_login):'Never';
+    html += `<tr onclick="openUserModal('${u.id}')">
+      <td class="user-cell">${avHTML(u.full_name,u.profile_image)}<div><div class="user-cell-name">${esc(u.full_name||'N/A')}</div><div class="user-cell-sub">${esc(u.role||'user')}</div></div></td>
+      <td>${esc(u.email)}</td>
+      <td>${statusBadge(u.status)}</td>
+      <td>${verified}</td>
+      <td>${activity}</td>
+      <td><div class="acts">
+        <button class="act act-approve" onclick="approveUser(event,'${u.id}')">Approve</button>
+        <button class="act act-ban" onclick="banUser(event,'${u.id}')">Ban</button>
+        <button class="act act-doc" onclick="viewUserDocs(event,'${u.id}')">Docs</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('users-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" style="text-align:center;padding:20px">No users found</td></tr>';
+}
+
+async function openUserModal(userId){
+  selectedUserId = userId;
+  const user = allUsers.find(u=>u.id===userId);
+  if(!user) return;
+
+  document.getElementById('modal-user-title').textContent = esc(user.full_name||'User');
+  
+  let detail = `<div class="detail-grid">
+    ${drRow('bi-person','Full Name',user.full_name)}
+    ${drRow('bi-envelope','Email',user.email)}
+    ${drRow('bi-telephone','Phone',user.phone)}
+    ${drRow('bi-briefcase','Role',user.role)}
+    ${drRow('bi-check-circle','Status',statusBadge(user.status))}
+    ${drRow('bi-patch-check','Verified',user.is_verified?'Yes':'No')}
+    ${drRow('bi-calendar','Joined',fmtDate(user.created_at))}
+    ${drRow('bi-clock','Last Login',fmtDate(user.last_login))}
+  </div>`;
+  
+  document.getElementById('user-detail-content').innerHTML = detail;
+
+  const userDocs = allDocuments.filter(d=>d.user_id===userId);
+  let docsHtml = userDocs.length ? '' : '<p style="color:var(--muted)">No documents</p>';
+  userDocs.forEach(d=>{
+    docsHtml += `<div style="padding:12px;border:1px solid var(--border);border-radius:7px;margin-bottom:8px">
+      <div style="font-weight:600;font-size:12px">${esc(d.document_type)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Status: ${statusBadge(d.status)}</div>
+      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="viewDocument('${d.id}')">View</button>
+    </div>`;
+  });
+  document.getElementById('user-docs-content').innerHTML = docsHtml;
+
+  openModal('userModal');
+}
+
+async function approveUser(e,userId){
+  e.stopPropagation();
+  const r = await sb.from('users').update({status:'active'}).eq('id',userId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-patch-check-fill','Approved','User approved',3000);
+  await loadAllData();
+  renderAllUsers();
+}
+
+async function banUser(e,userId){
+  e.stopPropagation();
+  const reason = prompt('Ban reason:');
+  if(!reason) return;
+  const r = await sb.from('users').update({status:'banned'}).eq('id',userId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-exclamation-octagon','Banned','User banned',3000);
+  await loadAllData();
+  renderAllUsers();
+}
+
+async function viewUserDocs(e,userId){
+  e.stopPropagation();
+  openUserModal(userId);
+  setTimeout(()=>switchUserTab('docs'),100);
+}
+
+/* ════════════████ TABS IN MODAL ════════════ */
+function switchUserTab(tab){
+  document.querySelectorAll('#userModal .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#userModal .tab-content').forEach(c=>c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+/* ════════════════════════════════════
+   APPROVALS
+════════════════════════════════════ */
+function renderApprovals(){
+  const pending = allUsers.filter(u=>u.status==='pending');
+  let html = '';
+  pending.forEach(u=>{
+    html += `<tr>
+      <td class="user-cell">${avHTML(u.full_name,u.profile_image)}<div><div class="user-cell-name">${esc(u.full_name)}</div></div></td>
+      <td>${u.role==='employer'?'Company Verification':'User Registration'}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><span style="font-size:11px;color:var(--muted)">${esc(u.email)}</span></td>
+      <td><div class="acts">
+        <button class="act act-approve" onclick="approveUser(event,'${u.id}')">Approve</button>
+        <button class="act act-ban" onclick="rejectUser('${u.id}')">Reject</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('approvals-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="5" style="text-align:center;padding:20px">No pending approvals</td></tr>';
+}
+
+async function rejectUser(userId){
+  const r = await sb.from('users').update({status:'rejected'}).eq('id',userId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-x-circle','Rejected','User rejected',3000);
+  await loadAllData();
+  renderApprovals();
+}
+
+/* ════════════════════════════════════
+   BANS
+════════════════════════════════════ */
+function renderBans(){
+  const banned = allUsers.filter(u=>u.status==='banned'||u.status==='suspended');
+  let html = '';
+  banned.forEach(u=>{
+    html += `<tr>
+      <td class="user-cell">${avHTML(u.full_name,u.profile_image)}<div><div class="user-cell-name">${esc(u.full_name)}</div></div></td>
+      <td>${esc(u.ban_reason||'No reason provided')}</td>
+      <td><span class="badge ${u.status==='banned'?'b-danger':'b-pending'}">${u.status}</span></td>
+      <td>${fmtDate(u.banned_at)}</td>
+      <td><div class="acts">
+        <button class="act act-approve" onclick="unbanUser('${u.id}')">Unban</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('bans-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="5" style="text-align:center;padding:20px">No banned users</td></tr>';
+}
+
+async function unbanUser(userId){
+  const r = await sb.from('users').update({status:'active',banned_at:null}).eq('id',userId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-person-check','Unbanned','User unbanned',3000);
+  await loadAllData();
+  renderBans();
+}
+
+/* ════════════════════════════════════
+   DOCUMENTS & VERIFICATION
+════════════════════════════════════ */
+function renderDocuments(){
+  let html = '';
+  (allDocuments || []).forEach(d=>{
+    const user = allUsers.find(u=>u.id===d.user_id);
+    html += `<tr>
+      <td class="user-cell">${avHTML(user?.full_name,user?.profile_image)}<div><div class="user-cell-name">${esc(user?.full_name||'N/A')}</div></div></td>
+      <td>${esc(d.document_type)}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${fmtDate(d.created_at)}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="viewDocument('${d.id}')">View</button></td>
+      <td><div class="acts">
+        <button class="act act-approve" onclick="approveDocument('${d.id}')">Approve</button>
+        <button class="act act-ban" onclick="rejectDocument('${d.id}')">Reject</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('docs-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" style="text-align:center;padding:20px">No documents</td></tr>';
+}
+
+async function approveDocument(docId){
+  const r = await sb.from('documents').update({status:'approved',verified_at:new Date().toISOString()}).eq('id',docId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-patch-check-fill','Approved','Document approved',3000);
+  await loadAllData();
+  renderDocuments();
+}
+
+async function rejectDocument(docId){
+  const r = await sb.from('documents').update({status:'rejected'}).eq('id',docId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-x-circle','Rejected','Document rejected',3000);
+  await loadAllData();
+  renderDocuments();
+}
+
+function viewDocument(docId){
+  const doc = allDocuments.find(d=>d.id===docId);
+  if(!doc) return;
+  const user = allUsers.find(u=>u.id===doc.user_id);
+  alert(`Document: ${doc.document_type}\nUser: ${user?.full_name}\nStatus: ${doc.status}\nURL: ${doc.file_url}`);
+}
+
+/* ════════════════════════════════════
+   BADGE MANAGEMENT
+════════════════════════════════════ */
+function renderBadges(){
+  const verified = allUsers.filter(u=>u.is_verified);
+  let html = '';
+  verified.forEach(u=>{
+    html += `<tr>
+      <td class="user-cell">${avHTML(u.full_name,u.profile_image)}<div><div class="user-cell-name">${esc(u.full_name)}</div></div></td>
+      <td><span class="badge b-info">✓ Verified</span></td>
+      <td>${statusBadge('verified')}</td>
+      <td>${fmtDate(u.verified_at)}</td>
+      <td><button class="act act-ban" onclick="removeBadge('${u.id}')">Remove Badge</button></td>
+    </tr>`;
+  });
+  html += `<tr><td colspan="5" style="padding:20px;text-align:center"><button class="btn btn-primary" onclick="grantBadgeModal()">+ Grant Badge</button></td></tr>`;
+  document.getElementById('badges-table').querySelector('tbody').innerHTML = html;
+}
+
+async function removeBadge(userId){
+  const r = await sb.from('users').update({is_verified:false,verified_at:null}).eq('id',userId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-patch-check-fill','Updated','Badge removed',3000);
+  await loadAllData();
+  renderBadges();
+}
+
+async function grantBadgeModal(){
+  const userId = prompt('Enter user ID or email to grant badge:');
+  if(!userId) return;
+  const user = allUsers.find(u=>u.id===userId||u.email===userId);
+  if(!user){toast('err','bi-exclamation-circle','Not Found','User not found',3000);return;}
+  const r = await sb.from('users').update({is_verified:true,verified_at:new Date().toISOString()}).eq('id',user.id);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-patch-check-fill','Verified','Badge granted to '+user.full_name,3500);
+  await loadAllData();
+  renderBadges();
+}
+
+/* ════════════════════════════════════
+   JOBS
+════════════════════════════════════ */
+function renderJobs(){
+  let html = '';
+  (allJobs || []).forEach(j=>{
+    const emp = allEmployers.find(e=>e.id===j.employer_id);
+    html += `<tr>
+      <td>${esc(j.title)}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">${esc(emp?.company_name||'N/A')}${j.is_verified?'<span class="badge b-info">✓</span>':''}</div></td>
+      <td>${statusBadge(j.status)}</td>
+      <td>${fmtDate(j.created_at)}</td>
+      <td>${j.view_count||0}</td>
+      <td><div class="acts">
+        <button class="act act-approve" onclick="toggleJobStatus('${j.id}','${j.status==='active'?'paused':'active'}')">
+          ${j.status==='active'?'Pause':'Resume'}
+        </button>
+        <button class="act act-ban" onclick="deleteJob('${j.id}')">Delete</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('jobs-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="6" style="text-align:center;padding:20px">No jobs posted</td></tr>';
+}
+
+async function toggleJobStatus(jobId,newStatus){
+  const r = await sb.from('jobs').update({status:newStatus}).eq('id',jobId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-check-circle','Updated','Job status updated',3000);
+  await loadAllData();
+  renderJobs();
+}
+
+async function deleteJob(jobId){
+  if(!confirm('Delete this job?')) return;
+  const r = await sb.from('jobs').delete().eq('id',jobId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-check-circle','Deleted','Job deleted',3000);
+  await loadAllData();
+  renderJobs();
+}
+
+function openNewJobModal(){
+  document.getElementById('job-company').innerHTML = '<option>--Select Company--</option>';
+  (allEmployers||[]).forEach(e=>{
+    document.getElementById('job-company').innerHTML += `<option value="${e.id}">${esc(e.company_name)}</option>`;
+  });
+  openModal('newJobModal');
+}
+
+async function saveNewJob(){
+  const title = val('job-title');
+  const companyId = val('job-company');
+  const positions = parseInt(val('job-positions'))||1;
+  const category = val('job-category');
+  const salary = val('job-salary');
+  const desc = val('job-desc');
+  const verified = document.getElementById('job-company-verified').checked;
+
+  if(!title||!companyId||!category||!desc){
+    toast('warn','bi-exclamation-circle','Missing Fields','Fill all required fields',3000);
+    return;
+  }
+
+  const r = await sb.from('jobs').insert([{
+    title,employer_id:companyId,category,salary,description:desc,
+    positions_open:positions,is_verified:verified,status:'active'
+  }]);
+
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-briefcase','Posted','Job posted successfully',3000);
+  closeModal('newJobModal');
+  await loadAllData();
+  renderJobs();
+}
+
+/* ════════════════════════════════════
+   PAYMENTS
+════════════════════════════════════ */
+function renderPayments(){
+  const total = allPayments.reduce((a,p)=>a+(p.amount||0),0);
+  const thisMonth = allPayments.filter(p=>{
+    const d = new Date(p.created_at);
+    const now = new Date();
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  }).reduce((a,p)=>a+(p.amount||0),0);
+  const pending = allPayments.filter(p=>p.status==='pending').reduce((a,p)=>a+(p.amount||0),0);
+  const complete = allPayments.filter(p=>p.status==='completed').reduce((a,p)=>a+(p.amount||0),0);
+
+  document.getElementById('payment-total').textContent = '$'+total.toLocaleString();
+  document.getElementById('payment-month').textContent = '$'+thisMonth.toLocaleString();
+  document.getElementById('payment-pending').textContent = '$'+pending.toLocaleString();
+  document.getElementById('payment-complete').textContent = '$'+complete.toLocaleString();
+
+  let html = '';
+  (allPayments || []).forEach(p=>{
+    const user = allUsers.find(u=>u.id===p.user_id);
+    const refId = p.reference_id || p.transaction_id || '–';
+    html += `<tr>
+      <td><span class="ref-badge">${esc(refId.slice(0,12))}</span></td>
+      <td>${esc(user?.full_name||'N/A')}</td>
+      <td>$${(p.amount||0).toLocaleString()}</td>
+      <td>${esc(p.payment_method||'–')}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td>${fmtDate(p.created_at)}</td>
+      <td><button class="btn btn-sm btn-secondary" onclick="viewPaymentDetails('${p.id}')">View</button></td>
+    </tr>`;
+  });
+  document.getElementById('payments-table').querySelector('tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center;padding:20px">No transactions</td></tr>';
+}
+
+function viewPaymentDetails(paymentId){
+  const p = allPayments.find(x=>x.id===paymentId);
+  if(!p) return;
+  const user = allUsers.find(u=>u.id===p.user_id);
+  let detail = `
+    <div class="detail-grid">
+      ${drRow('bi-envelope','User',user?.full_name)}
+      ${drRow('bi-credit-card','Amount','$'+(p.amount||0).toLocaleString())}
+      ${drRow('bi-key','Reference ID',p.reference_id||p.transaction_id||'–')}
+      ${drRow('bi-key','Transaction ID',p.transaction_id||'–')}
+      ${drRow('bi-credit-card','Payment Method',p.payment_method||'–')}
+      ${drRow('bi-check-circle','Status',statusBadge(p.status))}
+      ${drRow('bi-calendar','Date',fmtDate(p.created_at))}
+      ${drRow('bi-receipt','Description',p.description||'–')}
+    </div>
+  `;
+  document.getElementById('payment-detail-content').innerHTML = detail;
+  openModal('paymentModal');
+}
+
+/* ════════════════════════════════════
+   MESSAGES
+════════════════════════════════════ */
+function renderMessages(){
+  const conversations = {};
+  (allMessages||[]).forEach(m=>{
+    const key = m.sender_id+'_'+m.receiver_id;
+    if(!conversations[key]){
+      conversations[key] = {sender:m.sender_id,receiver:m.receiver_id,messages:[]};
+    }
+    conversations[key].messages.push(m);
+  });
+
+  let convHtml = '';
+  Object.values(conversations).forEach(c=>{
+    const sender = allUsers.find(u=>u.id===c.sender);
+    const receiver = allUsers.find(u=>u.id===c.receiver);
+    const lastMsg = c.messages[c.messages.length-1];
+    convHtml += `<div style="padding:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="loadConversation('${c.sender}','${c.receiver}')">
+      <div style="font-weight:600;font-size:12px">${esc(sender?.full_name||'N/A')} → ${esc(receiver?.full_name||'N/A')}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(lastMsg?.content?.slice(0,40)+'...')||'No messages'}</div>
+    </div>`;
+  });
+  document.getElementById('conversations-list').innerHTML = convHtml || '<div style="padding:20px;text-align:center;color:var(--muted)">No conversations</div>';
+}
+
+function loadConversation(senderId,receiverId){
+  const messages = (allMessages||[]).filter(m=>(m.sender_id===senderId&&m.receiver_id===receiverId)||(m.sender_id===receiverId&&m.receiver_id===senderId));
+  const sender = allUsers.find(u=>u.id===senderId);
+  const receiver = allUsers.find(u=>u.id===receiverId);
+
+  let html = `<div style="margin-bottom:16px"><h4>${esc(sender?.full_name)} ↔ ${esc(receiver?.full_name)}</h4></div>`;
+  messages.forEach(m=>{
+    const user = allUsers.find(u=>u.id===m.sender_id);
+    html += `<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:6px">
+      <div style="font-weight:600;font-size:11px;color:var(--brand)">${esc(user?.full_name)}</div>
+      <div style="font-size:12px;margin-top:4px">${esc(m.content)}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${fmtDate(m.created_at)}</div>
+    </div>`;
+  });
+  document.getElementById('message-detail').innerHTML = html;
+}
+
+/* ════════════════════════════════════
+   ACTIVITY & INSIGHTS
+════════════════════════════════════ */
+function renderActivity(){
+  let html = '';
+  (allUsers||[]).slice(0,20).forEach(u=>{
+    html += `<tr>
+      <td>${esc(u.full_name)}</td>
+      <td>${u.role==='employer'?'Company Signup':'User Registration'}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td>${statusBadge(u.status)}</td>
+    </tr>`;
+  });
+  document.getElementById('activity-table').querySelector('tbody').innerHTML = html;
+
+  let insightHtml = `
+    <tr><td>Avg Users/Month</td><td>${(allUsers.length/12).toFixed(1)}</td><td><span class="badge b-purple">+5%</span></td></tr>
+    <tr><td>Job Postings/Month</td><td>${(allJobs.length/12).toFixed(1)}</td><td><span class="badge b-green">+12%</span></td></tr>
+    <tr><td>Avg Payment Value</td><td>$${allPayments.length?(allPayments.reduce((a,p)=>a+(p.amount||0),0)/allPayments.length).toFixed(2):0}</td><td><span class="badge b-green">↑</span></td></tr>
+  `;
+  document.getElementById('insights-table').querySelector('tbody').innerHTML = insightHtml;
+}
+
+/* ════════════════════════════════════
+   ADMIN PROFILE
+════════════════════════════════════ */
+function renderAdminProfile(){
+  const detail = `
+    <div class="detail-grid">
+      ${drRow('bi-person','Name','Admin')}
+      ${drRow('bi-envelope','Email',currentUser?.email||'–')}
+      ${drRow('bi-shield-check','Role','Administrator')}
+      ${drRow('bi-calendar','Created At',fmtDate(currentUser?.created_at))}
+      ${drRow('bi-clock','Last Login',fmtDate(new Date()))}
+    </div>
+  `;
+  document.getElementById('admin-profile-detail').innerHTML = detail;
+}
+
+function editAdminProfile(){
+  alert('Admin profile edit form here');
+}
+
+function changeAdminPassword(){
+  alert('Change password modal here');
+}
+
+/* ════════════════════════════════════
+   IMPORT/EXPORT CSV
+════════════════════════════════════ */
+function exportUsersCSV(){
+  let csv = 'ID,Full Name,Email,Phone,Role,Status,Verified,Created At\n';
+  (allUsers||[]).forEach(u=>{
+    csv += `"${u.id}","${esc(u.full_name||'')}","${esc(u.email)}","${u.phone||''}","${u.role}","${u.status}","${u.is_verified?'Yes':'No'}","${u.created_at||''}"\n`;
+  });
+
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'users_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('ok','bi-download','Exported','CSV file downloaded',3000);
+}
+
+function openImportModal(){
+  document.getElementById('import-preview').style.display='none';
+  document.getElementById('import-file-input').value='';
+  document.getElementById('import-btn').disabled=true;
+  openModal('importModal');
+}
+
+function handleImportFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const csv = ev.target.result;
+    const lines = csv.split('\n').filter(l=>l.trim());
+    const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
+    const data = [];
+
+    for(let i=1;i<lines.length;i++){
+      const vals = lines[i].split(',');
+      const row = {};
+      headers.forEach((h,j)=>{row[h]=vals[j]?.replace(/^"|"$/g,'').trim();});
+      if(row.email) data.push(row);
+    }
+
+    let html = `<tr>${headers.map(h=>'<th>'+h+'</th>').join('')}</tr>`;
+    data.forEach(r=>{
+      html += `<tr>${headers.map(h=>'<td>'+esc(r[h]||'')+'</td>').join('')}</tr>`;
+    });
+    document.getElementById('import-table-body').innerHTML = html;
+    document.getElementById('import-preview').style.display='block';
+    document.getElementById('import-btn').disabled=false;
+    window.importData = data;
+  };
+  reader.readAsText(file);
+}
+
+async function processImport(){
+  if(!window.importData||!window.importData.length){toast('err','bi-exclamation-circle','No Data','No users to import',3000);return;}
+
+  const users = window.importData.map(d=>({
+    email:d.email,full_name:d.full_name||d.name||'',phone:d.phone||'',role:d.role||'employee',status:'active'
+  })).filter(u=>u.email);
+
+  const r = await sb.from('users').insert(users);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  toast('ok','bi-upload','Imported',users.length+' users imported',3500);
+  closeModal('importModal');
+  await loadAllData();
+  renderAllUsers();
+}
+
+/* ════════════════════════════════════
+   USER ACTIONS
+════════════════════════════════════ */
+function editUser(){
+  if(!selectedUserId) return;
+  const u = allUsers.find(x=>x.id===selectedUserId);
+  if(!u) return;
+  document.getElementById('edit-name').value = u.full_name||'';
+  document.getElementById('edit-email').value = u.email||'';
+  document.getElementById('edit-phone').value = u.phone||'';
+  document.getElementById('edit-role').value = u.role||'employee';
+  document.getElementById('edit-status').value = u.status||'active';
+  document.getElementById('edit-bio').value = u.admin_notes||'';
+  openModal('editUserModal');
+}
+
+async function saveUserChanges(){
+  if(!selectedUserId) return;
+  const updates = {
+    full_name:val('edit-name'),phone:val('edit-phone'),
+    role:val('edit-role'),status:val('edit-status'),admin_notes:val('edit-bio')
+  };
+  const r = await sb.from('users').update(updates).eq('id',selectedUserId);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  closeModal('editUserModal');
+  toast('ok','bi-check-circle','Updated','User details updated',3000);
+  await loadAllData();
+  openUserModal(selectedUserId);
+}
+
+function resetUserPassword(){
+  if(!selectedUserId) return;
+  const u = allUsers.find(x=>x.id===selectedUserId);
+  if(!u) return;
+  const email = prompt('Confirm email for reset:\n'+u.email);
+  if(email !== u.email) return;
+  sb.auth.resetPasswordForEmail(u.email);
+  toast('ok','bi-send-fill','Sent','Password reset email sent',3000);
+}
+
+function sendNotificationToUser(){
+  openModal('notificationModal');
+}
+
+async function sendNotification(){
+  if(!selectedUserId) return;
+  const title = val('notif-title');
+  const body = val('notif-body');
+  const method = val('notif-method');
+  if(!title||!body){toast('warn','bi-exclamation-circle','Required','Fill title and body',3000);return;}
+
+  const r = await sb.from('notifications').insert([{
+    user_id:selectedUserId,title,body,method,created_at:new Date().toISOString()
+  }]);
+  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
+  closeModal('notificationModal');
+  toast('ok','bi-send-fill','Sent','Notification sent',3000);
+}
+
+function banUserAction(){
+  if(!selectedUserId) return;
+  showConfirm('Ban User?','This will deactivate the user account','btn-danger','Ban',()=>banUser({stopPropagation:()=>{}},selectedUserId));
+}
+
+async function generateUserFile(){
+  if(!selectedUserId) return;
+  const u = allUsers.find(x=>x.id===selectedUserId);
+  if(!u) return;
+
+  const docHtml = `
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      body{font-family:Arial,sans-serif;margin:0;padding:40px;line-height:1.6}
+      .header{border-bottom:3px solid #1B6B45;padding-bottom:20px;margin-bottom:30px;text-align:center}
+      .logo{font-size:24px;font-weight:bold;color:#1B6B45}
+      .title{font-size:18px;font-weight:bold;margin-top:10px;color:#000}
+      .section{margin-bottom:25px}
+      .section-title{font-size:13px;font-weight:bold;text-transform:uppercase;color:#1B6B45;border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:12px}
+      .row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px}
+      .label{font-weight:bold;color:#333}
+      .value{color:#555}
+      .verification-box{border:2px solid #1B6B45;padding:15px;margin-top:20px;border-radius:5px;text-align:center}
+    </style></head><body>
+    <div class="header">
+      <div class="logo">🎵 SoundsCare</div>
+      <div class="title">User Profile Document</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Personal Information</div>
+      <div class="row"><span class="label">Name:</span><span class="value">${esc(u.full_name||'N/A')}</span></div>
+      <div class="row"><span class="label">Email:</span><span class="value">${esc(u.email)}</span></div>
+      <div class="row"><span class="label">Phone:</span><span class="value">${esc(u.phone||'N/A')}</span></div>
+      <div class="row"><span class="label">Role:</span><span class="value">${u.role}</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Account Details</div>
+      <div class="row"><span class="label">Status:</span><span class="value">${u.status}</span></div>
+      <div class="row"><span class="label">Verified:</span><span class="value">${u.is_verified?'Yes':'No'}</span></div>
+      <div class="row"><span class="label">Member Since:</span><span class="value">${fmtDate(u.created_at)}</span></div>
+      <div class="row"><span class="label">Last Active:</span><span class="value">${fmtDate(u.last_login)}</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Verification</div>
+      <div class="verification-box">
+        <p><strong>Document Status: ${u.is_verified?'VERIFIED ✓':'PENDING'}</strong></p>
+        <p style="font-size:11px;color:#666">Verified by SoundsCare Admin</p>
+        <p style="font-size:11px;color:#666">Date: ${new Date().toLocaleDateString('en-KE')}</p>
+      </div>
+    </div>
+    </body></html>
+  `;
+
+  const printWindow = window.open('','','width=800,height=600');
+  printWindow.document.write(docHtml);
+  printWindow.document.close();
+  printWindow.print();
+
+  toast('ok','bi-file-pdf','Generated','User document generated',3000);
+}
+
+/* ════════════════════════════════════
+   UTILITIES
+════════════════════════════════════ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function val(id){const el=document.getElementById(id);return el?(el.value||'').trim():'';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){if(!d)return'–';const dt=new Date(d);return isNaN(dt)?d:dt.toLocaleDateString('en-KE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function avHTML(name,url){
+  const inits=String(name||'?').split(' ').map(n=>n[0]||'').slice(0,2).join('').toUpperCase();
+  const colors=['#C9E8D4','#D6CBEE','#FAD4BB','#B5D4F4'];
+  const bg=colors[inits.charCodeAt(0)%colors.length]||'#C9E8D4';
+  if(url) return '<div class="av"><img src="'+esc(url)+'" onerror="this.parentElement.innerHTML=\''+inits+'\'"></div>';
+  return '<div class="av" style="background:'+bg+';color:#1A2E24">'+inits+'</div>';
+}
+function statusBadge(s){
+  const m={approved:'b-approved',active:'b-approved',pending:'b-pending',pending_review:'b-pending',banned:'b-banned',suspended:'b-banned',rejected:'b-danger',verified:'b-verified',inactive:'b-banned'};
+  return '<span class="badge '+(m[s]||'b-grey')+'">'+esc(s||'–')+'</span>';
+}
+function drRow(icon,lbl,val){
+  if(!val&&val!==0)return '';
+  return '<div class="detail-row"><i class="bi '+icon+'" style="font-size:13px;color:var(--brand);flex-shrink:0;margin-top:1px"></i><div><div class="detail-lbl">'+esc(lbl)+'</div><div class="detail-val">'+esc(val)+'</div></div></div>';
+}
+
+function toast(type,icon,title,body,dur){
+  const stack=document.getElementById('toast-stack');
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML='<i class="bi '+icon+'" style="font-size:15px;flex-shrink:0"></i><div style="flex:1"><strong>'+esc(title)+'</strong>'+(body?'<br><span style="font-size:11px;opacity:.8">'+esc(body)+'</span>':'')+'</div><button class="toast-close" onclick="this.closest(\'.toast\').remove()">×</button>';
+  stack.appendChild(t);
+  if(dur>0) setTimeout(()=>{t.classList.add('hide');setTimeout(()=>{if(t.parentNode)t.parentNode.removeChild(t);},320);},dur);
+}
+
+function showConfirm(title,msg,btnClass,btnText,fn){
+  const c=document.createElement('div');
+  c.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center';
+  c.innerHTML=`<div style="background:#fff;border-radius:10px;padding:22px;max-width:400px;width:90%">
+    <h3 style="margin-bottom:12px;color:#000">${esc(title)}</h3>
+    <p style="color:#555;margin-bottom:20px;font-size:13px">${esc(msg)}</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="this.parentElement.parentElement.parentElement.remove()">Cancel</button>
+      <button class="btn ${btnClass}" onclick="fn();this.parentElement.parentElement.parentElement.remove()">${btnText}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(c);
+}
+
+function toggleNotifications(){toast('info','bi-bell','Notifications','You have 3 new messages',4000);}
+function toggleSearch(){toast('info','bi-search','Search','Search panel opening',3000);}
+function toggleTheme(){toast('info','bi-moon','Theme','Theme toggle',3000);}
+function showHelp(){toast('info','bi-question-circle','Help','Help documentation',4000);}
+function filterUsers(){renderAllUsers();}
+
+/* INIT */
+(async ()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    document.getElementById('auth-overlay').classList.add('hidden');
+    initDashboard();
+  }
+})();
+</script>
+</body>
+</html>
