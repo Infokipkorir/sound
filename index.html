@@ -1217,20 +1217,6 @@ function normalizeSkills(raw) {
 }
 
 /* ══════════════════════════════
-   STATUS NORMALIZER
-   Maps any variant to canonical set
-══════════════════════════════ */
-function buildWorkerFilter(query) {
-  // Try all known approved-status values with OR
-  return query.or('status.eq.approved,status.eq.active,status.eq.verified,status.eq.published');
-}
-
-function buildJobFilter(query) {
-  // Try all known open-status values
-  return query.or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published');
-}
-
-/* ══════════════════════════════
    AUTH STATE CHECK
 ══════════════════════════════ */
 let currentUser = null;
@@ -1267,17 +1253,14 @@ async function loadAndRenderData() {
   debugLog('Auth', { user: currentUser?.id, role: currentUserRole });
 
   /* --- WORKERS --- */
+  // ✅ CONFIRMED: status = 'approved', is_deleted = false (boolean), submitted_at is NULL on most rows
+  // Order by created_at DESC as primary, submitted_at as secondary
   let workerQuery = supabase
     .from('worker_profiles')
-    .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at, status, is_deleted');
-
-  // Flexible status filter
-  workerQuery = buildWorkerFilter(workerQuery);
-
-  // Handle possible NULL is_deleted — use neq to avoid filtering out NULLs
-  workerQuery = workerQuery
-    .neq('is_deleted', true)
-    .order('submitted_at', { ascending: false })
+    .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at, created_at, status, is_deleted')
+    .eq('status', 'approved')
+    .neq('is_deleted', true)          // keeps NULLs, filters out true
+    .order('created_at', { ascending: false })
     .limit(4);
 
   const { data: workersData, error: workersError } = await workerQuery;
@@ -1286,43 +1269,31 @@ async function loadAndRenderData() {
   debugLog('workersError', workersError);
 
   /* --- JOBS --- */
-  // Try with employer_profiles join first; gracefully fall back
+  // ✅ CONFIRMED: status = 'active' (NOT 'open'). FK to employer_profiles exists.
+  // employer_profiles has no logo_url column — use profile_photo_url instead.
+  // company_name is stored directly on job_postings too (fallback available).
   let { data: jobsData, error: jobsError } = await supabase
     .from('job_postings')
-    .select(`id, title, location, county, salary_min, salary_max, job_role, work_type, is_urgent, created_at,
-             employer_profiles(company_name, logo_url, is_verified)`)
-    .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published')
+    .select(`id, title, location, county, salary_min, salary_max, job_role, job_type, work_type, is_urgent, created_at, company_name,
+             employer_profiles(full_name, company_name, profile_photo_url, is_verified)`)
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(4);
 
-  debugLog('jobsData (with join)', jobsData);
+  debugLog('jobsData', jobsData);
   debugLog('jobsError', jobsError);
-
-  // If join fails (no FK), fall back to flat query
-  if (jobsError && jobsError.message?.includes('employer_profiles')) {
-    console.warn('employer_profiles join failed, falling back to flat query');
-    const fb = await supabase
-      .from('job_postings')
-      .select('id, title, location, county, salary_min, salary_max, job_role, work_type, is_urgent, created_at')
-      .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published')
-      .order('created_at', { ascending: false })
-      .limit(4);
-    jobsData = fb.data;
-    jobsError = fb.error;
-    debugLog('jobsData (flat fallback)', jobsData);
-  }
 
   /* --- COUNTS --- */
   const { count: wCount } = await supabase
     .from('worker_profiles')
     .select('id', { count: 'exact', head: true })
-    .or('status.eq.approved,status.eq.active,status.eq.verified,status.eq.published')
+    .eq('status', 'approved')
     .neq('is_deleted', true);
 
   const { count: jCount } = await supabase
     .from('job_postings')
     .select('id', { count: 'exact', head: true })
-    .or('status.eq.open,status.eq.Active,status.eq.active,status.eq.published');
+    .eq('status', 'active');
 
   const { count: eCount } = await supabase
     .from('employer_profiles')
@@ -1399,7 +1370,7 @@ function renderWorkers(workers, error) {
 
       <div class="card-salary">
         <i class="bi bi-cash-stack"></i> ${formatSalary(w.salary_min, w.salary_max)}
-        <span style="margin-left:auto; opacity:0.6;">${timeAgo(w.submitted_at)}</span>
+        <span style="margin-left:auto; opacity:0.6;">${timeAgo(w.submitted_at || w.created_at)}</span>
       </div>
 
       <div class="card-footer">
@@ -1442,8 +1413,10 @@ function renderJobs(jobs, error) {
 
   container.innerHTML = jobs.map(job => {
     const emp = job.employer_profiles || {};
-    const logoUrl = buildStorageUrl(emp.logo_url);
-    const companyName = emp.company_name || 'Employer';
+    // employer_profiles has profile_photo_url not logo_url
+    // company_name is stored on job_postings itself as fallback
+    const logoUrl = buildStorageUrl(emp.profile_photo_url);
+    const companyName = emp.company_name || job.company_name || 'Employer';
 
     return `
     <div class="card" onclick="openApplyModal('${job.id}', '${esc(job.title)}', '${esc(companyName)}', '${logoUrl}')">
