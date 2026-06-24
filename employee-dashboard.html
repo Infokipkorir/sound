@@ -689,7 +689,7 @@
   </a>
   <div class="nav-right">
     <!-- Messages -->
-    <button class="nav-icon-btn" id="btn-nav-msgs" title="Interviews" onclick="scrollToSection('section-profile')">
+    <button class="nav-icon-btn" id="btn-nav-msgs" title="Messages" onclick="openModal('modal-messages')">
       <i class="bi bi-chat-left-dots"></i>
       <span class="nav-badge" id="badge-msgs"></span>
     </button>
@@ -734,15 +734,15 @@
 
   <!-- STATS -->
   <section class="stats" id="section-stats">
-    <div class="stat-card" onclick="openModal('modal-account')">
+    <div class="stat-card" onclick="openModal('modal-messages')">
       <div class="stat-icon"><i class="bi bi-chat-dots"></i></div>
       <div class="stat-val" id="stat-interviews">—</div>
       <div class="stat-lbl">Interviews</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-account')">
+    <div class="stat-card" onclick="openModal('modal-messages')">
       <div class="stat-icon msg"><i class="bi bi-reply-all"></i></div>
       <div class="stat-val" id="stat-replied">—</div>
-      <div class="stat-lbl">Replied</div>
+      <div class="stat-lbl\">Replied</div>
     </div>
     <div class="stat-card" onclick="toggleNotifPanel()">
       <div class="stat-icon notif"><i class="bi bi-bell"></i></div>
@@ -780,17 +780,17 @@
     </div>
     <div class="wallet-actions">
       <button class="btn-wallet primary" onclick="openModal('modal-payments')"><i class="bi bi-receipt"></i> Payment History</button>
-      <button class="btn-wallet ghost" onclick="openModal('modal-payments')"><i class="bi bi-credit-card"></i> Pay Now</button>
+      <button class="btn-wallet ghost" onclick="openPayModal()"><i class="bi bi-credit-card"></i> Pay Now</button>
     </div>
   </div>
 
-  <!-- INBOX (Messages from employers) -->
-  <div class="inbox-section" id="inbox-section">
+  <!-- MESSAGES TEASER (opens modal-messages) -->
+  <div class="inbox-section" id="inbox-section" onclick="openModal('modal-messages')" style="cursor:pointer">
     <div class="inbox-head">
       <h3><i class="bi bi-chat-left-dots" style="color:var(--teal);margin-right:6px"></i>Messages <span id="inbox-unread-badge" style="background:var(--rose);color:#fff;border-radius:50px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px;display:none"></span></h3>
-      <button class="btn btn-ghost btn-sm" onclick="markAllMsgsRead()"><i class="bi bi-check2-all"></i> Mark all read</button>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('modal-messages')"><i class="bi bi-arrow-right"></i> Open</button>
     </div>
-    <div id="inbox-list"><div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No messages yet</div></div>
+    <div id="inbox-preview" style="font-size:13px;color:var(--muted);padding:4px 0 2px">Loading messages…</div>
   </div>
 
   <!-- PROFILE CARD -->
@@ -1426,10 +1426,10 @@
       </div>
 
       <!-- Pay via M-Pesa prompt -->
-      <div style="background:rgba(0,184,156,.05);border:1px solid rgba(0,184,156,.2);border-radius:11px;padding:14px;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;">
+      <div style="background:rgba(0,184,156,.05);border:1px solid rgba(0,184,156,.2);border-radius:11px;padding:14px;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="closeModal('modal-payments');openPayModal()">
         <i class="bi bi-phone-fill" style="font-size:1.8rem;color:var(--teal);flex-shrink:0"></i>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:13px;margin-bottom:3px">Pay via M-Pesa</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px">Pay via M-Pesa <span style="font-size:11px;color:var(--teal);font-weight:600">→ Tap to Pay</span></div>
           <div style="font-size:12px;color:var(--muted)">Paybill: <strong>400200</strong> · Account: <strong id="mpesa-acct-no">your email</strong></div>
         </div>
       </div>
@@ -1483,6 +1483,79 @@
 
 <!-- ══ TOASTS & LOADER ════════════════════════════════════ -->
 <div class="toast-stack" id="toast-stack"></div>
+
+<!-- MESSAGES MODAL (Fix #2) -->
+<div class="modal-overlay" id="modal-messages">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-chat-left-dots" style="color:var(--teal)"></i> Messages</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="markAllMsgsRead()"><i class="bi bi-check2-all"></i> All read</button>
+        <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:1rem">
+      <div id="inbox-list"><div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- JOB LISTINGS MODAL (Fix #1) -->
+<div class="modal-overlay" id="modal-jobs">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-briefcase" style="color:var(--violet)"></i> Available Jobs</h2>
+      <button class="modal-close" onclick="closeModal('modal-jobs')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="jobs-list"><div style="padding:2rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-arrow-repeat spin" style="font-size:1.5rem;display:block;margin-bottom:8px"></i>Loading jobs…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- M-PESA PAYMENT MODAL (Fix #3) -->
+<div class="modal-overlay" id="modal-pay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-phone-fill" style="color:var(--teal)"></i> Pay via M-Pesa</h2>
+      <button class="modal-close" onclick="closeModal('modal-pay')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Fee info banner -->
+      <div id="pay-fee-banner" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:11px;padding:14px;margin-bottom:1.2rem;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#92400e" id="pay-fee-title">Registration Fee</div>
+        <div style="font-size:12px;color:var(--muted)" id="pay-fee-desc">Pay the KES 300 registration fee to activate your profile.</div>
+        <div style="font-size:1.4rem;font-weight:800;color:var(--gold);margin-top:6px" id="pay-fee-amount">KES 300</div>
+      </div>
+      <!-- STK push form -->
+      <div class="form-group">
+        <label>M-Pesa Phone Number</label>
+        <input type="tel" id="pay-phone" placeholder="e.g. 0712345678" style="font-size:15px;letter-spacing:1px">
+        <span class="form-hint">The number that will receive the STK push prompt</span>
+      </div>
+      <div style="background:rgba(0,184,156,.05);border:1px solid rgba(0,184,156,.2);border-radius:11px;padding:12px;font-size:12px;color:var(--muted);margin-bottom:1.2rem">
+        <strong style="color:var(--ink)">Account Number:</strong> <span id="pay-modal-acct" style="font-family:monospace;color:var(--teal);font-weight:700">—</span><br>
+        <strong style="color:var(--ink)">Paybill:</strong> <span style="font-family:monospace">400200</span>
+        <br><span style="font-size:11px;margin-top:4px;display:block">Or pay manually via M-Pesa → Paybill using the account number above.</span>
+      </div>
+      <!-- Confirm payment section (shown after STK) -->
+      <div id="pay-confirm-section" style="display:none;margin-bottom:1rem">
+        <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:12px;font-size:12.5px;color:#16a34a;margin-bottom:10px">
+          <i class="bi bi-phone-fill"></i> STK push sent! Check your phone and enter your M-Pesa PIN. Once paid, enter the confirmation code below.
+        </div>
+        <div class="form-group">
+          <label>M-Pesa Confirmation Code</label>
+          <input type="text" id="pay-mpesa-code" placeholder="e.g. QHX7T12K9P" style="text-transform:uppercase;letter-spacing:2px;font-family:monospace;font-size:15px">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btn-stk-push" onclick="startMpesaPayment()"><i class="bi bi-phone-fill"></i> Send STK Push</button>
+        <button class="btn btn-ghost" id="btn-confirm-pay" style="display:none" onclick="confirmMpesaPayment()"><i class="bi bi-check-circle"></i> Confirm Payment</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-pay')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════
      SCRIPTS
@@ -2648,19 +2721,56 @@ async function shareProfile() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  JOB CARDS → EMPLOYER PROFILE  (Fix #7)
-//  Job cards on the homepage (index.html) should use:
-//    onclick="window.location.href='employers.html?id='+job.employer_id"
-//  This dashboard helper navigates to an employer profile page.
+//  JOB LISTINGS MODAL  (Fix #1)
+//  "New Jobs" card opens this modal. Each job card links to
+//  employers.html?id=EMPLOYER_ID (not apply modal, not homepage).
 // ═══════════════════════════════════════════════════════
 function openEmployerProfile(employerId) {
   if (!employerId) return;
   window.location.href = 'employers.html?id=' + encodeURIComponent(employerId);
 }
 
-function viewJobListings() {
-  // Navigate to homepage / job listings; job cards there link to employers.html
-  window.location.href = 'index.html#jobs';
+async function viewJobListings() {
+  openModal('modal-jobs');
+  const el = document.getElementById('jobs-list');
+  if (!el) return;
+  try {
+    // Load active job postings with employer_id so cards can link to employers.html
+    const { data: jobs, error } = await sb.from('job_postings')
+      .select('id, title, employer_id, location, salary_range, job_type, created_at, employer_profiles(company_name, full_name, is_verified)')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (error) throw error;
+    if (!jobs || !jobs.length) {
+      el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-briefcase" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3"></i>No active job postings right now.</div>';
+      return;
+    }
+
+    el.innerHTML = jobs.map(j => {
+      const emp = j.employer_profiles || {};
+      const company = emp.company_name || emp.full_name || 'Company';
+      const verified = emp.is_verified ? '<span style="color:var(--green);font-size:11px"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '';
+      const init = company.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      return `
+      <div style="display:flex;gap:12px;padding:12px;border:1px solid var(--border);border-radius:11px;margin-bottom:8px;background:var(--surface);cursor:pointer;transition:.18s" onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--border)'" onclick="openEmployerProfile('${escHtml(j.employer_id || '')}')">
+        <div style="width:42px;height:42px;border-radius:10px;background:rgba(139,92,246,.1);color:var(--violet);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${escHtml(init)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;margin-bottom:2px">${escHtml(j.title || 'Job Opening')}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${escHtml(company)} ${verified}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${j.location ? `<span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 8px"><i class="bi bi-geo-alt" style="color:var(--teal)"></i> ${escHtml(j.location)}</span>` : ''}
+            ${j.salary_range ? `<span style="font-size:11px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:2px 8px;color:#16a34a"><i class="bi bi-cash"></i> ${escHtml(j.salary_range)}</span>` : ''}
+            ${j.job_type ? `<span style="font-size:11px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:20px;padding:2px 8px;color:var(--violet)">${escHtml(j.job_type)}</span>` : ''}
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);flex-shrink:0;margin-top:2px">${timeAgo(new Date(j.created_at))}<br><i class="bi bi-chevron-right" style="color:var(--teal)"></i></div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    el.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--rose);font-size:13px">${escHtml(e.message)}</div>`;
+  }
 }
 
 // ═══════════════════════════════════════════════════════
