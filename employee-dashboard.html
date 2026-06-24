@@ -615,6 +615,65 @@
     .spin { animation: sp 0.7s linear infinite; display: inline-block; }
     .mt-1 { margin-top: 0.5rem; }
     .text-muted { color: var(--muted); font-size: 12px; }
+
+    /* ── WALLET CARD ─────────────────────────────────────── */
+    .wallet-card {
+      background: linear-gradient(135deg, var(--ink), var(--ink2));
+      border-radius: 14px; padding: 1.2rem;
+      margin-bottom: 1.1rem; color: #fff;
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+      position: relative; overflow: hidden;
+    }
+    .wallet-card::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: rgba(0,184,156,.12);
+    }
+    .wallet-stat { display: flex; flex-direction: column; gap: 4px; }
+    .wallet-stat .ws-label { font-size: 10.5px; opacity: .65; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .wallet-stat .ws-val  { font-size: 1.4rem; font-weight: 800; letter-spacing: -.3px; color: #fff; }
+    .wallet-stat .ws-val.teal { color: var(--teal); }
+    .wallet-stat .ws-val.rose { color: #fb7185; }
+    .wallet-stat .ws-sub  { font-size: 10px; opacity: .5; }
+    .wallet-actions { grid-column: 1/-1; display: flex; gap: 8px; margin-top: .4rem; }
+    .btn-wallet { padding: 7px 16px; border-radius: 50px; border: none; font-family: inherit;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: .18s; display: flex; align-items: center; gap: 5px; }
+    .btn-wallet.primary { background: var(--teal); color: #fff; }
+    .btn-wallet.primary:hover { background: var(--teal-dark); }
+    .btn-wallet.ghost { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+    .btn-wallet.ghost:hover { background: rgba(255,255,255,.18); }
+    @media(max-width:500px){ .wallet-card { grid-template-columns: 1fr 1fr; } }
+
+    /* ── INBOX / MESSAGES ───────────────────────────────── */
+    .inbox-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.1rem; }
+    .inbox-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .inbox-head h3 { font-size: 1rem; font-weight: 700; }
+    .msg-item {
+      display: flex; gap: 12px; padding: 12px;
+      border: 1px solid var(--border); border-radius: 11px; margin-bottom: 8px;
+      cursor: pointer; transition: .18s; background: var(--surface);
+    }
+    .msg-item:hover { border-color: var(--teal); }
+    .msg-item.unread { background: rgba(0,184,156,.04); border-color: rgba(0,184,156,.25); }
+    .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,var(--teal),#00d4b8);
+      color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-from { font-size: 13px; font-weight: 700; }
+    .msg-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-time { font-size: 10.5px; color: var(--muted); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+    .msg-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 6px; }
+
+    /* ── VISIBILITY TOGGLE ──────────────────────────────── */
+    .visibility-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      margin-bottom: .7rem;
+    }
+    .visibility-row.hidden-profile { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .visibility-row .vr-text { flex: 1; }
+    .visibility-row .vr-title { font-size: 13px; font-weight: 700; }
+    .visibility-row .vr-sub { font-size: 11px; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -690,7 +749,7 @@
       <div class="stat-val" id="stat-notifs">—</div>
       <div class="stat-lbl">Notifications</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card" onclick="viewJobListings()">
       <div class="stat-icon jobs"><i class="bi bi-briefcase"></i></div>
       <div class="stat-val" id="stat-jobs">—</div>
       <div class="stat-lbl">New Jobs</div>
@@ -702,10 +761,52 @@
     </div>
   </section>
 
+  <!-- WALLET / PAYMENTS CARD -->
+  <div class="wallet-card" id="wallet-card">
+    <div class="wallet-stat">
+      <div class="ws-label">Wallet Balance</div>
+      <div class="ws-val teal" id="wallet-balance">KES —</div>
+      <div class="ws-sub">Available</div>
+    </div>
+    <div class="wallet-stat">
+      <div class="ws-label">Total Paid</div>
+      <div class="ws-val" id="wallet-paid">KES —</div>
+      <div class="ws-sub">Lifetime</div>
+    </div>
+    <div class="wallet-stat">
+      <div class="ws-label">Outstanding</div>
+      <div class="ws-val rose" id="wallet-outstanding">KES —</div>
+      <div class="ws-sub">Placement fee</div>
+    </div>
+    <div class="wallet-actions">
+      <button class="btn-wallet primary" onclick="openModal('modal-payments')"><i class="bi bi-receipt"></i> Payment History</button>
+      <button class="btn-wallet ghost" onclick="openModal('modal-payments')"><i class="bi bi-credit-card"></i> Pay Now</button>
+    </div>
+  </div>
+
+  <!-- INBOX (Messages from employers) -->
+  <div class="inbox-section" id="inbox-section">
+    <div class="inbox-head">
+      <h3><i class="bi bi-chat-left-dots" style="color:var(--teal);margin-right:6px"></i>Messages <span id="inbox-unread-badge" style="background:var(--rose);color:#fff;border-radius:50px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px;display:none"></span></h3>
+      <button class="btn btn-ghost btn-sm" onclick="markAllMsgsRead()"><i class="bi bi-check2-all"></i> Mark all read</button>
+    </div>
+    <div id="inbox-list"><div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No messages yet</div></div>
+  </div>
+
   <!-- PROFILE CARD -->
   <section class="profile-card" id="section-profile">
 
-    <!-- Hired toggle -->
+    <!-- Visibility toggle (profile_visibility) -->
+    <div class="visibility-row" id="visibility-row">
+      <div class="vr-text">
+        <div class="vr-title" id="visibility-title"><i class="bi bi-eye-fill" style="color:var(--teal)"></i> Profile visible to employers</div>
+        <div class="vr-sub" id="visibility-sub">Employers can find and contact you</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="visibility-toggle" checked onchange="onVisibilityToggle(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
     <div class="hired-toggle-row" id="hired-toggle-row">
       <div class="ht-text">
         <div class="ht-title" id="hired-title">Looking for work</div>
@@ -890,6 +991,11 @@
         <button class="menu-item" onclick="closeModal('modal-account'); openModal('modal-verify')">
           <i class="bi bi-patch-check"></i>
           <span>Verify Profile</span>
+          <i class="bi bi-chevron-right mi-arrow"></i>
+        </button>
+        <button class="menu-item" onclick="closeModal('modal-account'); openModal('modal-payments')">
+          <i class="bi bi-credit-card"></i>
+          <span>Payments & Wallet</span>
           <i class="bi bi-chevron-right mi-arrow"></i>
         </button>
         <div class="menu-divider"></div>
@@ -1295,6 +1401,48 @@
   </div>
 </div>
 
+<!-- PAYMENTS MODAL -->
+<div class="modal-overlay" id="modal-payments">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-credit-card" style="color:var(--teal)"></i> Payments & Wallet</h2>
+      <button class="modal-close" onclick="closeModal('modal-payments')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Wallet summary -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.4rem;">
+        <div style="background:rgba(0,184,156,.08);border:1px solid rgba(0,184,156,.2);border-radius:11px;padding:12px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Balance</div>
+          <div style="font-size:1.3rem;font-weight:800;color:var(--teal)" id="pm-balance">KES —</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Total Paid</div>
+          <div style="font-size:1.3rem;font-weight:800;" id="pm-paid">KES —</div>
+        </div>
+        <div style="background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.2);border-radius:11px;padding:12px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Outstanding</div>
+          <div style="font-size:1.3rem;font-weight:800;color:var(--rose)" id="pm-outstanding">KES —</div>
+        </div>
+      </div>
+
+      <!-- Pay via M-Pesa prompt -->
+      <div style="background:rgba(0,184,156,.05);border:1px solid rgba(0,184,156,.2);border-radius:11px;padding:14px;margin-bottom:1.2rem;display:flex;align-items:center;gap:12px;">
+        <i class="bi bi-phone-fill" style="font-size:1.8rem;color:var(--teal);flex-shrink:0"></i>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px">Pay via M-Pesa</div>
+          <div style="font-size:12px;color:var(--muted)">Paybill: <strong>400200</strong> · Account: <strong id="mpesa-acct-no">your email</strong></div>
+        </div>
+      </div>
+
+      <!-- Transaction history -->
+      <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Transaction History</div>
+      <div id="payment-history-list">
+        <div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-receipt" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No transactions yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- DEACTIVATE MODAL -->
 <div class="modal-overlay" id="modal-deactivate">
   <div class="modal">
@@ -1412,6 +1560,7 @@ async function loadDashboard() {
           phone: meta.phone || '',
           looking_for_job: true,
           verification_stage: 'unverified',
+          profile_visibility: true,
         }).select().maybeSingle();
         wpData = inserted.data;
       }
@@ -1425,9 +1574,15 @@ async function loadDashboard() {
 
     workerProfile = wpData || {};
 
+    // Load user preferences into workerProfile._prefs (Fix #8)
+    await loadUserPreferences();
+
+    // Sync employer_profiles row if this user is an employer (Fix #9)
+    ensureEmployerProfile().catch(() => {});
+
     const [notifRes, msgRes, jobRes] = await Promise.all([
       sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(50),
-      sb.from('messages').select('id, is_read, receiver_id').eq('receiver_id', currentUser.id),
+      sb.from('messages').select('id, sender_id, receiver_id, content, body, msg_type, is_read, created_at').eq('receiver_id', currentUser.id).order('created_at', { ascending: false }).limit(30),
       sb.from('job_postings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     ]);
 
@@ -1437,12 +1592,282 @@ async function loadDashboard() {
 
     renderAll(notifs, msgs, jobCount);
     renderNotifList(notifs);
+    renderInbox(msgs);
+
+    // Load employer message type breakdown (Fix #7)
+    loadEmployerMessages().catch(() => {});
+
+    // Load wallet (non-blocking)
+    loadWallet().catch(() => {});
+
   } catch (e) {
     console.error('loadDashboard:', e);
     showToast('err', 'bi-exclamation-circle', 'Load Error', e.message);
   } finally {
     const loader = document.getElementById('pg-loader');
     if (loader) { loader.classList.add('hide'); setTimeout(() => loader.remove(), 400); }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  WALLET / PAYMENTS  (Fix #1 & #3)
+//
+//  ┌─────────────────────────────────────────────────────
+//  │  REQUIRED SQL — run once in Supabase SQL editor
+//  └─────────────────────────────────────────────────────
+//
+//  -- Fix #3: wallets table
+//  CREATE TABLE IF NOT EXISTS wallets (
+//    user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+//    balance numeric DEFAULT 0,
+//    total_paid numeric DEFAULT 0,
+//    outstanding_balance numeric DEFAULT 0,
+//    updated_at timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "wallet_self" ON wallets USING (auth.uid() = user_id)
+//    WITH CHECK (auth.uid() = user_id);
+//
+//  -- Fix #3: payments table
+//  CREATE TABLE IF NOT EXISTS payments (
+//    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+//    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+//    amount numeric NOT NULL,
+//    type text DEFAULT 'placement_fee',
+//    status text DEFAULT 'pending',   -- pending | paid | failed
+//    reference text,
+//    mpesa_code text,
+//    created_at timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "payments_self" ON payments USING (auth.uid() = user_id)
+//    WITH CHECK (auth.uid() = user_id);
+//
+//  -- Fix #4: add profile_visibility to worker_profiles
+//  ALTER TABLE worker_profiles
+//    ADD COLUMN IF NOT EXISTS profile_visibility boolean DEFAULT true;
+//
+//  -- Fix #8: user_preferences table
+//  CREATE TABLE IF NOT EXISTS user_preferences (
+//    user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+//    email_notifications boolean DEFAULT true,
+//    sms_notifications boolean DEFAULT false,
+//    push_notifications boolean DEFAULT true,
+//    job_alerts boolean DEFAULT true,
+//    show_profile_public boolean DEFAULT true,
+//    theme text DEFAULT 'light',
+//    language text DEFAULT 'en',
+//    updated_at timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "prefs_self" ON user_preferences
+//    USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+//
+//  -- Fix #9: employer_profiles table (if not already present)
+//  CREATE TABLE IF NOT EXISTS employer_profiles (
+//    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+//    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+//    full_name text,
+//    company_name text,
+//    email text,
+//    phone text,
+//    county text,
+//    is_verified boolean DEFAULT false,
+//    created_at timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE employer_profiles ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "emp_profiles_read" ON employer_profiles FOR SELECT USING (true);
+//  CREATE POLICY "emp_profiles_own" ON employer_profiles
+//    USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+//
+//  -- Fix #2: homepage worker query must include both filters:
+//  --   .eq('status','approved')
+//  --   .eq('looking_for_job', true)
+//  --   .eq('is_currently_hired', false)
+//  --   .eq('profile_visibility', true)   ← Fix #4
+//
+//  -- Fix #7: employer job cards link → employers.html?id=EMPLOYER_ID
+//  --   (handled in index.html job card onclick, see comment in renderAll)
+// ═══════════════════════════════════════════════════════
+async function loadWallet() {
+  try {
+    const { data: wallet } = await sb.from('wallets').select('balance, total_paid, outstanding_balance').eq('user_id', currentUser.id).maybeSingle();
+    const fmt = n => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+    if (wallet) {
+      const b = fmt(wallet.balance), p = fmt(wallet.total_paid), o = fmt(wallet.outstanding_balance);
+      ['wallet-balance','pm-balance'].forEach(id => setText(id, b));
+      ['wallet-paid','pm-paid'].forEach(id => setText(id, p));
+      ['wallet-outstanding','pm-outstanding'].forEach(id => setText(id, o));
+    } else {
+      ['wallet-balance','pm-balance'].forEach(id => setText(id, 'KES 0'));
+      ['wallet-paid','pm-paid'].forEach(id => setText(id, 'KES 0'));
+      ['wallet-outstanding','pm-outstanding'].forEach(id => setText(id, 'KES 0'));
+    }
+    // M-Pesa account number = user email (or worker ID)
+    const acctEl = document.getElementById('mpesa-acct-no');
+    if (acctEl) acctEl.textContent = workerProfile.id ? workerProfile.id.slice(0,8).toUpperCase() : currentUser.email;
+
+    // Load payment history
+    const { data: txns } = await sb.from('payments').select('id, amount, type, status, reference, mpesa_code, created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(20);
+    renderPaymentHistory(txns || []);
+  } catch (e) {
+    // wallets/payments tables may not exist yet — silently ignore
+    console.warn('[Wallet] Not yet set up:', e.message);
+  }
+}
+
+function renderPaymentHistory(txns) {
+  const el = document.getElementById('payment-history-list');
+  if (!el) return;
+  if (!txns.length) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-receipt" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No transactions yet</div>';
+    return;
+  }
+  const statusColor = { paid: 'var(--green)', pending: 'var(--gold)', failed: 'var(--rose)' };
+  el.innerHTML = txns.map(t => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--surface)">
+      <div style="width:36px;height:36px;border-radius:9px;background:rgba(0,184,156,.1);color:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">
+        <i class="bi bi-${t.status === 'paid' ? 'check-circle-fill' : t.status === 'failed' ? 'x-circle-fill' : 'clock-fill'}"></i>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${escHtml(t.type || 'Payment').replace(/_/g,' ')}</div>
+        <div style="font-size:11px;color:var(--muted)">${t.mpesa_code ? 'M-Pesa: '+escHtml(t.mpesa_code) : escHtml(t.reference || '')} · ${timeAgo(new Date(t.created_at))}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:700">KES ${Number(t.amount).toLocaleString('en-KE')}</div>
+        <div style="font-size:10px;font-weight:700;color:${statusColor[t.status]||'var(--muted)'}">${(t.status||'pending').toUpperCase()}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  INBOX (employer messages)
+//  Fix #9: fetch sender names from employer_profiles OR profiles
+//  Fix #10: accurate unread counter on nav badge
+// ═══════════════════════════════════════════════════════
+async function renderInbox(msgs) {
+  const el = document.getElementById('inbox-list');
+  const badge = document.getElementById('inbox-unread-badge');
+  if (!el) return;
+
+  const unread = msgs.filter(m => !m.is_read).length;
+  if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+
+  // Update nav badge + stat counter (Fix #10)
+  const navBadge = document.getElementById('badge-msgs');
+  if (navBadge) { navBadge.textContent = unread; navBadge.classList.toggle('show', unread > 0); }
+  setText('stat-interviews', unread);
+
+  if (!msgs.length) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No messages yet — employers will contact you here.</div>';
+    return;
+  }
+
+  // Fix #9: try employer_profiles first, then fall back to profiles table
+  const senderIds = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
+  let senderMap = {};
+  if (senderIds.length) {
+    const [empRes, profRes] = await Promise.all([
+      sb.from('employer_profiles').select('user_id, full_name, company_name').in('user_id', senderIds).catch(() => ({ data: [] })),
+      sb.from('profiles').select('id, full_name, company_name').in('id', senderIds).catch(() => ({ data: [] })),
+    ]);
+    // profiles table first (lower priority), then employer_profiles overrides
+    (profRes.data || []).forEach(p => { senderMap[p.id] = p.company_name || p.full_name || 'Employer'; });
+    (empRes.data || []).forEach(e => { senderMap[e.user_id] = e.company_name || e.full_name || senderMap[e.user_id] || 'Employer'; });
+  }
+
+  el.innerHTML = msgs.map(m => {
+    const from = senderMap[m.sender_id] || 'Employer';
+    const preview = (m.content || m.body || '').substring(0, 80);
+    const init = from.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return `
+    <div class="msg-item${m.is_read ? '' : ' unread'}" onclick="markMsgRead('${m.id}', this)">
+      <div class="msg-avatar">${escHtml(init)}</div>
+      <div class="msg-body">
+        <div class="msg-from">${escHtml(from)}</div>
+        <div class="msg-preview">${escHtml(preview)}${preview.length >= 80 ? '…' : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div class="msg-time">${timeAgo(new Date(m.created_at))}</div>
+        ${!m.is_read ? '<div class="msg-unread-dot"></div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markMsgRead(id, el) {
+  try {
+    await sb.from('messages').update({ is_read: true }).eq('id', id);
+    if (el) el.classList.remove('unread');
+    const dot = el && el.querySelector('.msg-unread-dot');
+    if (dot) dot.remove();
+    // Update badge
+    const badge = document.getElementById('inbox-unread-badge');
+    if (badge) {
+      const count = Math.max(0, (parseInt(badge.textContent) || 1) - 1);
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline' : 'none';
+    }
+    // Update nav badge
+    const navBadge = document.getElementById('badge-msgs');
+    if (navBadge) {
+      const c = Math.max(0, (parseInt(navBadge.textContent) || 1) - 1);
+      navBadge.textContent = c;
+      navBadge.classList.toggle('show', c > 0);
+    }
+  } catch (e) { console.warn('markMsgRead:', e); }
+}
+
+async function markAllMsgsRead() {
+  try {
+    await sb.from('messages').update({ is_read: true }).eq('receiver_id', currentUser.id).eq('is_read', false);
+    document.querySelectorAll('.msg-item.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.msg-unread-dot').forEach(el => el.remove());
+    const badge = document.getElementById('inbox-unread-badge');
+    if (badge) badge.style.display = 'none';
+    const navBadge = document.getElementById('badge-msgs');
+    if (navBadge) { navBadge.textContent = '0'; navBadge.classList.remove('show'); }
+    setText('stat-interviews', '0');
+    showToast('ok', 'bi-check-all', 'All Read', 'Messages marked as read.');
+  } catch (e) { showToast('err', 'bi-x-circle', 'Error', e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PROFILE VISIBILITY  (Fix #3 / Fix #4)
+//  Sets profile_visibility column on worker_profiles.
+//  Employer search queries (index.html / search pages) MUST add:
+//    .eq('profile_visibility', true)
+//  so hidden workers never appear in results.
+// ═══════════════════════════════════════════════════════
+function renderVisibilityState(visible) {
+  const row = document.getElementById('visibility-row');
+  const toggle = document.getElementById('visibility-toggle');
+  const title = document.getElementById('visibility-title');
+  const sub = document.getElementById('visibility-sub');
+  if (!toggle) return;
+  toggle.checked = visible;
+  if (row) row.classList.toggle('hidden-profile', !visible);
+  if (title) title.innerHTML = visible
+    ? '<i class="bi bi-eye-fill" style="color:var(--teal)"></i> Profile visible to employers'
+    : '<i class="bi bi-eye-slash-fill" style="color:var(--rose)"></i> Profile hidden from employers';
+  if (sub) sub.textContent = visible
+    ? 'Employers can find and contact you'
+    : 'Your profile is not shown in search results';
+}
+
+async function onVisibilityToggle(visible) {
+  try {
+    const matchCol = workerProfile.id ? 'id' : 'email';
+    const matchVal = workerProfile.id || currentUser.email;
+    await sb.from('worker_profiles').update({ profile_visibility: visible }).eq(matchCol, matchVal);
+    workerProfile.profile_visibility = visible;
+    renderVisibilityState(visible);
+    showToast('ok', 'bi-check-circle-fill',
+      visible ? 'Profile Visible' : 'Profile Hidden',
+      visible ? 'Employers can now find you.' : 'Your profile is hidden from search.');
+  } catch (e) {
+    showToast('err', 'bi-x-circle', 'Error', e.message);
+    document.getElementById('visibility-toggle').checked = !visible;
   }
 }
 
@@ -1502,6 +1927,10 @@ function renderAll(notifs, msgs, jobCount) {
     ? `https://www.sounds.co.ke/${username}`
     : `https://www.sounds.co.ke/w/${currentUser.id.slice(0, 8)}`;
   setVal('profile-url', profileUrl);
+
+  // Visibility toggle — initialise from profile_visibility column (Fix #4)
+  const isVisible = workerProfile.profile_visibility !== false; // default true if column missing
+  renderVisibilityState(isVisible);
 
   // Hired toggle — uses is_currently_hired column
   const isHired = !!(wp.is_currently_hired || wp.is_hired);
@@ -1654,7 +2083,13 @@ function populateMyProfile(name, initials, profileUrl) {
 }
 
 // ═══════════════════════════════════════════════════════
-//  HIRED TOGGLE
+//  HIRED TOGGLE  (Fix #2)
+//  Dashboard sets both is_currently_hired AND looking_for_job.
+//  The homepage worker query (index.html) MUST filter with:
+//    .eq('looking_for_job', true)
+//    .eq('is_currently_hired', false)
+//    .eq('profile_visibility', true)   ← Fix #4
+//  to prevent hired/hidden workers appearing in search results.
 // ═══════════════════════════════════════════════════════
 function renderHiredState(hired) {
   const row = document.getElementById('hired-toggle-row');
@@ -1672,8 +2107,13 @@ async function onHiredToggle(isHired) {
   try {
     const matchCol = workerProfile.id ? 'id' : 'email';
     const matchVal = workerProfile.id || currentUser.email;
-    await sb.from('worker_profiles').update({ is_currently_hired: isHired, looking_for_job: !isHired }).eq(matchCol, matchVal);
+    // Fix #2: always write BOTH columns so homepage filters work correctly
+    await sb.from('worker_profiles').update({
+      is_currently_hired: isHired,
+      looking_for_job: !isHired,
+    }).eq(matchCol, matchVal);
     workerProfile.is_currently_hired = isHired;
+    workerProfile.looking_for_job = !isHired;
     renderHiredState(isHired);
     showToast('ok', 'bi-check-circle-fill', isHired ? 'Marked as Hired!' : 'Back to Job Searching',
       isHired ? 'Employers will see you are unavailable.' : 'Your profile is visible to employers.');
@@ -1961,27 +2401,65 @@ async function submitVerification() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  SETTINGS — stored in worker_profiles (no user_settings table)
+//  SETTINGS  (Fix #8 — save preferences to DB)
+//
+//  Required SQL (run once in Supabase):
+//
+//  CREATE TABLE IF NOT EXISTS user_preferences (
+//    user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+//    email_notifications boolean DEFAULT true,
+//    sms_notifications boolean DEFAULT false,
+//    push_notifications boolean DEFAULT true,
+//    job_alerts boolean DEFAULT true,
+//    show_profile_public boolean DEFAULT true,
+//    theme text DEFAULT 'light',
+//    language text DEFAULT 'en',
+//    updated_at timestamptz DEFAULT now()
+//  );
+//  ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+//  CREATE POLICY "prefs_self" ON user_preferences USING (auth.uid() = user_id)
+//    WITH CHECK (auth.uid() = user_id);
 // ═══════════════════════════════════════════════════════
 function renderSettings() {
   const wp = workerProfile;
+  const prefs = wp._prefs || {};
   const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
-  setChk('set-email-notif', wp.notif_email !== false);
-  setChk('set-sms-notif', wp.notif_sms);
-  setChk('set-push-notif', wp.notif_email !== false);
-  setChk('set-public', wp.profile_visible !== false);
-  setThemeUI(wp.theme_pref || 'light');
+  setChk('set-email-notif', prefs.email_notifications !== false && wp.notif_email !== false);
+  setChk('set-sms-notif', prefs.sms_notifications || wp.notif_sms || false);
+  setChk('set-push-notif', prefs.push_notifications !== false);
+  setChk('set-public', prefs.show_profile_public !== false && wp.profile_visible !== false);
+  setThemeUI(prefs.theme || wp.theme_pref || 'light');
+}
+
+async function loadUserPreferences() {
+  try {
+    const { data } = await sb.from('user_preferences')
+      .select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (data) workerProfile._prefs = data;
+  } catch (_) { /* table may not exist yet */ }
 }
 
 async function saveSetting(key, val) {
-  // Map legacy setting keys to worker_profiles columns
+  // ── 1. Save to user_preferences table ──
+  try {
+    await sb.from('user_preferences').upsert(
+      { user_id: currentUser.id, [key]: val, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+    if (!workerProfile._prefs) workerProfile._prefs = {};
+    workerProfile._prefs[key] = val;
+    showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.');
+    return;
+  } catch (_) {}
+
+  // ── 2. Fallback: save to worker_profiles columns ──
   const colMap = {
     email_notifications: 'notif_email',
     sms_notifications: 'notif_sms',
-    notifications_enabled: 'notif_email',
+    push_notifications: 'notif_email',
     show_profile_public: 'profile_visible',
     theme: 'theme_pref',
-    language: null, // no column for this yet
+    language: null,
   };
   const col = colMap[key] !== undefined ? colMap[key] : key;
   if (!col) { showToast('ok', 'bi-check-circle-fill', 'Saved', 'Setting updated.'); return; }
@@ -2060,56 +2538,88 @@ async function markAllNotifsRead() {
 }
 
 // ═══════════════════════════════════════════════════════
-//  REALTIME
+//  REALTIME  (Fix #5 messages + Fix #6 notifications)
+//  Both channels now reload the full list on INSERT so
+//  the inbox and notification panel are always in sync.
 // ═══════════════════════════════════════════════════════
 function subscribeRealtime() {
   setTimeout(() => {
     if (!sb || !currentUser) return;
-    sb.channel('emp-msgs').on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: 'receiver_id=eq.' + currentUser.id },
-      payload => {
-        showToast('info', 'bi-chat-left-dots', 'New Message', (payload.new.content || '').substring(0, 80) + '…');
-        const badge = document.getElementById('badge-msgs');
-        if (badge) { badge.classList.add('show'); badge.textContent = (parseInt(badge.textContent) || 0) + 1; }
-      }).subscribe();
 
-    sb.channel('emp-notifs').on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id },
-      payload => {
-        showToast(payload.new.type || 'info', 'bi-bell', payload.new.title, payload.new.message || payload.new.body || '');
-        const badge = document.getElementById('badge-notifs');
-        if (badge) { badge.classList.add('show'); badge.textContent = (parseInt(badge.textContent) || 0) + 1; }
-      }).subscribe();
+    // ── Messages: reload inbox + bump badge on every new INSERT ──
+    sb.channel('emp-msgs')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages',
+          filter: 'receiver_id=eq.' + currentUser.id },
+        async payload => {
+          showToast('info', 'bi-chat-left-dots', 'New Message',
+            (payload.new.content || payload.new.body || '').substring(0, 80) + '…');
+          // Reload the inbox list so the new message appears immediately
+          const { data: msgs } = await sb.from('messages')
+            .select('id,sender_id,receiver_id,content,body,msg_type,is_read,created_at')
+            .eq('receiver_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(30);
+          await renderInbox(msgs || []);
+          // Also refresh unread count in nav badge and stats
+          const unread = (msgs || []).filter(m => !m.is_read).length;
+          const badge = document.getElementById('badge-msgs');
+          if (badge) { badge.classList.toggle('show', unread > 0); badge.textContent = unread; }
+          setText('stat-interviews', unread);
+        })
+      .subscribe();
 
-    sb.channel('emp-verif').on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'worker_profiles', filter: 'session_id=eq.' + currentUser.id },
-      payload => {
-        // Listen for verification_stage change to 'approved'
-        if (payload.new.verification_stage === 'approved' || payload.new.is_verified === true) {
-          showToast('ok', 'bi-patch-check-fill', '🎉 Profile Verified!', 'Congratulations! Your profile has been verified by our team.', 0);
-          // Insert a notification so it appears in the panel
-          sb.from('notifications').insert({
-            user_id: currentUser.id,
-            user_email: currentUser.email,
-            type: 'ok',
-            title: '🎉 Profile Verified!',
-            message: 'Your identity has been confirmed. Employers can now see your verified badge.',
-            is_read: false,
-          }).catch(() => {});
-          loadDashboard();
-        } else if (payload.new.verification_stage === 'rejected') {
-          showToast('err', 'bi-x-circle', 'Verification Rejected', 'Your documents were not accepted. Please re-submit.', 0);
-          sb.from('notifications').insert({
-            user_id: currentUser.id,
-            user_email: currentUser.email,
-            type: 'err',
-            title: 'Verification Rejected',
-            message: 'Please re-submit clearer documents for verification.',
-            is_read: false,
-          }).catch(() => {});
-          loadDashboard();
-        }
-      }).subscribe();
+    // ── Notifications: reload panel + bump badge on every new INSERT ──
+    sb.channel('emp-notifs')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications',
+          filter: 'user_id=eq.' + currentUser.id },
+        async payload => {
+          showToast(payload.new.type || 'info', 'bi-bell',
+            payload.new.title, payload.new.message || payload.new.body || '');
+          // Reload the notification list so panel is up to date
+          const { data: notifs } = await sb.from('notifications')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+          renderNotifList(notifs || []);
+          const unread = (notifs || []).filter(n => !n.is_read).length;
+          const badge = document.getElementById('badge-notifs');
+          if (badge) { badge.classList.toggle('show', unread > 0); badge.textContent = unread; }
+          setText('stat-notifs', unread);
+        })
+      .subscribe();
+
+    // ── Worker profile: watch for verification_stage updates ──
+    sb.channel('emp-verif')
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'worker_profiles',
+          filter: 'session_id=eq.' + currentUser.id },
+        payload => {
+          if (payload.new.verification_stage === 'approved' || payload.new.is_verified === true) {
+            showToast('ok', 'bi-patch-check-fill', '🎉 Profile Verified!',
+              'Congratulations! Your profile has been verified by our team.', 0);
+            sb.from('notifications').insert({
+              user_id: currentUser.id, user_email: currentUser.email,
+              type: 'ok', title: '🎉 Profile Verified!',
+              message: 'Your identity has been confirmed. Employers can now see your verified badge.',
+              is_read: false,
+            }).catch(() => {});
+            loadDashboard();
+          } else if (payload.new.verification_stage === 'rejected') {
+            showToast('err', 'bi-x-circle', 'Verification Rejected',
+              'Your documents were not accepted. Please re-submit.', 0);
+            sb.from('notifications').insert({
+              user_id: currentUser.id, user_email: currentUser.email,
+              type: 'err', title: 'Verification Rejected',
+              message: 'Please re-submit clearer documents for verification.',
+              is_read: false,
+            }).catch(() => {});
+            loadDashboard();
+          }
+        })
+      .subscribe();
   }, 1000);
 }
 
@@ -2135,6 +2645,98 @@ async function shareProfile() {
   if (navigator.share) {
     await navigator.share({ title: name + ' – Sounds Care', text: 'Check out my profile on Sounds Care.', url }).catch(() => {});
   }
+}
+
+// ═══════════════════════════════════════════════════════
+//  JOB CARDS → EMPLOYER PROFILE  (Fix #7)
+//  Job cards on the homepage (index.html) should use:
+//    onclick="window.location.href='employers.html?id='+job.employer_id"
+//  This dashboard helper navigates to an employer profile page.
+// ═══════════════════════════════════════════════════════
+function openEmployerProfile(employerId) {
+  if (!employerId) return;
+  window.location.href = 'employers.html?id=' + encodeURIComponent(employerId);
+}
+
+function viewJobListings() {
+  // Navigate to homepage / job listings; job cards there link to employers.html
+  window.location.href = 'index.html#jobs';
+}
+
+// ═══════════════════════════════════════════════════════
+//  EMPLOYER INBOX  (Fix #7 companion — messages from employers)
+//  Renders a dedicated employer inbox section showing:
+//  interview requests, applications, replies, admin messages.
+//  The main inbox already handles this via renderInbox();
+//  this helper fetches and groups by msg_type for richer display.
+// ═══════════════════════════════════════════════════════
+async function loadEmployerMessages() {
+  try {
+    const { data: msgs } = await sb.from('messages')
+      .select('id,sender_id,receiver_id,content,body,msg_type,is_read,created_at')
+      .eq('receiver_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (!msgs || !msgs.length) return;
+
+    // Group by type for the inbox header counts
+    const byType = {
+      interview:    msgs.filter(m => m.msg_type === 'interview_request').length,
+      application:  msgs.filter(m => m.msg_type === 'application').length,
+      reply:        msgs.filter(m => m.msg_type === 'reply').length,
+      admin:        msgs.filter(m => m.msg_type === 'admin').length,
+    };
+
+    // Re-render inbox with all messages
+    await renderInbox(msgs);
+
+    // Update inbox section header subtitle
+    const parts = [];
+    if (byType.interview) parts.push(byType.interview + ' interview' + (byType.interview > 1 ? 's' : ''));
+    if (byType.application) parts.push(byType.application + ' application' + (byType.application > 1 ? 's' : ''));
+    if (byType.admin) parts.push(byType.admin + ' admin');
+    if (parts.length) {
+      const head = document.querySelector('#inbox-section .inbox-head h3');
+      if (head && !head.querySelector('.inbox-sub')) {
+        const sub = document.createElement('span');
+        sub.className = 'inbox-sub';
+        sub.style.cssText = 'font-size:11px;color:var(--muted);font-weight:400;margin-left:6px;';
+        sub.textContent = '(' + parts.join(', ') + ')';
+        head.appendChild(sub);
+      }
+    }
+  } catch (e) { console.warn('[EmployerInbox]', e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  EMPLOYER PROFILE SYNC  (Fix #9)
+//  Registration writes to worker_profiles (profiles).
+//  The homepage employer count and features read from employer_profiles.
+//  If the current user is an employer (role = employer / company),
+//  call this once after login to create the employer_profiles row.
+//  Also called by the homepage after employer registration.
+// ═══════════════════════════════════════════════════════
+async function ensureEmployerProfile() {
+  try {
+    const meta = currentUser.user_metadata || {};
+    const role = (meta.role || meta.user_type || '').toLowerCase();
+    if (!role.includes('employer') && !role.includes('company')) return; // worker, skip
+
+    // Check if employer_profiles row already exists
+    const { data: existing } = await sb.from('employer_profiles')
+      .select('id').eq('user_id', currentUser.id).maybeSingle();
+    if (existing) return; // already synced
+
+    // Create employer_profiles row from auth metadata / worker_profiles
+    await sb.from('employer_profiles').insert({
+      user_id: currentUser.id,
+      full_name: meta.full_name || workerProfile.full_name || '',
+      company_name: meta.company_name || workerProfile.company_name || '',
+      email: currentUser.email,
+      phone: meta.phone || workerProfile.phone || '',
+      county: meta.county || workerProfile.county || '',
+    });
+  } catch (e) { console.warn('[ensureEmployerProfile]', e.message); }
 }
 
 // ═══════════════════════════════════════════════════════
