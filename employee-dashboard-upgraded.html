@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard – Amilia Care</title>
+  <meta name="description" content="Manage your Amilia Care worker profile, payments, and job applications.">
+  <meta property="og:title" content="Amilia Care Worker Dashboard">
+  <meta property="og:image" content="https://www.amilia.co.ke/og-worker.png">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    :root {
+      --ink: #0f1923;
+      --ink2: #1e2e3e;
+      --teal: #00b89c;
+      --teal-dark: #008c76;
+      --teal-soft: rgba(0,184,156,0.10);
+      --sky: #0ea5e9;
+      --gold: #f59e0b;
+      --rose: #f43f5e;
+      --violet: #8b5cf6;
+      --green: #22c55e;
+      --surface: #f0f4f8;
+      --card: #ffffff;
+      --border: #dde5ee;
+      --muted: #5a7087;
+      --nav-h: 60px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── ENHANCED NAV WITH WALLET ─────────────────────────── */
+    .nav {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 300;
+    }
+
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--ink);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: var(--teal);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; font-weight: 800;
+    }
+
+    /* Wallet display in nav */
+    .nav-wallet {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      margin: 0 8px;
+      border-right: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+    }
+
+    .wallet-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      cursor: pointer;
+      transition: 0.18s;
+    }
+
+    .wallet-item:hover {
+      color: var(--teal);
+    }
+
+    .wallet-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .wallet-amount {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .wallet-amount.warning {
+      color: var(--rose);
+    }
+
+    .wallet-amount.success {
+      color: var(--green);
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 4px; }
+
+    .nav-icon-btn {
+      position: relative;
+      background: none; border: none;
+      font-size: 19px; cursor: pointer;
+      color: var(--muted); padding: 8px;
+      border-radius: 10px; transition: 0.18s;
+      display: flex;
+    }
+    .nav-icon-btn:hover { background: var(--teal-soft); color: var(--teal); }
+
+    .nav-badge {
+      position: absolute; top: 3px; right: 3px;
+      min-width: 14px; height: 14px;
+      background: var(--rose);
+      border-radius: 50px; border: 2px solid var(--card);
+      font-size: 8px; color: #fff; font-weight: 700;
+      display: none; align-items: center; justify-content: center; padding: 0 2px;
+    }
+    .nav-badge.show { display: flex; }
+
+    .nav-avatar-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%; border: 2px solid var(--border);
+      background: linear-gradient(135deg, var(--teal), #00d4b8);
+      color: #fff; font-size: 12px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      overflow: hidden; transition: 0.18s;
+    }
+    .nav-avatar-btn:hover { border-color: var(--teal); }
+    .nav-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    .page { max-width: 960px; margin: 0 auto; padding: 1.6rem 1.2rem 5rem; }
+
+    /* ── STATS ROW ───────────────────────────────────────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px; margin-bottom: 1.2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 0.85rem 0.9rem;
+      display: flex; flex-direction: column; gap: 5px;
+      cursor: pointer; transition: 0.2s;
+      text-decoration: none; color: inherit;
+    }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,184,156,0.12); border-color: #b0ddd7; }
+
+    .stat-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      background: var(--teal-soft); color: var(--teal);
+    }
+    .stat-icon.msg { background: rgba(14,165,233,0.1); color: var(--sky); }
+    .stat-icon.notif { background: rgba(245,158,11,0.1); color: var(--gold); }
+    .stat-icon.jobs { background: rgba(139,92,246,0.1); color: var(--violet); }
+
+    .stat-val {
+      font-size: 1.2rem; font-weight: 800;
+      line-height: 1; letter-spacing: -0.3px;
+    }
+    .stat-lbl { font-size: 10.5px; color: var(--muted); font-weight: 500; }
+
+    /* ── MESSAGES WITH VERIFIED BADGES ──────────────────── */
+    .inbox-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.1rem; }
+    .inbox-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .inbox-head h3 { font-size: 1rem; font-weight: 700; }
+
+    .msg-item {
+      display: flex; gap: 12px; padding: 12px;
+      border: 1px solid var(--border); border-radius: 11px; margin-bottom: 8px;
+      cursor: pointer; transition: .18s; background: var(--surface);
+    }
+    .msg-item:hover { border-color: var(--teal); background: var(--card); }
+    .msg-item.unread { background: rgba(0,184,156,.04); border-color: rgba(0,184,156,.25); }
+    .msg-item.from-admin { border-left: 3px solid var(--rose); }
+    .msg-item.from-support { border-left: 3px solid var(--sky); }
+
+    .msg-avatar { 
+      width: 40px; height: 40px; border-radius: 50%; 
+      background: linear-gradient(135deg,var(--teal),#00d4b8);
+      color: #fff; font-size: 14px; font-weight: 700; 
+      display: flex; align-items: center; justify-content: center; 
+      flex-shrink: 0; position: relative;
+    }
+
+    .msg-avatar.admin { background: linear-gradient(135deg,var(--rose),#f87171); }
+    .msg-avatar.support { background: linear-gradient(135deg,var(--sky),#38bdf8); }
+    .msg-avatar.verified::after {
+      content: '✓';
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 18px;
+      height: 18px;
+      background: var(--green);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--card);
+    }
+
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .msg-from { font-size: 13px; font-weight: 700; }
+    .msg-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--green);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .msg-badge.admin { background: var(--rose); }
+    .msg-badge.support { background: var(--sky); }
+    .msg-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-time { font-size: 10.5px; color: var(--muted); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+    .msg-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 6px; }
+
+    /* ── PAYMENT SECTION ─────────────────────────────────── */
+    .payment-widget {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .payment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .payment-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .balance-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .balance-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .balance-amount {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .balance-amount.warning {
+      color: var(--rose);
+    }
+
+    .balance-amount.success {
+      color: var(--green);
+    }
+
+    /* ── MODALS ──────────────────────────────────────────– */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15,25,35,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: 0 20px 60px rgba(15,25,35,.25);
+    }
+    .modal.modal-wide { max-width: 700px; }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 10;
+    }
+
+    .modal-header h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: 0.18s;
+    }
+    .modal-close:hover { background: var(--surface); color: var(--ink); }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    /* ── BUTTONS ─────────────────────────────────────────– */
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: 0.18s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--teal-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--teal);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--teal-soft); }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-full { width: 100%; }
+
+    /* ── FORM ELEMENTS ───────────────────────────────────– */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--card);
+      transition: 0.18s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(0,184,156,0.1);
+    }
+
+    .form-hint {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 1.5rem;
+    }
+
+    /* ── TABS ────────────────────────────────────────────– */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 10px 14px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: 0.18s;
+    }
+
+    .tab:hover { color: var(--teal); }
+    .tab.active { color: var(--teal); border-color: var(--teal); }
+
+    /* ── LOADING & ANIMATIONS ────────────────────────────– */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spin { animation: spin 1s linear infinite; }
+
+    /* ── TOAST ───────────────────────────────────────────– */
+    #toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(15,25,35,.15);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.ok { border-color: var(--green); }
+    .toast.ok i { color: var(--green); }
+    .toast.err { border-color: var(--rose); }
+    .toast.err i { color: var(--rose); }
+    .toast.warn { border-color: var(--gold); }
+    .toast.warn i { color: var(--gold); }
+
+    .toast-msg { flex: 1; }
+    .toast-msg strong { color: var(--ink); display: block; }
+    .toast-msg p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    .toast-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     NAVIGATION BAR WITH WALLET
+═════════════════════════════════════════════════════════ -->
+<div class="nav">
+  <a href="#" class="nav-logo">
+    <div class="logo-icon">A</div>
+    <span>Amilia <em>Care</em></span>
+  </a>
+
+  <!-- WALLET DISPLAY IN NAV -->
+  <div class="nav-wallet" onclick="openModal('modal-payments')" title="Click to manage payments">
+    <div class="wallet-item">
+      <div class="wallet-label">Available</div>
+      <div class="wallet-amount" id="nav-wallet-balance">KES 0</div>
+    </div>
+    <div style="width: 1px; height: 30px; background: var(--border)"></div>
+    <div class="wallet-item">
+      <div class="wallet-label">Outstanding</div>
+      <div class="wallet-amount warning" id="nav-outstanding-balance">KES 1,300</div>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <button class="nav-icon-btn" id="btn-nav-msgs" title="Messages" onclick="openModal('modal-messages')">
+      <i class="bi bi-chat-left-dots"></i>
+      <div class="nav-badge" id="badge-msgs">0</div>
+    </button>
+    <button class="nav-icon-btn" id="btn-nav-notifs" title="Notifications" onclick="toggleNotifPanel()">
+      <i class="bi bi-bell"></i>
+      <div class="nav-badge" id="badge-notifs">0</div>
+    </button>
+    <button class="nav-icon-btn" onclick="openModal('modal-account')" title="Account">
+      <i class="bi bi-gear"></i>
+    </button>
+    <button class="nav-avatar-btn" onclick="openModal('modal-account')" title="Profile">
+      <span id="nav-avatar-text">W</span>
+      <img id="nav-avatar-img" alt="Avatar">
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN PAGE
+═════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div id="pg-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--surface);display:flex;align-items:center;justify-content:center;z-index:9998">
+    <div style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:1rem"><i class="bi bi-arrow-repeat spin"></i></div>
+      <div style="font-size:14px;color:var(--muted);font-weight:600">Loading your dashboard…</div>
+    </div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats">
+    <div class="stat-card" onclick="openModal('modal-messages')">
+      <div class="stat-icon msg"><i class="bi bi-chat-left-dots"></i></div>
+      <div class="stat-val" id="stat-messages">0</div>
+      <div class="stat-lbl">Messages</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon notif"><i class="bi bi-bell"></i></div>
+      <div class="stat-val" id="stat-notifications">0</div>
+      <div class="stat-lbl">Notifications</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-jobs')">
+      <div class="stat-icon jobs"><i class="bi bi-briefcase"></i></div>
+      <div class="stat-val" id="stat-jobs">0</div>
+      <div class="stat-lbl">Jobs</div>
+    </div>
+    <div class="stat-card" onclick="scrollToSection('payment-section')">
+      <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--gold)"><i class="bi bi-wallet2"></i></div>
+      <div class="stat-val" id="stat-balance">KES 0</div>
+      <div class="stat-lbl">Wallet</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-payments')">
+      <div class="stat-icon" style="background: rgba(244,63,94,0.1); color: var(--rose)"><i class="bi bi-credit-card"></i></div>
+      <div class="stat-val" id="stat-outstanding">KES 1,300</div>
+      <div class="stat-lbl">Outstanding</div>
+    </div>
+  </div>
+
+  <!-- MESSAGES SECTION -->
+  <div class="inbox-section" id="inbox-section" onclick="openModal('modal-messages')" style="cursor:pointer">
+    <div class="inbox-head">
+      <h3><i class="bi bi-chat-left-dots" style="color:var(--teal);margin-right:6px"></i>Recent Messages <span id="inbox-unread-badge" style="background:var(--rose);color:#fff;border-radius:50px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px;display:none"></span></h3>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('modal-messages')"><i class="bi bi-arrow-right"></i> View All</button>
+    </div>
+    <div id="inbox-preview" style="font-size:13px;color:var(--muted);padding:4px 0 2px">Loading messages…</div>
+  </div>
+
+  <!-- PAYMENT SECTION -->
+  <div class="payment-widget" id="payment-section">
+    <div class="payment-header">
+      <h3><i class="bi bi-credit-card" style="color:var(--teal);margin-right:8px"></i>Payments & Wallet</h3>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-payments')"><i class="bi bi-plus-circle"></i> Make Payment</button>
+    </div>
+    <div id="payment-balances">
+      <div class="balance-row">
+        <span class="balance-label"><i class="bi bi-wallet-fill" style="margin-right:6px;color:var(--teal)"></i> Wallet Balance</span>
+        <span class="balance-amount success" id="balance-wallet">KES 0</span>
+      </div>
+      <div class="balance-row">
+        <span class="balance-label"><i class="bi bi-exclamation-circle" style="margin-right:6px;color:var(--rose)"></i> Outstanding</span>
+        <span class="balance-amount warning" id="balance-outstanding">KES 1,300</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MESSAGES MODAL (FIXED)
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-messages">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-chat-left-dots" style="color:var(--teal)"></i> Messages</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="markAllMsgsRead()"><i class="bi bi-check2-all"></i> Mark All Read</button>
+        <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:1rem">
+      <div id="inbox-list"><div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>Loading messages…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     PAYMENT MODAL (NEW - COMPREHENSIVE)
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-payments">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-credit-card" style="color:var(--teal)"></i> Payments & Wallet</h2>
+      <button class="modal-close" onclick="closeModal('modal-payments')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- BALANCES SUMMARY -->
+      <div style="background:linear-gradient(135deg,rgba(0,184,156,.08),rgba(14,165,233,.08));border:1px solid rgba(0,184,156,.2);border-radius:12px;padding:16px;margin-bottom:1.5rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Wallet Balance</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--green)" id="modal-wallet-balance">KES 0</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Available for refunds</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Outstanding Balance</div>
+            <div style="font-size:1.5rem;font-weight:800;color:var(--rose)" id="modal-outstanding-balance">KES 1,300</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Requires payment</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENT DETAILS -->
+      <div style="background:var(--surface);border-radius:12px;padding:12px;margin-bottom:1.5rem">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--ink)">Payment Requirements</div>
+        <div id="payment-requirements"></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchPaymentTab('history', this)"><i class="bi bi-clock-history"></i> History</button>
+        <button class="tab" onclick="switchPaymentTab('make', this)"><i class="bi bi-plus-circle"></i> Make Payment</button>
+      </div>
+
+      <!-- PAYMENT HISTORY TAB -->
+      <div id="payment-history-tab" class="payment-tab active">
+        <div id="payment-history-list" style="min-height:100px"></div>
+      </div>
+
+      <!-- MAKE PAYMENT TAB -->
+      <div id="make-payment-tab" class="payment-tab" style="display:none">
+        <div class="form-group">
+          <label>Select Payment Method</label>
+          <select id="payment-method" onchange="updatePaymentUI()">
+            <option value="">Choose a payment method…</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="airtel">Airtel Money</option>
+            <option value="manual">Manual Deposit (Paybill)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Amount to Pay (KES)</label>
+          <input type="number" id="payment-amount" placeholder="Enter amount" min="100" step="100">
+          <div class="form-hint">Interview fee: KES 300 | First salary fee: KES 1,000</div>
+        </div>
+
+        <!-- MPESA SECTION -->
+        <div id="mpesa-section" style="display:none">
+          <div style="background:rgba(0,184,156,.08);border:1px solid rgba(0,184,156,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--ink)">
+            <div style="font-weight:600;margin-bottom:6px">📱 M-Pesa Instructions</div>
+            <div style="color:var(--muted);line-height:1.5">
+              1. Enter your M-Pesa registered phone number<br>
+              2. Click "Send STK Push"<br>
+              3. You'll receive a prompt on your phone<br>
+              4. Enter your M-Pesa PIN<br>
+              5. Your payment will be completed
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>M-Pesa Phone Number</label>
+            <input type="tel" id="mpesa-phone" placeholder="e.g. 0712345678" maxlength="10">
+          </div>
+
+          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px">
+            <div style="font-weight:600;color:var(--green);margin-bottom:6px"><i class="bi bi-info-circle-fill"></i> Account Details</div>
+            <div style="color:var(--muted);line-height:1.6">
+              <strong style="color:var(--ink)">Account Number:</strong> <span id="pay-acct-num" style="font-family:monospace;font-weight:700">—</span><br>
+              <strong style="color:var(--ink)">Paybill:</strong> <span style="font-family:monospace;font-weight:700">400200</span><br>
+              <small>Or pay manually using M-Pesa → Paybill → 400200</small>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="initiateMpesaPayment()">
+            <i class="bi bi-phone-fill"></i> Send STK Push
+          </button>
+        </div>
+
+        <!-- AIRTEL SECTION -->
+        <div id="airtel-section" style="display:none">
+          <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--ink)">
+            <div style="font-weight:600;margin-bottom:6px">💳 Airtel Money Instructions</div>
+            <div style="color:var(--muted);line-height:1.5">
+              1. Enter your Airtel Money phone number<br>
+              2. Click "Send Airtel Request"<br>
+              3. You'll receive a prompt on your phone<br>
+              4. Confirm the transaction<br>
+              5. Your payment will be completed
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Airtel Money Phone Number</label>
+            <input type="tel" id="airtel-phone" placeholder="e.g. 0712345678" maxlength="10">
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="initiateAirtelPayment()">
+            <i class="bi bi-phone-fill"></i> Send Airtel Request
+          </button>
+        </div>
+
+        <!-- MANUAL DEPOSIT SECTION -->
+        <div id="manual-section" style="display:none">
+          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px">
+            <div style="font-weight:600;color:var(--gold);margin-bottom:8px"><i class="bi bi-info-circle-fill"></i> Manual Paybill Deposit</div>
+            <div style="color:var(--muted);line-height:1.6">
+              <strong style="color:var(--ink)">Step 1:</strong> Go to your bank or M-Pesa/Airtel<br>
+              <strong style="color:var(--ink)">Step 2:</strong> Select Paybill or Bill Payment<br>
+              <strong style="color:var(--ink)">Step 3:</strong> Enter details below<br>
+              <strong style="color:var(--ink)">Step 4:</strong> Complete transaction<br>
+              <strong style="color:var(--ink)">Step 5:</strong> Enter receipt code below to confirm
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border-radius:10px;padding:12px;margin-bottom:1rem">
+            <div style="font-weight:600;color:var(--ink);margin-bottom:10px">📋 Paybill Details</div>
+            <div style="font-size:13px;line-height:2">
+              <div><strong>Paybill Number:</strong> <span style="font-family:monospace;font-weight:700">400200</span></div>
+              <div><strong>Account Number:</strong> <span style="font-family:monospace;font-weight:700" id="pay-acct-manual">—</span></div>
+              <div><strong>Amount:</strong> <span style="font-family:monospace;font-weight:700" id="manual-amount">KES 0</span></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Receipt/Reference Code</label>
+            <input type="text" id="receipt-code" placeholder="e.g. XXXXXXXXXXXXXXX" style="text-transform:uppercase">
+            <div class="form-hint">You'll receive this after your bank deposit</div>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="verifyManualDeposit()">
+            <i class="bi bi-check-circle"></i> Verify Receipt
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;padding:12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--ink);display:block;margin-bottom:6px">💡 Payment Policy</strong>
+        Interview fee (KES 300): Valid for 30 days from payment. Renew each time you apply for a new job.<br>
+        First Salary Fee (KES 1,000): One-time payment, expires after 6 months of inactivity.<br>
+        ⚠️ <strong style="color:var(--rose)">Failure to pay may result in account deactivation.</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATIONS -->
+<div id="toast-stack"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPTS
+═════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+
+let sb, currentUser, workerProfile = {};
+let walletBalance = 0;
+let outstandingBalance = 1300;
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const { data } = await sb.auth.getSession().catch(() => ({ data: null }));
+  const session = data && data.session;
+  if (!session || !session.user) { window.location.href = 'login.html'; return; }
+  currentUser = session.user;
+
+  await loadDashboard();
+  subscribeToMessages();
+});
+
+// ═══════════════════════════════════════════════════════
+//  LOAD DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    // Load worker profile
+    const { data: wpData } = await sb.from('worker_profiles')
+      .select('*')
+      .eq('email', currentUser.email)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    workerProfile = wpData || {};
+
+    // Load wallet
+    const { data: walletData } = await sb.from('wallets')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (walletData) {
+      walletBalance = walletData.balance || 0;
+      outstandingBalance = walletData.outstanding_balance || 1300;
+    }
+
+    // Load messages
+    const { data: msgs } = await sb.from('messages')
+      .select('*')
+      .eq('receiver_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    renderInbox(msgs || []);
+    renderPaymentBalances();
+    updateNavWallet();
+
+  } catch (e) {
+    console.error('loadDashboard:', e);
+    showToast('err', 'bi-exclamation-circle', 'Load Error', e.message);
+  } finally {
+    const loader = document.getElementById('pg-loader');
+    if (loader) { loader.classList.add('hide'); setTimeout(() => loader.remove(), 400); }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER MESSAGES (FIXED)
+// ═══════════════════════════════════════════════════════
+async function renderInbox(msgs) {
+  const el = document.getElementById('inbox-list');
+  if (!el) return;
+
+  const unread = msgs.filter(m => !m.is_read).length;
+  
+  // Update badges
+  const badge = document.getElementById('inbox-unread-badge');
+  if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+  
+  const navBadge = document.getElementById('badge-msgs');
+  if (navBadge) { navBadge.textContent = unread; navBadge.classList.toggle('show', unread > 0); }
+  
+  setText('stat-messages', msgs.length);
+
+  if (!msgs.length) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No messages yet. Employers will contact you here.</div>';
+    return;
+  }
+
+  // Get sender info
+  const senderIds = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
+  let senderMap = {};
+  
+  if (senderIds.length) {
+    const { data: senders } = await sb.from('employer_profiles')
+      .select('user_id, full_name, company_name')
+      .in('user_id', senderIds)
+      .catch(() => ({ data: [] }));
+    
+    (senders || []).forEach(s => {
+      senderMap[s.user_id] = s.company_name || s.full_name || 'Employer';
+    });
+  }
+
+  el.innerHTML = msgs.slice(0, 10).map(m => {
+    const from = senderMap[m.sender_id] || 'Employer';
+    const isAdmin = m.is_from_admin || m.sender_type === 'admin';
+    const isSupport = m.sender_type === 'support';
+    const preview = (m.content || m.body || '').substring(0, 60);
+    const init = from.split(' ')[0][0].toUpperCase();
+    const badgeClass = isAdmin ? 'admin' : isSupport ? 'support' : '';
+    const badgeText = isAdmin ? '👨‍💼 Admin' : isSupport ? '🆘 Support' : '✓ Verified';
+
+    return `
+    <div class="msg-item${m.is_read ? '' : ' unread'} ${isAdmin ? 'from-admin' : isSupport ? 'from-support' : ''}" onclick="markMsgRead('${escHtml(m.id)}', this)">
+      <div class="msg-avatar ${badgeClass} ${!isAdmin && !isSupport ? 'verified' : ''}">
+        ${escHtml(init)}
+      </div>
+      <div class="msg-body">
+        <div class="msg-header">
+          <span class="msg-from">${escHtml(from)}</span>
+          <span class="msg-badge ${badgeClass}">
+            <i class="bi ${isAdmin ? 'bi-shield-check' : isSupport ? 'bi-exclamation-circle' : 'bi-patch-check-fill'}"></i>
+            ${badgeText}
+          </span>
+        </div>
+        <div class="msg-preview">${escHtml(preview)}${preview.length >= 60 ? '…' : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div class="msg-time">${timeAgo(new Date(m.created_at))}</div>
+        ${!m.is_read ? '<div class="msg-unread-dot"></div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update preview on dashboard
+  const preview = document.getElementById('inbox-preview');
+  if (preview && msgs.length > 0) {
+    const first = msgs[0];
+    const from = senderMap[first.sender_id] || 'Employer';
+    const text = (first.content || first.body || '').substring(0, 80);
+    preview.innerHTML = `<strong>${escHtml(from)}:</strong> ${escHtml(text)}${text.length >= 80 ? '...' : ''}`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  MESSAGE ACTIONS
+// ═══════════════════════════════════════════════════════
+async function markMsgRead(id, el) {
+  try {
+    await sb.from('messages').update({ is_read: true }).eq('id', id);
+    if (el) el.classList.remove('unread');
+    const dot = el && el.querySelector('.msg-unread-dot');
+    if (dot) dot.remove();
+  } catch (e) { console.warn('markMsgRead:', e); }
+}
+
+async function markAllMsgsRead() {
+  try {
+    await sb.from('messages').update({ is_read: true }).eq('receiver_id', currentUser.id).eq('is_read', false);
+    document.querySelectorAll('.msg-item.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.msg-unread-dot').forEach(el => el.remove());
+    const badge = document.getElementById('inbox-unread-badge');
+    if (badge) badge.style.display = 'none';
+    showToast('ok', 'bi-check-all', 'All Read', 'Messages marked as read.');
+  } catch (e) { showToast('err', 'bi-x-circle', 'Error', e.message); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAYMENT FUNCTIONS
+// ═══════════════════════════════════════════════════════
+function renderPaymentBalances() {
+  setText('modal-wallet-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
+  setText('modal-outstanding-balance', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
+  setText('balance-wallet', 'KES ' + walletBalance.toLocaleString('en-KE'));
+  setText('balance-outstanding', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
+  setText('stat-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
+  setText('stat-outstanding', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
+
+  // Payment requirements
+  const requirements = `
+    <div style="font-size:12px;line-height:1.8;color:var(--muted)">
+      <div style="padding:8px;background:${outstandingBalance > 0 ? 'rgba(244,63,94,.08)' : 'rgba(34,197,94,.08)'};border-radius:8px;margin-bottom:8px">
+        <span style="color:var(--ink);font-weight:600">Interview Fee:</span> KES 300
+        <span style="margin-left:12px;color:${outstandingBalance >= 300 ? 'var(--rose)' : 'var(--green)'};font-weight:600">${outstandingBalance >= 300 ? '⚠️ Pending' : '✓ Paid'}</span>
+      </div>
+      <div style="padding:8px;background:${outstandingBalance > 300 ? 'rgba(244,63,94,.08)' : 'rgba(34,197,94,.08)'};border-radius:8px">
+        <span style="color:var(--ink);font-weight:600">First Salary Fee:</span> KES 1,000
+        <span style="margin-left:12px;color:${outstandingBalance > 300 ? 'var(--rose)' : 'var(--green)'};font-weight:600">${outstandingBalance > 300 ? '⚠️ Pending' : '✓ Paid'}</span>
+      </div>
+    </div>
+  `;
+  document.getElementById('payment-requirements').innerHTML = requirements;
+}
+
+function updateNavWallet() {
+  setText('nav-wallet-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
+  const outstanding = document.getElementById('nav-outstanding-balance');
+  if (outstanding) {
+    outstanding.textContent = 'KES ' + outstandingBalance.toLocaleString('en-KE');
+    outstanding.className = 'wallet-amount ' + (outstandingBalance > 0 ? 'warning' : 'success');
+  }
+}
+
+function updatePaymentUI() {
+  const method = document.getElementById('payment-method').value;
+  document.getElementById('mpesa-section').style.display = method === 'mpesa' ? 'block' : 'none';
+  document.getElementById('airtel-section').style.display = method === 'airtel' ? 'block' : 'none';
+  document.getElementById('manual-section').style.display = method === 'manual' ? 'block' : 'none';
+  
+  if (method === 'manual') {
+    const amount = document.getElementById('payment-amount').value || '0';
+    document.getElementById('manual-amount').textContent = 'KES ' + parseInt(amount).toLocaleString('en-KE');
+  }
+}
+
+async function initiateMpesaPayment() {
+  const phone = document.getElementById('mpesa-phone').value;
+  const amount = document.getElementById('payment-amount').value;
+
+  if (!phone || phone.length < 10) {
+    showToast('warn', 'bi-exclamation-circle', 'Invalid Phone', 'Enter a valid M-Pesa number');
+    return;
+  }
+
+  if (!amount || amount < 100) {
+    showToast('warn', 'bi-exclamation-circle', 'Invalid Amount', 'Amount must be at least KES 100');
+    return;
+  }
+
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending STK push to ' + phone + '...');
+
+  // DEMO: In production, call actual M-Pesa API
+  // This would typically call your backend which handles M-Pesa STK push
+  setTimeout(() => {
+    showToast('ok', 'bi-check-circle', 'STK Sent', 'Check your phone for M-Pesa prompt. You have 2 minutes to respond.');
+    
+    // Create transaction record
+    createPaymentRecord(amount, 'mpesa', phone);
+  }, 2000);
+}
+
+async function initiateAirtelPayment() {
+  const phone = document.getElementById('airtel-phone').value;
+  const amount = document.getElementById('payment-amount').value;
+
+  if (!phone || phone.length < 10) {
+    showToast('warn', 'bi-exclamation-circle', 'Invalid Phone', 'Enter a valid Airtel number');
+    return;
+  }
+
+  if (!amount || amount < 100) {
+    showToast('warn', 'bi-exclamation-circle', 'Invalid Amount', 'Amount must be at least KES 100');
+    return;
+  }
+
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending Airtel request to ' + phone + '...');
+
+  // DEMO: In production, call actual Airtel Money API
+  setTimeout(() => {
+    showToast('ok', 'bi-check-circle', 'Request Sent', 'Check your phone for Airtel Money prompt.');
+    createPaymentRecord(amount, 'airtel', phone);
+  }, 2000);
+}
+
+async function verifyManualDeposit() {
+  const receipt = document.getElementById('receipt-code').value;
+  const amount = document.getElementById('payment-amount').value;
+
+  if (!receipt || receipt.length < 10) {
+    showToast('warn', 'bi-exclamation-circle', 'Invalid Receipt', 'Enter a valid receipt code');
+    return;
+  }
+
+  showToast('info', 'bi-hourglass-split spin', 'Verifying', 'Verifying your receipt...');
+
+  // DEMO verification
+  setTimeout(async () => {
+    await createPaymentRecord(amount, 'manual', receipt);
+    showToast('ok', 'bi-check-circle', 'Submitted', 'Receipt submitted. Admin will verify within 24 hours.');
+    closeModal('modal-payments');
+  }, 1500);
+}
+
+async function createPaymentRecord(amount, method, reference) {
+  try {
+    const { data: wallet } = await sb.from('wallets')
+      .select('account_number')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const { error } = await sb.from('payments').insert({
+      user_id: currentUser.id,
+      account_number: wallet?.account_number,
+      amount: parseFloat(amount),
+      payment_method: method,
+      status: method === 'manual' ? 'processing' : 'pending',
+      mpesa_phone: method === 'mpesa' ? reference : null,
+      airtel_phone: method === 'airtel' ? reference : null,
+      bank_account: method === 'manual' ? reference : null,
+      fee_type: parseFloat(amount) === 300 ? 'interview_fee' : 'first_salary_fee',
+    });
+
+    if (!error) {
+      // Create notification
+      await sb.from('notifications').insert({
+        user_id: currentUser.id,
+        type: 'payment_initiated',
+        title: 'Payment Initiated',
+        message: `Payment of KES ${amount} via ${method.toUpperCase()} initiated. Reference: ${reference}`,
+      });
+    }
+  } catch (e) {
+    console.warn('createPaymentRecord:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  PAYMENT TABS
+// ═══════════════════════════════════════════════════════
+function switchPaymentTab(tab, btn) {
+  document.querySelectorAll('.payment-tab').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tabs .tab').forEach(el => el.classList.remove('active'));
+  
+  const tabEl = document.getElementById(tab === 'history' ? 'payment-history-tab' : 'make-payment-tab');
+  if (tabEl) tabEl.style.display = 'block';
+  if (btn) btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBSCRIPTIONS
+// ═══════════════════════════════════════════════════════
+function subscribeToMessages() {
+  sb.channel('messages').on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'messages' },
+    async (payload) => {
+      if (payload.new.receiver_id === currentUser.id) {
+        const { data: msgs } = await sb.from('messages')
+          .select('*')
+          .eq('receiver_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(30);
+        renderInbox(msgs || []);
+      }
+    }
+  ).subscribe();
+}
+
+// ═══════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+  
+  if (id === 'modal-payments') {
+    renderPaymentBalances();
+  }
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val ?? '—';
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(d) {
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showToast(type, icon, title, body, duration) {
+  const stack = document.getElementById('toast-stack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'info');
+  t.innerHTML = `<i class="bi ${escHtml(icon)}"></i><div class="toast-msg"><strong>${escHtml(title)}</strong>${body ? `<p>${escHtml(String(body))}</p>` : ''}</div>`;
+  stack.appendChild(t);
+  const d = duration !== undefined ? duration : 4000;
+  if (d > 0) setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, d);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+</script>
+
+</body>
+</html>
