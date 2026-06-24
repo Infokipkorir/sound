@@ -1190,14 +1190,32 @@ function loadConversation(key){
   document.getElementById('message-detail').innerHTML = html;
 }
 
+async function getOrCreateConversation(recipientId){
+  const adminId = currentUser.id;
+  const {data:existing} = await sb.from('conversations')
+    .select('id')
+    .or(`and(employer_id.eq.${adminId},employee_id.eq.${recipientId}),and(employer_id.eq.${recipientId},employee_id.eq.${adminId})`)
+    .maybeSingle();
+  if(existing) return existing.id;
+  const {data:created,error} = await sb.from('conversations')
+    .insert([{employer_id:adminId,employee_id:recipientId}])
+    .select('id')
+    .single();
+  if(error) throw new Error('Could not create conversation: '+error.message);
+  return created.id;
+}
+
 async function sendReply(a,b){
   const body = document.getElementById('reply-box').value.trim();
   if(!body) return;
-  const r = await sb.from('messages').insert([{sender_id:currentUser.id,receiver_id:a,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
-  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
-  toast('ok','bi-send-fill','Sent','Reply sent',2500);
-  await loadAllData(true);
-  loadConversation(window._convCache.key);
+  try{
+    const conversation_id = await getOrCreateConversation(a);
+    const r = await sb.from('messages').insert([{conversation_id,sender_id:currentUser.id,receiver_id:a,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
+    if(r.error) throw r.error;
+    toast('ok','bi-send-fill','Sent','Reply sent',2500);
+    await loadAllData(true);
+    loadConversation(window._convCache.key);
+  }catch(e){toast('err','bi-exclamation-circle','Error',e.message,4000);}
 }
 
 async function softDeleteMessage(id){
@@ -1254,11 +1272,14 @@ async function sendComposeMessage(){
   const recipient = val('compose-recipient');
   const body = val('compose-body');
   if(!recipient || !body){ toast('warn','bi-exclamation-circle','Missing Fields','Select a recipient and write a message',3000); return; }
-  const r = await sb.from('messages').insert([{sender_id:currentUser.id,receiver_id:recipient,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
-  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
-  toast('ok','bi-send-fill','Sent','Message sent',3000);
-  closeModal('composeModal');
-  await loadAllData(true);
+  try{
+    const conversation_id = await getOrCreateConversation(recipient);
+    const r = await sb.from('messages').insert([{conversation_id,sender_id:currentUser.id,receiver_id:recipient,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
+    if(r.error) throw r.error;
+    toast('ok','bi-send-fill','Sent','Message sent',3000);
+    closeModal('composeModal');
+    await loadAllData(true);
+  }catch(e){toast('err','bi-exclamation-circle','Error',e.message,4000);}
 }
 
 async function sendQuickMessage(){
@@ -1267,11 +1288,14 @@ async function sendQuickMessage(){
   const body = document.getElementById('quick-msg-body').value.trim();
   if(!body) return;
   const recipientAuthId = u?.session_id || selectedUserId;
-  const r = await sb.from('messages').insert([{sender_id:currentUser.id,receiver_id:recipientAuthId,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
-  if(r.error){toast('err','bi-exclamation-circle','Error',r.error.message,4000);return;}
-  document.getElementById('quick-msg-body').value='';
-  toast('ok','bi-send-fill','Sent','Message sent to user',3000);
-  await loadAllData(true);
+  try{
+    const conversation_id = await getOrCreateConversation(recipientAuthId);
+    const r = await sb.from('messages').insert([{conversation_id,sender_id:currentUser.id,receiver_id:recipientAuthId,content:body,body,msg_type:'text',is_from_admin:true,is_read:false}]);
+    if(r.error) throw r.error;
+    document.getElementById('quick-msg-body').value='';
+    toast('ok','bi-send-fill','Sent','Message sent to user',3000);
+    await loadAllData(true);
+  }catch(e){toast('err','bi-exclamation-circle','Error',e.message,4000);}
 }
 
 /* ════════════════════════════════════
