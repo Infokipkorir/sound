@@ -759,44 +759,130 @@ function updateNavForUser(name, photoUrl, roleLabel) {
    LOAD DATA
 ══════════════════════════════════════════ */
 async function loadAndRenderData() {
-  setLoaderText('Loading workers…');
+  try {
+    setLoaderText('Loading workers…');
 
-  /* WORKERS */
-  const { data: workersData, error: workersError } = await supabase
-    .from('worker_profiles')
-    .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at, created_at')
-    .eq('status', 'approved')
-    .neq('is_deleted', true)
-    .order('created_at', { ascending: false })
-    .limit(4);
+    /* WORKERS */
+    const { data: workersData, error: workersError } = await supabase
+      .from('worker_profiles')
+      .select('id, full_name, profile_photo_url, county, preferred_role, salary_min, salary_max, key_skills, availability, submitted_at, created_at')
+      .eq('status', 'approved')
+      .neq('is_deleted', true)
+      .order('created_at', { ascending: false })
+      .limit(4);
 
-  setLoaderText('Loading jobs…');
+    console.log('✅ Workers query:', { count: workersData?.length || 0, error: workersError });
+    if (workersError) console.error('[Worker Error]', workersError);
 
-  /* JOBS — confirmed: status='active', company_name on job row itself */
-  const { data: jobsData, error: jobsError } = await supabase
-    .from('job_postings')
-    .select('id, title, location, county, salary_min, salary_max, job_role, job_type, work_type, is_urgent, created_at, company_name, employer_profiles(full_name, company_name, profile_photo_url, is_verified)')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(4);
+    setLoaderText('Loading jobs…');
 
-  setLoaderText('Almost there…');
+    /* JOBS — FLAT QUERY (no FK join to avoid errors) */
+    const { data: jobsData, error: jobsError } = await supabase
+      .from('job_postings')
+      .select('id, title, location, county, salary_min, salary_max, job_role, job_type, work_type, is_urgent, created_at, company_name, employer_id')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(4);
 
-  /* COUNTS */
-  const [{ count: wCount }, { count: jCount }, { count: eCount }] = await Promise.all([
-    supabase.from('worker_profiles').select('id',{count:'exact',head:true}).eq('status','approved').neq('is_deleted',true),
-    supabase.from('job_postings').select('id',{count:'exact',head:true}).eq('status','active'),
-    supabase.from('employer_profiles').select('id',{count:'exact',head:true}),
-  ]);
+    console.log('✅ Jobs query:', { count: jobsData?.length || 0, error: jobsError });
+    if (jobsError) console.error('[Jobs Error]', jobsError);
 
-  renderWorkers(workersData, workersError);
-  renderJobs(jobsData, jobsError);
+    // If jobs exist, fetch employer info separately (one query per job is safer than FK)
+    let jobsWithEmployer = jobsData || [];
+    if (jobsWithEmployer.length > 0) {
+      try {
+        const empIds = [...new Set(jobsWithEmployer.map(j => j.employer_id).filter(Boolean))];
+        if (empIds.length > 0) {
+          const { data: emps, error: empErr } = await supabase
+            .from('employer_profiles')
+            .select('id, full_name, company_name, profile_photo_url, is_verified')
+            .in('id', empIds);
+          
+          if (!empErr && emps) {
+            const empMap = Object.fromEntries(emps.map(e => [e.id, e]));
+            jobsWithEmployer = jobsWithEmployer.map(j => ({
+              ...j,
+              employer_profiles: empMap[j.employer_id] || null
+            }));
+          }
+        }
+      } catch(e) {
+        console.warn('[Employer Lookup] Non-critical:', e);
+        // Continue without employer details
+      }
+    }
 
-  document.getElementById('workers-badge').textContent = wCount != null ? `${wCount} workers` : 'Live';
-  document.getElementById('jobs-badge').textContent    = jCount != null ? `${jCount} open`    : 'Live';
-  animateCounter('stat-workers',   wCount || 0);
-  animateCounter('stat-jobs',      jCount || 0);
-  animateCounter('stat-employers', eCount || 0);
+    setLoaderText('Getting statistics…');
+
+    /* COUNTS */
+    let wCount = null, jCount = null, eCount = null;
+    try {
+      const res1 = await supabase
+        .from('worker_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'approved')
+        .neq('is_deleted', true);
+      wCount = res1.count;
+      console.log('✅ Worker count:', wCount, res1.error ? `(error: ${res1.error.message})` : '');
+    } catch(e) { console.error('[Count Error]', 'workers', e); }
+
+    try {
+      const res2 = await supabase
+        .from('job_postings')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
+      jCount = res2.count;
+      console.log('✅ Job count:', jCount, res2.error ? `(error: ${res2.error.message})` : '');
+    } catch(e) { console.error('[Count Error]', 'jobs', e); }
+
+    try {
+      const res3 = await supabase
+        .from('employer_profiles')
+        .select('id', { count: 'exact', head: true });
+      eCount = res3.count;
+      console.log('✅ Employer count:', eCount, res3.error ? `(error: ${res3.error.message})` : '');
+    } catch(e) { console.error('[Count Error]', 'employers', e); }
+
+    console.log('📊 Final Counts:', { workers: wCount, jobs: jCount, employers: eCount });
+
+    /* RENDER */
+    renderWorkers(workersData, workersError);
+    renderJobs(jobsWithEmployer, jobsError);
+
+    document.getElementById('workers-badge').textContent = wCount != null ? `${wCount} workers` : 'Live';
+    document.getElementById('jobs-badge').textContent    = jCount != null ? `${jCount} open`    : 'Live';
+    animateCounter('stat-workers',   wCount || 0);
+    animateCounter('stat-jobs',      jCount || 0);
+    animateCounter('stat-employers', eCount || 0);
+
+    console.log('✅ Data loaded and rendered successfully');
+
+  } catch (err) {
+    console.error('❌ loadAndRenderData fatal error:', err);
+    showToast('Failed to load data. Please refresh the page.', 'error', 5000);
+    // Show error in feeds
+    document.getElementById('workers-feed').innerHTML = `
+      <div class="error-message">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>Failed to load workers. Please check your connection and refresh.</span>
+      </div>`;
+    document.getElementById('jobs-feed').innerHTML = `
+      <div class="error-message">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>Failed to load jobs. Please check your connection and refresh.</span>
+      </div>`;
+  } finally {
+    // ALWAYS hide the loader, even if there's an error
+    console.log('🔄 Removing loader…');
+    setLoaderText('Done');
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        setTimeout(() => loader?.remove(), 500);
+      }, 800); // Give user a moment to see "Done"
+    }
+  }
 }
 
 function setLoaderText(t) { const el = document.getElementById('loader-text'); if(el) el.textContent = t; }
