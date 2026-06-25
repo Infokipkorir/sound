@@ -691,6 +691,7 @@
           <label>Payment Method</label>
           <select id="pay-method" onchange="updatePaymentUI()">
             <option value="">Choose…</option>
+            <option value="wallet">💰 Pay from Wallet Balance</option>
             <option value="mpesa">📱 M-Pesa</option>
             <option value="airtel">📞 Airtel Money</option>
             <option value="manual">🏦 Paybill Deposit</option>
@@ -701,6 +702,18 @@
           <label>Amount (KES)</label>
           <input type="number" id="pay-amount" placeholder="300 or 1000" min="100" step="100">
           <span class="form-hint">Interview: 300 | First Salary: 1000</span>
+        </div>
+
+        <!-- WALLET BALANCE -->
+        <div id="wallet-form" style="display:none;">
+          <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:var(--brand);">💰 Pay from Wallet Balance</strong><br>
+            Your available balance: <strong id="wallet-pay-balance">KES 0</strong><br>
+            Funds will be deducted instantly from your wallet.
+          </div>
+          <button class="btn btn-primary btn-full" onclick="payFromWallet()">
+            <i class="bi bi-wallet2"></i> Pay from Balance
+          </button>
         </div>
 
         <!-- M-PESA -->
@@ -1185,10 +1198,11 @@ async function applyJob(jobId, btn) {
   btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Applying…';
 
   // Check for existing application
+  // RLS on job_applications uses worker_id = auth.uid() so we check against currentUser.id
   const { data: existing } = await sb.from('job_applications')
     .select('id')
     .eq('job_id', jobId)
-    .eq('worker_id', workerProfile.id)
+    .eq('worker_id', currentUser.id)
     .maybeSingle();
 
   if (existing) {
@@ -1198,12 +1212,12 @@ async function applyJob(jobId, btn) {
     return;
   }
 
-  // job_applications INSERT: worker_id references worker_profiles.id
+  // job_applications INSERT: RLS requires worker_id = auth.uid()
   const { error } = await sb.from('job_applications').insert({
     job_id: jobId,
-    worker_id: workerProfile.id,
+    worker_id: currentUser.id,
     worker_name: workerProfile.full_name || '',
-    worker_phone: workerProfile.phone || '',
+    worker_phone: workerProfile.phone || workerProfile.phone_number || '',
     status: 'pending',
     applied_at: new Date().toISOString(),
   });
@@ -1270,13 +1284,124 @@ function updateFeeStatus(data) {
 
 function updatePaymentUI() {
   const method = document.getElementById('pay-method').value;
+  document.getElementById('wallet-form').style.display = method === 'wallet' ? 'block' : 'none';
   document.getElementById('mpesa-form').style.display = method === 'mpesa' ? 'block' : 'none';
   document.getElementById('airtel-form').style.display = method === 'airtel' ? 'block' : 'none';
   document.getElementById('manual-form').style.display = method === 'manual' ? 'block' : 'none';
 
+  if (method === 'wallet') {
+    // Show current balance so user can confirm they have enough
+    const balText = document.getElementById('wallet-balance').textContent;
+    document.getElementById('wallet-pay-balance').textContent = balText;
+  }
   if (method === 'manual') {
     const amt = document.getElementById('pay-amount').value || 0;
     document.getElementById('paybill-amount').textContent = 'KES ' + parseInt(amt || 0).toLocaleString('en-KE');
+  }
+}
+
+async function payFromWallet() {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const feeType = document.getElementById('fee-type').value;
+
+  if (!amount || amount <= 0) {
+    showToast('err', 'bi-exclamation-circle', 'Missing', 'Select a fee type and enter an amount');
+    return;
+  }
+
+  // Fetch live wallet balance first
+  const { data: wallet, error: wErr } = await sb.from('wallets')
+    .select('balance, account_number')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (wErr || !wallet) {
+    showToast('err', 'bi-exclamation-circle', 'Wallet Error', 'Could not read your wallet. Please try another payment method.');
+    return;
+  }
+
+  const balance = parseFloat(wallet.balance || 0);
+  if (balance < amount) {
+    showToast('err', 'bi-exclamation-circle', 'Insufficient Balance',
+      `Your wallet has KES ${balance.toLocaleString('en-KE')} but KES ${amount.toLocaleString('en-KE')} is required.`);
+    return;
+  }
+
+  const btn = document.querySelector('#wallet-form .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
+
+  try {
+    // 1. Deduct from wallet
+    const newBalance = balance - amount;
+    const { error: updateErr } = await sb.from('wallets')
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id);
+
+    if (updateErr) throw new Error(updateErr.message);
+
+    // 2. Create payment record (status = completed, method = wallet)
+    const { error: payErr } = await sb.from('payments').insert({
+      user_id: currentUser.id,
+      amount,
+      fee_type: feeType,
+      payment_method: 'wallet',
+      status: 'completed',
+      account_number: wallet.account_number || workerProfile?.account_number || null,
+      paybill_number: '400200',
+    });
+
+    if (payErr) {
+      // Rollback wallet deduction on payment insert failure
+      await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
+      throw new Error(payErr.message);
+    }
+
+    // 3. Update fee flags on wallets table
+    const feeUpdate = {};
+    if (feeType === 'interview_fee') {
+      feeUpdate.interview_fee_paid = true;
+      feeUpdate.interview_fee_paid_at = new Date().toISOString();
+      feeUpdate.interview_fee_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (feeType === 'first_salary_fee') {
+      feeUpdate.first_salary_fee_paid = true;
+      feeUpdate.first_salary_fee_paid_at = new Date().toISOString();
+      feeUpdate.first_salary_fee_expires_at = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    if (Object.keys(feeUpdate).length) {
+      await sb.from('wallets').update(feeUpdate).eq('user_id', currentUser.id);
+      // Mirror on worker_profiles
+      const wpUpdate = {};
+      if (feeType === 'interview_fee') { wpUpdate.interview_fee_paid = true; wpUpdate.payment_status = 'partial'; }
+      if (feeType === 'first_salary_fee') { wpUpdate.first_salary_fee_paid = true; wpUpdate.payment_status = 'paid'; }
+      if (Object.keys(wpUpdate).length) {
+        await sb.from('worker_profiles').update(wpUpdate).eq('email', currentUser.email);
+      }
+    }
+
+    // 4. Update local UI
+    document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    updateFeeStatus({ interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid, first_salary_fee_paid: feeType === 'first_salary_fee' || workerProfile?.first_salary_fee_paid });
+
+    // 5. Refresh payment history
+    const { data: payments } = await sb.from('payments')
+      .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    renderPaymentHistory(payments || []);
+
+    showToast('ok', 'bi-check-circle', 'Payment Successful',
+      `KES ${amount.toLocaleString('en-KE')} deducted from your wallet.`);
+    closeModal('modal-wallet');
+
+  } catch (e) {
+    showToast('err', 'bi-exclamation-circle', 'Payment Failed', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-wallet2"></i> Pay from Balance';
   }
 }
 
