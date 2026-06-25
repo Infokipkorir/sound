@@ -877,13 +877,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ════════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
-    // 1. worker_profiles — match by email (JWT-based RLS allows this)
-    const { data: wp, error: wpErr } = await sb.from('worker_profiles')
-      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage')
-      .eq('email', currentUser.email)
+    // 1. worker_profiles — try session_id (= auth.uid()) first, then fall back to email
+    // DB reality: no user_id column exists on worker_profiles; link is via session_id (uuid text) OR email
+    let wp = null, wpErr = null;
+
+    // Attempt 1: session_id match (RLS policy: session_id = auth.uid()::text)
+    const { data: bySession, error: e1 } = await sb.from('worker_profiles')
+      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
+      .eq('session_id', currentUser.id)
       .maybeSingle();
 
-    if (wpErr) console.warn('worker_profiles:', wpErr.message);
+    if (bySession) {
+      wp = bySession;
+    } else {
+      // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
+      const { data: byEmail, error: e2 } = await sb.from('worker_profiles')
+        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
+        .eq('email', currentUser.email)
+        .order('created_at', { ascending: false }) // newest profile wins if duplicates
+        .limit(1)
+        .maybeSingle();
+
+      wp = byEmail || null;
+      wpErr = e2;
+
+      // If we found a profile by email but session_id is missing, backfill it
+      if (wp && !bySession) {
+        sb.from('worker_profiles')
+          .update({ session_id: currentUser.id })
+          .eq('id', wp.id)
+          .then(() => {}).catch(() => {});
+      }
+    }
+
+    if (wpErr) console.warn('worker_profiles:', wpErr?.message);
     workerProfile = wp || null;
 
     // Welcome banner
@@ -1248,9 +1275,14 @@ async function toggleVisibility() {
     ? 'Employers can find you in search results'
     : 'You are not appearing in employer searches';
 
+  // Use workerProfile.id for a guaranteed single-row update; RLS is satisfied because
+  // the row was already fetched under the user's session (session_id or email match).
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
   const { error } = await sb.from('worker_profiles')
     .update({ profile_visible: newVal })
-    .eq('email', currentUser.email);
+    .eq(matchCol, matchVal);
 
   if (error) {
     // Revert on failure
@@ -1374,8 +1406,8 @@ async function payFromWallet() {
       const wpUpdate = {};
       if (feeType === 'interview_fee') { wpUpdate.interview_fee_paid = true; wpUpdate.payment_status = 'partial'; }
       if (feeType === 'first_salary_fee') { wpUpdate.first_salary_fee_paid = true; wpUpdate.payment_status = 'paid'; }
-      if (Object.keys(wpUpdate).length) {
-        await sb.from('worker_profiles').update(wpUpdate).eq('email', currentUser.email);
+      if (Object.keys(wpUpdate).length && workerProfile?.id) {
+        await sb.from('worker_profiles').update(wpUpdate).eq('id', workerProfile.id);
       }
     }
 
