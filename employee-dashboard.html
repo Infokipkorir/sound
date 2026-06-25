@@ -462,7 +462,7 @@
     <button class="nav-btn" onclick="openModal('modal-wallet')" title="Wallet & Payments">
       <i class="bi bi-wallet2"></i>
     </button>
-    <button class="nav-avatar" onclick="openModal('modal-account')" id="nav-avatar" title="Account">W</button>
+    <button class="nav-avatar" onclick="openModal('modal-account')" id="nav-avatar" title="Account"><span id="nav-avatar-init">W</span></button>
   </div>
 </div>
 
@@ -511,7 +511,7 @@
     <div class="section-title"><i class="bi bi-eye" style="color: var(--brand);"></i> Profile Visibility</div>
     <div class="visibility-toggle">
       <label class="toggle-switch">
-        <input type="checkbox" id="visibility-toggle" onchange="toggleVisibility()">
+        <input type="checkbox" id="visibility-toggle" onclick="toggleVisibility()">
         <span class="toggle-track"></span>
       </label>
       <div>
@@ -876,7 +876,7 @@ async function loadDashboard() {
     // Welcome banner
     const name = workerProfile?.full_name || currentUser.email?.split('@')[0] || 'Worker';
     document.getElementById('welcome-name').textContent = 'Welcome back, ' + name + ' 👋';
-    document.getElementById('nav-avatar').textContent = name[0].toUpperCase();
+    document.getElementById('nav-avatar-init').textContent = name[0].toUpperCase();
     document.getElementById('account-avatar').textContent = name[0].toUpperCase();
     document.getElementById('account-name').textContent = name;
     document.getElementById('account-email').textContent = currentUser.email;
@@ -1083,7 +1083,8 @@ async function openConversation(convId, fromName) {
   convEl.scrollTop = convEl.scrollHeight;
   document.getElementById('conv-status').textContent = msgs?.length + ' messages';
 
-  switchTab('messages-view', document.querySelectorAll('#modal-messages .tab')[1]);
+  const convTabBtn = document.querySelector('#modal-messages .tabs .tab:last-child');
+  switchTab('messages-view', convTabBtn);
   if (!document.getElementById('modal-messages').classList.contains('open')) {
     openModal('modal-messages');
   }
@@ -1223,23 +1224,31 @@ async function applyJob(jobId, btn) {
 let visibilityUpdating = false;
 async function toggleVisibility() {
   if (visibilityUpdating) return;
+  const checkbox = document.getElementById('visibility-toggle');
+  const newVal = checkbox.checked; // onclick fires AFTER checked changes — reliable
   visibilityUpdating = true;
-  const newVal = document.getElementById('visibility-toggle').checked;
 
-  // worker_profiles UPDATE: matches by email (RLS: email = auth.jwt()->'email')
+  // Optimistic UI update
+  document.getElementById('visibility-label').textContent = newVal ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+  document.getElementById('visibility-sub').textContent = newVal
+    ? 'Employers can find you in search results'
+    : 'You are not appearing in employer searches';
+
   const { error } = await sb.from('worker_profiles')
     .update({ profile_visible: newVal })
     .eq('email', currentUser.email);
 
   if (error) {
-    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
-    document.getElementById('visibility-toggle').checked = !newVal;
-  } else {
-    document.getElementById('visibility-label').textContent = newVal ? 'Profile is Visible to Employers' : 'Profile is Hidden';
-    document.getElementById('visibility-sub').textContent = newVal
+    // Revert on failure
+    checkbox.checked = !newVal;
+    document.getElementById('visibility-label').textContent = !newVal ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+    document.getElementById('visibility-sub').textContent = !newVal
       ? 'Employers can find you in search results'
       : 'You are not appearing in employer searches';
-    showToast('ok', 'bi-check-circle', newVal ? 'Visible' : 'Hidden', newVal ? 'Employers can now find you.' : 'Your profile is hidden.');
+    showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message);
+  } else {
+    showToast('ok', 'bi-check-circle', newVal ? 'Profile Visible' : 'Profile Hidden',
+      newVal ? 'Employers can now find you.' : 'Your profile is now hidden from searches.');
   }
   visibilityUpdating = false;
 }
@@ -1477,8 +1486,18 @@ function subscribeToRealtime() {
 //  AUTH
 // ════════════════════════════════════════════════════════
 async function signOut() {
-  await sb.from('user_presence').update({ is_online: false }).eq('user_id', currentUser.id).catch(() => {});
-  await sb.auth.signOut();
+  const btn = document.querySelector('#modal-account .btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Signing out…'; }
+
+  try {
+    // Presence update fire-and-forget
+    sb.from('user_presence').update({ is_online: false, last_seen: new Date().toISOString() })
+      .eq('user_id', currentUser.id).then(() => {}).catch(() => {});
+
+    await sb.auth.signOut();
+  } catch (e) {
+    console.warn('signOut error:', e);
+  }
   window.location.href = 'login.html';
 }
 
@@ -1489,10 +1508,12 @@ function openModal(id) { document.getElementById(id)?.classList.add('open'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 function switchTab(tabId, btn) {
-  const modal = btn?.closest('.modal-body') || btn?.closest('.modal');
-  const container = btn?.closest('.modal-body');
-  container?.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  btn?.closest('.tabs')?.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  // Scope to the nearest .modal so sibling modals' tabs are not affected
+  const modal = btn ? btn.closest('.modal') : null;
+  if (modal) {
+    modal.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    modal.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  }
   document.getElementById(tabId)?.classList.add('active');
   btn?.classList.add('active');
 }
