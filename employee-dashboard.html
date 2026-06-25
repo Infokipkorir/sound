@@ -436,10 +436,8 @@
     }
   </style>
 </head>
-<body> 
-<script>const { data: { user }, error } = await supabase.auth.getUser();
-console.log('User:', user);
-console.log('Auth Error:', error);</script>
+<body>
+
 <!-- NAV -->
 <div class="nav">
   <a href="index.html" class="nav-logo">
@@ -856,13 +854,15 @@ let allJobs = [];
 document.addEventListener('DOMContentLoaded', async () => {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Auth check
+  // Auth check — getUser() gives server-verified identity (not just local session cache)
   const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) {
-    window.location.href = 'login.html';
-    return;
-  }
-  currentUser = session.user;
+  if (!session?.user) { window.location.href = 'login.html'; return; }
+
+  const { data: { user }, error: authErr } = await sb.auth.getUser();
+  console.log('AUTH USER:', user);
+  console.log('AUTH ERROR:', authErr);
+  if (!user) { console.error('getUser() returned null — redirecting'); window.location.href = 'login.html'; return; }
+  currentUser = user;
 
   // Update presence
   await sb.from('user_presence').upsert(
@@ -870,7 +870,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     { onConflict: 'user_id' }
   ).catch(() => {});
 
-  await loadDashboard();
+  try {
+    await loadDashboard();
+  } catch (err) {
+    console.error('Top-level dashboard crash:', err);
+    showToast('err', 'bi-exclamation-circle', 'Dashboard failed to load', err.message);
+  }
   subscribeToRealtime();
 });
 
@@ -887,14 +892,17 @@ async function loadDashboard() {
     // DB reality: no user_id column exists on worker_profiles; link is via session_id (uuid text) OR email
     let wp = null, wpErr = null;
 
-    // Attempt 1: session_id match (RLS policy: session_id = auth.uid()::text)
+    // Attempt 1: session_id match — use limit(2) so duplicate rows never cause a 406 crash
     console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
-    const { data: bySession, error: e1 } = await sb.from('worker_profiles')
-      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
+    const { data: bySessionRows, error: e1 } = await sb.from('worker_profiles')
+      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
       .eq('session_id', currentUser.id)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(2);
 
     if (e1) console.warn('❌ Attempt 1 error:', e1.message);
+    const bySession = bySessionRows?.[0] || null;
+    if (bySessionRows?.length > 1) console.warn('⚠️  Duplicate session_id rows detected — using most recent');
     if (bySession) {
       console.log('✅ Attempt 1 SUCCESS:', bySession);
       wp = bySession;
@@ -902,14 +910,14 @@ async function loadDashboard() {
       console.log('⚠️  No session_id match. Trying email…');
       // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
       console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
-      const { data: byEmail, error: e2 } = await sb.from('worker_profiles')
-        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
+      const { data: byEmailRows, error: e2 } = await sb.from('worker_profiles')
+        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
         .eq('email', currentUser.email)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(2);
 
       if (e2) console.warn('❌ Attempt 2 error:', e2.message);
+      const byEmail = byEmailRows?.[0] || null;
       if (byEmail) {
         console.log('✅ Attempt 2 SUCCESS:', byEmail);
       } else {
@@ -919,7 +927,7 @@ async function loadDashboard() {
       wp = byEmail || null;
       wpErr = e2;
 
-      // If we found a profile by email but session_id is missing, backfill it
+      // If we found a profile by email but session_id is missing/wrong, backfill it
       if (wp && !bySession) {
         console.log('🔧 Backfilling session_id on row', wp.id);
         sb.from('worker_profiles')
@@ -1012,9 +1020,10 @@ async function loadDashboard() {
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
+    console.log('WALLET DATA:', wallet);
+    console.log('WALLET ERROR:', wErr);
     if (wErr) console.warn('❌ wallets error:', wErr.message);
     if (wallet) {
-      console.log('✅ Wallet loaded:', wallet);
     } else {
       console.log('⚠️  No wallet record exists for this user yet');
     }
@@ -1572,6 +1581,8 @@ async function loadNotifications() {
     .order('created_at', { ascending: false })
     .limit(20);
 
+  console.log('NOTIFICATIONS DATA:', notifs);
+  console.log('NOTIFICATIONS ERROR:', error);
   if (error) { console.warn('notifications:', error.message); return; }
 
   const unread = (notifs || []).filter(n => !n.is_read).length;
