@@ -4,16 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Dashboard – Amilia Care</title>
-  <meta name="description" content="Manage your Amilia Care worker profile, payments, and job applications.">
-  <meta property="og:title" content="Amilia Care Worker Dashboard">
-  <meta property="og:image" content="https://www.amilia.co.ke/og-worker.png">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <style>
     :root {
       --ink: #0f1923;
-      --ink2: #1e2e3e;
       --teal: #00b89c;
       --teal-dark: #008c76;
       --teal-soft: rgba(0,184,156,0.10);
@@ -26,7 +22,6 @@
       --card: #ffffff;
       --border: #dde5ee;
       --muted: #5a7087;
-      --nav-h: 60px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,12 +34,12 @@
       min-height: 100vh;
     }
 
-    /* ── ENHANCED NAV WITH WALLET ─────────────────────────── */
+    /* NAV */
     .nav {
       background: var(--card);
       border-bottom: 1px solid var(--border);
       padding: 0 1.5rem;
-      height: var(--nav-h);
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -61,178 +56,260 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      letter-spacing: -0.3px;
     }
 
     .logo-icon {
-      width: 30px; height: 30px;
+      width: 30px;
+      height: 30px;
       background: var(--teal);
       border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 13px; font-weight: 800;
-    }
-
-    /* Wallet display in nav */
-    .nav-wallet {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 0 12px;
-      margin: 0 8px;
-      border-right: 1px solid var(--border);
-      border-left: 1px solid var(--border);
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
     }
 
-    .wallet-item {
+    .nav-right {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      cursor: pointer;
-      transition: 0.18s;
+      align-items: center;
+      gap: 4px;
     }
 
-    .wallet-item:hover {
+    .nav-btn {
+      position: relative;
+      background: none;
+      border: none;
+      font-size: 19px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 8px;
+      border-radius: 10px;
+      transition: 0.18s;
+      display: flex;
+    }
+
+    .nav-btn:hover {
+      background: var(--teal-soft);
       color: var(--teal);
     }
 
-    .wallet-label {
-      font-size: 10px;
-      color: var(--muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+    .nav-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      min-width: 16px;
+      height: 16px;
+      background: var(--rose);
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      font-size: 8px;
+      color: #fff;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
     }
 
-    .wallet-amount {
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--ink);
-    }
-
-    .wallet-amount.warning {
-      color: var(--rose);
-    }
-
-    .wallet-amount.success {
-      color: var(--green);
-    }
-
-    .nav-right { display: flex; align-items: center; gap: 4px; }
-
-    .nav-icon-btn {
-      position: relative;
-      background: none; border: none;
-      font-size: 19px; cursor: pointer;
-      color: var(--muted); padding: 8px;
-      border-radius: 10px; transition: 0.18s;
+    .nav-badge.show {
       display: flex;
     }
-    .nav-icon-btn:hover { background: var(--teal-soft); color: var(--teal); }
 
-    .nav-badge {
-      position: absolute; top: 3px; right: 3px;
-      min-width: 14px; height: 14px;
-      background: var(--rose);
-      border-radius: 50px; border: 2px solid var(--card);
-      font-size: 8px; color: #fff; font-weight: 700;
-      display: none; align-items: center; justify-content: center; padding: 0 2px;
-    }
-    .nav-badge.show { display: flex; }
-
-    .nav-avatar-btn {
-      width: 34px; height: 34px;
-      border-radius: 50%; border: 2px solid var(--border);
+    .nav-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
       background: linear-gradient(135deg, var(--teal), #00d4b8);
-      color: #fff; font-size: 12px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      overflow: hidden; transition: 0.18s;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
     }
-    .nav-avatar-btn:hover { border-color: var(--teal); }
-    .nav-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ── LAYOUT ──────────────────────────────────────────── */
-    .page { max-width: 960px; margin: 0 auto; padding: 1.6rem 1.2rem 5rem; }
+    .nav-avatar:hover {
+      border-color: var(--teal);
+    }
 
-    /* ── STATS ROW ───────────────────────────────────────── */
+    /* PAGE */
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.2rem 5rem;
+    }
+
+    /* STATS */
     .stats {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px; margin-bottom: 1.2rem;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 2rem;
     }
 
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 0.85rem 0.9rem;
-      display: flex; flex-direction: column; gap: 5px;
-      cursor: pointer; transition: 0.2s;
-      text-decoration: none; color: inherit;
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      text-decoration: none;
+      color: inherit;
     }
-    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,184,156,0.12); border-color: #b0ddd7; }
+
+    .stat-card:hover {
+      box-shadow: 0 4px 12px rgba(0,184,156,0.15);
+      border-color: var(--teal);
+    }
 
     .stat-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
-      background: var(--teal-soft); color: var(--teal);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: var(--teal-soft);
+      color: var(--teal);
+      margin-bottom: 8px;
     }
-    .stat-icon.msg { background: rgba(14,165,233,0.1); color: var(--sky); }
-    .stat-icon.notif { background: rgba(245,158,11,0.1); color: var(--gold); }
-    .stat-icon.jobs { background: rgba(139,92,246,0.1); color: var(--violet); }
 
-    .stat-val {
-      font-size: 1.2rem; font-weight: 800;
-      line-height: 1; letter-spacing: -0.3px;
+    .stat-icon.msg {
+      background: rgba(14,165,233,0.1);
+      color: var(--sky);
     }
-    .stat-lbl { font-size: 10.5px; color: var(--muted); font-weight: 500; }
 
-    /* ── MESSAGES WITH VERIFIED BADGES ──────────────────── */
-    .inbox-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; margin-bottom: 1.1rem; }
-    .inbox-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-    .inbox-head h3 { font-size: 1rem; font-weight: 700; }
+    .stat-icon.job {
+      background: rgba(139,92,246,0.1);
+      color: var(--violet);
+    }
 
+    .stat-icon.pay {
+      background: rgba(245,158,11,0.1);
+      color: var(--gold);
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    /* SECTION */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* MESSAGE ITEM */
     .msg-item {
-      display: flex; gap: 12px; padding: 12px;
-      border: 1px solid var(--border); border-radius: 11px; margin-bottom: 8px;
-      cursor: pointer; transition: .18s; background: var(--surface);
-    }
-    .msg-item:hover { border-color: var(--teal); background: var(--card); }
-    .msg-item.unread { background: rgba(0,184,156,.04); border-color: rgba(0,184,156,.25); }
-    .msg-item.from-admin { border-left: 3px solid var(--rose); }
-    .msg-item.from-support { border-left: 3px solid var(--sky); }
-
-    .msg-avatar { 
-      width: 40px; height: 40px; border-radius: 50%; 
-      background: linear-gradient(135deg,var(--teal),#00d4b8);
-      color: #fff; font-size: 14px; font-weight: 700; 
-      display: flex; align-items: center; justify-content: center; 
-      flex-shrink: 0; position: relative;
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: 0.18s;
+      background: var(--surface);
     }
 
-    .msg-avatar.admin { background: linear-gradient(135deg,var(--rose),#f87171); }
-    .msg-avatar.support { background: linear-gradient(135deg,var(--sky),#38bdf8); }
+    .msg-item:hover {
+      border-color: var(--teal);
+      background: var(--card);
+    }
+
+    .msg-item.unread {
+      background: rgba(0,184,156,.05);
+      border-color: rgba(0,184,156,.25);
+    }
+
+    .msg-item.admin {
+      border-left: 3px solid var(--rose);
+    }
+
+    .msg-item.support {
+      border-left: 3px solid var(--sky);
+    }
+
+    .msg-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), #00d4b8);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .msg-avatar.admin {
+      background: linear-gradient(135deg, var(--rose), #f87171);
+    }
+
+    .msg-avatar.support {
+      background: linear-gradient(135deg, var(--sky), #38bdf8);
+    }
+
     .msg-avatar.verified::after {
       content: '✓';
       position: absolute;
       bottom: -2px;
       right: -2px;
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       background: var(--green);
       color: #fff;
       border-radius: 50%;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       border: 2px solid var(--card);
     }
 
-    .msg-body { flex: 1; min-width: 0; }
-    .msg-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-    .msg-from { font-size: 13px; font-weight: 700; }
+    .msg-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .msg-from {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
     .msg-badge {
       display: inline-flex;
       align-items: center;
@@ -241,70 +318,46 @@
       color: #fff;
       padding: 2px 6px;
       border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-    .msg-badge.admin { background: var(--rose); }
-    .msg-badge.support { background: var(--sky); }
-    .msg-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .msg-time { font-size: 10.5px; color: var(--muted); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
-    .msg-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); flex-shrink: 0; margin-top: 6px; }
-
-    /* ── PAYMENT SECTION ─────────────────────────────────── */
-    .payment-widget {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.2rem;
-      margin-bottom: 1.1rem;
-    }
-
-    .payment-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .payment-header h3 {
-      font-size: 1rem;
+      font-size: 9px;
       font-weight: 700;
+      flex-shrink: 0;
     }
 
-    .balance-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      background: var(--surface);
-      border-radius: 10px;
-      margin-bottom: 8px;
+    .msg-badge.admin {
+      background: var(--rose);
     }
 
-    .balance-label {
-      font-size: 13px;
-      font-weight: 600;
+    .msg-badge.support {
+      background: var(--sky);
+    }
+
+    .msg-preview {
+      font-size: 12px;
       color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .balance-amount {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--ink);
+    .msg-time {
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
     }
 
-    .balance-amount.warning {
-      color: var(--rose);
+    .msg-unread {
+      width: 8px;
+      height: 8px;
+      background: var(--teal);
+      border-radius: 50%;
+      flex-shrink: 0;
     }
 
-    .balance-amount.success {
-      color: var(--green);
-    }
-
-    /* ── MODALS ──────────────────────────────────────────– */
+    /* MODAL */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       background: rgba(15,25,35,.45);
@@ -314,19 +367,27 @@
       z-index: 999;
       padding: 20px;
     }
-    .modal-overlay.open { display: flex; }
+
+    .modal-overlay.open {
+      display: flex;
+    }
 
     .modal {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       width: 100%;
-      max-width: 500px;
+      max-width: 550px;
       max-height: 90vh;
       overflow: auto;
       box-shadow: 0 20px 60px rgba(15,25,35,.25);
+      display: flex;
+      flex-direction: column;
     }
-    .modal.modal-wide { max-width: 700px; }
+
+    .modal.wide {
+      max-width: 700px;
+    }
 
     .modal-header {
       display: flex;
@@ -334,10 +395,7 @@
       justify-content: space-between;
       padding: 1.5rem;
       border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--card);
-      z-index: 10;
+      flex-shrink: 0;
     }
 
     .modal-header h2 {
@@ -358,55 +416,58 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      transition: 0.18s;
     }
-    .modal-close:hover { background: var(--surface); color: var(--ink); }
+
+    .modal-close:hover {
+      background: var(--surface);
+      border-radius: 8px;
+    }
 
     .modal-body {
+      flex: 1;
+      overflow-y: auto;
       padding: 1.5rem;
     }
 
-    /* ── BUTTONS ─────────────────────────────────────────– */
-    .btn {
-      padding: 10px 16px;
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 12px 16px;
       border: none;
-      border-radius: 10px;
+      background: none;
       cursor: pointer;
       font-weight: 600;
       font-size: 13px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
       transition: 0.18s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
+      white-space: nowrap;
     }
 
-    .btn-primary {
-      background: var(--teal);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--teal-dark); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-secondary {
-      background: var(--surface);
-      color: var(--ink);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--border); }
-
-    .btn-ghost {
-      background: transparent;
+    .tab:hover {
       color: var(--teal);
-      border: 1px solid var(--border);
     }
-    .btn-ghost:hover { background: var(--teal-soft); }
 
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .btn-full { width: 100%; }
+    .tab.active {
+      color: var(--teal);
+      border-color: var(--teal);
+    }
 
-    /* ── FORM ELEMENTS ───────────────────────────────────– */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* FORM */
     .form-group {
       margin-bottom: 1.2rem;
     }
@@ -430,7 +491,6 @@
       font-size: 14px;
       color: var(--ink);
       background: var(--card);
-      transition: 0.18s;
     }
 
     .form-group input:focus,
@@ -448,47 +508,94 @@
       margin-top: 4px;
     }
 
-    .form-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 1.5rem;
-    }
-
-    /* ── TABS ────────────────────────────────────────────– */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 1.2rem;
-      overflow-x: auto;
-    }
-
-    .tab {
-      padding: 10px 14px;
+    /* BUTTON */
+    .btn {
+      padding: 10px 16px;
       border: none;
-      background: none;
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
       font-size: 13px;
-      color: var(--muted);
-      border-bottom: 2px solid transparent;
       transition: 0.18s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
     }
 
-    .tab:hover { color: var(--teal); }
-    .tab.active { color: var(--teal); border-color: var(--teal); }
-
-    /* ── LOADING & ANIMATIONS ────────────────────────────– */
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .btn-primary {
+      background: var(--teal);
+      color: #fff;
     }
 
-    .spin { animation: spin 1s linear infinite; }
+    .btn-primary:hover {
+      background: var(--teal-dark);
+    }
 
-    /* ── TOAST ───────────────────────────────────────────– */
-    #toast-stack {
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--teal);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--teal-soft);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* SUPPORT BUTTON (FLOATING) */
+    .support-btn {
       position: fixed;
       bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--sky);
+      color: #fff;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(14,165,233,.3);
+      transition: 0.2s;
+      z-index: 100;
+    }
+
+    .support-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(14,165,233,.4);
+    }
+
+    /* TOAST */
+    #toast-stack {
+      position: fixed;
+      bottom: 80px;
       right: 20px;
       display: flex;
       flex-direction: column;
@@ -505,741 +612,969 @@
       align-items: center;
       gap: 12px;
       font-size: 13px;
-      box-shadow: 0 8px 24px rgba(15,25,35,.15);
+      box-shadow: 0 4px 12px rgba(15,25,35,.15);
       animation: slideIn 0.3s ease-out;
+      min-width: 300px;
     }
 
     @keyframes slideIn {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
 
-    .toast.ok { border-color: var(--green); }
-    .toast.ok i { color: var(--green); }
-    .toast.err { border-color: var(--rose); }
-    .toast.err i { color: var(--rose); }
-    .toast.warn { border-color: var(--gold); }
-    .toast.warn i { color: var(--gold); }
+    .toast.ok {
+      border-color: var(--green);
+    }
 
-    .toast-msg { flex: 1; }
-    .toast-msg strong { color: var(--ink); display: block; }
-    .toast-msg p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .toast.ok i {
+      color: var(--green);
+    }
 
-    .toast-close {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
+    .toast.err {
+      border-color: var(--rose);
+    }
+
+    .toast.err i {
+      color: var(--rose);
+    }
+
+    .toast.info {
+      border-color: var(--sky);
+    }
+
+    .toast.info i {
+      color: var(--sky);
+    }
+
+    .toast-msg {
+      flex: 1;
+    }
+
+    .toast-msg strong {
+      color: var(--ink);
+    }
+
+    /* CONVERSATION */
+    .conversation {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 1rem;
+      background: var(--surface);
+    }
+
+    .msg-bubble {
+      margin-bottom: 12px;
+    }
+
+    .msg-bubble.sent {
+      text-align: right;
+    }
+
+    .bubble {
+      display: inline-block;
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .bubble.received {
+      background: var(--card);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+
+    .bubble.sent {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .bubble-time {
+      font-size: 10px;
       color: var(--muted);
-      padding: 0;
+      margin-top: 4px;
     }
 
+    /* BALANCE CARD (in modal) */
+    .balance-box {
+      background: linear-gradient(135deg, rgba(0,184,156,.08), rgba(14,165,233,.08));
+      border: 1px solid rgba(0,184,156,.2);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .balance-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .balance-item {
+      text-align: center;
+    }
+
+    .balance-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .balance-amount {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--teal);
+      margin-bottom: 4px;
+    }
+
+    .balance-amount.warning {
+      color: var(--rose);
+    }
+
+    .balance-amount.success {
+      color: var(--green);
+    }
+
+    .balance-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* LOADER */
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @media (max-width: 600px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .modal.wide {
+        max-width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════
-     NAVIGATION BAR WITH WALLET
-═════════════════════════════════════════════════════════ -->
+<!-- NAV -->
 <div class="nav">
   <a href="#" class="nav-logo">
     <div class="logo-icon">A</div>
-    <span>Amilia <em>Care</em></span>
+    <span>Amilia <strong style="color: var(--teal)">Care</strong></span>
   </a>
 
-  <!-- WALLET DISPLAY IN NAV -->
-  <div class="nav-wallet" onclick="openModal('modal-payments')" title="Click to manage payments">
-    <div class="wallet-item">
-      <div class="wallet-label">Available</div>
-      <div class="wallet-amount" id="nav-wallet-balance">KES 0</div>
-    </div>
-    <div style="width: 1px; height: 30px; background: var(--border)"></div>
-    <div class="wallet-item">
-      <div class="wallet-label">Outstanding</div>
-      <div class="wallet-amount warning" id="nav-outstanding-balance">KES 1,300</div>
-    </div>
-  </div>
-
   <div class="nav-right">
-    <button class="nav-icon-btn" id="btn-nav-msgs" title="Messages" onclick="openModal('modal-messages')">
-      <i class="bi bi-chat-left-dots"></i>
-      <div class="nav-badge" id="badge-msgs">0</div>
+    <button class="nav-btn" onclick="openModal('modal-messages')" title="Messages">
+      <i class="bi bi-chat-dots"></i>
+      <div class="nav-badge" id="msg-badge">0</div>
     </button>
-    <button class="nav-icon-btn" id="btn-nav-notifs" title="Notifications" onclick="toggleNotifPanel()">
-      <i class="bi bi-bell"></i>
-      <div class="nav-badge" id="badge-notifs">0</div>
+    <button class="nav-btn" onclick="openModal('modal-jobs')" title="Available Jobs">
+      <i class="bi bi-briefcase"></i>
+      <div class="nav-badge" id="job-badge">0</div>
     </button>
-    <button class="nav-icon-btn" onclick="openModal('modal-account')" title="Account">
+    <button class="nav-btn" onclick="openModal('modal-wallet')" title="Wallet & Payments">
+      <i class="bi bi-wallet2"></i>
+      <div class="nav-badge" id="pay-badge"></div>
+    </button>
+    <button class="nav-btn" onclick="openModal('modal-account')" title="Account">
       <i class="bi bi-gear"></i>
     </button>
-    <button class="nav-avatar-btn" onclick="openModal('modal-account')" title="Profile">
-      <span id="nav-avatar-text">W</span>
-      <img id="nav-avatar-img" alt="Avatar">
+    <button class="nav-avatar" onclick="openModal('modal-account')">
+      <span id="avatar-init">W</span>
     </button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     MAIN PAGE
-═════════════════════════════════════════════════════════ -->
+<!-- PAGE -->
 <div class="page">
-  <div id="pg-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--surface);display:flex;align-items:center;justify-content:center;z-index:9998">
-    <div style="text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:1rem"><i class="bi bi-arrow-repeat spin"></i></div>
-      <div style="font-size:14px;color:var(--muted);font-weight:600">Loading your dashboard…</div>
+  <!-- LOADER -->
+  <div id="pg-loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--surface); display: flex; align-items: center; justify-content: center; z-index: 9998;">
+    <div style="text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 1rem;"><i class="bi bi-arrow-repeat spin"></i></div>
+      <div style="font-size: 14px; color: var(--muted); font-weight: 600;">Loading dashboard…</div>
     </div>
   </div>
 
-  <!-- STATS ROW -->
+  <!-- STATS -->
   <div class="stats">
     <div class="stat-card" onclick="openModal('modal-messages')">
-      <div class="stat-icon msg"><i class="bi bi-chat-left-dots"></i></div>
-      <div class="stat-val" id="stat-messages">0</div>
-      <div class="stat-lbl">Messages</div>
+      <div class="stat-icon msg"><i class="bi bi-chat-dots"></i></div>
+      <div class="stat-value" id="stat-messages">0</div>
+      <div class="stat-label">Messages</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon notif"><i class="bi bi-bell"></i></div>
-      <div class="stat-val" id="stat-notifications">0</div>
-      <div class="stat-lbl">Notifications</div>
-    </div>
+
     <div class="stat-card" onclick="openModal('modal-jobs')">
-      <div class="stat-icon jobs"><i class="bi bi-briefcase"></i></div>
-      <div class="stat-val" id="stat-jobs">0</div>
-      <div class="stat-lbl">Jobs</div>
+      <div class="stat-icon job"><i class="bi bi-briefcase"></i></div>
+      <div class="stat-value" id="stat-jobs">0</div>
+      <div class="stat-label">Jobs Available</div>
     </div>
-    <div class="stat-card" onclick="scrollToSection('payment-section')">
-      <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--gold)"><i class="bi bi-wallet2"></i></div>
-      <div class="stat-val" id="stat-balance">KES 0</div>
-      <div class="stat-lbl">Wallet</div>
+
+    <div class="stat-card" onclick="openModal('modal-wallet')">
+      <div class="stat-icon pay"><i class="bi bi-wallet2"></i></div>
+      <div class="stat-value" id="stat-wallet">KES 0</div>
+      <div class="stat-label">Balance</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-payments')">
-      <div class="stat-icon" style="background: rgba(244,63,94,0.1); color: var(--rose)"><i class="bi bi-credit-card"></i></div>
-      <div class="stat-val" id="stat-outstanding">KES 1,300</div>
-      <div class="stat-lbl">Outstanding</div>
+
+    <div class="stat-card" onclick="openModal('modal-wallet')">
+      <div class="stat-icon" style="background: rgba(244,63,94,0.1); color: var(--rose);"><i class="bi bi-exclamation-circle"></i></div>
+      <div class="stat-value" id="stat-outstanding">KES 0</div>
+      <div class="stat-label">Outstanding</div>
     </div>
   </div>
 
-  <!-- MESSAGES SECTION -->
-  <div class="inbox-section" id="inbox-section" onclick="openModal('modal-messages')" style="cursor:pointer">
-    <div class="inbox-head">
-      <h3><i class="bi bi-chat-left-dots" style="color:var(--teal);margin-right:6px"></i>Recent Messages <span id="inbox-unread-badge" style="background:var(--rose);color:#fff;border-radius:50px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px;display:none"></span></h3>
-      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('modal-messages')"><i class="bi bi-arrow-right"></i> View All</button>
+  <!-- RECENT MESSAGES -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
+      Recent Messages
+      <span style="margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted);">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-messages')">View All</button>
+      </span>
     </div>
-    <div id="inbox-preview" style="font-size:13px;color:var(--muted);padding:4px 0 2px">Loading messages…</div>
+    <div id="recent-messages" style="min-height: 80px;">
+      <div style="text-align: center; color: var(--muted); padding: 2rem;">
+        <i class="bi bi-chat-dots" style="font-size: 2rem; display: block; opacity: 0.3; margin-bottom: 0.5rem;"></i>
+        Loading messages…
+      </div>
+    </div>
   </div>
 
-  <!-- PAYMENT SECTION -->
-  <div class="payment-widget" id="payment-section">
-    <div class="payment-header">
-      <h3><i class="bi bi-credit-card" style="color:var(--teal);margin-right:8px"></i>Payments & Wallet</h3>
-      <button class="btn btn-primary btn-sm" onclick="openModal('modal-payments')"><i class="bi bi-plus-circle"></i> Make Payment</button>
+  <!-- QUICK ACTIONS -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-lightning" style="color: var(--gold);"></i>
+      Quick Actions
     </div>
-    <div id="payment-balances">
-      <div class="balance-row">
-        <span class="balance-label"><i class="bi bi-wallet-fill" style="margin-right:6px;color:var(--teal)"></i> Wallet Balance</span>
-        <span class="balance-amount success" id="balance-wallet">KES 0</span>
-      </div>
-      <div class="balance-row">
-        <span class="balance-label"><i class="bi bi-exclamation-circle" style="margin-right:6px;color:var(--rose)"></i> Outstanding</span>
-        <span class="balance-amount warning" id="balance-outstanding">KES 1,300</span>
-      </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-jobs')">
+        <i class="bi bi-briefcase"></i> Find Jobs
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet')">
+        <i class="bi bi-wallet2"></i> Payments
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-messages')">
+        <i class="bi bi-chat-dots"></i> Messages
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-account')">
+        <i class="bi bi-person"></i> Profile
+      </button>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     MESSAGES MODAL (FIXED)
+     MESSAGES MODAL (WITH CONVERSATION)
 ═════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-messages">
-  <div class="modal modal-wide">
+  <div class="modal wide">
     <div class="modal-header">
-      <h2><i class="bi bi-chat-left-dots" style="color:var(--teal)"></i> Messages</h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-ghost btn-sm" onclick="markAllMsgsRead()"><i class="bi bi-check2-all"></i> Mark All Read</button>
-        <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
-      </div>
+      <h2><i class="bi bi-chat-dots"></i> Messages</h2>
+      <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
     </div>
-    <div class="modal-body" style="padding-top:1rem">
-      <div id="inbox-list"><div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>Loading messages…</div></div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('messages-list', this)">Inbox</button>
+        <button class="tab" onclick="switchTab('messages-view', this)">Conversation</button>
+      </div>
+
+      <!-- MESSAGES LIST -->
+      <div id="messages-list" class="tab-content active">
+        <div id="messages-inbox"></div>
+      </div>
+
+      <!-- CONVERSATION VIEW -->
+      <div id="messages-view" class="tab-content">
+        <div id="conversation-header" style="display: none; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;" id="conv-from">Employer Name</div>
+          <div style="font-size: 12px; color: var(--muted);" id="conv-status">Last message just now</div>
+        </div>
+        <div class="conversation" id="conversation-messages"></div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="msg-reply" placeholder="Type your reply…" style="flex: 1;">
+          <button class="btn btn-primary" onclick="sendMessageReply()">Send</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
-     PAYMENT MODAL (NEW - COMPREHENSIVE)
+     JOBS MODAL
 ═════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-payments">
-  <div class="modal modal-wide">
+<div class="modal-overlay" id="modal-jobs">
+  <div class="modal wide">
     <div class="modal-header">
-      <h2><i class="bi bi-credit-card" style="color:var(--teal)"></i> Payments & Wallet</h2>
-      <button class="modal-close" onclick="closeModal('modal-payments')">×</button>
+      <h2><i class="bi bi-briefcase"></i> Available Jobs</h2>
+      <button class="modal-close" onclick="closeModal('modal-jobs')">×</button>
     </div>
     <div class="modal-body">
-      <!-- BALANCES SUMMARY -->
-      <div style="background:linear-gradient(135deg,rgba(0,184,156,.08),rgba(14,165,233,.08));border:1px solid rgba(0,184,156,.2);border-radius:12px;padding:16px;margin-bottom:1.5rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Wallet Balance</div>
-            <div style="font-size:1.5rem;font-weight:800;color:var(--green)" id="modal-wallet-balance">KES 0</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px">Available for refunds</div>
+      <div id="jobs-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     WALLET & PAYMENTS MODAL (CONSOLIDATED)
+═════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-wallet">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-wallet2"></i> Wallet & Payments</h2>
+      <button class="modal-close" onclick="closeModal('modal-wallet')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- BALANCES -->
+      <div class="balance-box">
+        <div class="balance-grid">
+          <div class="balance-item">
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amount success" id="wallet-balance">KES 0</div>
+            <div class="balance-sub">Ready for refund</div>
           </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px">Outstanding Balance</div>
-            <div style="font-size:1.5rem;font-weight:800;color:var(--rose)" id="modal-outstanding-balance">KES 1,300</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px">Requires payment</div>
+          <div class="balance-item">
+            <div class="balance-label">Outstanding</div>
+            <div class="balance-amount warning" id="wallet-outstanding">KES 1,300</div>
+            <div class="balance-sub">Requires payment</div>
           </div>
         </div>
-      </div>
-
-      <!-- PAYMENT DETAILS -->
-      <div style="background:var(--surface);border-radius:12px;padding:12px;margin-bottom:1.5rem">
-        <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--ink)">Payment Requirements</div>
-        <div id="payment-requirements"></div>
       </div>
 
       <!-- TABS -->
       <div class="tabs">
-        <button class="tab active" onclick="switchPaymentTab('history', this)"><i class="bi bi-clock-history"></i> History</button>
-        <button class="tab" onclick="switchPaymentTab('make', this)"><i class="bi bi-plus-circle"></i> Make Payment</button>
+        <button class="tab active" onclick="switchTab('payment-history', this)">History</button>
+        <button class="tab" onclick="switchTab('payment-make', this)">Make Payment</button>
       </div>
 
-      <!-- PAYMENT HISTORY TAB -->
-      <div id="payment-history-tab" class="payment-tab active">
-        <div id="payment-history-list" style="min-height:100px"></div>
+      <!-- PAYMENT HISTORY -->
+      <div id="payment-history" class="tab-content active">
+        <div id="payment-list" style="min-height: 100px;"></div>
       </div>
 
-      <!-- MAKE PAYMENT TAB -->
-      <div id="make-payment-tab" class="payment-tab" style="display:none">
+      <!-- MAKE PAYMENT -->
+      <div id="payment-make" class="tab-content">
+        <div style="background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 1.5rem;">
+          <div style="font-weight: 700; margin-bottom: 10px;">📋 Payment Requirements</div>
+          <div style="font-size: 12px; line-height: 1.8; color: var(--muted);">
+            <div style="padding: 8px; background: rgba(244,63,94,.08); border-radius: 8px; margin-bottom: 8px;">
+              <span style="color: var(--ink); font-weight: 600;">Interview Fee:</span> KES 300
+              <span style="margin-left: 12px; color: var(--rose); font-weight: 600;" id="fee-interview">⚠️ Pending</span>
+            </div>
+            <div style="padding: 8px; background: rgba(244,63,94,.08); border-radius: 8px;">
+              <span style="color: var(--ink); font-weight: 600;">First Salary Fee:</span> KES 1,000
+              <span style="margin-left: 12px; color: var(--rose); font-weight: 600;" id="fee-salary">⚠️ Pending</span>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Select Payment Method</label>
-          <select id="payment-method" onchange="updatePaymentUI()">
-            <option value="">Choose a payment method…</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="airtel">Airtel Money</option>
-            <option value="manual">Manual Deposit (Paybill)</option>
+          <select id="pay-method" onchange="updatePaymentUI()">
+            <option value="">Choose…</option>
+            <option value="mpesa">📱 M-Pesa</option>
+            <option value="airtel">📞 Airtel Money</option>
+            <option value="manual">🏦 Paybill Deposit</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Amount to Pay (KES)</label>
-          <input type="number" id="payment-amount" placeholder="Enter amount" min="100" step="100">
-          <div class="form-hint">Interview fee: KES 300 | First salary fee: KES 1,000</div>
+          <label>Amount (KES)</label>
+          <input type="number" id="pay-amount" placeholder="300 or 1000" min="100" step="100">
+          <div class="form-hint">Interview: 300 | First Salary: 1000</div>
         </div>
 
-        <!-- MPESA SECTION -->
-        <div id="mpesa-section" style="display:none">
-          <div style="background:rgba(0,184,156,.08);border:1px solid rgba(0,184,156,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--ink)">
-            <div style="font-weight:600;margin-bottom:6px">📱 M-Pesa Instructions</div>
-            <div style="color:var(--muted);line-height:1.5">
-              1. Enter your M-Pesa registered phone number<br>
-              2. Click "Send STK Push"<br>
-              3. You'll receive a prompt on your phone<br>
-              4. Enter your M-Pesa PIN<br>
-              5. Your payment will be completed
-            </div>
+        <!-- M-PESA -->
+        <div id="mpesa-form" style="display: none;">
+          <div style="background: rgba(0,184,156,.08); border: 1px solid rgba(0,184,156,.2); border-radius: 10px; padding: 12px; margin-bottom: 1rem; font-size: 12px;">
+            <strong style="color: var(--teal);">📱 M-Pesa STK Push</strong><br>
+            Enter your phone. You'll get a prompt to enter your M-Pesa PIN.
           </div>
-
           <div class="form-group">
-            <label>M-Pesa Phone Number</label>
-            <input type="tel" id="mpesa-phone" placeholder="e.g. 0712345678" maxlength="10">
+            <label>M-Pesa Phone</label>
+            <input type="tel" id="mpesa-phone" placeholder="0712345678">
           </div>
-
-          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px">
-            <div style="font-weight:600;color:var(--green);margin-bottom:6px"><i class="bi bi-info-circle-fill"></i> Account Details</div>
-            <div style="color:var(--muted);line-height:1.6">
-              <strong style="color:var(--ink)">Account Number:</strong> <span id="pay-acct-num" style="font-family:monospace;font-weight:700">—</span><br>
-              <strong style="color:var(--ink)">Paybill:</strong> <span style="font-family:monospace;font-weight:700">400200</span><br>
-              <small>Or pay manually using M-Pesa → Paybill → 400200</small>
-            </div>
-          </div>
-
-          <button class="btn btn-primary btn-full" onclick="initiateMpesaPayment()">
-            <i class="bi bi-phone-fill"></i> Send STK Push
-          </button>
+          <button class="btn btn-primary btn-full" onclick="sendMpesaSTK()">Send STK Push</button>
         </div>
 
-        <!-- AIRTEL SECTION -->
-        <div id="airtel-section" style="display:none">
-          <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--ink)">
-            <div style="font-weight:600;margin-bottom:6px">💳 Airtel Money Instructions</div>
-            <div style="color:var(--muted);line-height:1.5">
-              1. Enter your Airtel Money phone number<br>
-              2. Click "Send Airtel Request"<br>
-              3. You'll receive a prompt on your phone<br>
-              4. Confirm the transaction<br>
-              5. Your payment will be completed
-            </div>
+        <!-- AIRTEL -->
+        <div id="airtel-form" style="display: none;">
+          <div style="background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.2); border-radius: 10px; padding: 12px; margin-bottom: 1rem; font-size: 12px;">
+            <strong style="color: var(--sky);">📞 Airtel Money</strong><br>
+            Enter your phone. You'll get a confirmation prompt.
           </div>
-
           <div class="form-group">
-            <label>Airtel Money Phone Number</label>
-            <input type="tel" id="airtel-phone" placeholder="e.g. 0712345678" maxlength="10">
+            <label>Airtel Phone</label>
+            <input type="tel" id="airtel-phone" placeholder="0712345678">
           </div>
-
-          <button class="btn btn-primary btn-full" onclick="initiateAirtelPayment()">
-            <i class="bi bi-phone-fill"></i> Send Airtel Request
-          </button>
+          <button class="btn btn-primary btn-full" onclick="sendAirtelRequest()">Request Payment</button>
         </div>
 
-        <!-- MANUAL DEPOSIT SECTION -->
-        <div id="manual-section" style="display:none">
-          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px">
-            <div style="font-weight:600;color:var(--gold);margin-bottom:8px"><i class="bi bi-info-circle-fill"></i> Manual Paybill Deposit</div>
-            <div style="color:var(--muted);line-height:1.6">
-              <strong style="color:var(--ink)">Step 1:</strong> Go to your bank or M-Pesa/Airtel<br>
-              <strong style="color:var(--ink)">Step 2:</strong> Select Paybill or Bill Payment<br>
-              <strong style="color:var(--ink)">Step 3:</strong> Enter details below<br>
-              <strong style="color:var(--ink)">Step 4:</strong> Complete transaction<br>
-              <strong style="color:var(--ink)">Step 5:</strong> Enter receipt code below to confirm
-            </div>
+        <!-- MANUAL PAYBILL -->
+        <div id="manual-form" style="display: none;">
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 1rem; font-size: 12px; line-height: 1.6;">
+            <strong style="color: var(--ink);">Paybill Details</strong><br>
+            <span style="color: var(--muted);">Paybill: <strong style="color: var(--ink); font-family: monospace;">400200</strong></span><br>
+            <span style="color: var(--muted);">Account: <strong style="color: var(--ink); font-family: monospace;" id="paybill-account">—</strong></span><br>
+            <span style="color: var(--muted);">Amount: <strong style="color: var(--ink); font-family: monospace;" id="paybill-amount">KES 0</strong></span>
           </div>
-
-          <div style="background:var(--surface);border-radius:10px;padding:12px;margin-bottom:1rem">
-            <div style="font-weight:600;color:var(--ink);margin-bottom:10px">📋 Paybill Details</div>
-            <div style="font-size:13px;line-height:2">
-              <div><strong>Paybill Number:</strong> <span style="font-family:monospace;font-weight:700">400200</span></div>
-              <div><strong>Account Number:</strong> <span style="font-family:monospace;font-weight:700" id="pay-acct-manual">—</span></div>
-              <div><strong>Amount:</strong> <span style="font-family:monospace;font-weight:700" id="manual-amount">KES 0</span></div>
-            </div>
-          </div>
-
           <div class="form-group">
-            <label>Receipt/Reference Code</label>
-            <input type="text" id="receipt-code" placeholder="e.g. XXXXXXXXXXXXXXX" style="text-transform:uppercase">
-            <div class="form-hint">You'll receive this after your bank deposit</div>
+            <label>Receipt Code</label>
+            <input type="text" id="receipt-code" placeholder="Receipt from bank" style="text-transform: uppercase;">
+            <div class="form-hint">After paying via Paybill, enter receipt code here</div>
           </div>
-
-          <button class="btn btn-primary btn-full" onclick="verifyManualDeposit()">
-            <i class="bi bi-check-circle"></i> Verify Receipt
-          </button>
+          <button class="btn btn-primary btn-full" onclick="confirmReceipt()">Verify Receipt</button>
         </div>
-      </div>
 
-      <div style="margin-top:1.5rem;padding:12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6">
-        <strong style="color:var(--ink);display:block;margin-bottom:6px">💡 Payment Policy</strong>
-        Interview fee (KES 300): Valid for 30 days from payment. Renew each time you apply for a new job.<br>
-        First Salary Fee (KES 1,000): One-time payment, expires after 6 months of inactivity.<br>
-        ⚠️ <strong style="color:var(--rose)">Failure to pay may result in account deactivation.</strong>
+        <div style="background: rgba(245,158,11,.05); border: 1px solid rgba(245,158,11,.2); border-radius: 10px; padding: 12px; margin-top: 1.5rem; font-size: 11px; color: var(--muted); line-height: 1.6;">
+          <strong style="color: var(--ink);">💡 Payment Policy</strong><br>
+          Interview fee valid 30 days. First salary fee valid 6 months.<br>
+          ⚠️ Non-payment may deactivate your account after 90 days.
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TOAST NOTIFICATIONS -->
+<!-- ACCOUNT MODAL -->
+<div class="modal-overlay" id="modal-account">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-person"></i> Account</h2>
+      <button class="modal-close" onclick="closeModal('modal-account')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;" id="account-avatar">👤</div>
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 4px;" id="account-name">User</div>
+        <div style="font-size: 13px; color: var(--muted); margin-bottom: 1.5rem;" id="account-email">user@example.com</div>
+        <button class="btn btn-primary btn-full" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORT BUTTON (FLOATING) -->
+<button class="support-btn" onclick="openModal('modal-support')" title="Support Chat">
+  <i class="bi bi-headset"></i>
+</button>
+
+<!-- SUPPORT MODAL -->
+<div class="modal-overlay" id="modal-support">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-headset"></i> Support</h2>
+      <button class="modal-close" onclick="closeModal('modal-support')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="conversation" id="support-chat"></div>
+      <div style="display: flex; gap: 8px; margin-top: 1rem;">
+        <input type="text" id="support-msg" placeholder="Your question…" style="flex: 1;">
+        <button class="btn btn-primary" onclick="sendSupportMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
 <div id="toast-stack"></div>
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPTS
-═════════════════════════════════════════════════════════ -->
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════
-//  CONFIG
-// ═══════════════════════════════════════════════════════
+// CONFIG
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
 
 let sb, currentUser, workerProfile = {};
-let walletBalance = 0;
-let outstandingBalance = 1300;
+let allMessages = [];
+let selectedConversation = null;
 
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
+// INIT
 document.addEventListener('DOMContentLoaded', async () => {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const { data } = await sb.auth.getSession().catch(() => ({ data: null }));
-  const session = data && data.session;
-  if (!session || !session.user) { window.location.href = 'login.html'; return; }
-  currentUser = session.user;
+  if (!data?.session?.user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = data.session.user;
 
   await loadDashboard();
-  subscribeToMessages();
+  subscribeToUpdates();
 });
 
-// ═══════════════════════════════════════════════════════
-//  LOAD DASHBOARD
-// ═══════════════════════════════════════════════════════
+// LOAD DASHBOARD
 async function loadDashboard() {
   try {
-    // Load worker profile
-    const { data: wpData } = await sb.from('worker_profiles')
+    // Load profile
+    const { data: wp } = await sb.from('worker_profiles')
       .select('*')
       .eq('email', currentUser.email)
-      .order('created_at', { ascending: false })
-      .limit(1)
       .maybeSingle();
+    
+    workerProfile = wp || {};
+    document.getElementById('avatar-init').textContent = (workerProfile.full_name?.[0] || 'W').toUpperCase();
+    document.getElementById('account-name').textContent = workerProfile.full_name || 'User';
+    document.getElementById('account-email').textContent = currentUser.email;
 
-    workerProfile = wpData || {};
+    // Load messages (FIX RLS)
+    const { data: msgs } = await sb.from('messages')
+      .select('id, sender_id, receiver_id, content, body, is_from_admin, sender_type, is_read, created_at')
+      .eq('receiver_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    allMessages = msgs || [];
+    renderMessages();
+
+    // Load jobs
+    const { data: jobs } = await sb.from('job_postings')
+      .select('*')
+      .eq('status', 'active')
+      .limit(20);
+
+    renderJobs(jobs || []);
+    document.getElementById('stat-jobs').textContent = jobs?.length || 0;
 
     // Load wallet
-    const { data: walletData } = await sb.from('wallets')
+    const { data: wallet } = await sb.from('wallets')
       .select('*')
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    if (walletData) {
-      walletBalance = walletData.balance || 0;
-      outstandingBalance = walletData.outstanding_balance || 1300;
+    if (wallet) {
+      document.getElementById('wallet-balance').textContent = 'KES ' + (wallet.balance || 0).toLocaleString('en-KE');
+      document.getElementById('wallet-outstanding').textContent = 'KES ' + (wallet.outstanding_balance || 1300).toLocaleString('en-KE');
+      document.getElementById('stat-wallet').textContent = 'KES ' + (wallet.balance || 0).toLocaleString('en-KE');
+      document.getElementById('stat-outstanding').textContent = 'KES ' + (wallet.outstanding_balance || 1300).toLocaleString('en-KE');
+      document.getElementById('paybill-account').textContent = wallet.account_number || '—';
+      
+      updateFeeStatus(wallet);
     }
 
-    // Load messages
-    const { data: msgs } = await sb.from('messages')
+    // Load payment history
+    const { data: payments } = await sb.from('payments')
       .select('*')
-      .eq('receiver_id', currentUser.id)
-      .order('created_at', { ascending: false })
-      .limit(30);
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
 
-    renderInbox(msgs || []);
-    renderPaymentBalances();
-    updateNavWallet();
+    renderPaymentHistory(payments || []);
 
   } catch (e) {
     console.error('loadDashboard:', e);
-    showToast('err', 'bi-exclamation-circle', 'Load Error', e.message);
+    showToast('err', 'bi-exclamation-circle', 'Error', e.message);
   } finally {
     const loader = document.getElementById('pg-loader');
-    if (loader) { loader.classList.add('hide'); setTimeout(() => loader.remove(), 400); }
+    if (loader) {
+      loader.style.opacity = '0';
+      loader.style.transition = 'opacity 0.3s';
+      setTimeout(() => loader.remove(), 300);
+    }
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//  RENDER MESSAGES (FIXED)
-// ═══════════════════════════════════════════════════════
-async function renderInbox(msgs) {
-  const el = document.getElementById('inbox-list');
-  if (!el) return;
-
-  const unread = msgs.filter(m => !m.is_read).length;
+// RENDER MESSAGES
+async function renderMessages() {
+  const inbox = document.getElementById('messages-inbox');
+  const badge = document.getElementById('msg-badge');
   
-  // Update badges
-  const badge = document.getElementById('inbox-unread-badge');
-  if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
-  
-  const navBadge = document.getElementById('badge-msgs');
-  if (navBadge) { navBadge.textContent = unread; navBadge.classList.toggle('show', unread > 0); }
-  
-  setText('stat-messages', msgs.length);
-
-  if (!msgs.length) {
-    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:13px"><i class="bi bi-chat-left-dots" style="font-size:1.5rem;display:block;margin-bottom:6px;opacity:.3"></i>No messages yet. Employers will contact you here.</div>';
+  if (!allMessages.length) {
+    inbox.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--muted);">No messages yet</div>';
+    badge.classList.remove('show');
+    document.getElementById('stat-messages').textContent = '0';
     return;
   }
 
+  const unread = allMessages.filter(m => !m.is_read).length;
+  badge.textContent = unread;
+  badge.classList.toggle('show', unread > 0);
+  document.getElementById('stat-messages').textContent = allMessages.length;
+
   // Get sender info
-  const senderIds = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
-  let senderMap = {};
+  const senderIds = [...new Set(allMessages.map(m => m.sender_id).filter(Boolean))];
+  let senders = {};
   
   if (senderIds.length) {
-    const { data: senders } = await sb.from('employer_profiles')
-      .select('user_id, full_name, company_name')
-      .in('user_id', senderIds)
-      .catch(() => ({ data: [] }));
+    const { data } = await sb.from('employer_profiles')
+      .select('user_id, company_name, full_name')
+      .in('user_id', senderIds);
     
-    (senders || []).forEach(s => {
-      senderMap[s.user_id] = s.company_name || s.full_name || 'Employer';
+    (data || []).forEach(s => {
+      senders[s.user_id] = s.company_name || s.full_name || 'Employer';
     });
   }
 
-  el.innerHTML = msgs.slice(0, 10).map(m => {
-    const from = senderMap[m.sender_id] || 'Employer';
+  inbox.innerHTML = allMessages.map((m, i) => {
+    const from = senders[m.sender_id] || 'Employer';
     const isAdmin = m.is_from_admin || m.sender_type === 'admin';
     const isSupport = m.sender_type === 'support';
-    const preview = (m.content || m.body || '').substring(0, 60);
-    const init = from.split(' ')[0][0].toUpperCase();
-    const badgeClass = isAdmin ? 'admin' : isSupport ? 'support' : '';
+    const preview = (m.content || m.body || '').substring(0, 50);
+    const init = from[0].toUpperCase();
+    const badge = isAdmin ? 'admin' : isSupport ? 'support' : '';
     const badgeText = isAdmin ? '👨‍💼 Admin' : isSupport ? '🆘 Support' : '✓ Verified';
 
     return `
-    <div class="msg-item${m.is_read ? '' : ' unread'} ${isAdmin ? 'from-admin' : isSupport ? 'from-support' : ''}" onclick="markMsgRead('${escHtml(m.id)}', this)">
-      <div class="msg-avatar ${badgeClass} ${!isAdmin && !isSupport ? 'verified' : ''}">
-        ${escHtml(init)}
+    <div class="msg-item ${m.is_read ? '' : 'unread'} ${badge}" onclick="viewConversation(${i})">
+      <div class="msg-avatar ${badge} ${!isAdmin && !isSupport ? 'verified' : ''}">
+        ${esc(init)}
       </div>
-      <div class="msg-body">
+      <div class="msg-content">
         <div class="msg-header">
-          <span class="msg-from">${escHtml(from)}</span>
-          <span class="msg-badge ${badgeClass}">
-            <i class="bi ${isAdmin ? 'bi-shield-check' : isSupport ? 'bi-exclamation-circle' : 'bi-patch-check-fill'}"></i>
-            ${badgeText}
+          <span class="msg-from">${esc(from)}</span>
+          <span class="msg-badge ${badge}">
+            <i class="bi bi-patch-check-fill"></i> ${badgeText}
           </span>
         </div>
-        <div class="msg-preview">${escHtml(preview)}${preview.length >= 60 ? '…' : ''}</div>
+        <div class="msg-preview">${esc(preview)}…</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
         <div class="msg-time">${timeAgo(new Date(m.created_at))}</div>
-        ${!m.is_read ? '<div class="msg-unread-dot"></div>' : ''}
+        ${!m.is_read ? '<div class="msg-unread"></div>' : ''}
       </div>
     </div>`;
   }).join('');
 
-  // Update preview on dashboard
-  const preview = document.getElementById('inbox-preview');
-  if (preview && msgs.length > 0) {
-    const first = msgs[0];
-    const from = senderMap[first.sender_id] || 'Employer';
-    const text = (first.content || first.body || '').substring(0, 80);
-    preview.innerHTML = `<strong>${escHtml(from)}:</strong> ${escHtml(text)}${text.length >= 80 ? '...' : ''}`;
+  // Update recent on dashboard
+  if (allMessages.length > 0) {
+    const m = allMessages[0];
+    const from = senders[m.sender_id] || 'Employer';
+    const preview = (m.content || m.body || '').substring(0, 80);
+    document.getElementById('recent-messages').innerHTML = `
+      <div class="msg-item" onclick="openModal('modal-messages')">
+        <div class="msg-avatar">${esc(from[0].toUpperCase())}</div>
+        <div class="msg-content">
+          <div class="msg-from">${esc(from)}</div>
+          <div class="msg-preview">${esc(preview)}</div>
+        </div>
+        <div class="msg-time" style="flex-shrink: 0;">${timeAgo(new Date(m.created_at))}</div>
+      </div>
+    `;
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//  MESSAGE ACTIONS
-// ═══════════════════════════════════════════════════════
-async function markMsgRead(id, el) {
-  try {
-    await sb.from('messages').update({ is_read: true }).eq('id', id);
-    if (el) el.classList.remove('unread');
-    const dot = el && el.querySelector('.msg-unread-dot');
-    if (dot) dot.remove();
-  } catch (e) { console.warn('markMsgRead:', e); }
-}
+// VIEW CONVERSATION
+async function viewConversation(index) {
+  selectedConversation = index;
+  const msg = allMessages[index];
+  
+  // Mark as read
+  await sb.from('messages').update({ is_read: true }).eq('id', msg.id);
+  
+  // Get sender info
+  const { data: sender } = await sb.from('employer_profiles')
+    .select('company_name, full_name')
+    .eq('user_id', msg.sender_id)
+    .maybeSingle();
 
-async function markAllMsgsRead() {
-  try {
-    await sb.from('messages').update({ is_read: true }).eq('receiver_id', currentUser.id).eq('is_read', false);
-    document.querySelectorAll('.msg-item.unread').forEach(el => el.classList.remove('unread'));
-    document.querySelectorAll('.msg-unread-dot').forEach(el => el.remove());
-    const badge = document.getElementById('inbox-unread-badge');
-    if (badge) badge.style.display = 'none';
-    showToast('ok', 'bi-check-all', 'All Read', 'Messages marked as read.');
-  } catch (e) { showToast('err', 'bi-x-circle', 'Error', e.message); }
-}
+  const from = sender?.company_name || sender?.full_name || 'Employer';
+  document.getElementById('conv-from').textContent = from;
+  document.getElementById('conversation-header').style.display = 'block';
+  
+  // Load conversation
+  const { data: conv } = await sb.from('messages')
+    .select('*')
+    .or(`and(sender_id.eq.${msg.sender_id},receiver_id.eq.${currentUser.id}),and(sender_id.eq.${currentUser.id},receiver_id.eq.${msg.sender_id})`)
+    .order('created_at', { ascending: true });
 
-// ═══════════════════════════════════════════════════════
-//  PAYMENT FUNCTIONS
-// ═══════════════════════════════════════════════════════
-function renderPaymentBalances() {
-  setText('modal-wallet-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
-  setText('modal-outstanding-balance', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
-  setText('balance-wallet', 'KES ' + walletBalance.toLocaleString('en-KE'));
-  setText('balance-outstanding', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
-  setText('stat-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
-  setText('stat-outstanding', 'KES ' + outstandingBalance.toLocaleString('en-KE'));
-
-  // Payment requirements
-  const requirements = `
-    <div style="font-size:12px;line-height:1.8;color:var(--muted)">
-      <div style="padding:8px;background:${outstandingBalance > 0 ? 'rgba(244,63,94,.08)' : 'rgba(34,197,94,.08)'};border-radius:8px;margin-bottom:8px">
-        <span style="color:var(--ink);font-weight:600">Interview Fee:</span> KES 300
-        <span style="margin-left:12px;color:${outstandingBalance >= 300 ? 'var(--rose)' : 'var(--green)'};font-weight:600">${outstandingBalance >= 300 ? '⚠️ Pending' : '✓ Paid'}</span>
+  const convEl = document.getElementById('conversation-messages');
+  convEl.innerHTML = (conv || []).map(m => `
+    <div class="msg-bubble ${m.sender_id === currentUser.id ? 'sent' : ''}">
+      <div class="bubble ${m.sender_id === currentUser.id ? 'sent' : 'received'}">
+        ${esc(m.content || m.body || '')}
       </div>
-      <div style="padding:8px;background:${outstandingBalance > 300 ? 'rgba(244,63,94,.08)' : 'rgba(34,197,94,.08)'};border-radius:8px">
-        <span style="color:var(--ink);font-weight:600">First Salary Fee:</span> KES 1,000
-        <span style="margin-left:12px;color:${outstandingBalance > 300 ? 'var(--rose)' : 'var(--green)'};font-weight:600">${outstandingBalance > 300 ? '⚠️ Pending' : '✓ Paid'}</span>
+      <div class="bubble-time">${timeAgo(new Date(m.created_at))}</div>
+    </div>
+  `).join('');
+
+  switchTab('messages-view', document.querySelectorAll('#modal-messages .tab')[1]);
+  convEl.scrollTop = convEl.scrollHeight;
+}
+
+// SEND MESSAGE REPLY
+async function sendMessageReply() {
+  const msg = document.getElementById('msg-reply').value.trim();
+  if (!msg) return;
+
+  const selectedMsg = allMessages[selectedConversation];
+  if (!selectedMsg) return;
+
+  try {
+    await sb.from('messages').insert({
+      sender_id: currentUser.id,
+      receiver_id: selectedMsg.sender_id,
+      content: msg,
+      is_read: false,
+    });
+
+    document.getElementById('msg-reply').value = '';
+    await viewConversation(selectedConversation);
+    showToast('ok', 'bi-check-circle', 'Sent', 'Your message has been sent.');
+  } catch (e) {
+    showToast('err', 'bi-exclamation-circle', 'Error', e.message);
+  }
+}
+
+// RENDER JOBS
+function renderJobs(jobs) {
+  const el = document.getElementById('jobs-list');
+  
+  if (!jobs.length) {
+    el.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--muted);">No jobs available now</div>';
+    return;
+  }
+
+  el.innerHTML = jobs.map(j => `
+    <div style="background: var(--surface); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+      <div style="font-weight: 700; margin-bottom: 6px;">${esc(j.title || 'Job')}</div>
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5;">${esc((j.description || '').substring(0, 150))}</div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 12px; color: var(--muted);">${esc(j.county || '')}</div>
+        <button class="btn btn-primary btn-sm" onclick="applyJob('${j.id}')">Apply Now</button>
       </div>
     </div>
-  `;
-  document.getElementById('payment-requirements').innerHTML = requirements;
+  `).join('');
 }
 
-function updateNavWallet() {
-  setText('nav-wallet-balance', 'KES ' + walletBalance.toLocaleString('en-KE'));
-  const outstanding = document.getElementById('nav-outstanding-balance');
-  if (outstanding) {
-    outstanding.textContent = 'KES ' + outstandingBalance.toLocaleString('en-KE');
-    outstanding.className = 'wallet-amount ' + (outstandingBalance > 0 ? 'warning' : 'success');
+// APPLY JOB
+async function applyJob(jobId) {
+  try {
+    const { error } = await sb.from('job_applications').insert({
+      job_id: jobId,
+      worker_id: workerProfile.id,
+      status: 'pending',
+    });
+
+    if (!error) {
+      showToast('ok', 'bi-check-circle', 'Applied', 'You've applied to this job!');
+    }
+  } catch (e) {
+    showToast('err', 'bi-exclamation-circle', 'Error', e.message);
   }
 }
 
+// PAYMENT FUNCTIONS
 function updatePaymentUI() {
-  const method = document.getElementById('payment-method').value;
-  document.getElementById('mpesa-section').style.display = method === 'mpesa' ? 'block' : 'none';
-  document.getElementById('airtel-section').style.display = method === 'airtel' ? 'block' : 'none';
-  document.getElementById('manual-section').style.display = method === 'manual' ? 'block' : 'none';
-  
+  const method = document.getElementById('pay-method').value;
+  document.getElementById('mpesa-form').style.display = method === 'mpesa' ? 'block' : 'none';
+  document.getElementById('airtel-form').style.display = method === 'airtel' ? 'block' : 'none';
+  document.getElementById('manual-form').style.display = method === 'manual' ? 'block' : 'none';
+
   if (method === 'manual') {
-    const amount = document.getElementById('payment-amount').value || '0';
-    document.getElementById('manual-amount').textContent = 'KES ' + parseInt(amount).toLocaleString('en-KE');
+    const amt = document.getElementById('pay-amount').value || 0;
+    document.getElementById('paybill-amount').textContent = 'KES ' + parseInt(amt).toLocaleString('en-KE');
   }
 }
 
-async function initiateMpesaPayment() {
+async function sendMpesaSTK() {
   const phone = document.getElementById('mpesa-phone').value;
-  const amount = document.getElementById('payment-amount').value;
+  const amount = document.getElementById('pay-amount').value;
 
-  if (!phone || phone.length < 10) {
-    showToast('warn', 'bi-exclamation-circle', 'Invalid Phone', 'Enter a valid M-Pesa number');
+  if (!phone || !amount) {
+    showToast('warn', 'bi-exclamation-circle', 'Missing', 'Enter phone and amount');
     return;
   }
 
-  if (!amount || amount < 100) {
-    showToast('warn', 'bi-exclamation-circle', 'Invalid Amount', 'Amount must be at least KES 100');
-    return;
-  }
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending STK to ' + phone);
 
-  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending STK push to ' + phone + '...');
-
-  // DEMO: In production, call actual M-Pesa API
-  // This would typically call your backend which handles M-Pesa STK push
-  setTimeout(() => {
-    showToast('ok', 'bi-check-circle', 'STK Sent', 'Check your phone for M-Pesa prompt. You have 2 minutes to respond.');
-    
-    // Create transaction record
-    createPaymentRecord(amount, 'mpesa', phone);
-  }, 2000);
-}
-
-async function initiateAirtelPayment() {
-  const phone = document.getElementById('airtel-phone').value;
-  const amount = document.getElementById('payment-amount').value;
-
-  if (!phone || phone.length < 10) {
-    showToast('warn', 'bi-exclamation-circle', 'Invalid Phone', 'Enter a valid Airtel number');
-    return;
-  }
-
-  if (!amount || amount < 100) {
-    showToast('warn', 'bi-exclamation-circle', 'Invalid Amount', 'Amount must be at least KES 100');
-    return;
-  }
-
-  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending Airtel request to ' + phone + '...');
-
-  // DEMO: In production, call actual Airtel Money API
-  setTimeout(() => {
-    showToast('ok', 'bi-check-circle', 'Request Sent', 'Check your phone for Airtel Money prompt.');
-    createPaymentRecord(amount, 'airtel', phone);
-  }, 2000);
-}
-
-async function verifyManualDeposit() {
-  const receipt = document.getElementById('receipt-code').value;
-  const amount = document.getElementById('payment-amount').value;
-
-  if (!receipt || receipt.length < 10) {
-    showToast('warn', 'bi-exclamation-circle', 'Invalid Receipt', 'Enter a valid receipt code');
-    return;
-  }
-
-  showToast('info', 'bi-hourglass-split spin', 'Verifying', 'Verifying your receipt...');
-
-  // DEMO verification
   setTimeout(async () => {
-    await createPaymentRecord(amount, 'manual', receipt);
-    showToast('ok', 'bi-check-circle', 'Submitted', 'Receipt submitted. Admin will verify within 24 hours.');
-    closeModal('modal-payments');
+    await createPayment(amount, 'mpesa', phone);
+    showToast('ok', 'bi-check-circle', 'STK Sent', 'Check your phone for M-Pesa prompt');
   }, 1500);
 }
 
-async function createPaymentRecord(amount, method, reference) {
+async function sendAirtelRequest() {
+  const phone = document.getElementById('airtel-phone').value;
+  const amount = document.getElementById('pay-amount').value;
+
+  if (!phone || !amount) {
+    showToast('warn', 'bi-exclamation-circle', 'Missing', 'Enter phone and amount');
+    return;
+  }
+
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending to Airtel…');
+
+  setTimeout(async () => {
+    await createPayment(amount, 'airtel', phone);
+    showToast('ok', 'bi-check-circle', 'Sent', 'Check your Airtel Money app');
+  }, 1500);
+}
+
+async function confirmReceipt() {
+  const receipt = document.getElementById('receipt-code').value;
+  const amount = document.getElementById('pay-amount').value;
+
+  if (!receipt || !amount) {
+    showToast('warn', 'bi-exclamation-circle', 'Missing', 'Enter receipt and amount');
+    return;
+  }
+
+  await createPayment(amount, 'manual', receipt);
+  showToast('ok', 'bi-check-circle', 'Submitted', 'Admin will verify within 24h');
+  closeModal('modal-wallet');
+}
+
+async function createPayment(amount, method, ref) {
   try {
     const { data: wallet } = await sb.from('wallets')
       .select('account_number')
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    const { error } = await sb.from('payments').insert({
+    await sb.from('payments').insert({
       user_id: currentUser.id,
       account_number: wallet?.account_number,
       amount: parseFloat(amount),
       payment_method: method,
       status: method === 'manual' ? 'processing' : 'pending',
-      mpesa_phone: method === 'mpesa' ? reference : null,
-      airtel_phone: method === 'airtel' ? reference : null,
-      bank_account: method === 'manual' ? reference : null,
-      fee_type: parseFloat(amount) === 300 ? 'interview_fee' : 'first_salary_fee',
+      mpesa_phone: method === 'mpesa' ? ref : null,
+      airtel_phone: method === 'airtel' ? ref : null,
+      bank_account: method === 'manual' ? ref : null,
     });
-
-    if (!error) {
-      // Create notification
-      await sb.from('notifications').insert({
-        user_id: currentUser.id,
-        type: 'payment_initiated',
-        title: 'Payment Initiated',
-        message: `Payment of KES ${amount} via ${method.toUpperCase()} initiated. Reference: ${reference}`,
-      });
-    }
   } catch (e) {
-    console.warn('createPaymentRecord:', e);
+    console.warn(e);
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//  PAYMENT TABS
-// ═══════════════════════════════════════════════════════
-function switchPaymentTab(tab, btn) {
-  document.querySelectorAll('.payment-tab').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.tabs .tab').forEach(el => el.classList.remove('active'));
+function renderPaymentHistory(payments) {
+  const el = document.getElementById('payment-list');
   
-  const tabEl = document.getElementById(tab === 'history' ? 'payment-history-tab' : 'make-payment-tab');
-  if (tabEl) tabEl.style.display = 'block';
-  if (btn) btn.classList.add('active');
+  if (!payments.length) {
+    el.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--muted);">No payment history</div>';
+    return;
+  }
+
+  el.innerHTML = payments.map(p => {
+    const statusColor = p.status === 'completed' ? 'var(--green)' : p.status === 'failed' ? 'var(--rose)' : 'var(--gold)';
+    return `
+    <div style="background: var(--surface); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-weight: 600; margin-bottom: 2px;">KES ${p.amount.toLocaleString('en-KE')}</div>
+        <div style="font-size: 11px; color: var(--muted);">${p.payment_method.toUpperCase()} • ${new Date(p.created_at).toLocaleDateString('en-KE')}</div>
+      </div>
+      <div style="font-size: 12px; font-weight: 600; color: ${statusColor}; text-transform: capitalize;">${p.status}</div>
+    </div>
+    `;
+  }).join('');
 }
 
-// ═══════════════════════════════════════════════════════
-//  SUBSCRIPTIONS
-// ═══════════════════════════════════════════════════════
-function subscribeToMessages() {
-  sb.channel('messages').on(
+function updateFeeStatus(wallet) {
+  const interview = wallet.interview_fee_paid;
+  const salary = wallet.first_salary_fee_paid;
+  
+  document.getElementById('fee-interview').innerHTML = interview ? '✓ <span style="color: var(--green);">Paid</span>' : '⚠️ Pending';
+  document.getElementById('fee-salary').innerHTML = salary ? '✓ <span style="color: var(--green);">Paid</span>' : '⚠️ Pending';
+}
+
+// SUPPORT
+async function sendSupportMessage() {
+  const msg = document.getElementById('support-msg').value.trim();
+  if (!msg) return;
+
+  const chat = document.getElementById('support-chat');
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble sent';
+  bubble.innerHTML = `<div class="bubble sent">${esc(msg)}</div><div class="bubble-time">just now</div>`;
+  chat.appendChild(bubble);
+  chat.scrollTop = chat.scrollHeight;
+
+  document.getElementById('support-msg').value = '';
+
+  // Create notification for admin
+  await sb.from('notifications').insert({
+    user_id: currentUser.id,
+    type: 'support_message',
+    title: 'Support Request',
+    message: msg,
+  });
+
+  showToast('ok', 'bi-check-circle', 'Sent', 'We'll respond shortly');
+}
+
+// SUBSCRIPTIONS
+function subscribeToUpdates() {
+  sb.channel('public-updates').on(
     'postgres_changes',
-    { event: '*', schema: 'public', table: 'messages' },
-    async (payload) => {
+    { event: 'INSERT', schema: 'public', table: 'messages' },
+    (payload) => {
       if (payload.new.receiver_id === currentUser.id) {
-        const { data: msgs } = await sb.from('messages')
-          .select('*')
-          .eq('receiver_id', currentUser.id)
-          .order('created_at', { ascending: false })
-          .limit(30);
-        renderInbox(msgs || []);
+        allMessages.unshift(payload.new);
+        renderMessages();
       }
     }
   ).subscribe();
 }
 
-// ═══════════════════════════════════════════════════════
-//  UTILITIES
-// ═══════════════════════════════════════════════════════
+// ACCOUNT
+async function signOut() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// UTILITIES
 function openModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add('open');
-  
-  if (id === 'modal-payments') {
-    renderPaymentBalances();
-  }
+  document.getElementById(id)?.classList.add('open');
 }
 
 function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
+  document.getElementById(id)?.classList.remove('open');
 }
 
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val ?? '—';
-}
-
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function switchTab(tabId, btn) {
+  const modal = btn?.closest('.modal');
+  modal?.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  modal?.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  
+  const tab = document.getElementById(tabId);
+  if (tab) tab.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 function timeAgo(d) {
   const diff = (Date.now() - d) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
-  return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+  if (diff < 60) return 'now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+  return d.toLocaleDateString('en-KE', { day: 'short', month: 'short' });
 }
 
-function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function showToast(type, icon, title, body, duration) {
+function showToast(type, icon, title, body) {
   const stack = document.getElementById('toast-stack');
   const t = document.createElement('div');
-  t.className = 'toast ' + (type || 'info');
-  t.innerHTML = `<i class="bi ${escHtml(icon)}"></i><div class="toast-msg"><strong>${escHtml(title)}</strong>${body ? `<p>${escHtml(String(body))}</p>` : ''}</div>`;
+  t.className = 'toast ' + type;
+  t.innerHTML = `<i class="bi ${icon}"></i><div class="toast-msg"><strong>${esc(title)}</strong></div>`;
   stack.appendChild(t);
-  const d = duration !== undefined ? duration : 4000;
-  if (d > 0) setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, d);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
 }
 
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 </script>
 
