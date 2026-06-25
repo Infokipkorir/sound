@@ -877,41 +877,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ════════════════════════════════════════════════════════
 async function loadDashboard() {
   try {
+    console.log('🚀 Dashboard loading…');
+    console.log('📌 currentUser.id:', currentUser.id);
+    console.log('📧 currentUser.email:', currentUser.email);
+
     // 1. worker_profiles — try session_id (= auth.uid()) first, then fall back to email
     // DB reality: no user_id column exists on worker_profiles; link is via session_id (uuid text) OR email
     let wp = null, wpErr = null;
 
     // Attempt 1: session_id match (RLS policy: session_id = auth.uid()::text)
+    console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
     const { data: bySession, error: e1 } = await sb.from('worker_profiles')
       .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
       .eq('session_id', currentUser.id)
       .maybeSingle();
 
+    if (e1) console.warn('❌ Attempt 1 error:', e1.message);
     if (bySession) {
+      console.log('✅ Attempt 1 SUCCESS:', bySession);
       wp = bySession;
     } else {
+      console.log('⚠️  No session_id match. Trying email…');
       // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
+      console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
       const { data: byEmail, error: e2 } = await sb.from('worker_profiles')
         .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number')
         .eq('email', currentUser.email)
-        .order('created_at', { ascending: false }) // newest profile wins if duplicates
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (e2) console.warn('❌ Attempt 2 error:', e2.message);
+      if (byEmail) {
+        console.log('✅ Attempt 2 SUCCESS:', byEmail);
+      } else {
+        console.log('⚠️  No worker_profile found at all for', currentUser.email);
+      }
 
       wp = byEmail || null;
       wpErr = e2;
 
       // If we found a profile by email but session_id is missing, backfill it
       if (wp && !bySession) {
+        console.log('🔧 Backfilling session_id on row', wp.id);
         sb.from('worker_profiles')
           .update({ session_id: currentUser.id })
           .eq('id', wp.id)
-          .then(() => {}).catch(() => {});
+          .then(() => console.log('✅ Backfill done')).catch(e => console.warn('Backfill error:', e.message));
       }
     }
 
-    if (wpErr) console.warn('worker_profiles:', wpErr?.message);
+    if (wpErr) console.warn('worker_profiles final error:', wpErr?.message);
     workerProfile = wp || null;
+    console.log('📋 workerProfile now:', workerProfile);
 
     // Welcome banner
     const name = workerProfile?.full_name || currentUser.email?.split('@')[0] || 'Worker';
@@ -948,6 +966,7 @@ async function loadDashboard() {
       : 'You are not appearing in employer searches';
 
     // 2. conversations (RLS: employee_id = auth.uid()) — get threads
+    console.log('🔍 Loading conversations where employee_id =', currentUser.id);
     const { data: convs, error: convErr } = await sb.from('conversations')
       .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status')
       .eq('employee_id', currentUser.id)
@@ -955,7 +974,8 @@ async function loadDashboard() {
       .order('last_message_at', { ascending: false })
       .limit(30);
 
-    if (convErr) console.warn('conversations:', convErr.message);
+    if (convErr) console.warn('❌ conversations error:', convErr.message);
+    console.log('✅ conversations loaded:', convs?.length || 0, 'threads');
     allConversations = convs || [];
 
     // Count unread
@@ -969,25 +989,33 @@ async function loadDashboard() {
     await renderConversationList();
 
     // 3. job_postings (public read policy on status='active')
+    console.log('🔍 Loading active job_postings');
     const { data: jobs, error: jobErr } = await sb.from('job_postings')
       .select('id, title, description, location, county, salary_range, job_type, is_urgent, created_at, job_role')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
 
-    if (jobErr) console.warn('job_postings:', jobErr.message);
+    if (jobErr) console.warn('❌ job_postings error:', jobErr.message);
+    console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
     document.getElementById('stat-jobs').textContent = allJobs.length;
     renderJobs(allJobs);
     populateCountyFilter(allJobs);
 
     // 4. wallets (RLS: user_id = auth.uid())
+    console.log('🔍 Loading wallet for user_id =', currentUser.id);
     const { data: wallet, error: wErr } = await sb.from('wallets')
       .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance')
       .eq('user_id', currentUser.id)
       .maybeSingle();
 
-    if (wErr) console.warn('wallets:', wErr.message);
+    if (wErr) console.warn('❌ wallets error:', wErr.message);
+    if (wallet) {
+      console.log('✅ Wallet loaded:', wallet);
+    } else {
+      console.log('⚠️  No wallet record exists for this user yet');
+    }
     if (wallet) {
       const bal = (wallet.balance || 0);
       const out = (wallet.outstanding_balance || 0);
@@ -1018,8 +1046,9 @@ async function loadDashboard() {
     await loadNotifications();
 
   } catch (e) {
-    console.error('loadDashboard:', e);
-    showToast('err', 'bi-exclamation-circle', 'Error', e.message);
+    console.error('❌ loadDashboard CRASHED:', e.message);
+    console.error('Stack:', e.stack);
+    showToast('err', 'bi-exclamation-circle', 'Dashboard Error', e.message);
   }
 }
 
