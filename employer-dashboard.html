@@ -3,16 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Messages & Payments – SoundsCare Employer</title>
+<title>Employer Dashboard – SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --ink:#0f1923;--brand:#1B6B45;--brand-dark:#134f33;--brand-soft:rgba(27,107,69,.10);
   --accent:#E8A040;--accent-soft:rgba(232,160,64,.12);
-  --sky:#0ea5e9;--rose:#f43f5e;--violet:#8b5cf6;--green:#22c55e;
+  --sky:#0ea5e9;--rose:#f43f5e;--violet:#8b5cf6;--green:#22c55e;--amber:#f59e0b;--gray:#9ca3af;
   --surface:#fff;--card:#fff;--border:#e5e7eb;--muted:#6b7280;
   --sidebar-dark:#0F3D28;--bg:#f9fafb;
 }
@@ -33,7 +31,19 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .back-btn:hover{background:var(--brand-soft);}
 
 /* PAGE */
-.page{max-width:1000px;margin:0 auto;padding:1.5rem 1.2rem 5rem;}
+.page{max-width:1100px;margin:0 auto;padding:1.5rem 1.2rem 5rem;}
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1.2rem;flex-wrap:wrap;}
+.page-head h1{font-size:1.3rem;font-weight:800;}
+.page-head p{font-size:12.5px;color:var(--muted);margin-top:2px;}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem;}
+@media(max-width:760px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.1rem 1.2rem;box-shadow:0 2px 10px rgba(15,25,35,.04);}
+.stat-card .s-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.stat-card .s-val{font-size:1.6rem;font-weight:800;color:var(--brand);}
+.stat-card .s-val.accent{color:var(--accent);}
+.stat-card .s-val.rose{color:var(--rose);}
 
 /* PAYMENT WALL */
 .payment-wall{background:linear-gradient(135deg,var(--sidebar-dark),var(--brand));border-radius:18px;padding:2rem;color:#fff;text-align:center;margin-bottom:1.5rem;}
@@ -44,10 +54,36 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .pay-feature{background:rgba(255,255,255,.12);border-radius:20px;padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:6px;}
 
 /* SECTION */
-.section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.5rem;}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 2px 10px rgba(15,25,35,.04);}
 .section-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .section-title{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px;}
 .section-body{padding:1.2rem 1.5rem;}
+
+/* SEARCH */
+.search-bar{display:flex;gap:8px;padding:1rem 1.5rem;border-bottom:1px solid var(--border);}
+.search-bar input{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;outline:none;}
+.search-bar input:focus{border-color:var(--brand);}
+
+/* EMPLOYEE GRID */
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:1.2rem 1.5rem;}
+.emp-card{border:1px solid var(--border);border-radius:14px;padding:1rem;transition:.15s;background:#fff;}
+.emp-card:hover{box-shadow:0 4px 14px rgba(15,25,35,.08);transform:translateY(-1px);}
+.emp-top{display:flex;gap:10px;align-items:flex-start;}
+.emp-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
+.presence-dot{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;}
+.presence-dot.online{background:var(--green);}
+.presence-dot.away{background:var(--amber);}
+.presence-dot.offline{background:var(--gray);}
+.emp-name{font-size:13.5px;font-weight:700;}
+.emp-role{font-size:11.5px;color:var(--muted);}
+.emp-status-line{font-size:10.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px;}
+.emp-status-line .dot-txt{font-weight:700;}
+.emp-status-line .dot-txt.online{color:var(--green);}
+.emp-status-line .dot-txt.away{color:var(--amber);}
+.emp-tags{display:flex;gap:6px;margin:.6rem 0;flex-wrap:wrap;}
+.emp-tag{font-size:10px;background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:3px 8px;font-weight:600;}
+.emp-tag.blocked{background:rgba(244,63,94,.12);color:var(--rose);}
+.emp-actions{display:flex;gap:6px;margin-top:.5rem;}
 
 /* TABS */
 .tabs{display:flex;border-bottom:1px solid var(--border);}
@@ -56,94 +92,6 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .tab-btn.active{color:var(--brand);border-color:var(--brand);}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
-
-/* MESSAGES */
-.msg-layout{display:grid;grid-template-columns:280px 1fr;height:520px;}
-@media(max-width:680px){.msg-layout{grid-template-columns:1fr;height:auto;}}
-.msg-list-pane{border-right:1px solid var(--border);overflow-y:auto;}
-.msg-search{padding:12px;border-bottom:1px solid var(--border);}
-.msg-search input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;outline:none;}
-.msg-search input:focus{border-color:var(--brand);}
-.conv-item{display:flex;gap:10px;padding:12px 14px;cursor:pointer;transition:.15s;border-bottom:1px solid var(--border);}
-.conv-item:hover{background:var(--bg);}
-.conv-item.active{background:var(--brand-soft);border-left:3px solid var(--brand);}
-.conv-item.unread{background:rgba(27,107,69,.04);}
-.conv-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
-.conv-av.worker{background:linear-gradient(135deg,var(--accent),#f0b562);}
-.online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--green);border-radius:50%;border:2px solid #fff;}
-.conv-info{flex:1;min-width:0;}
-.conv-name{font-size:13px;font-weight:700;margin-bottom:2px;}
-.conv-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.conv-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-.conv-time{font-size:10px;color:var(--muted);}
-.unread-dot{width:8px;height:8px;background:var(--brand);border-radius:50%;}
-.conv-badge{font-size:9px;background:var(--brand);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-weight:700;}
-.msg-chat-pane{display:flex;flex-direction:column;}
-.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#fff;}
-.chat-header .ch-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--bg);}
-.bubble-row{display:flex;gap:8px;}
-.bubble-row.sent{flex-direction:row-reverse;}
-.bubble-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;}
-.bubble-av.employer{background:linear-gradient(135deg,var(--accent),#f0b562);}
-.bubble{max-width:72%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;}
-.bubble.received{background:#fff;border:1px solid var(--border);border-top-left-radius:4px;}
-.bubble.sent{background:var(--brand);color:#fff;border-top-right-radius:4px;}
-.bubble-time{font-size:10px;color:var(--muted);margin-top:4px;text-align:right;}
-.bubble-row.sent .bubble-time{text-align:left;}
-.chat-input-area{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;}
-.chat-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:13px;outline:none;resize:none;}
-.chat-input:focus{border-color:var(--brand);}
-.chat-send{background:var(--brand);color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;transition:.15s;}
-.chat-send:hover{background:var(--brand-dark);}
-.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--muted);background:var(--bg);}
-.chat-empty i{font-size:40px;opacity:.3;}
-
-/* PAYMENT */
-.pay-status-card{background:linear-gradient(135deg,rgba(27,107,69,.08),rgba(232,160,64,.06));border:1px solid rgba(27,107,69,.2);border-radius:14px;padding:1.2rem;margin-bottom:1.2rem;}
-.pay-status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
-@media(max-width:600px){.pay-status-grid{grid-template-columns:1fr;}}
-.pay-stat{text-align:center;}
-.pay-stat-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;}
-.pay-stat-val{font-size:1.5rem;font-weight:800;color:var(--brand);}
-.pay-stat-val.danger{color:var(--rose);}
-.pay-stat-val.warning{color:var(--accent);}
-.pay-history-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
-.pay-history-item:last-child{border-bottom:none;}
-.pay-hist-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--brand-soft);color:var(--brand);}
-.pay-hist-info{flex:1;}
-.pay-hist-name{font-size:13px;font-weight:700;}
-.pay-hist-sub{font-size:11px;color:var(--muted);}
-.pay-hist-right{text-align:right;}
-.pay-hist-amount{font-size:14px;font-weight:700;color:var(--brand);}
-.pay-hist-date{font-size:10px;color:var(--muted);}
-.pay-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;}
-.pay-badge.paid{background:rgba(34,197,94,.15);color:#16a34a;}
-.pay-badge.pending{background:var(--accent-soft);color:#b45309;}
-.pay-badge.failed{background:rgba(244,63,94,.1);color:var(--rose);}
-
-/* M-PESA MODAL */
-.mpesa-input{display:flex;gap:8px;margin-bottom:.75rem;}
-.mpesa-input .prefix{background:var(--bg);border:1px solid var(--border);border-radius:10px 0 0 10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--muted);flex-shrink:0;display:flex;align-items:center;}
-.mpesa-input input{flex:1;padding:10px 12px;border:1px solid var(--border);border-left:none;border-radius:0 10px 10px 0;font-family:inherit;font-size:14px;outline:none;}
-.mpesa-input input:focus{border-color:var(--brand);}
-
-/* MODAL */
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,25,35,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:480px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(15,25,35,.28);display:flex;flex-direction:column;}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.3rem 1.5rem;border-bottom:1px solid var(--border);flex-shrink:0;}
-.modal-header h2{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:.18s;}
-.modal-close:hover{background:var(--bg);}
-.modal-body{flex:1;overflow-y:auto;padding:1.5rem;}
-.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
-
-/* FORM */
-.form-group{margin-bottom:1rem;}
-.form-group label{display:block;font-weight:600;font-size:12px;margin-bottom:5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--card);}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(27,107,69,.1);}
 
 /* BUTTONS */
 .btn{padding:10px 16px;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;transition:.18s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
@@ -155,9 +103,102 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .btn-secondary{background:var(--bg);color:var(--ink);border:1px solid var(--border);}
 .btn-secondary:hover{background:var(--border);}
 .btn-full{width:100%;justify-content:center;}
-.btn-sm{padding:6px 12px;font-size:12px;}
+.btn-sm{padding:6px 10px;font-size:11.5px;}
 .btn-danger{background:rgba(244,63,94,.1);color:var(--rose);border:1px solid rgba(244,63,94,.2);}
 .btn-danger:hover{background:rgba(244,63,94,.2);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg);}
+
+/* CHAT MODAL (large) */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,25,35,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:480px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(15,25,35,.28);display:flex;flex-direction:column;}
+.modal.chat-modal{max-width:720px;height:88vh;overflow:hidden;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-header h2{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:.18s;}
+.modal-close:hover{background:var(--bg);}
+.modal-body{flex:1;overflow-y:auto;padding:1.5rem;}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+/* CHAT HEADER */
+.chat-modal-header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;}
+.chat-who{display:flex;align-items:center;gap:10px;min-width:0;}
+.chat-who .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
+.chat-who-info{min-width:0;}
+.chat-who-name{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-who-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.chat-who-status .dot{width:7px;height:7px;border-radius:50%;}
+.chat-who-status .dot.online{background:var(--green);}
+.chat-who-status .dot.away{background:var(--amber);}
+.chat-who-status .dot.offline{background:var(--gray);}
+.chat-menu-wrap{position:relative;flex-shrink:0;}
+.chat-kebab{background:var(--bg);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink);}
+.chat-kebab:hover{background:var(--border);}
+.chat-dropdown{position:absolute;top:42px;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,25,35,.18);min-width:220px;display:none;overflow:hidden;z-index:50;}
+.chat-dropdown.open{display:block;}
+.chat-dropdown button{width:100%;text-align:left;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);}
+.chat-dropdown button:hover{background:var(--bg);}
+.chat-dropdown button.danger{color:var(--rose);}
+.chat-dropdown .sep{height:1px;background:var(--border);margin:4px 0;}
+
+/* CHAT BODY */
+.chat-modal-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
+.chat-banner{font-size:11.5px;text-align:center;color:var(--muted);padding:6px 10px;border-radius:20px;background:#fff;border:1px solid var(--border);align-self:center;display:flex;align-items:center;gap:6px;}
+.chat-banner.admin{background:rgba(139,92,246,.08);color:var(--violet);border-color:rgba(139,92,246,.25);}
+.chat-banner.system{background:#fff;}
+.bubble-row{display:flex;gap:8px;max-width:100%;}
+.bubble-row.sent{flex-direction:row-reverse;align-self:flex-end;}
+.bubble-row.received{align-self:flex-start;}
+.bubble-row.admin-row{align-self:center;}
+.bubble-av{width:28px;height:28px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;background:linear-gradient(135deg,var(--accent),#f0b562);}
+.bubble-av.employer{background:linear-gradient(135deg,var(--brand),#2a9961);}
+.bubble-av.admin{background:linear-gradient(135deg,var(--violet),#a78bfa);}
+.bubble-col{display:flex;flex-direction:column;max-width:420px;}
+.bubble-name{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:2px;}
+.bubble{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;}
+.bubble.received{background:#fff;border:1px solid var(--border);border-top-left-radius:4px;}
+.bubble.sent{background:var(--brand);color:#fff;border-top-right-radius:4px;}
+.bubble.admin{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#4c2c91;border-top-left-radius:4px;}
+.bubble.file-request{background:#fff;border:1px dashed var(--accent);}
+.bubble-time{font-size:10px;color:var(--muted);margin-top:4px;}
+.bubble-row.sent .bubble-time{text-align:right;}
+.typing-row{display:flex;align-items:center;gap:8px;align-self:flex-start;padding-left:36px;}
+.typing-dots{display:flex;gap:3px;background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:14px;}
+.typing-dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce 1.2s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+
+/* CHAT INPUT */
+.chat-modal-input{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;flex-shrink:0;align-items:flex-end;}
+.chat-modal-input textarea{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:13px;outline:none;resize:none;max-height:90px;}
+.chat-modal-input textarea:focus{border-color:var(--brand);}
+.chat-icon-btn{background:var(--bg);border:1px solid var(--border);color:var(--brand);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;}
+.chat-icon-btn:hover{background:var(--border);}
+.chat-send{background:var(--brand);color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;transition:.15s;}
+.chat-send:hover{background:var(--brand-dark);}
+.chat-send:disabled{opacity:.4;cursor:not-allowed;}
+.chat-ended-bar{padding:10px 14px;background:rgba(244,63,94,.06);border-top:1px solid rgba(244,63,94,.2);font-size:12px;color:var(--rose);text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
+.chat-blocked-bar{padding:10px 14px;background:rgba(107,114,128,.08);border-top:1px solid var(--border);font-size:12px;color:var(--muted);text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
+
+/* FORM */
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-weight:600;font-size:12px;margin-bottom:5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--card);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(27,107,69,.1);}
+.mpesa-input{display:flex;gap:8px;}
+.mpesa-input .prefix{background:var(--bg);border:1px solid var(--border);border-radius:10px 0 0 10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--muted);flex-shrink:0;display:flex;align-items:center;}
+.mpesa-input input{flex:1;padding:10px 12px;border:1px solid var(--border);border-left:none;border-radius:0 10px 10px 0;font-family:inherit;font-size:14px;outline:none;}
+
+/* PAYMENT MODAL BALANCE BOX */
+.balance-box{background:linear-gradient(135deg,rgba(27,107,69,.08),rgba(232,160,64,.06));border:1px solid rgba(27,107,69,.2);border-radius:14px;padding:1.1rem;margin-bottom:1.2rem;}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.balance-item{text-align:center;}
+.balance-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;}
+.balance-amount{font-size:1.5rem;font-weight:800;color:var(--brand);}
+.balance-amount.warning{color:var(--accent);}
+.balance-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 
 /* TOAST */
 #toast-stack{position:fixed;bottom:80px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:9999;}
@@ -169,25 +210,20 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 .toast.err i{color:var(--rose);}
 .toast.info{border-left:3px solid var(--sky);}
 .toast.info i{color:var(--sky);}
-.toast-msg{}
 
-/* EMPTY */
 .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
 .empty-state i{font-size:36px;opacity:.25;display:block;margin-bottom:.5rem;}
 .empty-state p{font-size:13px;}
 
-/* RECEIPT */
 .receipt-box{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:1.2rem;}
 .receipt-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
 .receipt-row:last-child{border-bottom:none;}
 .receipt-label{color:var(--muted);}
 .receipt-val{font-weight:700;}
 
-@media(max-width:600px){
-  .pay-status-grid{grid-template-columns:1fr 1fr;}
-  .msg-layout{height:auto;}
-  .msg-list-pane{height:200px;border-right:none;border-bottom:1px solid var(--border);}
-  .msg-chat-pane{height:400px;}
+@media(max-width:680px){
+  .modal.chat-modal{height:94vh;border-radius:14px;}
+  .emp-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -195,207 +231,259 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
 
 <!-- NAV -->
 <div class="nav">
-  <a href="employer-dashboard.html" class="nav-logo">
+  <a href="#" class="nav-logo">
     <div class="logo-icon">SC</div>
     <span>Sounds<strong style="color:var(--accent)">Care</strong></span>
   </a>
-  <a href="employer-dashboard.html" class="back-btn">
-    <i class="bi bi-arrow-left"></i> Dashboard
-  </a>
+  <a href="#" class="back-btn"><i class="bi bi-arrow-left"></i> Dashboard</a>
   <div class="nav-right">
-    <button class="nav-btn" id="notif-btn" title="Notifications">
+    <button class="nav-btn" title="Notifications">
       <i class="bi bi-bell"></i>
-      <div class="nav-badge" id="notif-badge">0</div>
+      <div class="nav-badge show" id="notif-badge">2</div>
     </button>
-    <div class="nav-avatar" id="nav-avatar" title="Account">—</div>
+    <div class="nav-avatar" id="nav-avatar" title="Account">EM</div>
   </div>
 </div>
 
 <!-- PAGE -->
 <div class="page">
 
-  <!-- PAYMENT WALL (shown if not paid) -->
-  <div id="payment-wall" class="payment-wall" style="display:none;">
-    <i class="bi bi-shield-lock" style="font-size:2.5rem;margin-bottom:.75rem;display:block;opacity:.8;"></i>
-    <h2>Unlock Full Access</h2>
-    <p>Pay the one-time employer access fee to unlock messaging with workers, view worker contact details, and manage all your hiring activities.</p>
-    <div class="pay-amount">KES 2,000</div>
-    <div class="pay-features">
-      <span class="pay-feature"><i class="bi bi-chat-dots-fill"></i> Direct Messaging</span>
-      <span class="pay-feature"><i class="bi bi-person-check-fill"></i> Full Worker Profiles</span>
-      <span class="pay-feature"><i class="bi bi-telephone-fill"></i> Contact Details</span>
-      <span class="pay-feature"><i class="bi bi-briefcase-fill"></i> Post Up to 5 Jobs</span>
-      <span class="pay-feature"><i class="bi bi-file-earmark-text-fill"></i> Contract Generator</span>
+  <div class="page-head">
+    <div>
+      <h1>Employer Dashboard</h1>
+      <p>Manage workers, interviews and payments in one place.</p>
     </div>
-    <button class="btn btn-accent" style="font-size:15px;padding:12px 28px;" onclick="openModal('pay-modal')">
-      <i class="bi bi-phone-fill"></i> Pay via M-PESA Now
+    <button class="btn btn-accent" onclick="openModal('pay-modal')">
+      <i class="bi bi-credit-card-fill"></i> Make Payment
     </button>
-    <p style="font-size:11px;margin-top:.75rem;opacity:.6;">One-time fee · Non-refundable · M-PESA & Airtel Money</p>
   </div>
 
-  <!-- ACCESS CONFIRMED (shown if paid) -->
-  <div id="access-confirmed" style="display:none;margin-bottom:1.5rem;">
+  <!-- ACCESS CONFIRMED -->
+  <div id="access-confirmed" style="margin-bottom:1.5rem;">
     <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
       <i class="bi bi-patch-check-fill" style="font-size:24px;color:var(--green);flex-shrink:0;"></i>
       <div>
         <div style="font-weight:700;font-size:14px;color:#14532d;">Full Access Active</div>
-        <div style="font-size:12px;color:var(--muted);">Your KES 2,000 access fee has been confirmed. You have full access to all features.</div>
+        <div style="font-size:12px;color:var(--muted);">Your employer access fee has been confirmed. You can message and interview workers.</div>
       </div>
     </div>
   </div>
 
-  <!-- TABS -->
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="s-label"><i class="bi bi-people-fill"></i> Workers Listed</div>
+      <div class="s-val" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><i class="bi bi-chat-dots-fill"></i> Active Interviews</div>
+      <div class="s-val accent" id="stat-active">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><i class="bi bi-check-circle-fill"></i> Ended</div>
+      <div class="s-val" id="stat-ended">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><i class="bi bi-slash-circle-fill"></i> Blocked</div>
+      <div class="s-val rose" id="stat-blocked">—</div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES -->
   <div class="section">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('messages', this)" id="tab-msg-btn">
-        <i class="bi bi-chat-dots"></i> Messages
-        <span id="msg-tab-count" style="background:var(--rose);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:none;align-items:center;justify-content:center;font-weight:700;"></span>
-      </button>
-      <button class="tab-btn" onclick="switchTab('payments', this)" id="tab-pay-btn">
-        <i class="bi bi-credit-card"></i> Payments
-      </button>
+    <div class="section-header">
+      <div class="section-title"><i class="bi bi-people"></i> Workers</div>
     </div>
-
-    <!-- MESSAGES TAB -->
-    <div class="tab-content active" id="tab-messages">
-      <div class="msg-layout">
-        <!-- Conversation List -->
-        <div class="msg-list-pane">
-          <div class="msg-search">
-            <input type="text" id="conv-search" placeholder="🔍 Search messages…" oninput="filterConversations()">
-          </div>
-          <div id="conv-list">
-            <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading…</p></div>
-          </div>
-        </div>
-        <!-- Chat Pane -->
-        <div class="msg-chat-pane" id="chat-pane">
-          <div class="chat-empty" id="chat-empty">
-            <i class="bi bi-chat-square-text"></i>
-            <span>Select a conversation</span>
-          </div>
-          <div id="active-chat" style="display:none;flex-direction:column;height:100%;">
-            <div class="chat-header">
-              <div class="ch-av" id="chat-av">—</div>
-              <div>
-                <div style="font-weight:700;font-size:13px;" id="chat-name">—</div>
-                <div style="font-size:11px;color:var(--muted);" id="chat-role">—</div>
-              </div>
-              <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="openWorkerProfile()">
-                <i class="bi bi-person"></i> Profile
-              </button>
-            </div>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div class="chat-input-area">
-              <textarea class="chat-input" id="chat-input" placeholder="Type a message…" rows="1" onkeydown="handleChatKey(event)"></textarea>
-              <button class="chat-send" onclick="sendMessage()"><i class="bi bi-send-fill"></i></button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="search-bar">
+      <input type="text" id="emp-search" placeholder="🔍 Search workers by name or role…" oninput="renderEmployees()">
     </div>
-
-    <!-- PAYMENTS TAB -->
-    <div class="tab-content" id="tab-payments">
-      <div style="padding:1.5rem;">
-        <!-- Status -->
-        <div class="pay-status-card">
-          <div class="pay-status-grid">
-            <div class="pay-stat">
-              <div class="pay-stat-label">Access Fee</div>
-              <div class="pay-stat-val" id="stat-fee-status">—</div>
-            </div>
-            <div class="pay-stat">
-              <div class="pay-stat-label">Total Paid</div>
-              <div class="pay-stat-val" id="stat-total-paid">—</div>
-            </div>
-            <div class="pay-stat">
-              <div class="pay-stat-label">Transactions</div>
-              <div class="pay-stat-val" id="stat-tx-count">—</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div style="display:flex;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="openModal('pay-modal')">
-            <i class="bi bi-phone-fill"></i> Pay via M-PESA
-          </button>
-          <button class="btn btn-secondary" onclick="loadPayments()">
-            <i class="bi bi-arrow-clockwise"></i> Refresh
-          </button>
-        </div>
-
-        <!-- Info -->
-        <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.2);border-radius:10px;padding:12px 16px;font-size:12.5px;color:var(--brand);margin-bottom:1.2rem;display:flex;gap:8px;align-items:flex-start;">
-          <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:2px;"></i>
-          <span>Employer access fee: <strong>KES 2,000 one-time, non-refundable</strong>. Unlocks full worker access, messaging, and contact details. M-PESA & Airtel Money accepted.</span>
-        </div>
-
-        <!-- History -->
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.75rem;">Payment History</div>
-        <div id="pay-history-list">
-          <div class="empty-state"><i class="bi bi-inbox"></i><p>Loading payments…</p></div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /section -->
+    <div class="emp-grid" id="emp-grid"></div>
+  </div>
 
 </div><!-- /page -->
 
 <!-- TOAST -->
 <div id="toast-stack"></div>
 
-<!-- ═════════════ PAYMENT MODAL ═════════════ -->
-<div class="modal-overlay" id="pay-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="bi bi-phone-fill" style="color:var(--green);"></i> Pay via M-PESA</h2>
-      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div style="background:var(--brand-soft);border-radius:12px;padding:14px;margin-bottom:1.2rem;text-align:center;">
-        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;">Amount to Pay</div>
-        <div style="font-size:2.2rem;font-weight:800;color:var(--brand);">KES 2,000</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">One-time employer access fee</div>
-      </div>
-
-      <div class="form-group">
-        <label>Your M-PESA Phone Number</label>
-        <div class="mpesa-input">
-          <span class="prefix">+254</span>
-          <input type="tel" id="mpesa-phone" placeholder="7XX XXX XXX" maxlength="9">
+<!-- ═════════════ INTERVIEW / CHAT MODAL ═════════════ -->
+<div class="modal-overlay" id="chat-modal">
+  <div class="modal chat-modal">
+    <div class="chat-modal-header">
+      <div class="chat-who">
+        <div class="av" id="chat-av">—</div>
+        <div class="chat-who-info">
+          <div class="chat-who-name" id="chat-name">—</div>
+          <div class="chat-who-status" id="chat-status"><span class="dot online"></span> Online</div>
         </div>
       </div>
-
-      <div class="form-group">
-        <label>M-PESA Transaction Reference</label>
-        <input type="text" id="mpesa-ref" placeholder="e.g. QHX23YRTE5" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="chat-state-badge" style="font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:8px;display:none;"></span>
+        <div class="chat-menu-wrap">
+          <button class="chat-kebab" onclick="toggleChatMenu()"><i class="bi bi-three-dots-vertical"></i></button>
+          <div class="chat-dropdown" id="chat-dropdown">
+            <button onclick="requestFile()"><i class="bi bi-paperclip"></i> Request a File</button>
+            <div class="sep"></div>
+            <button onclick="confirmEndInterview()" id="end-interview-btn"><i class="bi bi-stop-circle"></i> End Interview</button>
+            <div class="sep"></div>
+            <button class="danger" onclick="confirmBlockWorker()" id="block-worker-btn"><i class="bi bi-slash-circle"></i> Block Worker</button>
+            <button class="danger" onclick="openReportModal()"><i class="bi bi-flag"></i> Report Worker</button>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('chat-modal')">×</button>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label>Date of Payment</label>
-        <input type="date" id="mpesa-date">
+    <div class="chat-modal-body" id="chat-body"></div>
+
+    <div id="chat-input-wrap">
+      <div class="chat-modal-input">
+        <button class="chat-icon-btn" title="Request a file" onclick="requestFile()"><i class="bi bi-paperclip"></i></button>
+        <textarea id="chat-text" rows="1" placeholder="Type a message…" oninput="onTyping()" onkeydown="onChatKeydown(event)"></textarea>
+        <button class="chat-send" id="chat-send-btn" onclick="sendChatMessage()"><i class="bi bi-send-fill"></i></button>
       </div>
+    </div>
+    <div class="chat-ended-bar" id="chat-ended-bar" style="display:none;">
+      <i class="bi bi-lock-fill"></i> Interview ended — conversation is view-only.
+    </div>
+    <div class="chat-blocked-bar" id="chat-blocked-bar" style="display:none;">
+      <i class="bi bi-slash-circle-fill"></i> Worker blocked — no further messages can be sent.
+    </div>
+  </div>
+</div>
 
-      <div id="pay-error" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:12px;color:#991b1b;display:none;margin-bottom:.75rem;"></div>
-      <div id="pay-success" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;font-size:12px;color:#14532d;display:none;margin-bottom:.75rem;"></div>
-
-      <div style="font-size:11px;color:var(--muted);line-height:1.7;padding:.75rem;background:var(--bg);border-radius:8px;">
-        <strong>How to Pay:</strong><br>
-        1. Go to M-PESA on your phone<br>
-        2. Select <strong>Lipa na M-PESA → Buy Goods</strong><br>
-        3. Enter Till/Paybill number: <strong>XXXXXXXX</strong><br>
-        4. Enter amount: <strong>KES 2,000</strong><br>
-        5. Confirm and copy the M-PESA reference above
+<!-- ═════════════ REPORT MODAL ═════════════ -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-flag-fill" style="color:var(--rose);"></i> Report Worker</h2>
+      <button class="modal-close" onclick="closeModal('report-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Reason</label>
+        <select id="report-reason">
+          <option>Inappropriate behavior</option>
+          <option>Fraud / Scam</option>
+          <option>No-show / Unresponsive</option>
+          <option>Harassment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Details</label>
+        <textarea id="report-details" rows="4" placeholder="Describe what happened…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('pay-modal')">Cancel</button>
-      <button class="btn btn-primary" id="pay-submit-btn" onclick="submitPayment()">
-        <i class="bi bi-check-circle"></i> Confirm Payment
-      </button>
+      <button class="btn btn-secondary" onclick="closeModal('report-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitReport()"><i class="bi bi-flag-fill"></i> Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════ PAYMENT MODAL (clone of employee wallet style) ═════════════ -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-wallet2"></i> Make Payment</h2>
+      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="balance-box">
+        <div class="balance-grid">
+          <div class="balance-item">
+            <div class="balance-label">Access Fee Status</div>
+            <div class="balance-amount" id="fee-status-val">Pending</div>
+            <div class="balance-sub">Employer account</div>
+          </div>
+          <div class="balance-item">
+            <div class="balance-label">Amount Due</div>
+            <div class="balance-amount warning">KES 2,000</div>
+            <div class="balance-sub">One-time, non-refundable</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchPayTab('history',this)">History</button>
+        <button class="tab-btn" onclick="switchPayTab('make',this)">Make Payment</button>
+      </div>
+
+      <div id="paytab-history" class="tab-content active" style="padding-top:1rem;">
+        <div id="pay-history-list">
+          <div class="empty-state"><i class="bi bi-receipt"></i><p>No payments yet.</p></div>
+        </div>
+      </div>
+
+      <div id="paytab-make" class="tab-content" style="padding-top:1rem;">
+        <div class="form-group">
+          <label>Fee Type</label>
+          <select id="fee-type">
+            <option value="employer_access_fee">Employer Access Fee – KES 2,000</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="pay-method" onchange="updatePaymentUI()">
+            <option value="">Choose…</option>
+            <option value="mpesa">📱 M-Pesa</option>
+            <option value="airtel">📞 Airtel Money</option>
+            <option value="manual">🏦 Paybill Deposit</option>
+          </select>
+        </div>
+
+        <div id="mpesa-form" style="display:none;">
+          <div style="background:rgba(27,107,69,.08);border:1px solid rgba(27,107,69,.2);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;">
+            <strong style="color:var(--brand);">📱 M-Pesa STK Push</strong><br>
+            Enter your phone number to receive an M-Pesa PIN prompt.
+          </div>
+          <div class="form-group">
+            <label>M-Pesa Phone</label>
+            <div class="mpesa-input">
+              <span class="prefix">+254</span>
+              <input type="tel" id="mpesa-phone" placeholder="7XX XXX XXX" maxlength="9">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('mpesa')"><i class="bi bi-phone-fill"></i> Send STK Push</button>
+        </div>
+
+        <div id="airtel-form" style="display:none;">
+          <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;">
+            <strong style="color:var(--sky);">📞 Airtel Money</strong><br>
+            Enter your Airtel number to receive a payment prompt.
+          </div>
+          <div class="form-group">
+            <label>Airtel Phone</label>
+            <div class="mpesa-input">
+              <span class="prefix">+254</span>
+              <input type="tel" id="airtel-phone" placeholder="7XX XXX XXX" maxlength="9">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('airtel')">Request Payment</button>
+        </div>
+
+        <div id="manual-form" style="display:none;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:1rem;font-size:12px;line-height:1.8;">
+            <strong>Paybill Details</strong><br>
+            Paybill: <strong style="font-family:monospace;">400200</strong><br>
+            Account: <strong style="font-family:monospace;">EMP-ACCESS</strong><br>
+            Amount: <strong style="font-family:monospace;">KES 2,000</strong>
+          </div>
+          <div class="form-group">
+            <label>Receipt / Confirmation Code</label>
+            <input type="text" id="receipt-code" placeholder="e.g. QJG3XYZABC" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('manual')"><i class="bi bi-check-circle"></i> Verify Receipt</button>
+        </div>
+
+        <div id="pay-error" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:12px;color:#991b1b;display:none;margin-top:.75rem;"></div>
+        <div id="pay-success" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;font-size:12px;color:#14532d;display:none;margin-top:.75rem;"></div>
+
+        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:12px;margin-top:1.2rem;font-size:11px;color:var(--muted);line-height:1.7;">
+          <strong style="color:var(--ink);">💡 Payment Policy</strong><br>
+          Employer access fee is one-time and non-refundable. Unlocks messaging, interviews, full worker profiles and contact details.
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -412,442 +500,414 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
         <div style="width:56px;height:56px;background:rgba(34,197,94,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;">
           <i class="bi bi-check-circle-fill" style="font-size:28px;color:var(--green);"></i>
         </div>
-        <div style="font-size:1.1rem;font-weight:800;color:#14532d;">Payment Confirmed</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#14532d;">Payment Submitted</div>
       </div>
       <div class="receipt-box">
-        <div class="receipt-row"><span class="receipt-label">M-PESA Ref</span><span class="receipt-val" id="r-ref">—</span></div>
-        <div class="receipt-row"><span class="receipt-label">Phone</span><span class="receipt-val" id="r-phone">—</span></div>
+        <div class="receipt-row"><span class="receipt-label">Reference</span><span class="receipt-val" id="r-ref">—</span></div>
+        <div class="receipt-row"><span class="receipt-label">Method</span><span class="receipt-val" id="r-method">—</span></div>
         <div class="receipt-row"><span class="receipt-label">Date</span><span class="receipt-val" id="r-date">—</span></div>
         <div class="receipt-row"><span class="receipt-label">Amount</span><span class="receipt-val" style="color:var(--brand);" id="r-amount">KES 2,000</span></div>
-        <div class="receipt-row"><span class="receipt-label">Status</span><span class="receipt-val" style="color:var(--green);"><i class="bi bi-patch-check-fill"></i> Confirmed</span></div>
-        <div class="receipt-row"><span class="receipt-label">Fee Type</span><span class="receipt-val">Employer Access Fee</span></div>
-      </div>
-      <div style="text-align:center;margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--border);">
-        <div style="font-size:16px;font-weight:800;color:var(--brand);">Sounds<span style="color:var(--accent);">Care</span></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px;"><i class="bi bi-shield-check"></i> Official Payment Receipt</div>
+        <div class="receipt-row"><span class="receipt-label">Status</span><span class="receipt-val" style="color:var(--accent);"><i class="bi bi-hourglass-split"></i> Pending Verification</span></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('receipt-modal')">Close</button>
-      <button class="btn btn-primary" onclick="downloadReceiptPDF()"><i class="bi bi-file-pdf-fill"></i> Download PDF</button>
+      <button class="btn btn-primary btn-full" onclick="closeModal('receipt-modal')">Done</button>
     </div>
   </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════
-//   SUPABASE
+//   MOCK DATA (replace with Supabase wiring as needed)
 // ═══════════════════════════════════════════
-const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const ADMIN_NAME = 'SoundsCare Support';
+let employees = [
+  { id:1, name:'Grace Wanjiru', role:'House Manager', presence:'online', lastSeen:null, blocked:false, status:'active', convoEnded:false },
+  { id:2, name:'Kevin Otieno', role:'Caregiver', presence:'away', lastSeen: Date.now()-1000*60*22, blocked:false, status:'active', convoEnded:false },
+  { id:3, name:'Mary Achieng', role:'Nanny', presence:'offline', lastSeen: Date.now()-1000*60*60*5, blocked:false, status:'idle', convoEnded:false },
+  { id:4, name:'Brian Kiptoo', role:'Gardener', presence:'online', lastSeen:null, blocked:true, status:'blocked', convoEnded:false },
+  { id:5, name:'Faith Mwangi', role:'Cook', presence:'away', lastSeen: Date.now()-1000*60*60*2, blocked:false, status:'ended', convoEnded:true },
+];
 
-let currentUser = null, employerId = null, hasPaid = false;
-let allConversations = [], activeConvId = null, activeWorkerData = null;
-let allPayments = [];
+let conversations = {}; // id -> {messages:[], adminJoined:bool}
+employees.forEach(e => { conversations[e.id] = { messages: seedMessages(e), adminJoined:false }; });
 
-// ═══════════════════════════════════════════
-//   INIT
-// ═══════════════════════════════════════════
-(async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  currentUser = session.user;
-
-  // Avatar
-  const initials = (currentUser.email||'U').substring(0,1).toUpperCase();
-  document.getElementById('nav-avatar').textContent = initials;
-
-  // Load employer & check payment
-  await loadEmployerData();
-  await checkPaymentStatus();
-  await loadConversations();
-  await loadPayments();
-  loadNotificationsCount();
-  subscribeRealtime();
-})();
-
-async function loadEmployerData() {
-  const { data } = await sb.from('employers').select('id').eq('user_id', currentUser.id).maybeSingle();
-  if (data) employerId = data.id;
+function seedMessages(e){
+  const base = [
+    { from:'employer', text:'Hi '+e.name.split(' ')[0]+', thanks for applying! Are you available for a quick interview this week?', t: Date.now()-1000*60*60 },
+    { from:'worker', text:'Hello! Yes, I am available. What time works for you?', t: Date.now()-1000*60*55 },
+  ];
+  return base;
 }
 
-async function checkPaymentStatus() {
-  const { data } = await sb.from('employer_payments')
-    .select('id, status')
-    .eq('employer_id', employerId || currentUser.id)
-    .eq('status', 'confirmed')
-    .limit(1);
-  hasPaid = !!(data && data.length > 0);
-  document.getElementById('payment-wall').style.display  = hasPaid ? 'none' : 'block';
-  document.getElementById('access-confirmed').style.display = hasPaid ? 'block' : 'none';
-}
+let activeEmpId = null;
+let typingTimeout = null;
 
 // ═══════════════════════════════════════════
-//   CONVERSATIONS
+//   RENDER EMPLOYEES
 // ═══════════════════════════════════════════
-async function loadConversations() {
-  const { data, error } = await sb.from('conversations')
-    .select('id, last_message_text, last_message_at, employer_unread, workers(id,full_name,role,location,is_verified), profiles!conversations_worker_id_fkey(full_name)')
-    .eq('employer_id', employerId || currentUser.id)
-    .order('last_message_at', { ascending: false });
+function renderEmployees(){
+  const q = (document.getElementById('emp-search').value || '').toLowerCase();
+  const grid = document.getElementById('emp-grid');
+  const filtered = employees.filter(e => e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q));
 
-  if (error) {
-    // Fallback – try simpler query
-    const { data: d2 } = await sb.from('conversations')
-      .select('*')
-      .eq('employer_id', currentUser.id)
-      .order('last_message_at', { ascending: false });
-    allConversations = d2 || [];
+  if (!filtered.length){
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-people"></i><p>No workers found.</p></div>';
   } else {
-    allConversations = data || [];
+    grid.innerHTML = filtered.map(e => `
+      <div class="emp-card">
+        <div class="emp-top">
+          <div class="emp-av">${initials(e.name)}<span class="presence-dot ${e.presence}"></span></div>
+          <div>
+            <div class="emp-name">${esc(e.name)}</div>
+            <div class="emp-role">${esc(e.role)}</div>
+            <div class="emp-status-line">${presenceLabel(e)}</div>
+          </div>
+        </div>
+        <div class="emp-tags">
+          ${e.blocked ? '<span class="emp-tag blocked"><i class="bi bi-slash-circle"></i> Blocked</span>' : ''}
+          ${e.convoEnded && !e.blocked ? '<span class="emp-tag"><i class="bi bi-check-circle"></i> Interview Ended</span>' : ''}
+          ${!e.blocked && !e.convoEnded ? '<span class="emp-tag"><i class="bi bi-chat-dots"></i> Open Conversation</span>' : ''}
+        </div>
+        <div class="emp-actions">
+          <button class="btn btn-primary btn-sm" onclick="openInterview(${e.id})">
+            <i class="bi bi-chat-dots-fill"></i> ${e.convoEnded ? 'View Conversation' : 'Interview'}
+          </button>
+        </div>
+      </div>
+    `).join('');
   }
-  renderConversationList(allConversations);
+  updateStats();
 }
 
-function renderConversationList(list) {
-  const el = document.getElementById('conv-list');
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>No conversations yet. Find workers to start messaging!</p></div>';
-    return;
+function presenceLabel(e){
+  if (e.presence === 'online') return '<span class="dot-txt online">● Online</span>';
+  if (e.presence === 'away') return '<span class="dot-txt away">● Away</span> · last seen '+timeAgo(e.lastSeen);
+  return '<span>Offline</span> · last seen '+timeAgo(e.lastSeen);
+}
+
+function initials(name){ return name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+
+function updateStats(){
+  document.getElementById('stat-total').textContent = employees.length;
+  document.getElementById('stat-active').textContent = employees.filter(e=>!e.blocked && !e.convoEnded).length;
+  document.getElementById('stat-ended').textContent = employees.filter(e=>e.convoEnded).length;
+  document.getElementById('stat-blocked').textContent = employees.filter(e=>e.blocked).length;
+}
+
+// ═══════════════════════════════════════════
+//   CHAT / INTERVIEW
+// ═══════════════════════════════════════════
+function openInterview(id){
+  activeEmpId = id;
+  const e = employees.find(x=>x.id===id);
+  document.getElementById('chat-av').textContent = initials(e.name);
+  document.getElementById('chat-name').textContent = e.name;
+  renderChatStatus(e);
+  renderChatState(e);
+  renderMessages();
+  openModal('chat-modal');
+
+  // simulate admin (SoundsCare Support) joining shortly after opening, once
+  const convo = conversations[id];
+  if (!convo.adminJoined && !e.blocked){
+    setTimeout(()=>{
+      if (activeEmpId !== id) return;
+      convo.adminJoined = true;
+      convo.messages.push({ from:'system', text: ADMIN_NAME + ' has entered the conversation', t: Date.now() });
+      renderMessages();
+      showToast('info','bi-shield-check','Support Joined', ADMIN_NAME+' is now monitoring this interview.');
+    }, 1800);
   }
-  el.innerHTML = list.map(c => {
-    const worker = c.workers || {};
-    const name = worker.full_name || c.profiles?.full_name || 'Worker';
-    const role = worker.role || 'Job Seeker';
-    const unread = c.employer_unread || 0;
-    const preview = c.last_message_text || 'No messages yet';
-    const time = c.last_message_at ? timeAgo(new Date(c.last_message_at)) : '';
-    const inits = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return `<div class="conv-item ${unread?'unread':''} ${activeConvId===c.id?'active':''}" onclick="openConversation('${c.id}','${esc(name)}','${esc(role)}')">
-      <div class="conv-av worker">${inits}<span class="online-dot" style="display:none;"></span></div>
-      <div class="conv-info">
-        <div class="conv-name">${esc(name)}</div>
-        <div class="conv-preview">${esc(preview)}</div>
-      </div>
-      <div class="conv-meta">
-        <span class="conv-time">${time}</span>
-        ${unread ? `<span class="conv-badge">${unread}</span>` : ''}
+
+  // simulate worker typing briefly
+  setTimeout(()=>{
+    if (activeEmpId !== id || e.convoEnded || e.blocked) return;
+    showTyping(true);
+    setTimeout(()=>showTyping(false), 2200);
+  }, 700);
+}
+
+function renderChatStatus(e){
+  const dotClass = e.presence;
+  let label = e.presence === 'online' ? 'Online' : (e.presence === 'away' ? 'Away · last seen '+timeAgo(e.lastSeen) : 'Last seen '+timeAgo(e.lastSeen));
+  document.getElementById('chat-status').innerHTML = `<span class="dot ${dotClass}"></span> ${label}`;
+}
+
+function renderChatState(e){
+  const badge = document.getElementById('chat-state-badge');
+  const endedBar = document.getElementById('chat-ended-bar');
+  const blockedBar = document.getElementById('chat-blocked-bar');
+  const inputWrap = document.getElementById('chat-input-wrap');
+  const endBtn = document.getElementById('end-interview-btn');
+  const blockBtn = document.getElementById('block-worker-btn');
+
+  badge.style.display = 'none';
+  endedBar.style.display = 'none';
+  blockedBar.style.display = 'none';
+  inputWrap.style.display = 'flex';
+
+  if (e.blocked){
+    badge.textContent = 'Blocked';
+    badge.style.background = 'rgba(244,63,94,.12)'; badge.style.color = 'var(--rose)';
+    badge.style.display = 'inline-block';
+    blockedBar.style.display = 'flex';
+    inputWrap.style.display = 'none';
+    endBtn.disabled = true; endBtn.style.opacity='.4'; endBtn.style.pointerEvents='none';
+    blockBtn.style.display = 'none';
+  } else if (e.convoEnded){
+    badge.textContent = 'Ended';
+    badge.style.background = 'rgba(107,114,128,.12)'; badge.style.color = 'var(--muted)';
+    badge.style.display = 'inline-block';
+    endedBar.style.display = 'flex';
+    inputWrap.style.display = 'none';
+    endBtn.style.opacity='.4'; endBtn.style.pointerEvents='none';
+    blockBtn.style.opacity='1'; blockBtn.style.pointerEvents='auto';
+  } else {
+    endBtn.style.opacity='1'; endBtn.style.pointerEvents='auto';
+    blockBtn.style.opacity='1'; blockBtn.style.pointerEvents='auto';
+  }
+}
+
+function renderMessages(){
+  const e = employees.find(x=>x.id===activeEmpId);
+  const convo = conversations[activeEmpId];
+  const body = document.getElementById('chat-body');
+  body.innerHTML = convo.messages.map(m => renderMessageRow(m, e)).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function renderMessageRow(m, e){
+  if (m.from === 'system'){
+    return `<div class="chat-banner admin"><i class="bi bi-shield-check"></i> ${esc(m.text)} <span style="opacity:.6;">· ${fmtTime(m.t)}</span></div>`;
+  }
+  if (m.from === 'admin'){
+    return `
+      <div class="bubble-row admin-row">
+        <div class="bubble-av admin">SC</div>
+        <div class="bubble-col">
+          <div class="bubble-name">${ADMIN_NAME}</div>
+          <div class="bubble admin">${esc(m.text)}</div>
+          <div class="bubble-time">${fmtTime(m.t)}</div>
+        </div>
+      </div>`;
+  }
+  if (m.from === 'file-request'){
+    return `
+      <div class="bubble-row sent">
+        <div class="bubble-av employer">EM</div>
+        <div class="bubble-col">
+          <div class="bubble file-request"><i class="bi bi-paperclip" style="color:var(--accent);"></i> ${esc(m.text)}</div>
+          <div class="bubble-time">${fmtTime(m.t)}</div>
+        </div>
+      </div>`;
+  }
+  const sent = m.from === 'employer';
+  return `
+    <div class="bubble-row ${sent?'sent':'received'}">
+      <div class="bubble-av ${sent?'employer':''}">${sent?'EM':initials(e.name)}</div>
+      <div class="bubble-col">
+        <div class="bubble ${sent?'sent':'received'}">${esc(m.text)}</div>
+        <div class="bubble-time">${fmtTime(m.t)}</div>
       </div>
     </div>`;
-  }).join('');
 }
 
-function filterConversations() {
-  const q = document.getElementById('conv-search').value.toLowerCase();
-  const filtered = allConversations.filter(c => {
-    const name = (c.workers?.full_name || '').toLowerCase();
-    return name.includes(q) || (c.last_message_text||'').toLowerCase().includes(q);
-  });
-  renderConversationList(filtered);
+function showTyping(on){
+  const body = document.getElementById('chat-body');
+  let row = document.getElementById('typing-row');
+  if (on){
+    if (!row){
+      row = document.createElement('div');
+      row.id = 'typing-row';
+      row.className = 'typing-row';
+      row.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      body.appendChild(row);
+      body.scrollTop = body.scrollHeight;
+    }
+  } else if (row) row.remove();
 }
 
-async function openConversation(convId, name, role) {
-  if (!hasPaid) { openModal('pay-modal'); showToast('info','bi-lock','Access Required','Please pay the KES 2,000 access fee to message workers.'); return; }
-  activeConvId = convId;
-  activeWorkerData = { name, role };
-
-  // Update header
-  const inits = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('chat-av').textContent = inits;
-  document.getElementById('chat-name').textContent = name;
-  document.getElementById('chat-role').textContent = role;
-  document.getElementById('chat-empty').style.display = 'none';
-  document.getElementById('active-chat').style.display = 'flex';
-
-  // Mark conversation active in list
-  document.querySelectorAll('.conv-item').forEach(el=>el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  event.currentTarget.querySelector('.conv-badge')?.remove();
-
-  // Load messages
-  await loadMessages(convId);
-
-  // Clear unread
-  await sb.from('conversations').update({ employer_unread: 0 }).eq('id', convId);
+function onTyping(){
+  // demo: notify presence the employer is typing (no-op visually for employer's own side)
 }
 
-async function loadMessages(convId) {
-  const msgEl = document.getElementById('chat-messages');
-  msgEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:12px;">Loading…</div>';
-
-  const { data, error } = await sb.from('messages')
-    .select('id, content, body, sender_id, created_at, sender_type')
-    .eq('conversation_id', convId)
-    .order('created_at', { ascending: true })
-    .limit(100);
-
-  if (error || !data?.length) {
-    msgEl.innerHTML = '<div class="empty-state"><i class="bi bi-chat"></i><p>No messages yet. Say hello!</p></div>';
-    return;
-  }
-
-  msgEl.innerHTML = data.map(m => {
-    const sent = m.sender_id === currentUser.id || m.sender_type === 'employer';
-    const text = m.content || m.body || '';
-    const empInits = (currentUser.email||'E').substring(0,1).toUpperCase();
-    const wrkInits = (activeWorkerData?.name||'W').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    return `<div class="bubble-row ${sent?'sent':''}">
-      <div class="bubble-av ${sent?'employer':''}"> ${sent?empInits:wrkInits}</div>
-      <div>
-        <div class="bubble ${sent?'sent':'received'}">${esc(text)}</div>
-        <div class="bubble-time">${timeAgo(new Date(m.created_at))}</div>
-      </div>
-    </div>`;
-  }).join('');
-  msgEl.scrollTop = msgEl.scrollHeight;
+function onChatKeydown(ev){
+  if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); sendChatMessage(); }
 }
 
-async function sendMessage() {
-  if (!hasPaid) { openModal('pay-modal'); return; }
-  if (!activeConvId) return;
-  const input = document.getElementById('chat-input');
+function sendChatMessage(){
+  const e = employees.find(x=>x.id===activeEmpId);
+  if (!e || e.blocked || e.convoEnded) return;
+  const input = document.getElementById('chat-text');
   const text = input.value.trim();
   if (!text) return;
+  conversations[activeEmpId].messages.push({ from:'employer', text, t: Date.now() });
   input.value = '';
+  renderMessages();
 
-  const msgEl = document.getElementById('chat-messages');
-  const inits = (currentUser.email||'E').substring(0,1).toUpperCase();
-  const tempEl = document.createElement('div');
-  tempEl.className = 'bubble-row sent';
-  tempEl.innerHTML = `<div class="bubble-av employer">${inits}</div><div><div class="bubble sent">${esc(text)}</div><div class="bubble-time">Sending…</div></div>`;
-  msgEl.appendChild(tempEl);
-  msgEl.scrollTop = msgEl.scrollHeight;
-
-  const { error } = await sb.from('messages').insert({
-    conversation_id: activeConvId,
-    sender_id: currentUser.id,
-    sender_type: 'employer',
-    content: text,
-    body: text,
-    created_at: new Date().toISOString()
-  });
-
-  if (error) {
-    tempEl.querySelector('.bubble-time').textContent = 'Failed to send';
-    showToast('err','bi-exclamation-circle','Error','Message not sent: ' + error.message);
-  } else {
-    tempEl.querySelector('.bubble-time').textContent = 'Just now';
-    await sb.from('conversations').update({
-      last_message_text: text, last_message_at: new Date().toISOString(), worker_unread: 1
-    }).eq('id', activeConvId);
-  }
+  // simulate worker reply
+  setTimeout(()=>{
+    if (employees.find(x=>x.id===activeEmpId)?.blocked) return;
+    showTyping(true);
+    setTimeout(()=>{
+      showTyping(false);
+      conversations[activeEmpId].messages.push({ from:'worker', text:'Got it, thank you for the update.', t: Date.now() });
+      renderMessages();
+    }, 1600);
+  }, 500);
 }
 
-function handleChatKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+function requestFile(){
+  const e = employees.find(x=>x.id===activeEmpId);
+  if (!e || e.blocked || e.convoEnded){ showToast('err','bi-x-circle','Unavailable','This conversation is closed.'); return; }
+  conversations[activeEmpId].messages.push({ from:'file-request', text:'Requested: ID document / certificate upload from worker.', t: Date.now() });
+  renderMessages();
+  toggleChatMenu(true);
+  showToast('ok','bi-paperclip','File Requested','The worker has been asked to upload a file.');
 }
 
-function openWorkerProfile() {
-  showToast('info','bi-person','Worker Profile','Opening full worker profile…');
+function toggleChatMenu(forceClose){
+  const dd = document.getElementById('chat-dropdown');
+  if (forceClose) { dd.classList.remove('open'); return; }
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.chat-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('chat-dropdown')?.classList.remove('open');
+});
+
+function confirmEndInterview(){
+  const e = employees.find(x=>x.id===activeEmpId);
+  if (!e || e.convoEnded || e.blocked) return;
+  toggleChatMenu(true);
+  if (!confirm('End this interview? You will no longer be able to send messages, but the full conversation history will remain visible.')) return;
+  e.convoEnded = true; e.status = 'ended';
+  conversations[activeEmpId].messages.push({ from:'system', text:'Interview ended by employer', t: Date.now() });
+  renderMessages(); renderChatState(e); renderEmployees();
+  showToast('info','bi-stop-circle','Interview Ended','Conversation is now view-only.');
 }
 
-// ═══════════════════════════════════════════
-//   PAYMENTS
-// ═══════════════════════════════════════════
-async function loadPayments() {
-  const { data, error } = await sb.from('employer_payments')
-    .select('*')
-    .eq('employer_id', employerId || currentUser.id)
-    .order('created_at', { ascending: false });
-
-  allPayments = data || [];
-  renderPayments(allPayments);
-  updatePaymentStats(allPayments);
+function confirmBlockWorker(){
+  const e = employees.find(x=>x.id===activeEmpId);
+  if (!e || e.blocked) return;
+  toggleChatMenu(true);
+  if (!confirm('Block this worker? They will no longer be able to message you.')) return;
+  e.blocked = true; e.status = 'blocked';
+  conversations[activeEmpId].messages.push({ from:'system', text:'Worker blocked by employer', t: Date.now() });
+  renderMessages(); renderChatState(e); renderEmployees();
+  showToast('err','bi-slash-circle','Worker Blocked','This worker can no longer contact you.');
 }
 
-function renderPayments(list) {
-  const el = document.getElementById('pay-history-list');
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No payment history yet. Pay your access fee to get started.</p></div>';
-    return;
-  }
-  el.innerHTML = list.map(p => {
-    const statusClass = p.status === 'confirmed' ? 'paid' : p.status === 'pending' ? 'pending' : 'failed';
-    const feeLabel = p.fee_type === 'employer_access' ? 'Employer Access Fee' : (p.fee_type||'Payment');
-    return `<div class="pay-history-item">
-      <div class="pay-hist-icon"><i class="bi bi-phone-fill"></i></div>
-      <div class="pay-hist-info">
-        <div class="pay-hist-name">${feeLabel}</div>
-        <div class="pay-hist-sub">${esc(p.mpesa_ref||p.transaction_id||'—')} · ${(p.payment_method||'M-PESA').toUpperCase()}</div>
-      </div>
-      <div class="pay-hist-right">
-        <div class="pay-hist-amount">KES ${parseFloat(p.amount||0).toLocaleString('en-KE')}</div>
-        <div class="pay-hist-date">${p.created_at ? new Date(p.created_at).toLocaleDateString('en-KE') : ''}</div>
-        <span class="pay-badge ${statusClass}">${p.status||'—'}</span>
-      </div>
-    </div>`;
-  }).join('');
+let reportTargetId = null;
+function openReportModal(){
+  reportTargetId = activeEmpId;
+  toggleChatMenu(true);
+  openModal('report-modal');
+}
+function submitReport(){
+  const reason = document.getElementById('report-reason').value;
+  const details = document.getElementById('report-details').value.trim();
+  closeModal('report-modal');
+  document.getElementById('report-details').value = '';
+  showToast('ok','bi-flag-fill','Report Submitted', reason + ' — our team will review this within 24 hours.');
 }
 
-function updatePaymentStats(list) {
-  const confirmed = list.filter(p => p.status === 'confirmed');
-  const total = confirmed.reduce((s, p) => s + parseFloat(p.amount||0), 0);
-  document.getElementById('stat-fee-status').textContent = hasPaid ? 'Paid ✓' : 'Pending';
-  document.getElementById('stat-fee-status').className = 'pay-stat-val' + (hasPaid ? '' : ' warning');
-  document.getElementById('stat-total-paid').textContent = `KES ${total.toLocaleString('en-KE')}`;
-  document.getElementById('stat-tx-count').textContent = list.length;
+function timeAgo(t){
+  if (!t) return 'now';
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60)+'m ago';
+  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
 }
-
-// ═══════════════════════════════════════════
-//   SUBMIT PAYMENT
-// ═══════════════════════════════════════════
-async function submitPayment() {
-  const phone = document.getElementById('mpesa-phone').value.trim();
-  const ref   = document.getElementById('mpesa-ref').value.trim().toUpperCase();
-  const date  = document.getElementById('mpesa-date').value;
-  const errEl = document.getElementById('pay-error');
-  const okEl  = document.getElementById('pay-success');
-
-  errEl.style.display = 'none';
-  okEl.style.display  = 'none';
-
-  if (!phone || phone.length < 9) { errEl.textContent = 'Enter a valid M-PESA phone number.'; errEl.style.display='block'; return; }
-  if (!ref) { errEl.textContent = 'Enter the M-PESA transaction reference.'; errEl.style.display='block'; return; }
-  if (!date) { errEl.textContent = 'Enter the payment date.'; errEl.style.display='block'; return; }
-
-  const btn = document.getElementById('pay-submit-btn');
-  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing…';
-
-  const payload = {
-    employer_id: employerId || currentUser.id,
-    user_id: currentUser.id,
-    mpesa_ref: ref,
-    transaction_id: ref,
-    phone_number: '+254' + phone,
-    amount: 2000,
-    fee_type: 'employer_access',
-    payment_method: 'mpesa',
-    status: 'pending',
-    created_at: new Date().toISOString(),
-    payment_date: date
-  };
-
-  const { data, error } = await sb.from('employer_payments').insert(payload).select().single();
-  btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm Payment';
-
-  if (error) {
-    errEl.textContent = 'Error: ' + error.message;
-    errEl.style.display = 'block';
-    return;
-  }
-
-  okEl.textContent = '✓ Payment submitted for verification! You will receive access once confirmed by our team.';
-  okEl.style.display = 'block';
-
-  // Show receipt
-  document.getElementById('r-ref').textContent = ref;
-  document.getElementById('r-phone').textContent = '+254' + phone;
-  document.getElementById('r-date').textContent = new Date(date).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('r-amount').textContent = 'KES 2,000';
-
-  setTimeout(() => {
-    closeModal('pay-modal');
-    openModal('receipt-modal');
-    loadPayments();
-    showToast('ok','bi-check-circle-fill','Payment Submitted','Our team will verify and activate your account shortly.');
-  }, 1500);
+function fmtTime(t){
+  return new Date(t).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
 }
-
-function downloadReceiptPDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({unit:'mm',format:[148,210]});
-    doc.setFillColor(27,107,69); doc.rect(0,0,148,28,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.text('SOUNDS CARE',74,12,{align:'center'});
-    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.text('Payment Receipt | sounds.co.ke',74,20,{align:'center'});
-    const ref = document.getElementById('r-ref').textContent;
-    const phone = document.getElementById('r-phone').textContent;
-    const dt = document.getElementById('r-date').textContent;
-    doc.setDrawColor(27,107,69); doc.setLineWidth(.8); doc.circle(120,50,18);
-    doc.setTextColor(27,107,69); doc.setFontSize(6.5); doc.setFont('helvetica','bold');
-    doc.text('SOUNDS CARE',120,45,{align:'center'}); doc.text('OFFICIAL',120,51,{align:'center'}); doc.text('RECEIPT',120,57,{align:'center'});
-    doc.setTextColor(30,30,30); doc.setFontSize(10); doc.setFont('helvetica','normal');
-    const rows=[['M-Pesa Ref',ref],['Date',dt],['Phone',phone],['Fee Type','Employer Access Fee'],['Amount','KES 2,000'],['Status','SUBMITTED FOR REVIEW']];
-    let y=38; rows.forEach(r=>{ doc.setFont('helvetica','bold'); doc.setTextColor(100,100,100); doc.setFontSize(8); doc.text(r[0].toUpperCase(),12,y); doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20); doc.setFontSize(10); doc.text(r[1]||'—',12,y+5); doc.setDrawColor(220,220,220); doc.setLineWidth(.3); doc.line(12,y+8,136,y+8); y+=14; });
-    doc.setFillColor(245,249,247); doc.rect(0,183,148,12,'F');
-    doc.setTextColor(120,120,120); doc.setFontSize(7.5);
-    doc.text('Non-refundable fee. Keep this receipt for your records.',74,190,{align:'center'});
-    doc.save('SoundsCare_Employer_Receipt_'+ref+'.pdf');
-  } catch(e) { console.error(e); window.print(); }
-}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ═══════════════════════════════════════════
-//   NOTIFICATIONS
+//   PAYMENT MODAL
 // ═══════════════════════════════════════════
-async function loadNotificationsCount() {
-  const { data } = await sb.from('notifications').select('id').eq('user_id', currentUser.id).eq('is_read', false);
-  const count = data?.length || 0;
-  if (count) {
-    document.getElementById('notif-badge').textContent = count > 9 ? '9+' : count;
-    document.getElementById('notif-badge').classList.add('show');
-  }
-}
-
-// ═══════════════════════════════════════════
-//   REALTIME
-// ═══════════════════════════════════════════
-function subscribeRealtime() {
-  sb.channel('emp-msgs-page')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async payload => {
-      const msg = payload.new;
-      const conv = allConversations.find(c => c.id === msg.conversation_id);
-      if (!conv) return;
-      if (msg.sender_id !== currentUser.id) {
-        showToast('info','bi-chat-dots','New Message',(msg.content||msg.body||'').substring(0,60));
-        if (activeConvId === msg.conversation_id) {
-          await loadMessages(activeConvId);
-        } else {
-          conv.employer_unread = (conv.employer_unread||0) + 1;
-          renderConversationList(allConversations);
-        }
-      }
-    }).subscribe();
-}
-
-// ═══════════════════════════════════════════
-//   UI HELPERS
-// ═══════════════════════════════════════════
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
+function switchPayTab(id, btn){
+  document.querySelectorAll('#pay-modal .tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('#pay-modal .tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('paytab-'+id).classList.add('active');
   btn.classList.add('active');
 }
+function updatePaymentUI(){
+  const method = document.getElementById('pay-method').value;
+  ['mpesa','airtel','manual'].forEach(m => document.getElementById(m+'-form').style.display = (m===method)?'block':'none');
+}
+let payHistory = [];
+function submitPayment(method){
+  const errEl = document.getElementById('pay-error'), okEl = document.getElementById('pay-success');
+  errEl.style.display='none'; okEl.style.display='none';
+  let ref = 'TXN' + Math.floor(Math.random()*900000+100000);
+  if (method === 'mpesa'){
+    const phone = document.getElementById('mpesa-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)){ errEl.textContent='Enter a valid 9-digit phone number.'; errEl.style.display='block'; return; }
+  } else if (method === 'airtel'){
+    const phone = document.getElementById('airtel-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)){ errEl.textContent='Enter a valid 9-digit phone number.'; errEl.style.display='block'; return; }
+  } else if (method === 'manual'){
+    const code = document.getElementById('receipt-code').value.trim();
+    if (!code){ errEl.textContent='Enter your receipt / confirmation code.'; errEl.style.display='block'; return; }
+    ref = code;
+  }
+  okEl.textContent = '✓ Payment submitted for verification!';
+  okEl.style.display = 'block';
+  payHistory.unshift({ ref, method, date: Date.now(), status:'pending' });
 
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+  document.getElementById('r-ref').textContent = ref;
+  document.getElementById('r-method').textContent = method.toUpperCase();
+  document.getElementById('r-date').textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
 
+  setTimeout(()=>{
+    closeModal('pay-modal');
+    openModal('receipt-modal');
+    renderPayHistory();
+    showToast('ok','bi-check-circle-fill','Payment Submitted','Our team will verify and activate your account shortly.');
+  }, 1200);
+}
+function renderPayHistory(){
+  const el = document.getElementById('pay-history-list');
+  if (!payHistory.length){ el.innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>No payments yet.</p></div>'; return; }
+  el.innerHTML = payHistory.map(p => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="bi bi-credit-card"></i></div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;">${p.ref}</div>
+        <div style="font-size:11px;color:var(--muted);">${p.method.toUpperCase()}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:700;color:var(--brand);">KES 2,000</div>
+        <div style="font-size:10px;color:var(--muted);">${new Date(p.date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+//   MODAL HELPERS / TOAST
+// ═══════════════════════════════════════════
+function openModal(id){ document.getElementById(id)?.classList.add('open'); }
+function closeModal(id){ document.getElementById(id)?.classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
-
-function timeAgo(d) {
-  const diff = (Date.now() - d) / 1000;
-  if (diff < 60) return 'now';
-  if (diff < 3600) return Math.floor(diff/60)+'m ago';
-  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
-  return d.toLocaleDateString('en-KE',{day:'numeric',month:'short'});
-}
-
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function showToast(type, icon, title, body) {
+function showToast(type, icon, title, body){
   const stack = document.getElementById('toast-stack');
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.innerHTML = `<i class="bi ${icon}" style="font-size:18px;flex-shrink:0;"></i>
-    <div class="toast-msg"><strong>${esc(title)}</strong>${body ? '<br><span style="color:var(--muted);font-size:11px;">'+esc(body)+'</span>' : ''}</div>`;
+    <div><strong>${esc(title)}</strong>${body ? '<br><span style="color:var(--muted);font-size:11px;">'+esc(body)+'</span>' : ''}</div>`;
   stack.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 4500);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 4500);
 }
 
-// Set today date default
-document.getElementById('mpesa-date').value = new Date().toISOString().split('T')[0];
+// INIT
+renderEmployees();
 </script>
 </body>
 </html>
