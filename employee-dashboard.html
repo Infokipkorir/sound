@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard – SoundsCare</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    :root {
+      --ink: #0f1923;
+      --brand: #1B6B45;
+      --brand-dark: #134f33;
+      --brand-soft: rgba(27,107,69,0.10);
+      --accent: #E8A040;
+      --accent-soft: rgba(232,160,64,0.12);
+      --sky: #0ea5e9;
+      --rose: #f43f5e;
+      --violet: #8b5cf6;
+      --green: #22c55e;
+      --surface: #f0f4f8;
+      --card: #ffffff;
+      --border: #dde5ee;
+      --muted: #5a7087;
+      --sidebar-dark: #0F3D28;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    .nav {
+      background: var(--sidebar-dark);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      box-shadow: 0 2px 12px rgba(15,61,40,0.25);
+    }
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--brand);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .nav-right { display: flex; align-items: center; gap: 4px; }
+    .nav-btn {
+      position: relative;
+      background: rgba(255,255,255,0.08);
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.75);
+      padding: 8px;
+      border-radius: 10px;
+      transition: 0.18s;
+      display: flex;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .nav-badge {
+      position: absolute;
+      top: 2px; right: 2px;
+      min-width: 16px; height: 16px;
+      background: var(--rose);
+      border-radius: 50%;
+      border: 2px solid var(--sidebar-dark);
+      font-size: 8px; color: #fff; font-weight: 700;
+      display: none; align-items: center; justify-content: center;
+    }
+    .nav-badge.show { display: flex; }
+    .nav-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(255,255,255,0.25);
+      transition: 0.18s;
+    }
+    .nav-avatar:hover { border-color: var(--accent); }
+
+    /* ONLINE PILL */
+    .online-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+      color: var(--green); border-radius: 20px;
+      padding: 3px 10px; font-size: 11px; font-weight: 600;
+    }
+    .online-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* PAGE */
+    .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.2rem 5rem; }
+
+    /* WELCOME BANNER */
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--sidebar-dark), var(--brand));
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .welcome-banner h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .welcome-banner p { font-size: 13px; opacity: 0.8; }
+    .profile-completeness {
+      text-align: right; min-width: 140px;
+    }
+    .profile-completeness .pct { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .progress-bar { width: 140px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 4px; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
+
+    /* STATS */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(27,107,69,0.12); border-color: var(--brand); transform: translateY(-1px); }
+    .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      background: var(--brand-soft); color: var(--brand);
+      margin-bottom: 8px;
+    }
+    .stat-icon.msg { background: rgba(14,165,233,0.1); color: var(--sky); }
+    .stat-icon.job { background: rgba(139,92,246,0.1); color: var(--violet); }
+    .stat-icon.pay { background: var(--accent-soft); color: var(--accent); }
+    .stat-value { font-size: 1.3rem; font-weight: 800; }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+
+    /* SECTION */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* PROFILE VISIBILITY TOGGLE */
+    .visibility-toggle {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 1rem;
+    }
+    .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border); border-radius: 24px; transition: 0.3s;
+    }
+    .toggle-track::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: #fff; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: var(--brand); }
+    .toggle-switch input:checked + .toggle-track::before { transform: translateX(20px); }
+    .toggle-label { flex: 1; font-size: 13px; font-weight: 600; }
+    .toggle-sub { font-size: 11px; color: var(--muted); }
+
+    /* MESSAGE ITEM */
+    .msg-item {
+      display: flex; gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: 0.18s;
+      background: var(--surface);
+    }
+    .msg-item:hover { border-color: var(--brand); background: var(--card); }
+    .msg-item.unread { background: rgba(27,107,69,.05); border-color: rgba(27,107,69,.2); }
+    .msg-item.admin-msg { border-left: 3px solid var(--rose); }
+    .msg-item.support-msg { border-left: 3px solid var(--sky); }
+    .msg-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #2a9961);
+      color: #fff; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative;
+    }
+    .msg-avatar.is-admin { background: linear-gradient(135deg, var(--rose), #f87171); }
+    .msg-avatar.is-employer { background: linear-gradient(135deg, var(--accent), #f0b562); }
+    .msg-avatar.verified::after {
+      content: '✓'; position: absolute; bottom: -2px; right: -2px;
+      width: 18px; height: 18px;
+      background: var(--green); color: #fff;
+      border-radius: 50%; font-size: 10px; font-weight: 700;
+      border: 2px solid var(--card);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .msg-content { flex: 1; min-width: 0; }
+    .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .msg-from { font-size: 13px; font-weight: 700; }
+    .msg-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--green); color: #fff;
+      padding: 2px 6px; border-radius: 4px;
+      font-size: 9px; font-weight: 700; flex-shrink: 0;
+    }
+    .msg-badge.admin { background: var(--rose); }
+    .msg-badge.employer { background: var(--accent); color: #fff; }
+    .msg-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg-time { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+    .msg-unread { width: 8px; height: 8px; background: var(--brand); border-radius: 50%; flex-shrink: 0; }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15,25,35,.5);
+      display: none; align-items: center; justify-content: center;
+      z-index: 999; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; width: 100%;
+      max-width: 560px; max-height: 90vh;
+      overflow: auto; box-shadow: 0 24px 60px rgba(15,25,35,.28);
+      display: flex; flex-direction: column;
+    }
+    .modal.wide { max-width: 700px; }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.4rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(27,107,69,.04), transparent);
+    }
+    .modal-header h2 { font-size: 1rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .modal-close {
+      background: none; border: none; font-size: 22px; cursor: pointer;
+      color: var(--muted); width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; transition: 0.18s;
+    }
+    .modal-close:hover { background: var(--surface); color: var(--ink); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+    /* TABS */
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .tab {
+      padding: 10px 16px; border: none; background: none;
+      cursor: pointer; font-weight: 600; font-size: 13px;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: 0.18s; white-space: nowrap; font-family: inherit;
+    }
+    .tab:hover { color: var(--brand); }
+    .tab.active { color: var(--brand); border-color: var(--brand); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* FORM */
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 10px;
+      font-family: inherit; font-size: 14px; color: var(--ink); background: var(--card);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(27,107,69,0.1);
+    }
+    .form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 16px; border: none; border-radius: 10px;
+      cursor: pointer; font-weight: 600; font-size: 13px;
+      transition: 0.18s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit;
+    }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { background: #d4892e; }
+    .btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-ghost { background: transparent; color: var(--brand); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--brand-soft); }
+    .btn-full { width: 100%; justify-content: center; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* CONVERSATION */
+    .conversation {
+      max-height: 380px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; margin-bottom: 1rem;
+      background: var(--surface);
+    }
+    .msg-bubble { margin-bottom: 12px; }
+    .msg-bubble.sent { text-align: right; }
+    .bubble {
+      display: inline-block; max-width: 85%;
+      padding: 10px 14px; border-radius: 12px;
+      font-size: 13px; line-height: 1.4; word-wrap: break-word;
+    }
+    .bubble.received { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
+    .bubble.sent { background: var(--brand); color: #fff; }
+    .bubble-meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+    /* BALANCE CARD */
+    .balance-box {
+      background: linear-gradient(135deg, rgba(27,107,69,.08), rgba(232,160,64,.06));
+      border: 1px solid rgba(27,107,69,.2);
+      border-radius: 14px; padding: 1.3rem; margin-bottom: 1.5rem;
+    }
+    .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .balance-item { text-align: center; }
+    .balance-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .balance-amount { font-size: 1.8rem; font-weight: 800; color: var(--brand); margin-bottom: 4px; }
+    .balance-amount.warning { color: var(--rose); }
+    .balance-sub { font-size: 11px; color: var(--muted); }
+
+    /* TOAST */
+    #toast-stack {
+      position: fixed; bottom: 80px; right: 20px;
+      display: flex; flex-direction: column; gap: 10px; z-index: 9999;
+    }
+    .toast {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 13px; box-shadow: 0 4px 16px rgba(15,25,35,.15);
+      animation: slideIn 0.3s ease-out; min-width: 300px;
+    }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast.ok { border-left: 3px solid var(--green); }
+    .toast.ok i { color: var(--green); }
+    .toast.err { border-left: 3px solid var(--rose); }
+    .toast.err i { color: var(--rose); }
+    .toast.info { border-left: 3px solid var(--sky); }
+    .toast.info i { color: var(--sky); }
+    .toast-msg { flex: 1; }
+
+    /* JOB CARD */
+    .job-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px; margin-bottom: 12px;
+      transition: 0.18s;
+    }
+    .job-card:hover { border-color: var(--brand); }
+    .job-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--brand-soft); color: var(--brand);
+      padding: 3px 8px; border-radius: 20px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+    }
+    .job-chip.urgent { background: rgba(244,63,94,.1); color: var(--rose); }
+
+    /* LOADER */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center; padding: 2.5rem 1rem; color: var(--muted);
+    }
+    .empty-state i { font-size: 2.5rem; display: block; opacity: 0.25; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 13px; }
+
+    /* NOTIFICATION BELL */
+    .notif-item {
+      padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 8px; cursor: pointer; transition: 0.18s;
+    }
+    .notif-item.unread { background: rgba(27,107,69,.04); border-color: rgba(27,107,69,.2); }
+    .notif-item:hover { border-color: var(--brand); }
+    .notif-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .notif-msg { font-size: 12px; color: var(--muted); }
+    .notif-time { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .modal.wide { max-width: 100%; }
+      .welcome-banner { flex-direction: column; align-items: flex-start; }
+      .profile-completeness { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="logo-icon">SC</div>
+    <span>Sounds<strong style="color: var(--accent)">Care</strong></span>
+  </a>
+  <div class="nav-right">
+    <div class="online-pill" id="online-status" style="margin-right: 8px;">
+      <span class="online-dot"></span> Online
+    </div>
+    <button class="nav-btn" onclick="openModal('modal-notifications')" title="Notifications">
+      <i class="bi bi-bell"></i>
+      <div class="nav-badge" id="notif-badge">0</div>
+    </button>
+    <button class="nav-btn" onclick="openModal('modal-messages')" title="Messages">
+      <i class="bi bi-chat-dots"></i>
+      <div class="nav-badge" id="msg-badge">0</div>
+    </button>
+    <button class="nav-btn" onclick="openModal('modal-jobs')" title="Available Jobs">
+      <i class="bi bi-briefcase"></i>
+    </button>
+    <button class="nav-btn" onclick="openModal('modal-wallet')" title="Wallet & Payments">
+      <i class="bi bi-wallet2"></i>
+    </button>
+    <button class="nav-avatar" onclick="openModal('modal-account')" id="nav-avatar" title="Account"><span id="nav-avatar-init">W</span></button>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="page">
+
+  <!-- WELCOME BANNER -->
+  <div class="welcome-banner" id="welcome-banner">
+    <div>
+      <h2 id="welcome-name">Welcome back 👋</h2>
+      <p id="welcome-sub">Your dashboard is loading…</p>
+    </div>
+    <div class="profile-completeness">
+      <div class="pct" id="profile-pct">—</div>
+      <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">Profile Complete</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0"></div></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card" onclick="openModal('modal-messages')">
+      <div class="stat-icon msg"><i class="bi bi-chat-dots"></i></div>
+      <div class="stat-value" id="stat-messages">—</div>
+      <div class="stat-label">Messages</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-jobs')">
+      <div class="stat-icon job"><i class="bi bi-briefcase"></i></div>
+      <div class="stat-value" id="stat-jobs">—</div>
+      <div class="stat-label">Jobs Available</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-wallet')">
+      <div class="stat-icon pay"><i class="bi bi-wallet2"></i></div>
+      <div class="stat-value" id="stat-wallet">—</div>
+      <div class="stat-label">Balance</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-wallet')">
+      <div class="stat-icon" style="background: rgba(244,63,94,0.1); color: var(--rose);"><i class="bi bi-exclamation-circle"></i></div>
+      <div class="stat-value" id="stat-outstanding">—</div>
+      <div class="stat-label">Outstanding</div>
+    </div>
+  </div>
+
+  <!-- PROFILE VISIBILITY -->
+  <div class="section">
+    <div class="section-title"><i class="bi bi-eye" style="color: var(--brand);"></i> Profile Visibility</div>
+    <div class="visibility-toggle">
+      <label class="toggle-switch">
+        <input type="checkbox" id="visibility-toggle" onclick="toggleVisibility()">
+        <span class="toggle-track"></span>
+      </label>
+      <div>
+        <div class="toggle-label" id="visibility-label">Loading…</div>
+        <div class="toggle-sub" id="visibility-sub">Checking status…</div>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: var(--muted); line-height: 1.6;">
+      When <strong>ON</strong>, employers can find and contact you. Turn off if you're currently employed or not seeking work.
+    </div>
+  </div>
+
+  <!-- RECENT MESSAGES PREVIEW -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
+      Recent Messages
+      <span style="margin-left: auto;">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-messages')">View All</button>
+      </span>
+    </div>
+    <div id="recent-messages">
+      <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section">
+    <div class="section-title"><i class="bi bi-lightning" style="color: var(--accent);"></i> Quick Actions</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px;">
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-jobs')">
+        <i class="bi bi-briefcase"></i> Find Jobs
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet')">
+        <i class="bi bi-wallet2"></i> Payments
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-messages')">
+        <i class="bi bi-chat-dots"></i> Messages
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="openModal('modal-account')">
+        <i class="bi bi-person"></i> Profile
+      </button>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ═══════════════════════════ NOTIFICATIONS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-notifications">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-bell"></i> Notifications</h2>
+      <button class="modal-close" onclick="closeModal('modal-notifications')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="notif-list">
+        <div class="empty-state"><i class="bi bi-bell"></i><p>Loading…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MESSAGES MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-messages">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-chat-dots"></i> Messages</h2>
+      <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('messages-list', this)">Inbox</button>
+        <button class="tab" onclick="switchTab('messages-view', this)">Conversation</button>
+      </div>
+
+      <div id="messages-list" class="tab-content active">
+        <div id="messages-inbox">
+          <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading…</p></div>
+        </div>
+      </div>
+
+      <div id="messages-view" class="tab-content">
+        <div id="conversation-header" style="display:none; margin-bottom:1.2rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
+          <div style="font-weight:700; font-size:14px; margin-bottom:2px;" id="conv-from">—</div>
+          <div style="font-size:12px; color:var(--muted);" id="conv-status">—</div>
+        </div>
+        <div class="conversation" id="conversation-messages"></div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="msg-reply" placeholder="Type your reply…" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit;">
+          <button class="btn btn-primary" onclick="sendMessageReply()"><i class="bi bi-send"></i> Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ JOBS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-jobs">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-briefcase"></i> Available Jobs</h2>
+      <button class="modal-close" onclick="closeModal('modal-jobs')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:1rem; display:flex; gap:8px;">
+        <input type="text" id="job-search" placeholder="Search jobs…" oninput="filterJobs()" style="flex:1; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px;">
+        <select id="job-county" onchange="filterJobs()" style="padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; min-width:130px;">
+          <option value="">All Counties</option>
+        </select>
+      </div>
+      <div id="jobs-list">
+        <div class="empty-state"><i class="bi bi-briefcase"></i><p>Loading jobs…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ WALLET & PAYMENTS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-wallet">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-wallet2"></i> Wallet & Payments</h2>
+      <button class="modal-close" onclick="closeModal('modal-wallet')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="balance-box">
+        <div class="balance-grid">
+          <div class="balance-item">
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amount" id="wallet-balance">KES 0</div>
+            <div class="balance-sub" id="wallet-acct">Acct: —</div>
+          </div>
+          <div class="balance-item">
+            <div class="balance-label">Outstanding</div>
+            <div class="balance-amount warning" id="wallet-outstanding">KES 0</div>
+            <div class="balance-sub">Requires payment</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('payment-history', this)">History</button>
+        <button class="tab" onclick="switchTab('payment-make', this)">Make Payment</button>
+      </div>
+
+      <div id="payment-history" class="tab-content active">
+        <div id="payment-list">
+          <div class="empty-state"><i class="bi bi-receipt"></i><p>Loading history…</p></div>
+        </div>
+      </div>
+
+      <div id="payment-make" class="tab-content">
+        <!-- FEE STATUS -->
+        <div style="background:var(--surface); border-radius:12px; padding:14px; margin-bottom:1.5rem;">
+          <div style="font-weight:700; margin-bottom:10px;">📋 Payment Requirements</div>
+          <div style="font-size:12px; line-height:1.8;">
+            <div style="padding:8px; background:rgba(244,63,94,.06); border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span><strong>Interview Fee:</strong> KES 300</span>
+              <span id="fee-interview" style="font-weight:600;">⚠️ Pending</span>
+            </div>
+            <div style="padding:8px; background:rgba(244,63,94,.06); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span><strong>First Salary Fee:</strong> KES 1,000</span>
+              <span id="fee-salary" style="font-weight:600;">⚠️ Pending</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fee Type</label>
+          <select id="fee-type">
+            <option value="interview_fee">Interview Fee – KES 300</option>
+            <option value="first_salary_fee">First Salary Fee – KES 1,000</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="pay-method" onchange="updatePaymentUI()">
+            <option value="">Choose…</option>
+            <option value="wallet">💰 Pay from Wallet Balance</option>
+            <option value="mpesa">📱 M-Pesa</option>
+            <option value="airtel">📞 Airtel Money</option>
+            <option value="manual">🏦 Paybill Deposit</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Amount (KES)</label>
+          <input type="number" id="pay-amount" placeholder="300 or 1000" min="100" step="100">
+          <span class="form-hint">Interview: 300 | First Salary: 1000</span>
+        </div>
+
+        <!-- WALLET BALANCE -->
+        <div id="wallet-form" style="display:none;">
+          <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:var(--brand);">💰 Pay from Wallet Balance</strong><br>
+            Your available balance: <strong id="wallet-pay-balance">KES 0</strong><br>
+            Funds will be deducted instantly from your wallet.
+          </div>
+          <button class="btn btn-primary btn-full" onclick="payFromWallet()">
+            <i class="bi bi-wallet2"></i> Pay from Balance
+          </button>
+        </div>
+
+        <!-- M-PESA -->
+        <div id="mpesa-form" style="display:none;">
+          <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:var(--brand);">📱 M-Pesa STK Push</strong><br>
+            Enter your phone number to receive an M-Pesa PIN prompt.
+          </div>
+          <div class="form-group">
+            <label>M-Pesa Phone</label>
+            <input type="tel" id="mpesa-phone" placeholder="0712345678">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="sendMpesaSTK()">Send STK Push</button>
+        </div>
+
+        <!-- AIRTEL -->
+        <div id="airtel-form" style="display:none;">
+          <div style="background:rgba(14,165,233,.08); border:1px solid rgba(14,165,233,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:var(--sky);">📞 Airtel Money</strong><br>
+            Enter your Airtel number to receive a payment prompt.
+          </div>
+          <div class="form-group">
+            <label>Airtel Phone</label>
+            <input type="tel" id="airtel-phone" placeholder="0712345678">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="sendAirtelRequest()">Request Payment</button>
+        </div>
+
+        <!-- MANUAL PAYBILL -->
+        <div id="manual-form" style="display:none;">
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:1rem; font-size:12px; line-height:1.8;">
+            <strong>Paybill Details</strong><br>
+            Paybill: <strong style="font-family:monospace;">400200</strong><br>
+            Account: <strong style="font-family:monospace;" id="paybill-account">—</strong><br>
+            Amount: <strong style="font-family:monospace;" id="paybill-amount">KES 0</strong>
+          </div>
+          <div class="form-group">
+            <label>Receipt / Confirmation Code</label>
+            <input type="text" id="receipt-code" placeholder="e.g. QJG3XYZABC" style="text-transform:uppercase;">
+            <span class="form-hint">Enter M-Pesa or bank receipt after paying via Paybill</span>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="confirmReceipt()">Verify Receipt</button>
+        </div>
+
+        <div style="background:var(--accent-soft); border:1px solid rgba(232,160,64,.3); border-radius:10px; padding:12px; margin-top:1.5rem; font-size:11px; color:var(--muted); line-height:1.7;">
+          <strong style="color:var(--ink);">💡 Payment Policy</strong><br>
+          Interview fee valid for 30 days. First salary fee valid for 6 months.<br>
+          ⚠️ Non-payment may deactivate your account after 90 days.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ACCOUNT MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-account">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-person-circle"></i> My Account</h2>
+      <button class="modal-close" onclick="closeModal('modal-account')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center; padding:1.5rem 0;">
+        <div style="width:72px; height:72px; border-radius:50%; background:var(--brand); color:#fff; font-size:1.8rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; border:3px solid var(--accent);" id="account-avatar">W</div>
+        <div style="font-size:1.1rem; font-weight:800; margin-bottom:4px;" id="account-name">—</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:4px;" id="account-email">—</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:1.5rem;" id="account-role">Employee</div>
+        <div id="account-status-bar" style="display:none; padding:10px; background:rgba(244,63,94,.08); border:1px solid rgba(244,63,94,.2); border-radius:10px; font-size:12px; color:var(--rose); margin-bottom:1.2rem;">
+          <i class="bi bi-exclamation-triangle-fill"></i> <span id="account-status-msg"></span>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="post-profile.html" class="btn btn-secondary btn-full">
+          <i class="bi bi-pencil-square"></i> Edit Profile
+        </a>
+        <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet'); closeModal('modal-account')">
+          <i class="bi bi-wallet2"></i> View Wallet
+        </button>
+        <button class="btn btn-primary btn-full" onclick="signOut()" style="margin-top:4px;">
+          <i class="bi bi-box-arrow-right"></i> Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-stack"></div>
+
+<!-- TAWK.TO LIVE SUPPORT -->
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+
+let sb, currentUser;
+// DB fields confirmed live:
+// worker_profiles: id, email, full_name, profile_visible, status, account_number,
+//   interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason
+// messages: id, conversation_id, sender_id, body, content, is_read, is_from_admin, sender_type,
+//   receiver_id, created_at, msg_type, is_deleted
+// conversations: id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status
+// wallets: user_id, balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance
+// payments: id, user_id, amount, fee_type, payment_method, status, mpesa_phone, airtel_phone,
+//   bank_account, phone_used, paybill_number, created_at, transaction_id, account_number
+// job_postings: id, title, description, location, county, salary_range, job_type, status, is_urgent, created_at, job_role
+// job_applications: id, job_id, worker_id, cover_letter, status, applied_at
+// employer_profiles: id, user_id, full_name, company_name, location
+// notifications: id, user_id, type, title, message, is_read, created_at
+
+let workerProfile = null;
+let allConversations = [];
+let activeConvId = null;
+let allJobs = [];
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Auth check — getUser() gives server-verified identity (not just local session cache)
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) { window.location.href = 'login.html'; return; }
+
+  const { data: { user }, error: authErr } = await sb.auth.getUser();
+  console.log('AUTH USER:', user);
+  console.log('AUTH ERROR:', authErr);
+  if (!user) { console.error('getUser() returned null — redirecting'); window.location.href = 'login.html'; return; }
+  currentUser = user;
+
+  // Update presence
+  await sb.from('user_presence').upsert(
+    { user_id: currentUser.id, is_online: true, last_seen: new Date().toISOString() },
+    { onConflict: 'user_id' }
+  ).catch(() => {});
+
+  try {
+    await loadDashboard();
+  } catch (err) {
+    console.error('Top-level dashboard crash:', err);
+    showToast('err', 'bi-exclamation-circle', 'Dashboard failed to load', err.message);
+  }
+  subscribeToRealtime();
+});
+
+// ════════════════════════════════════════════════════════
+//  LOAD DASHBOARD
+// ════════════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    console.log('🚀 Dashboard loading…');
+    console.log('📌 currentUser.id:', currentUser.id);
+    console.log('📧 currentUser.email:', currentUser.email);
+
+    // 1. worker_profiles — try session_id (= auth.uid()) first, then fall back to email
+    // DB reality: no user_id column exists on worker_profiles; link is via session_id (uuid text) OR email
+    let wp = null, wpErr = null;
+
+    // Attempt 1: session_id match — use limit(2) so duplicate rows never cause a 406 crash
+    console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
+    const { data: bySessionRows, error: e1 } = await sb.from('worker_profiles')
+      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
+      .eq('session_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(2);
+
+    if (e1) console.warn('❌ Attempt 1 error:', e1.message);
+    const bySession = bySessionRows?.[0] || null;
+    if (bySessionRows?.length > 1) console.warn('⚠️  Duplicate session_id rows detected — using most recent');
+    if (bySession) {
+      console.log('✅ Attempt 1 SUCCESS:', bySession);
+      wp = bySession;
+    } else {
+      console.log('⚠️  No session_id match. Trying email…');
+      // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
+      console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
+      const { data: byEmailRows, error: e2 } = await sb.from('worker_profiles')
+        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
+        .eq('email', currentUser.email)
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      if (e2) console.warn('❌ Attempt 2 error:', e2.message);
+      const byEmail = byEmailRows?.[0] || null;
+      if (byEmail) {
+        console.log('✅ Attempt 2 SUCCESS:', byEmail);
+      } else {
+        console.log('⚠️  No worker_profile found at all for', currentUser.email);
+      }
+
+      wp = byEmail || null;
+      wpErr = e2;
+
+      // If we found a profile by email but session_id is missing/wrong, backfill it
+      if (wp && !bySession) {
+        console.log('🔧 Backfilling session_id on row', wp.id);
+        sb.from('worker_profiles')
+          .update({ session_id: currentUser.id })
+          .eq('id', wp.id)
+          .then(() => console.log('✅ Backfill done')).catch(e => console.warn('Backfill error:', e.message));
+      }
+    }
+
+    if (wpErr) console.warn('worker_profiles final error:', wpErr?.message);
+    workerProfile = wp || null;
+    console.log('📋 workerProfile now:', workerProfile);
+
+    // Welcome banner
+    const name = workerProfile?.full_name || currentUser.email?.split('@')[0] || 'Worker';
+    document.getElementById('welcome-name').textContent = 'Welcome back, ' + name + ' 👋';
+    document.getElementById('nav-avatar-init').textContent = name[0].toUpperCase();
+    document.getElementById('account-avatar').textContent = name[0].toUpperCase();
+    document.getElementById('account-name').textContent = name;
+    document.getElementById('account-email').textContent = currentUser.email;
+    document.getElementById('account-role').textContent = 'Employee · ' + (workerProfile?.verification_stage || 'unverified');
+
+    // Profile completeness
+    const fields = ['full_name','email','profile_visible','status','account_number','interview_fee_paid','first_salary_fee_paid'];
+    const filled = fields.filter(f => workerProfile?.[f] !== null && workerProfile?.[f] !== undefined && workerProfile?.[f] !== '').length;
+    const pct = Math.round((filled / fields.length) * 100);
+    document.getElementById('profile-pct').textContent = pct + '%';
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    // Account status
+    if (workerProfile?.account_deactivated) {
+      document.getElementById('account-status-bar').style.display = 'block';
+      document.getElementById('account-status-msg').textContent = 'Account deactivated: ' + (workerProfile.deactivation_reason || 'Contact support');
+    }
+
+    // Welcome sub
+    const statusMap = { approved: '✅ Profile approved & visible', pending: '⏳ Profile under review', rejected: '❌ Profile needs attention' };
+    document.getElementById('welcome-sub').textContent = statusMap[workerProfile?.status] || 'Complete your profile to get hired faster.';
+
+    // Profile visibility toggle
+    const visible = workerProfile?.profile_visible !== false;
+    document.getElementById('visibility-toggle').checked = visible;
+    document.getElementById('visibility-label').textContent = visible ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+    document.getElementById('visibility-sub').textContent = visible
+      ? 'Employers can find you in search results'
+      : 'You are not appearing in employer searches';
+
+    // 2. conversations (RLS: employee_id = auth.uid()) — get threads
+    console.log('🔍 Loading conversations where employee_id =', currentUser.id);
+    const { data: convs, error: convErr } = await sb.from('conversations')
+      .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status')
+      .eq('employee_id', currentUser.id)
+      .eq('is_deleted', false)
+      .order('last_message_at', { ascending: false })
+      .limit(30);
+
+    if (convErr) console.warn('❌ conversations error:', convErr.message);
+    console.log('✅ conversations loaded:', convs?.length || 0, 'threads');
+    allConversations = convs || [];
+
+    // Count unread
+    const totalUnread = allConversations.reduce((s, c) => s + (c.employee_unread || 0), 0);
+    if (totalUnread > 0) {
+      document.getElementById('msg-badge').textContent = totalUnread;
+      document.getElementById('msg-badge').classList.add('show');
+    }
+    document.getElementById('stat-messages').textContent = allConversations.length;
+
+    await renderConversationList();
+
+    // 3. job_postings (public read policy on status='active')
+    console.log('🔍 Loading active job_postings');
+    const { data: jobs, error: jobErr } = await sb.from('job_postings')
+      .select('id, title, description, location, county, salary_range, job_type, is_urgent, created_at, job_role')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (jobErr) console.warn('❌ job_postings error:', jobErr.message);
+    console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
+    allJobs = jobs || [];
+    document.getElementById('stat-jobs').textContent = allJobs.length;
+    renderJobs(allJobs);
+    populateCountyFilter(allJobs);
+
+    // 4. wallets (RLS: user_id = auth.uid())
+    console.log('🔍 Loading wallet for user_id =', currentUser.id);
+    const { data: wallet, error: wErr } = await sb.from('wallets')
+      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    console.log('WALLET DATA:', wallet);
+    console.log('WALLET ERROR:', wErr);
+    if (wErr) console.warn('❌ wallets error:', wErr.message);
+    if (wallet) {
+    } else {
+      console.log('⚠️  No wallet record exists for this user yet');
+    }
+    if (wallet) {
+      const bal = (wallet.balance || 0);
+      const out = (wallet.outstanding_balance || 0);
+      document.getElementById('wallet-balance').textContent = 'KES ' + bal.toLocaleString('en-KE');
+      document.getElementById('wallet-outstanding').textContent = 'KES ' + out.toLocaleString('en-KE');
+      document.getElementById('stat-wallet').textContent = 'KES ' + bal.toLocaleString('en-KE');
+      document.getElementById('stat-outstanding').textContent = 'KES ' + out.toLocaleString('en-KE');
+      document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
+      document.getElementById('paybill-account').textContent = wallet.account_number || '—';
+      updateFeeStatus(wallet);
+    } else {
+      // Try worker_profiles for fee status fallback
+      if (workerProfile) updateFeeStatus(workerProfile);
+      ['stat-wallet','stat-outstanding'].forEach(id => document.getElementById(id).textContent = 'KES 0');
+    }
+
+    // 5. payments (RLS: user_id = auth.uid())
+    const { data: payments, error: pErr } = await sb.from('payments')
+      .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (pErr) console.warn('payments:', pErr.message);
+    renderPaymentHistory(payments || []);
+
+    // 6. notifications
+    await loadNotifications();
+
+  } catch (e) {
+    console.error('❌ loadDashboard CRASHED:', e.message);
+    console.error('Stack:', e.stack);
+    showToast('err', 'bi-exclamation-circle', 'Dashboard Error', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  CONVERSATIONS / MESSAGES
+// ════════════════════════════════════════════════════════
+async function renderConversationList() {
+  const inbox = document.getElementById('messages-inbox');
+  const recent = document.getElementById('recent-messages');
+
+  if (!allConversations.length) {
+    const empty = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>No messages yet. Employers will contact you here.</p></div>';
+    inbox.innerHTML = empty;
+    recent.innerHTML = empty;
+    return;
+  }
+
+  // Fetch employer names for all convs
+  const employerIds = [...new Set(allConversations.map(c => c.employer_id).filter(Boolean))];
+  let employers = {};
+  if (employerIds.length) {
+    const { data } = await sb.from('employer_profiles')
+      .select('user_id, full_name, company_name')
+      .in('user_id', employerIds);
+    (data || []).forEach(e => {
+      employers[e.user_id] = e.company_name || e.full_name || 'Employer';
+    });
+  }
+
+  const html = allConversations.map((conv, i) => {
+    const from = employers[conv.employer_id] || 'Employer';
+    const init = from[0].toUpperCase();
+    const preview = (conv.last_message_text || 'No messages yet').substring(0, 60);
+    const unread = conv.employee_unread > 0;
+    const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
+    return `
+    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openConversation('${conv.id}', '${esc(from)}')">
+      <div class="msg-avatar is-employer">${esc(init)}</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-from">${esc(from)}</span>
+          <span class="msg-badge employer"><i class="bi bi-building"></i> Employer</span>
+        </div>
+        <div class="msg-preview">${esc(preview)}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
+        <div class="msg-time">${time}</div>
+        ${unread ? '<div class="msg-unread"></div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  inbox.innerHTML = html;
+  recent.innerHTML = allConversations.slice(0, 2).map((conv, i) => {
+    const from = employers[conv.employer_id] || 'Employer';
+    const preview = (conv.last_message_text || '—').substring(0, 80);
+    return `
+    <div class="msg-item" onclick="openConversation('${conv.id}', '${esc(from)}')">
+      <div class="msg-avatar is-employer">${esc(from[0].toUpperCase())}</div>
+      <div class="msg-content">
+        <div class="msg-from">${esc(from)}</div>
+        <div class="msg-preview">${esc(preview)}</div>
+      </div>
+      <div class="msg-time" style="flex-shrink:0;">${conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function openConversation(convId, fromName) {
+  activeConvId = convId;
+  document.getElementById('conv-from').textContent = fromName;
+  document.getElementById('conv-status').textContent = 'Loading conversation…';
+  document.getElementById('conversation-header').style.display = 'block';
+
+  // messages RLS: conversation_id must exist in conversations where employer_id or employee_id = auth.uid()
+  const { data: msgs, error } = await sb.from('messages')
+    .select('id, sender_id, body, content, is_read, created_at, msg_type, is_from_admin')
+    .eq('conversation_id', convId)
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    return;
+  }
+
+  const convEl = document.getElementById('conversation-messages');
+  convEl.innerHTML = (msgs || []).map(m => {
+    const sent = m.sender_id === currentUser.id;
+    const text = m.content || m.body || '';
+    return `
+    <div class="msg-bubble ${sent ? 'sent' : ''}">
+      <div class="bubble ${sent ? 'sent' : 'received'}">${esc(text)}</div>
+      <div class="bubble-meta">${timeAgo(new Date(m.created_at))}</div>
+    </div>`;
+  }).join('');
+
+  // Mark as read — update conversation employee_unread
+  await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
+
+  convEl.scrollTop = convEl.scrollHeight;
+  document.getElementById('conv-status').textContent = msgs?.length + ' messages';
+
+  const convTabBtn = document.querySelector('#modal-messages .tabs .tab:last-child');
+  switchTab('messages-view', convTabBtn);
+  if (!document.getElementById('modal-messages').classList.contains('open')) {
+    openModal('modal-messages');
+  }
+}
+
+async function sendMessageReply() {
+  const text = document.getElementById('msg-reply').value.trim();
+  if (!text || !activeConvId) return;
+
+  const btn = document.querySelector('#modal-messages .btn-primary');
+  btn.disabled = true;
+
+  // messages INSERT RLS: sender_id = auth.uid() AND conversation exists where employer/employee = auth.uid()
+  const { error } = await sb.from('messages').insert({
+    conversation_id: activeConvId,
+    sender_id: currentUser.id,
+    body: text,
+    content: text,
+    is_read: false,
+    msg_type: 'text',
+  });
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+  } else {
+    document.getElementById('msg-reply').value = '';
+    // Update conversation last_message_at
+    await sb.from('conversations').update({
+      last_message_text: text,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', activeConvId);
+    await openConversation(activeConvId, document.getElementById('conv-from').textContent);
+    showToast('ok', 'bi-check-circle', 'Sent', 'Message delivered.');
+  }
+  btn.disabled = false;
+}
+
+// ════════════════════════════════════════════════════════
+//  JOBS
+// ════════════════════════════════════════════════════════
+function populateCountyFilter(jobs) {
+  const counties = [...new Set(jobs.map(j => j.county).filter(Boolean))].sort();
+  const sel = document.getElementById('job-county');
+  counties.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+function filterJobs() {
+  const q = document.getElementById('job-search').value.toLowerCase();
+  const county = document.getElementById('job-county').value;
+  const filtered = allJobs.filter(j => {
+    const matchQ = !q || (j.title + j.description + j.job_role).toLowerCase().includes(q);
+    const matchC = !county || j.county === county;
+    return matchQ && matchC;
+  });
+  renderJobs(filtered);
+}
+
+function renderJobs(jobs) {
+  const el = document.getElementById('jobs-list');
+  if (!jobs.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-briefcase"></i><p>No jobs match your search</p></div>';
+    return;
+  }
+  el.innerHTML = jobs.map(j => `
+    <div class="job-card">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
+        <div>
+          <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${esc(j.title || 'Untitled Job')}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${j.is_urgent ? '<span class="job-chip urgent"><i class="bi bi-lightning-fill"></i> Urgent</span>' : ''}
+            ${j.job_type ? `<span class="job-chip">${esc(j.job_type)}</span>` : ''}
+            ${j.county ? `<span class="job-chip"><i class="bi bi-geo-alt"></i> ${esc(j.county)}</span>` : ''}
+          </div>
+        </div>
+        ${j.salary_range ? `<div style="font-size:12px; color:var(--brand); font-weight:700; white-space:nowrap;">${esc(j.salary_range)}</div>` : ''}
+      </div>
+      <div style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:10px;">${esc((j.description || '').substring(0, 160))}${j.description?.length > 160 ? '…' : ''}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:11px; color:var(--muted);">${j.created_at ? timeAgo(new Date(j.created_at)) + ' ago' : ''}</div>
+        <button class="btn btn-primary btn-sm" onclick="applyJob('${j.id}', this)">
+          <i class="bi bi-send"></i> Apply Now
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function applyJob(jobId, btn) {
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first to apply for jobs.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Applying…';
+
+  // Check for existing application
+  // RLS on job_applications uses worker_id = auth.uid() so we check against currentUser.id
+  const { data: existing } = await sb.from('job_applications')
+    .select('id')
+    .eq('job_id', jobId)
+    .eq('worker_id', currentUser.id)
+    .maybeSingle();
+
+  if (existing) {
+    showToast('info', 'bi-info-circle', 'Already Applied', 'You have already applied for this job.');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check"></i> Applied';
+    return;
+  }
+
+  // job_applications INSERT: RLS requires worker_id = auth.uid()
+  const { error } = await sb.from('job_applications').insert({
+    job_id: jobId,
+    worker_id: currentUser.id,
+    worker_name: workerProfile.full_name || '',
+    worker_phone: workerProfile.phone || workerProfile.phone_number || '',
+    status: 'pending',
+    applied_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send"></i> Apply Now';
+  } else {
+    showToast('ok', 'bi-check-circle', 'Applied!', 'Your application has been submitted.');
+    btn.innerHTML = '<i class="bi bi-check"></i> Applied';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  PROFILE VISIBILITY
+// ════════════════════════════════════════════════════════
+let visibilityUpdating = false;
+async function toggleVisibility() {
+  if (visibilityUpdating) return;
+  const checkbox = document.getElementById('visibility-toggle');
+  const newVal = checkbox.checked; // onclick fires AFTER checked changes — reliable
+  visibilityUpdating = true;
+
+  // Optimistic UI update
+  document.getElementById('visibility-label').textContent = newVal ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+  document.getElementById('visibility-sub').textContent = newVal
+    ? 'Employers can find you in search results'
+    : 'You are not appearing in employer searches';
+
+  // Use workerProfile.id for a guaranteed single-row update; RLS is satisfied because
+  // the row was already fetched under the user's session (session_id or email match).
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles')
+    .update({ profile_visible: newVal })
+    .eq(matchCol, matchVal);
+
+  if (error) {
+    // Revert on failure
+    checkbox.checked = !newVal;
+    document.getElementById('visibility-label').textContent = !newVal ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+    document.getElementById('visibility-sub').textContent = !newVal
+      ? 'Employers can find you in search results'
+      : 'You are not appearing in employer searches';
+    showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message);
+  } else {
+    showToast('ok', 'bi-check-circle', newVal ? 'Profile Visible' : 'Profile Hidden',
+      newVal ? 'Employers can now find you.' : 'Your profile is now hidden from searches.');
+  }
+  visibilityUpdating = false;
+}
+
+// ════════════════════════════════════════════════════════
+//  WALLET / PAYMENTS
+// ════════════════════════════════════════════════════════
+function updateFeeStatus(data) {
+  // data can be wallet or worker_profiles — both have interview_fee_paid, first_salary_fee_paid
+  const i = data.interview_fee_paid;
+  const s = data.first_salary_fee_paid;
+  document.getElementById('fee-interview').innerHTML = i
+    ? '<span style="color:var(--green)">✓ Paid</span>'
+    : '<span style="color:var(--rose)">⚠️ Pending</span>';
+  document.getElementById('fee-salary').innerHTML = s
+    ? '<span style="color:var(--green)">✓ Paid</span>'
+    : '<span style="color:var(--rose)">⚠️ Pending</span>';
+}
+
+function updatePaymentUI() {
+  const method = document.getElementById('pay-method').value;
+  document.getElementById('wallet-form').style.display = method === 'wallet' ? 'block' : 'none';
+  document.getElementById('mpesa-form').style.display = method === 'mpesa' ? 'block' : 'none';
+  document.getElementById('airtel-form').style.display = method === 'airtel' ? 'block' : 'none';
+  document.getElementById('manual-form').style.display = method === 'manual' ? 'block' : 'none';
+
+  if (method === 'wallet') {
+    // Show current balance so user can confirm they have enough
+    const balText = document.getElementById('wallet-balance').textContent;
+    document.getElementById('wallet-pay-balance').textContent = balText;
+  }
+  if (method === 'manual') {
+    const amt = document.getElementById('pay-amount').value || 0;
+    document.getElementById('paybill-amount').textContent = 'KES ' + parseInt(amt || 0).toLocaleString('en-KE');
+  }
+}
+
+async function payFromWallet() {
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const feeType = document.getElementById('fee-type').value;
+
+  if (!amount || amount <= 0) {
+    showToast('err', 'bi-exclamation-circle', 'Missing', 'Select a fee type and enter an amount');
+    return;
+  }
+
+  // Fetch live wallet balance first
+  const { data: wallet, error: wErr } = await sb.from('wallets')
+    .select('balance, account_number')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (wErr || !wallet) {
+    showToast('err', 'bi-exclamation-circle', 'Wallet Error', 'Could not read your wallet. Please try another payment method.');
+    return;
+  }
+
+  const balance = parseFloat(wallet.balance || 0);
+  if (balance < amount) {
+    showToast('err', 'bi-exclamation-circle', 'Insufficient Balance',
+      `Your wallet has KES ${balance.toLocaleString('en-KE')} but KES ${amount.toLocaleString('en-KE')} is required.`);
+    return;
+  }
+
+  const btn = document.querySelector('#wallet-form .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
+
+  try {
+    // 1. Deduct from wallet
+    const newBalance = balance - amount;
+    const { error: updateErr } = await sb.from('wallets')
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id);
+
+    if (updateErr) throw new Error(updateErr.message);
+
+    // 2. Create payment record (status = completed, method = wallet)
+    const { error: payErr } = await sb.from('payments').insert({
+      user_id: currentUser.id,
+      amount,
+      fee_type: feeType,
+      payment_method: 'wallet',
+      status: 'completed',
+      account_number: wallet.account_number || workerProfile?.account_number || null,
+      paybill_number: '400200',
+    });
+
+    if (payErr) {
+      // Rollback wallet deduction on payment insert failure
+      await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
+      throw new Error(payErr.message);
+    }
+
+    // 3. Update fee flags on wallets table
+    const feeUpdate = {};
+    if (feeType === 'interview_fee') {
+      feeUpdate.interview_fee_paid = true;
+      feeUpdate.interview_fee_paid_at = new Date().toISOString();
+      feeUpdate.interview_fee_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (feeType === 'first_salary_fee') {
+      feeUpdate.first_salary_fee_paid = true;
+      feeUpdate.first_salary_fee_paid_at = new Date().toISOString();
+      feeUpdate.first_salary_fee_expires_at = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    if (Object.keys(feeUpdate).length) {
+      await sb.from('wallets').update(feeUpdate).eq('user_id', currentUser.id);
+      // Mirror on worker_profiles
+      const wpUpdate = {};
+      if (feeType === 'interview_fee') { wpUpdate.interview_fee_paid = true; wpUpdate.payment_status = 'partial'; }
+      if (feeType === 'first_salary_fee') { wpUpdate.first_salary_fee_paid = true; wpUpdate.payment_status = 'paid'; }
+      if (Object.keys(wpUpdate).length && workerProfile?.id) {
+        await sb.from('worker_profiles').update(wpUpdate).eq('id', workerProfile.id);
+      }
+    }
+
+    // 4. Update local UI
+    document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    updateFeeStatus({ interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid, first_salary_fee_paid: feeType === 'first_salary_fee' || workerProfile?.first_salary_fee_paid });
+
+    // 5. Refresh payment history
+    const { data: payments } = await sb.from('payments')
+      .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    renderPaymentHistory(payments || []);
+
+    showToast('ok', 'bi-check-circle', 'Payment Successful',
+      `KES ${amount.toLocaleString('en-KE')} deducted from your wallet.`);
+    closeModal('modal-wallet');
+
+  } catch (e) {
+    showToast('err', 'bi-exclamation-circle', 'Payment Failed', e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-wallet2"></i> Pay from Balance';
+  }
+}
+
+async function sendMpesaSTK() {
+  const phone = document.getElementById('mpesa-phone').value.trim();
+  const amount = document.getElementById('pay-amount').value;
+  const feeType = document.getElementById('fee-type').value;
+  if (!phone || !amount) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter phone and amount'); return; }
+
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending STK Push to ' + phone);
+  setTimeout(async () => {
+    await createPayment(parseFloat(amount), 'mpesa', feeType, { mpesa_phone: phone, phone_used: phone });
+    showToast('ok', 'bi-check-circle', 'STK Sent', 'Check your phone for the M-Pesa prompt.');
+  }, 1200);
+}
+
+async function sendAirtelRequest() {
+  const phone = document.getElementById('airtel-phone').value.trim();
+  const amount = document.getElementById('pay-amount').value;
+  const feeType = document.getElementById('fee-type').value;
+  if (!phone || !amount) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter phone and amount'); return; }
+
+  showToast('info', 'bi-hourglass-split spin', 'Processing', 'Requesting Airtel payment…');
+  setTimeout(async () => {
+    await createPayment(parseFloat(amount), 'airtel', feeType, { airtel_phone: phone, phone_used: phone });
+    showToast('ok', 'bi-check-circle', 'Sent', 'Check your Airtel Money app.');
+  }, 1200);
+}
+
+async function confirmReceipt() {
+  const receipt = document.getElementById('receipt-code').value.trim().toUpperCase();
+  const amount = document.getElementById('pay-amount').value;
+  const feeType = document.getElementById('fee-type').value;
+  if (!receipt || !amount) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter receipt code and amount'); return; }
+
+  await createPayment(parseFloat(amount), 'manual', feeType, { bank_account: receipt });
+  showToast('ok', 'bi-check-circle', 'Submitted', 'Admin will verify within 24 hours.');
+  closeModal('modal-wallet');
+}
+
+async function createPayment(amount, method, feeType, extra = {}) {
+  try {
+    // Fetch account_number from wallet first
+    const { data: wallet } = await sb.from('wallets')
+      .select('account_number')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    const payload = {
+      user_id: currentUser.id,
+      amount,
+      fee_type: feeType,
+      payment_method: method,
+      status: method === 'manual' ? 'processing' : 'pending',
+      account_number: wallet?.account_number || workerProfile?.account_number || null,
+      paybill_number: '400200',
+      ...extra,
+    };
+
+    const { error } = await sb.from('payments').insert(payload);
+    if (error) console.error('payment insert:', error.message);
+
+    // Reload payment history
+    const { data: payments } = await sb.from('payments')
+      .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    renderPaymentHistory(payments || []);
+  } catch (e) {
+    console.warn(e);
+  }
+}
+
+function renderPaymentHistory(payments) {
+  const el = document.getElementById('payment-list');
+  if (!payments.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>No payment history yet</p></div>';
+    return;
+  }
+  const feeLabels = { interview_fee: 'Interview Fee', first_salary_fee: 'First Salary Fee' };
+  const statusColors = { completed: 'var(--green)', failed: 'var(--rose)', processing: 'var(--sky)', pending: 'var(--accent)' };
+  el.innerHTML = payments.map(p => `
+    <div style="background:var(--surface); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:700; font-size:13px; margin-bottom:2px;">KES ${parseFloat(p.amount || 0).toLocaleString('en-KE')}</div>
+        <div style="font-size:11px; color:var(--muted);">${feeLabels[p.fee_type] || p.fee_type} · ${(p.payment_method || '').toUpperCase()}</div>
+        <div style="font-size:10px; color:var(--muted);">${p.transaction_id || ''}</div>
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:${statusColors[p.status] || 'var(--muted)'}; text-transform:capitalize;">${p.status || '—'}</div>
+        <div style="font-size:10px; color:var(--muted); text-align:right;">${p.created_at ? new Date(p.created_at).toLocaleDateString('en-KE') : ''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ════════════════════════════════════════════════════════
+async function loadNotifications() {
+  // notifications SELECT: user_id = auth.uid()
+  const { data: notifs, error } = await sb.from('notifications')
+    .select('id, type, title, message, is_read, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  console.log('NOTIFICATIONS DATA:', notifs);
+  console.log('NOTIFICATIONS ERROR:', error);
+  if (error) { console.warn('notifications:', error.message); return; }
+
+  const unread = (notifs || []).filter(n => !n.is_read).length;
+  if (unread) {
+    document.getElementById('notif-badge').textContent = unread;
+    document.getElementById('notif-badge').classList.add('show');
+  }
+
+  const el = document.getElementById('notif-list');
+  if (!notifs?.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-bell"></i><p>No notifications</p></div>';
+    return;
+  }
+
+  el.innerHTML = notifs.map(n => `
+    <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markNotifRead('${n.id}', this)">
+      <div class="notif-title">${esc(n.title || n.type || 'Notification')}</div>
+      <div class="notif-msg">${esc(n.message || '')}</div>
+      <div class="notif-time">${timeAgo(new Date(n.created_at))}</div>
+    </div>`).join('');
+}
+
+async function markNotifRead(id, el) {
+  // notifications UPDATE RLS: user_id = auth.uid()
+  await sb.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', currentUser.id);
+  el.classList.remove('unread');
+}
+
+// ════════════════════════════════════════════════════════
+//  REALTIME SUBSCRIPTIONS
+// ════════════════════════════════════════════════════════
+function subscribeToRealtime() {
+  // New messages in conversations the employee is part of
+  sb.channel('emp-messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+      const msg = payload.new;
+      // Only handle if this conversation belongs to current user
+      const conv = allConversations.find(c => c.id === msg.conversation_id);
+      if (!conv) return;
+
+      // Update conversation preview
+      conv.last_message_text = msg.body || msg.content || '';
+      conv.last_message_at = msg.created_at;
+      if (msg.sender_id !== currentUser.id) {
+        conv.employee_unread = (conv.employee_unread || 0) + 1;
+        const total = allConversations.reduce((s, c) => s + (c.employee_unread || 0), 0);
+        document.getElementById('msg-badge').textContent = total;
+        document.getElementById('msg-badge').classList.add('show');
+        showToast('info', 'bi-chat-dots', 'New Message', (msg.body || msg.content || '').substring(0, 60));
+      }
+
+      // If conversation is open, append message live
+      if (activeConvId === msg.conversation_id) {
+        const sent = msg.sender_id === currentUser.id;
+        const text = msg.content || msg.body || '';
+        const convEl = document.getElementById('conversation-messages');
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${sent ? 'sent' : ''}`;
+        bubble.innerHTML = `<div class="bubble ${sent ? 'sent' : 'received'}">${esc(text)}</div><div class="bubble-meta">just now</div>`;
+        convEl.appendChild(bubble);
+        convEl.scrollTop = convEl.scrollHeight;
+      }
+
+      await renderConversationList();
+    })
+    .subscribe();
+
+  // New notifications
+  sb.channel('emp-notifications')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications',
+      filter: `user_id=eq.${currentUser.id}` }, (payload) => {
+      const n = payload.new;
+      showToast('info', 'bi-bell', n.title || 'Notification', n.message || '');
+      const cur = parseInt(document.getElementById('notif-badge').textContent || '0');
+      document.getElementById('notif-badge').textContent = cur + 1;
+      document.getElementById('notif-badge').classList.add('show');
+    })
+    .subscribe();
+
+  // Wallet balance changes
+  sb.channel('emp-wallet')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wallets',
+      filter: `user_id=eq.${currentUser.id}` }, (payload) => {
+      const w = payload.new;
+      document.getElementById('wallet-balance').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
+      document.getElementById('wallet-outstanding').textContent = 'KES ' + (w.outstanding_balance || 0).toLocaleString('en-KE');
+      document.getElementById('stat-wallet').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
+      document.getElementById('stat-outstanding').textContent = 'KES ' + (w.outstanding_balance || 0).toLocaleString('en-KE');
+      updateFeeStatus(w);
+    })
+    .subscribe();
+
+  // Update presence on window close
+  window.addEventListener('beforeunload', () => {
+    sb.from('user_presence').update({ is_online: false }).eq('user_id', currentUser.id);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════════════
+async function signOut() {
+  const btn = document.querySelector('#modal-account .btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Signing out…'; }
+
+  try {
+    // Presence update fire-and-forget
+    sb.from('user_presence').update({ is_online: false, last_seen: new Date().toISOString() })
+      .eq('user_id', currentUser.id).then(() => {}).catch(() => {});
+
+    await sb.auth.signOut();
+  } catch (e) {
+    console.warn('signOut error:', e);
+  }
+  window.location.href = 'login.html';
+}
+
+// ════════════════════════════════════════════════════════
+//  UI UTILITIES
+// ════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+function switchTab(tabId, btn) {
+  // Scope to the nearest .modal so sibling modals' tabs are not affected
+  const modal = btn ? btn.closest('.modal') : null;
+  if (modal) {
+    modal.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    modal.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  }
+  document.getElementById(tabId)?.classList.add('active');
+  btn?.classList.add('active');
+}
+
+function timeAgo(d) {
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return 'now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showToast(type, icon, title, body) {
+  const stack = document.getElementById('toast-stack');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = `<i class="bi ${icon}" style="font-size:18px; flex-shrink:0;"></i>
+    <div class="toast-msg"><strong>${esc(title)}</strong>${body ? '<br><span style="color:var(--muted);font-size:11px;">' + esc(body) + '</span>' : ''}</div>`;
+  stack.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 4500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// Enter key for message reply
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('msg-reply') === document.activeElement) {
+    sendMessageReply();
+  }
+});
+</script>
+</body>
+</html>
