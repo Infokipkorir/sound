@@ -516,32 +516,160 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════════
-//   MOCK DATA (replace with Supabase wiring as needed)
+//   SUPABASE CONFIG
 // ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4MjYxNTMsImV4cCI6MjAyODQwMjE1M30.VhjoRlnHgcpSi4JAzDQdx7bWi_DIb7bPCBi0GGsUNi4';
 const ADMIN_NAME = 'SoundsCare Support';
-let employees = [
-  { id:1, name:'Grace Wanjiru', role:'House Manager', presence:'online', lastSeen:null, blocked:false, status:'active', convoEnded:false },
-  { id:2, name:'Kevin Otieno', role:'Caregiver', presence:'away', lastSeen: Date.now()-1000*60*22, blocked:false, status:'active', convoEnded:false },
-  { id:3, name:'Mary Achieng', role:'Nanny', presence:'offline', lastSeen: Date.now()-1000*60*60*5, blocked:false, status:'idle', convoEnded:false },
-  { id:4, name:'Brian Kiptoo', role:'Gardener', presence:'online', lastSeen:null, blocked:true, status:'blocked', convoEnded:false },
-  { id:5, name:'Faith Mwangi', role:'Cook', presence:'away', lastSeen: Date.now()-1000*60*60*2, blocked:false, status:'ended', convoEnded:true },
-];
 
-let conversations = {}; // id -> {messages:[], adminJoined:bool}
-employees.forEach(e => { conversations[e.id] = { messages: seedMessages(e), adminJoined:false }; });
+let sb, currentUser, employerProfile;
+// workers who have active conversations with this employer
+let employees = [];       // [{id, name, role, presence, lastSeen, blocked, convoEnded, convId, workerId, photo}]
+let conversations = {};   // convId -> { messages:[], adminJoined:bool }
+let activeEmpId = null;   // active conversation id (uuid)
+let presenceMap = {};     // worker_profile.id -> {is_online, last_seen}
+let realtimeChannel = null;
 
-function seedMessages(e){
-  const base = [
-    { from:'employer', text:'Hi '+e.name.split(' ')[0]+', thanks for applying! Are you available for a quick interview this week?', t: Date.now()-1000*60*60 },
-    { from:'worker', text:'Hello! Yes, I am available. What time works for you?', t: Date.now()-1000*60*55 },
-  ];
-  return base;
+// ═══════════════════════════════════════════
+//   INIT
+// ═══════════════════════════════════════════
+(async () => {
+  sb = window.supabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (!window.supabaseClient) window.supabaseClient = sb;
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) { window.location.href = 'login.html'; return; }
+
+  const { data: { user } } = await sb.auth.getUser();
+  currentUser = user;
+
+  // Load employer profile
+  const { data: ep } = await sb.from('employer_profiles')
+    .select('id, full_name, company_name, location, profile_photo_url, is_verified, hiring_history')
+    .eq('user_id', currentUser.id)
+    .limit(1)
+    .maybeSingle();
+
+  employerProfile = ep;
+
+  const name = ep?.full_name || ep?.company_name || currentUser.email?.split('@')[0] || 'Employer';
+  const initArr = name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('nav-avatar').textContent = initArr;
+  document.querySelector('.page-head h1').textContent = 'Welcome, ' + name.split(' ')[0];
+
+  await loadData();
+  subscribeRealtime();
+})();
+
+// ═══════════════════════════════════════════
+//   LOAD CONVERSATIONS + WORKERS
+// ═══════════════════════════════════════════
+async function loadData() {
+  // 1. Conversations where this employer is the sender
+  const { data: convs, error: convErr } = await sb.from('conversations')
+    .select('id, employee_id, last_message_text, last_message_at, employer_unread, employer_blocked, employee_blocked, status')
+    .eq('employer_id', currentUser.id)
+    .order('last_message_at', { ascending: false });
+
+  if (convErr) console.error('conversations error:', convErr.message);
+
+  const allConvs = convs || [];
+
+  // 2. Resolve worker profiles for each conversation (flat query — no nested FK joins)
+  const workerIds = [...new Set(allConvs.map(c => c.employee_id).filter(Boolean))];
+  let workerMap = {};
+  if (workerIds.length) {
+    // worker_profiles links via session_id (text UUID), but conversations.employee_id is auth.uid
+    // Try matching session_id first, then worker_profiles where id = employee_id (some rows may have id = auth uuid)
+    const { data: wps } = await sb.from('worker_profiles')
+      .select('id, session_id, full_name, preferred_role, profile_photo_url, status, county')
+      .in('session_id', workerIds.map(String));
+    (wps || []).forEach(w => { workerMap[w.session_id] = w; });
+  }
+
+  // 3. Presence for known workers
+  if (workerIds.length) {
+    const { data: pres } = await sb.from('user_presence')
+      .select('user_id, is_online, last_seen')
+      .in('user_id', workerIds);
+    (pres || []).forEach(p => { presenceMap[p.user_id] = p; });
+  }
+
+  // 4. Build employees array from conversations
+  employees = allConvs.map(c => {
+    const wp = workerMap[c.employee_id] || null;
+    const pres = presenceMap[c.employee_id] || null;
+    const isOnline = pres?.is_online;
+    const lastSeen = pres?.last_seen ? new Date(pres.last_seen).getTime() : null;
+    const presenceLabel = isOnline ? 'online' : (lastSeen && Date.now()-lastSeen < 30*60*1000 ? 'away' : 'offline');
+    const blocked = c.employer_blocked || c.employee_blocked || false;
+    const ended = c.status === 'ended';
+    return {
+      id: c.id,          // convId used as the key throughout
+      convId: c.id,
+      workerId: c.employee_id,
+      name: wp?.full_name || 'Unknown Worker',
+      role: wp?.preferred_role || '—',
+      photo: wp?.profile_photo_url || null,
+      presence: presenceLabel,
+      lastSeen,
+      blocked,
+      convoEnded: ended,
+      status: blocked ? 'blocked' : ended ? 'ended' : 'active',
+      unread: c.employer_unread || 0,
+    };
+  });
+
+  // 5. Load payment history for employer (payments table: user_id = auth.uid())
+  const { data: pays } = await sb.from('payments')
+    .select('id, transaction_id, amount, fee_type, payment_method, status, mpesa_ref, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  renderPayHistory(pays || []);
+
+  // 6. Show/hide access confirmed banner based on any confirmed employer access fee
+  const hasPaid = (pays || []).some(p => p.fee_type === 'employer_access_fee' && p.status === 'confirmed');
+  document.getElementById('access-confirmed').style.display = hasPaid ? 'block' : 'none';
+
+  renderEmployees();
 }
 
-let activeEmpId = null;
-let typingTimeout = null;
+// ═══════════════════════════════════════════
+//   REALTIME SUBSCRIPTIONS
+// ═══════════════════════════════════════════
+function subscribeRealtime() {
+  if (realtimeChannel) sb.removeChannel(realtimeChannel);
+  realtimeChannel = sb.channel('employer-dash-' + currentUser.id)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'messages',
+    }, async (payload) => {
+      const msg = payload.new;
+      if (!msg?.conversation_id) return;
+      const emp = employees.find(e => e.convId === msg.conversation_id);
+      if (!emp) return;
+      // append to in-memory conversation if open
+      if (conversations[emp.id]) {
+        const fromSelf = msg.sender_id === currentUser.id;
+        conversations[emp.id].messages.push({
+          from: fromSelf ? 'employer' : 'worker',
+          text: msg.body || msg.content || msg.message || '',
+          t: new Date(msg.created_at).getTime(),
+          id: msg.id,
+        });
+        if (activeEmpId === emp.id) renderMessages();
+      }
+      // refresh unread badge
+      await loadData();
+    })
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'conversations',
+      filter: `employer_id=eq.${currentUser.id}`
+    }, async () => { await loadData(); })
+    .subscribe();
+}
 
 // ═══════════════════════════════════════════
 //   RENDER EMPLOYEES
@@ -552,26 +680,26 @@ function renderEmployees(){
   const filtered = employees.filter(e => e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q));
 
   if (!filtered.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-people"></i><p>No workers found.</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-people"></i><p>No worker conversations yet.</p></div>';
   } else {
     grid.innerHTML = filtered.map(e => `
       <div class="emp-card">
         <div class="emp-top">
-          <div class="emp-av">${initials(e.name)}<span class="presence-dot ${e.presence}"></span></div>
+          <div class="emp-av">${e.photo ? `<img src="${esc(e.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : initials(e.name)}<span class="presence-dot ${e.presence}"></span></div>
           <div>
             <div class="emp-name">${esc(e.name)}</div>
             <div class="emp-role">${esc(e.role)}</div>
-            <div class="emp-status-line">${presenceLabel(e)}</div>
+            <div class="emp-status-line">${presenceLbl(e)}</div>
           </div>
         </div>
         <div class="emp-tags">
           ${e.blocked ? '<span class="emp-tag blocked"><i class="bi bi-slash-circle"></i> Blocked</span>' : ''}
           ${e.convoEnded && !e.blocked ? '<span class="emp-tag"><i class="bi bi-check-circle"></i> Interview Ended</span>' : ''}
-          ${!e.blocked && !e.convoEnded ? '<span class="emp-tag"><i class="bi bi-chat-dots"></i> Open Conversation</span>' : ''}
+          ${!e.blocked && !e.convoEnded ? `<span class="emp-tag"><i class="bi bi-chat-dots"></i> Open Conversation</span>${e.unread > 0 ? `<span class="emp-tag" style="background:rgba(244,63,94,.12);color:var(--rose);">${e.unread} new</span>` : ''}` : ''}
         </div>
         <div class="emp-actions">
-          <button class="btn btn-primary btn-sm" onclick="openInterview(${e.id})">
-            <i class="bi bi-chat-dots-fill"></i> ${e.convoEnded ? 'View Conversation' : 'Interview'}
+          <button class="btn btn-primary btn-sm" onclick="openInterview('${e.id}')">
+            <i class="bi bi-chat-dots-fill"></i> ${e.convoEnded ? 'View Chat' : 'Interview'}
           </button>
         </div>
       </div>
@@ -580,13 +708,13 @@ function renderEmployees(){
   updateStats();
 }
 
-function presenceLabel(e){
+function presenceLbl(e){
   if (e.presence === 'online') return '<span class="dot-txt online">● Online</span>';
   if (e.presence === 'away') return '<span class="dot-txt away">● Away</span> · last seen '+timeAgo(e.lastSeen);
-  return '<span>Offline</span> · last seen '+timeAgo(e.lastSeen);
+  return '<span>Offline</span>' + (e.lastSeen ? ' · last seen '+timeAgo(e.lastSeen) : '');
 }
 
-function initials(name){ return name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+function initials(name){ return (name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
 
 function updateStats(){
   document.getElementById('stat-total').textContent = employees.length;
@@ -598,41 +726,47 @@ function updateStats(){
 // ═══════════════════════════════════════════
 //   CHAT / INTERVIEW
 // ═══════════════════════════════════════════
-function openInterview(id){
+async function openInterview(id){
   activeEmpId = id;
   const e = employees.find(x=>x.id===id);
   document.getElementById('chat-av').textContent = initials(e.name);
   document.getElementById('chat-name').textContent = e.name;
   renderChatStatus(e);
   renderChatState(e);
-  renderMessages();
-  openModal('chat-modal');
 
-  // simulate admin (SoundsCare Support) joining shortly after opening, once
-  const convo = conversations[id];
-  if (!convo.adminJoined && !e.blocked){
-    setTimeout(()=>{
-      if (activeEmpId !== id) return;
-      convo.adminJoined = true;
-      convo.messages.push({ from:'system', text: ADMIN_NAME + ' has entered the conversation', t: Date.now() });
-      renderMessages();
-      showToast('info','bi-shield-check','Support Joined', ADMIN_NAME+' is now monitoring this interview.');
-    }, 1800);
+  // Load messages if not cached
+  if (!conversations[id]) {
+    conversations[id] = { messages: [], adminJoined: false };
+    const { data: msgs } = await sb.from('messages')
+      .select('id, sender_id, body, content, message, created_at, is_from_admin, msg_type')
+      .eq('conversation_id', e.convId)
+      .order('created_at', { ascending: true });
+    (msgs || []).forEach(m => {
+      const fromSelf = m.sender_id === currentUser.id;
+      const fromAdmin = m.is_from_admin;
+      conversations[id].messages.push({
+        from: fromAdmin ? 'admin' : fromSelf ? 'employer' : 'worker',
+        text: m.body || m.content || m.message || '',
+        t: new Date(m.created_at).getTime(),
+        id: m.id,
+      });
+    });
+    // Mark employer unread = 0
+    await sb.from('conversations').update({ employer_unread: 0 }).eq('id', e.convId).eq('employer_id', currentUser.id);
+    e.unread = 0;
   }
 
-  // simulate worker typing briefly
-  setTimeout(()=>{
-    if (activeEmpId !== id || e.convoEnded || e.blocked) return;
-    showTyping(true);
-    setTimeout(()=>showTyping(false), 2200);
-  }, 700);
+  renderMessages();
+  openModal('chat-modal');
 }
 
 function renderChatStatus(e){
   const dotClass = e.presence;
-  let label = e.presence === 'online' ? 'Online' : (e.presence === 'away' ? 'Away · last seen '+timeAgo(e.lastSeen) : 'Last seen '+timeAgo(e.lastSeen));
+  let label = e.presence === 'online' ? 'Online' : (e.presence === 'away' ? 'Away · last seen '+timeAgo(e.lastSeen) : 'Last seen '+(e.lastSeen ? timeAgo(e.lastSeen) : 'a while ago'));
   document.getElementById('chat-status').innerHTML = `<span class="dot ${dotClass}"></span> ${label}`;
 }
+
+// renderEmployees, openInterview, renderChatStatus defined above near Supabase init
 
 function renderChatState(e){
   const badge = document.getElementById('chat-state-badge');
@@ -736,26 +870,33 @@ function onChatKeydown(ev){
   if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); sendChatMessage(); }
 }
 
-function sendChatMessage(){
+async function sendChatMessage(){
   const e = employees.find(x=>x.id===activeEmpId);
   if (!e || e.blocked || e.convoEnded) return;
   const input = document.getElementById('chat-text');
   const text = input.value.trim();
   if (!text) return;
-  conversations[activeEmpId].messages.push({ from:'employer', text, t: Date.now() });
   input.value = '';
+
+  const { error } = await sb.from('messages').insert({
+    conversation_id: e.convId,
+    sender_id: currentUser.id,
+    body: text,
+    sender_type: 'employer',
+  });
+  if (error) { showToast('err','bi-x-circle','Send Failed', error.message); input.value = text; return; }
+
+  // Optimistic UI
+  if (!conversations[activeEmpId]) conversations[activeEmpId] = { messages:[], adminJoined:false };
+  conversations[activeEmpId].messages.push({ from:'employer', text, t: Date.now() });
   renderMessages();
 
-  // simulate worker reply
-  setTimeout(()=>{
-    if (employees.find(x=>x.id===activeEmpId)?.blocked) return;
-    showTyping(true);
-    setTimeout(()=>{
-      showTyping(false);
-      conversations[activeEmpId].messages.push({ from:'worker', text:'Got it, thank you for the update.', t: Date.now() });
-      renderMessages();
-    }, 1600);
-  }, 500);
+  // Update last message on conversation
+  await sb.from('conversations').update({
+    last_message_text: text,
+    last_message_at: new Date().toISOString(),
+    employer_unread: 0,
+  }).eq('id', e.convId);
 }
 
 function requestFile(){
@@ -777,13 +918,15 @@ document.addEventListener('click', e => {
   if (wrap && !wrap.contains(e.target)) document.getElementById('chat-dropdown')?.classList.remove('open');
 });
 
-function confirmEndInterview(){
+async function confirmEndInterview(){
   const e = employees.find(x=>x.id===activeEmpId);
   if (!e || e.convoEnded || e.blocked) return;
   toggleChatMenu(true);
   if (!confirm('End this interview? You will no longer be able to send messages, but the full conversation history will remain visible.')) return;
+  const { error } = await sb.from('conversations').update({ status: 'ended' }).eq('id', e.convId).eq('employer_id', currentUser.id);
+  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
   e.convoEnded = true; e.status = 'ended';
-  conversations[activeEmpId].messages.push({ from:'system', text:'Interview ended by employer', t: Date.now() });
+  if (conversations[e.id]) conversations[e.id].messages.push({ from:'system', text:'Interview ended by employer', t: Date.now() });
   renderMessages(); renderChatState(e); renderEmployees();
   showToast('info','bi-stop-circle','Interview Ended','Conversation is now view-only.');
 }
