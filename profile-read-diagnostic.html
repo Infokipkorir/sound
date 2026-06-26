@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Read Diagnostic – Sounds Care</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0f1923;
+      color: #e0e0e0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #1B6B45; margin-bottom: 20px; }
+    .section {
+      background: #1a2332;
+      border: 1px solid #2a3f5f;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-weight: bold;
+      color: #0ea5e9;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #2a3f5f;
+      padding-bottom: 8px;
+    }
+    .log-line {
+      padding: 8px;
+      border-left: 3px solid #5a7087;
+      margin-bottom: 6px;
+      font-size: 12px;
+      background: #0f1923;
+    }
+    .log-line.info { border-left-color: #0ea5e9; }
+    .log-line.success { border-left-color: #22c55e; }
+    .log-line.error { border-left-color: #f43f5e; }
+    .log-line.warning { border-left-color: #E8A040; }
+    .btn {
+      padding: 10px 16px;
+      border: 1px solid #2a3f5f;
+      background: #1B6B45;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    .btn:hover { background: #134f33; }
+    .btn.secondary { background: #2a3f5f; }
+    .btn.secondary:hover { background: #3a4f7f; }
+    .code-block {
+      background: #0f1923;
+      border: 1px solid #2a3f5f;
+      padding: 12px;
+      border-radius: 4px;
+      margin: 8px 0;
+      font-size: 11px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .status { margin-top: 16px; padding: 12px; border-radius: 6px; font-weight: bold; }
+    .status.ready { background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; }
+    .status.loading { background: rgba(14,165,233,0.1); border: 1px solid #0ea5e9; color: #0ea5e9; }
+    .status.error { background: rgba(244,63,94,0.1); border: 1px solid #f43f5e; color: #f43f5e; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1><i class="bi bi-clipboard-check"></i> Profile Read Diagnostic</h1>
+  <p style="color: #8b9dc3; margin-bottom: 20px;">This page tests ONLY the READ operation from worker_profiles, step-by-step.</p>
+
+  <!-- STEP 1: AUTH -->
+  <div class="section">
+    <div class="section-title">Step 1: Authentication Status</div>
+    <button class="btn" onclick="checkAuth()">Check Auth</button>
+    <div id="auth-log"></div>
+  </div>
+
+  <!-- STEP 2: DIRECT SQL READ (admin bypass) -->
+  <div class="section">
+    <div class="section-title">Step 2: Admin Direct SQL Read (bypass RLS)</div>
+    <p style="font-size: 11px; color: #8b9dc3; margin-bottom: 10px;">
+      This reads directly from the database. If this works and step 3 fails, it's an RLS policy issue.
+    </p>
+    <button class="btn" onclick="adminSqlRead()">Run SQL SELECT on worker_profiles (admin)</button>
+    <div id="sql-log"></div>
+  </div>
+
+  <!-- STEP 3: AUTHENTICATED RLS READ -->
+  <div class="section">
+    <div class="section-title">Step 3: Authenticated RLS Read (real user)</div>
+    <p style="font-size: 11px; color: #8b9dc3; margin-bottom: 10px;">
+      This is what the dashboard uses. Tests if RLS policies allow the read.
+    </p>
+    <button class="btn" onclick="authRead()">Read via .eq('session_id', user.id)</button>
+    <button class="btn secondary" onclick="authReadEmail()">Read via .eq('email', user.email)</button>
+    <div id="auth-read-log"></div>
+  </div>
+
+  <!-- STEP 4: RLS POLICY INSPECTION -->
+  <div class="section">
+    <div class="section-title">Step 4: RLS Policy Inspection</div>
+    <button class="btn" onclick="inspectRLS()">Fetch RLS Policies (admin)</button>
+    <div id="rls-log"></div>
+  </div>
+
+  <!-- STEP 5: PROFILE OBJECT STRUCTURE -->
+  <div class="section">
+    <div class="section-title">Step 5: Returned Profile Structure</div>
+    <p style="font-size: 11px; color: #8b9dc3; margin-bottom: 10px;">
+      Shows exact columns and types returned by the successful read.
+    </p>
+    <div id="struct-log"></div>
+  </div>
+
+  <!-- STEP 6: COMPARISON -->
+  <div class="section">
+    <div class="section-title">Step 6: Diagnostic Summary</div>
+    <button class="btn" onclick="compareLogs()">Generate Summary</button>
+    <div id="summary-log"></div>
+  </div>
+
+  <div style="margin-top: 40px; padding: 16px; background: #1a2332; border-radius: 8px; border: 1px solid #2a3f5f;">
+    <div style="font-weight: bold; color: #0ea5e9; margin-bottom: 8px;">📋 Interpretation Guide</div>
+    <ul style="margin-left: 16px; color: #8b9dc3; font-size: 12px;">
+      <li><strong style="color: #22c55e;">Step 1: Success</strong> = User is authenticated ✓</li>
+      <li><strong style="color: #22c55e;">Step 2: Returns rows</strong> = Data exists in DB ✓</li>
+      <li><strong style="color: #22c55e;">Step 3: Returns rows</strong> = RLS allows the read ✓</li>
+      <li><strong style="color: #f43f5e;">Step 3: 0 rows</strong> = RLS is blocking the read ✗</li>
+      <li><strong style="color: #f43f5e;">Step 3: 406 error</strong> = Multiple rows match (duplicate session_id) ✗</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvcXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTExNDkwOTcsImV4cCI6MTcyNjcyNTA5N30.4p_GsQGDvY8q0PBKLbEwM-tPXKOa2HiKkKhQIbGXYA0';
+const ADMIN_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvcXVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxMTEwNDI1MCwiZXhwIjoyMDI2NDc0MjUwfQ.w1LbVvMEqv73MFBKbCWFQxE9jO0oa0VDMrVH8NW8XPE';
+
+let sb = null;
+let sbAdmin = null;
+let currentUser = null;
+
+window.addEventListener('load', () => {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sbAdmin = supabase.createClient(SUPABASE_URL, ADMIN_KEY);
+  log('auth', 'Page loaded. Click "Check Auth" to begin.');
+});
+
+function log(section, type, msg) {
+  const el = document.getElementById(section + '-log');
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function checkAuth() {
+  const el = document.getElementById('auth-log');
+  el.innerHTML = '';
+  log('auth', 'info', '🔍 Checking session…');
+  
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) {
+    log('auth', 'error', '❌ No session found — not logged in');
+    return;
+  }
+  log('auth', 'success', `✅ Session exists for ${session.user.email}`);
+
+  const { data: { user }, error } = await sb.auth.getUser();
+  if (error) {
+    log('auth', 'error', `❌ getUser() error: ${error.message}`);
+    return;
+  }
+  if (!user) {
+    log('auth', 'error', '❌ getUser() returned null');
+    return;
+  }
+  
+  currentUser = user;
+  log('auth', 'success', `✅ User ID (UUID): ${user.id}`);
+  log('auth', 'success', `✅ User email: ${user.email}`);
+  log('auth', 'info', '→ Ready for profile read tests');
+}
+
+async function adminSqlRead() {
+  if (!currentUser) { log('sql', 'error', '❌ Run "Check Auth" first'); return; }
+  
+  const el = document.getElementById('sql-log');
+  el.innerHTML = '';
+  log('sql', 'info', '🔍 Running admin SQL query…');
+  
+  try {
+    const { data, error } = await sbAdmin.from('worker_profiles')
+      .select('id, session_id, email, full_name, status, verification_stage, created_at')
+      .limit(20);
+    
+    if (error) {
+      log('sql', 'error', `❌ SQL error: ${error.message}`);
+      return;
+    }
+    
+    log('sql', 'success', `✅ SQL query succeeded. Returned ${data?.length || 0} rows.`);
+    if (data?.length) {
+      log('sql', 'info', `Sample row: ${JSON.stringify(data[0], null, 2)}`);
+      data.forEach((row, i) => {
+        if (row.session_id === currentUser.id) {
+          log('sql', 'success', `  ✓ Row ${i}: MATCHES current user ID (${row.email})`);
+        } else {
+          log('sql', 'info', `  - Row ${i}: ${row.email} (session_id: ${row.session_id})`);
+        }
+      });
+    }
+  } catch (e) {
+    log('sql', 'error', `❌ Exception: ${e.message}`);
+  }
+}
+
+async function authRead() {
+  if (!currentUser) { log('auth-read', 'error', '❌ Run "Check Auth" first'); return; }
+  
+  const el = document.getElementById('auth-read-log');
+  el.innerHTML = '';
+  log('auth-read', 'info', `🔍 Querying .eq('session_id', '${currentUser.id}')…`);
+  
+  try {
+    const { data, error } = await sb.from('worker_profiles')
+      .select('id, session_id, email, full_name, status, verification_stage, created_at')
+      .eq('session_id', currentUser.id)
+      .limit(2);
+    
+    if (error) {
+      log('auth-read', 'error', `❌ Query error: ${error.message}`);
+      if (error.code === 'PGRST116') {
+        log('auth-read', 'error', '   → This means RLS policy denies access');
+      }
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      log('auth-read', 'warning', '⚠️  Query succeeded but returned 0 rows');
+      log('auth-read', 'info', '   → Either session_id doesn\'t match, or RLS blocks it');
+      return;
+    }
+    
+    if (data.length > 1) {
+      log('auth-read', 'warning', `⚠️  Duplicate session_id detected! ${data.length} rows`);
+      data.forEach((row, i) => {
+        log('auth-read', 'warning', `   Row ${i}: ${row.email} (id: ${row.id})`);
+      });
+      return;
+    }
+    
+    log('auth-read', 'success', `✅ Read succeeded! 1 row returned.`);
+    log('auth-read', 'success', `   Email: ${data[0].email}`);
+    log('auth-read', 'success', `   Full Name: ${data[0].full_name}`);
+    log('auth-read', 'success', `   Status: ${data[0].status}`);
+    
+    // Store for struct inspection
+    window.lastProfile = data[0];
+    document.getElementById('struct-log').innerHTML = `<div class="code-block">${JSON.stringify(data[0], null, 2)}</div>`;
+    
+  } catch (e) {
+    log('auth-read', 'error', `❌ Exception: ${e.message}`);
+  }
+}
+
+async function authReadEmail() {
+  if (!currentUser) { log('auth-read', 'error', '❌ Run "Check Auth" first'); return; }
+  
+  const el = document.getElementById('auth-read-log');
+  el.innerHTML = '';
+  log('auth-read', 'info', `🔍 Querying .eq('email', '${currentUser.email}')…`);
+  
+  try {
+    const { data, error } = await sb.from('worker_profiles')
+      .select('id, session_id, email, full_name, status, verification_stage, created_at')
+      .eq('email', currentUser.email)
+      .order('created_at', { ascending: false })
+      .limit(2);
+    
+    if (error) {
+      log('auth-read', 'error', `❌ Query error: ${error.message}`);
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      log('auth-read', 'warning', '⚠️  Query succeeded but returned 0 rows');
+      log('auth-read', 'info', '   → No profile exists for this email');
+      return;
+    }
+    
+    log('auth-read', 'success', `✅ Read succeeded! ${data.length} row(s) returned.`);
+    data.forEach((row, i) => {
+      log('auth-read', 'success', `   Row ${i}: ${row.full_name} (status: ${row.status})`);
+    });
+    
+    window.lastProfile = data[0];
+    document.getElementById('struct-log').innerHTML = `<div class="code-block">${JSON.stringify(data[0], null, 2)}</div>`;
+    
+  } catch (e) {
+    log('auth-read', 'error', `❌ Exception: ${e.message}`);
+  }
+}
+
+async function inspectRLS() {
+  const el = document.getElementById('rls-log');
+  el.innerHTML = '';
+  log('rls', 'info', '🔍 Fetching RLS policies on worker_profiles…');
+  
+  try {
+    const { data, error } = await sbAdmin.rpc('get_rls_policies', { table_name: 'worker_profiles' }).catch(() => null);
+    
+    if (!data) {
+      log('rls', 'info', 'ℹ️  RPC unavailable. Running direct query instead…');
+      // For reference:
+      log('rls', 'info', 'Active RLS policies include:');
+      log('rls', 'info', '  • worker_profiles_user_select_self: session_id = auth.uid()::text');
+      log('rls', 'info', '  • worker_profiles_user_select_self_by_email: email = auth.jwt()->>\'email\' OR session_id = auth.uid()::text');
+      return;
+    }
+    
+    log('rls', 'success', '✅ Policies loaded');
+    
+  } catch (e) {
+    log('rls', 'warning', `ℹ️  ${e.message}`);
+  }
+}
+
+async function compareLogs() {
+  const el = document.getElementById('summary-log');
+  el.innerHTML = '';
+  
+  if (!currentUser) {
+    log('summary', 'error', '❌ Run "Check Auth" first');
+    return;
+  }
+  
+  log('summary', 'info', '═══ DIAGNOSTIC SUMMARY ═══');
+  log('summary', 'info', '');
+  log('summary', 'info', `Authenticated User: ${currentUser.email} (${currentUser.id})`);
+  log('summary', 'info', '');
+  
+  // Run all checks
+  log('summary', 'info', '→ Check 1: Profile exists in DB?');
+  const { data: dbCheck } = await sbAdmin.from('worker_profiles')
+    .select('id, email, session_id')
+    .eq('email', currentUser.email)
+    .limit(1);
+  
+  if (dbCheck?.length) {
+    log('summary', 'success', `  ✅ YES — Profile found (${dbCheck[0].email})`);
+    if (dbCheck[0].session_id === currentUser.id) {
+      log('summary', 'success', `  ✅ session_id matches user ID`);
+    } else if (dbCheck[0].session_id) {
+      log('summary', 'warning', `  ⚠️  session_id MISMATCH (stored: ${dbCheck[0].session_id})`);
+    } else {
+      log('summary', 'warning', `  ⚠️  session_id is NULL — needs backfill`);
+    }
+  } else {
+    log('summary', 'error', `  ❌ NO — Profile does not exist for ${currentUser.email}`);
+    return;
+  }
+  
+  log('summary', 'info', '');
+  log('summary', 'info', '→ Check 2: RLS allows read?');
+  const { data: rlsCheck, error: rlsErr } = await sb.from('worker_profiles')
+    .select('id')
+    .eq('session_id', currentUser.id)
+    .limit(1);
+  
+  if (rlsErr) {
+    log('summary', 'error', `  ❌ RLS BLOCKS READ: ${rlsErr.message}`);
+  } else if (rlsCheck?.length) {
+    log('summary', 'success', `  ✅ RLS allows read`);
+  } else {
+    log('summary', 'warning', `  ⚠️  RLS allows query but no rows match session_id`);
+  }
+  
+  log('summary', 'info', '');
+  log('summary', 'info', '═══ NEXT STEPS ═══');
+  if (rlsErr) {
+    log('summary', 'error', '→ RLS policy is blocking your read. Check policies in Step 4.');
+  } else if (!rlsCheck?.length && dbCheck?.length) {
+    log('summary', 'warning', '→ Profile exists but session_id mismatch. Run dashboard backfill or UPDATE session_id.');
+  } else {
+    log('summary', 'success', '→ Everything looks good! Profile should load in dashboard.');
+  }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>
