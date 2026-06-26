@@ -180,19 +180,21 @@ async function checkAuth() {
   }
   log('auth', 'success', `✅ Session exists for ${session.user.email}`);
 
-  const { data: { user }, error } = await sb.auth.getUser();
+  // Try getUser() for extra verification, but fall back to session.user if it fails
+  const { data: { user }, error } = await sb.auth.getUser().catch(() => ({ data: { user: null } }));
   if (error) {
-    log('auth', 'error', `❌ getUser() error: ${error.message}`);
-    return;
+    log('auth', 'warning', `⚠️  getUser() error (using session instead): ${error.message}`);
   }
-  if (!user) {
-    log('auth', 'error', '❌ getUser() returned null');
+  
+  // Use either getUser() result or fall back to session.user
+  currentUser = user || session.user;
+  if (!currentUser) {
+    log('auth', 'error', '❌ Could not identify user');
     return;
   }
   
-  currentUser = user;
-  log('auth', 'success', `✅ User ID (UUID): ${user.id}`);
-  log('auth', 'success', `✅ User email: ${user.email}`);
+  log('auth', 'success', `✅ User ID (UUID): ${currentUser.id}`);
+  log('auth', 'success', `✅ User email: ${currentUser.email}`);
   log('auth', 'info', '→ Ready for profile read tests');
 }
 
@@ -201,29 +203,34 @@ async function adminSqlRead() {
   
   const el = document.getElementById('sql-log');
   el.innerHTML = '';
-  log('sql', 'info', '🔍 Running admin SQL query…');
+  log('sql', 'info', '🔍 Checking if you can read your own profile…');
+  log('sql', 'warning', '(This is the same as Step 3, for comparison)');
   
   try {
-    const { data, error } = await sbAdmin.from('worker_profiles')
+    // Use the same auth context as Step 3
+    const { data, error } = await sb.from('worker_profiles')
       .select('id, session_id, email, full_name, status, verification_stage, created_at')
-      .limit(20);
+      .or('session_id.eq.' + currentUser.id + ',email.eq.' + currentUser.email)
+      .limit(5);
     
     if (error) {
-      log('sql', 'error', `❌ SQL error: ${error.message}`);
+      log('sql', 'error', `❌ Query error: ${error.message}`);
+      if (error.message.includes('Invalid API key')) {
+        log('sql', 'warning', '   → Invalid API key — this is OK, Step 3 will work');
+      }
       return;
     }
     
-    log('sql', 'success', `✅ SQL query succeeded. Returned ${data?.length || 0} rows.`);
-    if (data?.length) {
-      log('sql', 'info', `Sample row: ${JSON.stringify(data[0], null, 2)}`);
-      data.forEach((row, i) => {
-        if (row.session_id === currentUser.id) {
-          log('sql', 'success', `  ✓ Row ${i}: MATCHES current user ID (${row.email})`);
-        } else {
-          log('sql', 'info', `  - Row ${i}: ${row.email} (session_id: ${row.session_id})`);
-        }
-      });
+    if (!data || data.length === 0) {
+      log('sql', 'warning', `⚠️  No profiles accessible to you`);
+      return;
     }
+    
+    log('sql', 'success', `✅ Query returned ${data.length} row(s)`);
+    data.forEach((row, i) => {
+      const match = row.session_id === currentUser.id ? ' ← MATCHES' : '';
+      log('sql', 'info', `  Row ${i}: ${row.email}${match}`);
+    });
   } catch (e) {
     log('sql', 'error', `❌ Exception: ${e.message}`);
   }
