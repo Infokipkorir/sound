@@ -866,10 +866,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentUser = user;
 
   // Update presence
-  await sb.from('user_presence').upsert(
+  console.log('📍 Updating user_presence…');
+  const { error: presenceErr } = await sb.from('user_presence').upsert(
     { user_id: currentUser.id, is_online: true, last_seen: new Date().toISOString() },
     { onConflict: 'user_id' }
-  ).catch(() => {});
+  );
+  if (presenceErr) {
+    console.warn('⚠️  user_presence upsert error:', presenceErr.message);
+    console.warn('   (This table may not exist, but it\'s non-critical)');
+  } else {
+    console.log('✅ user_presence updated');
+  }
 
   try {
     await loadDashboard();
@@ -877,13 +884,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Top-level dashboard crash:', err);
     showToast('err', 'bi-exclamation-circle', 'Dashboard failed to load', err.message);
   }
-  subscribeToRealtime();
+  try {
+    subscribeToRealtime();
+    console.log('✅ Realtime subscriptions active');
+  } catch (err) {
+    console.warn('⚠️  Realtime subscription error:', err.message);
+  }
 });
 
 // ════════════════════════════════════════════════════════
 //  LOAD DASHBOARD
 // ════════════════════════════════════════════════════════
 async function loadDashboard() {
+  console.group("🚀 DASHBOARD LOAD TRACE");
   try {
     console.log('🚀 Dashboard loading…');
     console.log('📌 currentUser.id:', currentUser.id);
@@ -985,7 +998,10 @@ async function loadDashboard() {
       .order('last_message_at', { ascending: false })
       .limit(30);
 
-    if (convErr) console.warn('❌ conversations error:', convErr.message);
+    if (convErr) {
+      console.error('❌ CONVERSATIONS ERROR:', convErr.message, '—', convErr.code);
+      console.error('   This blocks message loading. Check RLS policy on conversations table.');
+    }
     console.log('✅ conversations loaded:', convs?.length || 0, 'threads');
     allConversations = convs || [];
 
@@ -997,7 +1013,13 @@ async function loadDashboard() {
     }
     document.getElementById('stat-messages').textContent = allConversations.length;
 
-    await renderConversationList();
+    try {
+      await renderConversationList();
+      console.log('✅ Conversation list rendered');
+    } catch (renderErr) {
+      console.error('❌ renderConversationList failed:', renderErr.message);
+      document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
+    }
 
     // 3. job_postings (public read policy on status='active')
     console.log('🔍 Loading active job_postings');
@@ -1007,25 +1029,34 @@ async function loadDashboard() {
       .order('created_at', { ascending: false })
       .limit(30);
 
-    if (jobErr) console.warn('❌ job_postings error:', jobErr.message);
+    if (jobErr) {
+      console.error('❌ JOB_POSTINGS ERROR:', jobErr.message, '—', jobErr.code);
+      console.error('   This blocks job listings. Check if job_postings table exists and is readable.');
+    }
     console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
     document.getElementById('stat-jobs').textContent = allJobs.length;
-    renderJobs(allJobs);
-    populateCountyFilter(allJobs);
+    try {
+      renderJobs(allJobs);
+      populateCountyFilter(allJobs);
+      console.log('✅ Jobs rendered');
+    } catch (jobRenderErr) {
+      console.error('❌ renderJobs failed:', jobRenderErr.message);
+      document.getElementById('jobs-list').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load jobs</p></div>';
+    }
 
     // 4. wallets (RLS: user_id = auth.uid())
-    console.log('🔍 Loading wallet for user_id =', currentUser.id);
-    const { data: wallet, error: wErr } = await sb.from('wallets')
+    console.log('🔍 4️⃣ Loading wallet for user_id =', currentUser.id);
+    const { data: walletData, error: wErr } = await sb.from('wallets')
       .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance')
       .eq('user_id', currentUser.id)
-      .maybeSingle();
+      .limit(1);
+    const wallet = walletData?.[0] || null;
 
     console.log('WALLET DATA:', wallet);
     console.log('WALLET ERROR:', wErr);
     if (wErr) console.warn('❌ wallets error:', wErr.message);
-    if (wallet) {
-    } else {
+    if (!wallet) {
       console.log('⚠️  No wallet record exists for this user yet');
     }
     if (wallet) {
@@ -1045,23 +1076,42 @@ async function loadDashboard() {
     }
 
     // 5. payments (RLS: user_id = auth.uid())
+    console.log('🔍 5️⃣ Loading payments for user_id =', currentUser.id);
     const { data: payments, error: pErr } = await sb.from('payments')
       .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(20);
 
-    if (pErr) console.warn('payments:', pErr.message);
-    renderPaymentHistory(payments || []);
+    if (pErr) {
+      console.error('❌ PAYMENTS ERROR:', pErr.message, '—', pErr.code);
+      console.warn('   Payments table may not exist. Using empty list.');
+    }
+    try {
+      renderPaymentHistory(payments || []);
+      console.log('✅ Payment history rendered');
+    } catch (payErr) {
+      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
+    }
 
     // 6. notifications
-    await loadNotifications();
+    console.log('🔍 6️⃣ Loading notifications…');
+    try {
+      await loadNotifications();
+      console.log('✅ Notifications loaded');
+    } catch (notifErr) {
+      console.error('❌ loadNotifications failed:', notifErr.message);
+      document.getElementById('notif-list').innerHTML = '<div class="empty-state"><i class="bi bi-bell"></i><p>Could not load notifications</p></div>';
+    }
 
   } catch (e) {
     console.error('❌ loadDashboard CRASHED:', e.message);
     console.error('Stack:', e.stack);
+    console.groupEnd();
     showToast('err', 'bi-exclamation-circle', 'Dashboard Error', e.message);
   }
+  console.groupEnd();
 }
 
 // ════════════════════════════════════════════════════════
@@ -1384,6 +1434,7 @@ async function payFromWallet() {
 
   // Fetch live wallet balance first
   const { data: wallet, error: wErr } = await sb.from('wallets')
+    console.log("📍 4️⃣ Querying wallets table…");
     .select('balance, account_number')
     .eq('user_id', currentUser.id)
     .maybeSingle();
@@ -1464,7 +1515,13 @@ async function payFromWallet() {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(20);
-    renderPaymentHistory(payments || []);
+    try {
+      renderPaymentHistory(payments || []);
+      console.log('✅ Payment history rendered');
+    } catch (payErr) {
+      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
+    }
 
     showToast('ok', 'bi-check-circle', 'Payment Successful',
       `KES ${amount.toLocaleString('en-KE')} deducted from your wallet.`);
@@ -1543,7 +1600,13 @@ async function createPayment(amount, method, feeType, extra = {}) {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(20);
-    renderPaymentHistory(payments || []);
+    try {
+      renderPaymentHistory(payments || []);
+      console.log('✅ Payment history rendered');
+    } catch (payErr) {
+      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
+    }
   } catch (e) {
     console.warn(e);
   }
@@ -1576,6 +1639,7 @@ function renderPaymentHistory(payments) {
 // ════════════════════════════════════════════════════════
 async function loadNotifications() {
   // notifications SELECT: user_id = auth.uid()
+  console.log('📍 Loading notifications…');
   const { data: notifs, error } = await sb.from('notifications')
     .select('id, type, title, message, is_read, created_at')
     .eq('user_id', currentUser.id)
@@ -1584,7 +1648,11 @@ async function loadNotifications() {
 
   console.log('NOTIFICATIONS DATA:', notifs);
   console.log('NOTIFICATIONS ERROR:', error);
-  if (error) { console.warn('notifications:', error.message); return; }
+  if (error) { 
+    console.error('❌ NOTIFICATIONS ERROR:', error.message, '—', error.code);
+    console.error('   Notifications table may not exist or RLS blocks access.');
+    return; 
+  }
 
   const unread = (notifs || []).filter(n => !n.is_read).length;
   if (unread) {
@@ -1647,7 +1715,13 @@ function subscribeToRealtime() {
         convEl.scrollTop = convEl.scrollHeight;
       }
 
+      try {
       await renderConversationList();
+      console.log('✅ Conversation list rendered');
+    } catch (renderErr) {
+      console.error('❌ renderConversationList failed:', renderErr.message);
+      document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
+    }
     })
     .subscribe();
 
