@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minimal Test</title>
+  <style>
+    body { font-family: monospace; background: #0f1923; color: #e0e0e0; padding: 20px; line-height: 1.8; }
+    .log { padding: 8px; margin: 4px 0; background: #1a2332; border-left: 3px solid #0ea5e9; }
+    .success { border-left-color: #22c55e; }
+    .error { border-left-color: #f43f5e; }
+  </style>
+</head>
+<body>
+  <h1>Minimal Test</h1>
+  <div id="output"></div>
+
+  <script>
+    function log(type, msg) {
+      const el = document.getElementById('output');
+      const div = document.createElement('div');
+      div.className = 'log ' + type;
+      div.textContent = msg;
+      el.appendChild(div);
+      console.log(msg);
+    }
+
+    log('', '1️⃣ Page loaded');
+
+    // Load Supabase
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.onload = () => {
+      log('success', '2️⃣ Supabase JS loaded');
+      testAuth();
+    };
+    script.onerror = () => {
+      log('error', '2️⃣ Failed to load Supabase JS');
+    };
+    document.head.appendChild(script);
+
+    async function testAuth() {
+      const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+      const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+
+      log('', '3️⃣ Creating Supabase client…');
+      const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      log('success', '   ✓ Client created');
+
+      log('', '4️⃣ Getting session…');
+      const { data: { session }, error: sessErr } = await sb.auth.getSession();
+      if (sessErr) {
+        log('error', `   ✗ Error: ${sessErr.message}`);
+        return;
+      }
+      if (!session?.user) {
+        log('error', '   ✗ Not logged in');
+        return;
+      }
+      log('success', `   ✓ Logged in as: ${session.user.email}`);
+      log('success', `   ✓ User ID: ${session.user.id}`);
+
+      log('', '5️⃣ Querying worker_profiles…');
+      const { data, error } = await sb.from('worker_profiles')
+        .select('id, email, full_name, session_id')
+        .eq('session_id', session.user.id)
+        .limit(1);
+
+      if (error) {
+        log('error', `   ✗ Query error: ${error.message}`);
+        log('error', `      Code: ${error.code}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        log('error', '   ✗ Query succeeded but returned 0 rows');
+        return;
+      }
+
+      log('success', `   ✓ Profile found!`);
+      log('success', `      Email: ${data[0].email}`);
+      log('success', `      Name: ${data[0].full_name}`);
+      log('success', `      Session ID: ${data[0].session_id}`);
+      log('', '✅ EVERYTHING WORKS - Dashboard should load!');
+    }
+  </script>
+</body>
+</html>
