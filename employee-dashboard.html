@@ -1433,18 +1433,19 @@ async function payFromWallet() {
   }
 
   // Fetch live wallet balance first
+  console.log("📍 4️⃣ Fetching wallet for payFromWallet…");
   const { data: wallet, error: wErr } = await sb.from('wallets')
-    console.log("📍 4️⃣ Querying wallets table…");
     .select('balance, account_number')
     .eq('user_id', currentUser.id)
-    .maybeSingle();
+    .limit(1);
+  const walletRow = wallet?.[0] || null;
 
-  if (wErr || !wallet) {
+  if (wErr || !walletRow) {
     showToast('err', 'bi-exclamation-circle', 'Wallet Error', 'Could not read your wallet. Please try another payment method.');
     return;
   }
 
-  const balance = parseFloat(wallet.balance || 0);
+  const balance = parseFloat(walletRow.balance || 0);
   if (balance < amount) {
     showToast('err', 'bi-exclamation-circle', 'Insufficient Balance',
       `Your wallet has KES ${balance.toLocaleString('en-KE')} but KES ${amount.toLocaleString('en-KE')} is required.`);
