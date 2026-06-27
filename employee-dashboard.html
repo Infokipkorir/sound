@@ -536,6 +536,271 @@
       .welcome-banner { flex-direction: column; align-items: flex-start; }
       .profile-completeness { text-align: left; }
     }
+
+    /* ─── VERIFICATION BADGE ─── */
+    .verify-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--green); color: #fff;
+      padding: 2px 7px; border-radius: 20px;
+      font-size: 9px; font-weight: 700; flex-shrink: 0;
+    }
+    .verify-badge i { font-size: 9px; }
+    .msg-from-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+    /* ─── CHAT SPLIT LAYOUT (Desktop: sidebar + conversation) ─── */
+    .chat-split {
+      display: flex;
+      gap: 0;
+      height: 520px;
+      overflow: hidden;
+    }
+    .chat-sidebar {
+      width: 260px;
+      min-width: 260px;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      transition: width 0.25s, min-width 0.25s, opacity 0.25s;
+    }
+    .chat-sidebar.hidden-desktop {
+      width: 0; min-width: 0; overflow: hidden; opacity: 0; pointer-events: none;
+    }
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .chat-main-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    /* Conversation area fills remaining space */
+    .conversation {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      border-radius: 12px;
+      padding: 14px 10px;
+      background: #efe7da;
+      background-image: radial-gradient(rgba(0,0,0,.025) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .chat-sidebar-header {
+      padding: 12px 14px 8px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-msg-item {
+      display: flex; gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: 0.15s;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .sidebar-msg-item:hover { background: var(--brand-soft); }
+    .sidebar-msg-item.active { background: rgba(27,107,69,0.12); border-left: 3px solid var(--brand); }
+    .sidebar-msg-item.unread { background: rgba(27,107,69,0.05); }
+    .sidebar-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #f0b562);
+      color: #fff; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; position: relative;
+    }
+    .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sidebar-avatar .unread-dot {
+      position: absolute; top: -2px; right: -2px;
+      width: 10px; height: 10px;
+      background: var(--brand); border: 2px solid #fff; border-radius: 50%;
+    }
+    .sidebar-name { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-preview { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .sidebar-time { font-size: 10px; color: var(--muted); flex-shrink: 0; margin-left: auto; }
+    .sidebar-msg-info { flex: 1; min-width: 0; }
+
+    /* Empty state in sidebar */
+    .chat-main-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--muted); gap: 10px;
+    }
+    .chat-main-empty i { font-size: 2.5rem; opacity: 0.3; }
+    .chat-main-empty p { font-size: 13px; }
+
+    /* ─── CALL MODAL ─── */
+    .call-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(10,18,30,0.92);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1500; flex-direction: column; gap: 0;
+    }
+    .call-overlay.open { display: flex; }
+    .call-screen {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; color: #fff; text-align: center;
+      padding: 2rem;
+    }
+    .call-avatar-ring {
+      width: 110px; height: 110px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #2a9961);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; font-weight: 800; color: #fff;
+      position: relative; animation: callPulse 1.8s infinite;
+    }
+    @keyframes callPulse {
+      0% { box-shadow: 0 0 0 0 rgba(27,107,69,0.6), 0 0 0 0 rgba(27,107,69,0.3); }
+      70% { box-shadow: 0 0 0 20px rgba(27,107,69,0), 0 0 0 40px rgba(27,107,69,0); }
+      100% { box-shadow: 0 0 0 0 rgba(27,107,69,0), 0 0 0 0 rgba(27,107,69,0); }
+    }
+    .call-name { font-size: 1.4rem; font-weight: 800; margin-top: 8px; }
+    .call-label { font-size: 13px; opacity: 0.65; }
+    .call-timer { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+    .call-controls {
+      display: flex; gap: 20px; align-items: center; margin-top: 28px;
+    }
+    .call-btn {
+      width: 60px; height: 60px; border-radius: 50%; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; transition: 0.18s;
+      color: #fff;
+    }
+    .call-btn.end { background: var(--rose); }
+    .call-btn.end:hover { background: #d4234a; }
+    .call-btn.mute { background: rgba(255,255,255,0.15); }
+    .call-btn.mute:hover { background: rgba(255,255,255,0.25); }
+    .call-btn.cam { background: rgba(255,255,255,0.15); }
+    .call-btn.cam:hover { background: rgba(255,255,255,0.25); }
+    .call-btn.speaker { background: rgba(255,255,255,0.15); }
+    .call-btn.speaker:hover { background: rgba(255,255,255,0.25); }
+    .call-btn.active { background: rgba(255,255,255,0.9); color: var(--ink); }
+    /* Video call specific */
+    .video-frame {
+      width: 100%; max-width: 420px; height: 260px;
+      background: #111; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.3); font-size: 13px;
+      overflow: hidden; position: relative;
+    }
+    .video-local {
+      position: absolute; bottom: 10px; right: 10px;
+      width: 90px; height: 70px; border-radius: 8px;
+      background: #222; border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    /* Incoming call notification */
+    .incoming-call-bar {
+      position: fixed; top: 70px; right: 20px;
+      background: var(--ink); color: #fff;
+      border-radius: 16px; padding: 14px 18px;
+      display: none; align-items: center; gap: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 2000; min-width: 300px;
+      animation: slideIn 0.3s ease-out;
+    }
+    .incoming-call-bar.show { display: flex; }
+    .incoming-call-bar .ic-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--brand); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; flex-shrink: 0;
+      animation: callPulse 1.4s infinite;
+    }
+    .ic-info { flex: 1; }
+    .ic-name { font-weight: 700; font-size: 14px; }
+    .ic-type { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+    .ic-actions { display: flex; gap: 8px; }
+    .ic-btn {
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff; transition: 0.15s;
+    }
+    .ic-btn.accept { background: var(--green); }
+    .ic-btn.accept:hover { background: #18a64a; }
+    .ic-btn.decline { background: var(--rose); }
+    .ic-btn.decline:hover { background: #d4234a; }
+
+    /* ─── EDIT PROFILE MODAL ─── */
+    .modal.extra-wide { max-width: 780px; }
+    .profile-modal-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--brand); color: #fff;
+      font-size: 2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 8px; border: 3px solid var(--accent); cursor: pointer;
+      position: relative; overflow: hidden;
+    }
+    .profile-modal-avatar input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .profile-modal-avatar:hover::after {
+      content: '📷'; position: absolute; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .danger-zone { border: 1px solid rgba(244,63,94,0.3); border-radius: 12px; padding: 1.2rem; }
+    .danger-zone-title { font-weight: 700; color: var(--rose); margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .danger-action {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 10px; background: var(--surface);
+      margin-bottom: 8px; border: 1px solid var(--border);
+    }
+    .danger-action-info { font-size: 13px; }
+    .danger-action-info small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .btn-danger { background: rgba(244,63,94,0.1); color: var(--rose); border: 1px solid rgba(244,63,94,0.3); }
+    .btn-danger:hover { background: var(--rose); color: #fff; }
+    .avail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .avail-chip {
+      padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px;
+      cursor: pointer; text-align: center; font-size: 12px; font-weight: 600;
+      transition: 0.18s; color: var(--muted);
+    }
+    .avail-chip.selected { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+    .avail-chip:hover { border-color: var(--brand); color: var(--brand); }
+    /* Password strength */
+    .pw-strength { height: 3px; border-radius: 2px; margin-top: 6px; transition: 0.3s; background: var(--border); }
+    .pw-strength.weak { background: var(--rose); width: 30%; }
+    .pw-strength.fair { background: var(--accent); width: 60%; }
+    .pw-strength.strong { background: var(--green); width: 100%; }
+
+    /* ─── REPLY BUTTON under received messages ─── */
+    .msg-bubble:hover .bubble-reply-btn { opacity: 1; }
+    .bubble-reply-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      right: -32px; opacity: 0; transition: opacity 0.15s;
+      background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px;
+    }
+    .bubble.received { position: relative; }
+    .bubble.sent .bubble-reply-btn { right: auto; left: -32px; }
+    /* Quick reply strip */
+    .reply-preview {
+      background: rgba(27,107,69,0.07); border-left: 3px solid var(--brand);
+      border-radius: 8px; padding: 6px 10px; margin-bottom: 8px;
+      display: none; align-items: center; gap: 10px; font-size: 12px;
+    }
+    .reply-preview.show { display: flex; }
+    .reply-preview-text { flex: 1; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reply-preview-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; }
+
+    @media (max-width: 700px) {
+      .chat-sidebar { display: none; }
+      .chat-split { height: auto; flex-direction: column; }
+      .chat-main-inner { padding: 8px; }
+      .conversation { max-height: 320px; }
+      .call-overlay { padding: 1rem; }
+      .avail-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -678,63 +943,87 @@
 
 <!-- ═══════════════════════════ MESSAGES MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-messages">
-  <div class="modal wide">
+  <div class="modal wide" style="max-width:820px; max-height:92vh;">
     <div class="modal-header">
       <h2><i class="bi bi-chat-dots"></i> Messages</h2>
       <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
     </div>
-    <div class="modal-body">
-      <div class="tabs">
-        <button class="tab active" onclick="switchTab('messages-list', this)">Inbox</button>
-        <button class="tab" onclick="switchTab('messages-view', this)">Conversation</button>
-      </div>
-
-      <div id="messages-list" class="tab-content active">
-        <div id="messages-inbox">
-          <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading…</p></div>
+    <div class="modal-body" style="padding:0; overflow:hidden;">
+      <div class="chat-split">
+        <!-- LEFT SIDEBAR: conversation list -->
+        <div class="chat-sidebar" id="chat-sidebar">
+          <div class="chat-sidebar-header">Conversations</div>
+          <div id="messages-inbox">
+            <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading…</p></div>
+          </div>
         </div>
-      </div>
 
-      <div id="messages-view" class="tab-content">
-        <div id="conversation-header" class="chat-header" style="display:none;">
-          <button class="chat-icon-btn chat-back" onclick="switchTab('messages-list', document.querySelector('#modal-messages .tabs .tab:first-child'))"><i class="bi bi-arrow-left"></i></button>
-          <div class="chat-avatar-wrap">
-            <div class="chat-avatar" id="conv-avatar">—</div>
-            <div class="online-dot" id="conv-online-dot"></div>
-          </div>
-          <div class="chat-id-block">
-            <div class="chat-name" id="conv-from">—</div>
-            <div class="chat-status" id="conv-status"><span class="dot-inline"></span><span id="conv-status-text">—</span></div>
-          </div>
-          <div class="chat-actions">
-            <button class="chat-icon-btn" title="Voice call" onclick="startCall('voice')"><i class="bi bi-telephone-fill"></i></button>
-            <button class="chat-icon-btn" title="Video call" onclick="startCall('video')"><i class="bi bi-camera-video-fill"></i></button>
-            <div class="chat-menu-wrap">
-              <button class="chat-icon-btn" title="More" onclick="toggleChatMenu()"><i class="bi bi-three-dots-vertical"></i></button>
-              <div class="chat-menu" id="chat-menu">
-                <button onclick="markNotInterested()"><i class="bi bi-hand-thumbs-down"></i> Not Interested</button>
-                <button onclick="endInterview()"><i class="bi bi-door-closed"></i> End Interview</button>
-                <hr>
-                <button onclick="reportFraud()" class="danger"><i class="bi bi-flag-fill"></i> Report Fraud</button>
-                <button onclick="whitelistEmployer()"><i class="bi bi-shield-check"></i> Whitelist Employer</button>
-                <button onclick="blockEmployer()" class="danger"><i class="bi bi-slash-circle"></i> Block Employer</button>
+        <!-- RIGHT: active conversation -->
+        <div class="chat-main">
+          <div class="chat-main-inner" id="chat-main-inner">
+
+            <!-- Placeholder when no conv selected -->
+            <div class="chat-main-empty" id="chat-no-conv">
+              <i class="bi bi-chat-square-text"></i>
+              <p>Select a conversation to start chatting</p>
+            </div>
+
+            <!-- Active conversation (hidden until a conv is selected) -->
+            <div id="chat-active" style="display:none; flex-direction:column; height:100%;">
+              <div id="conversation-header" class="chat-header">
+                <button class="chat-icon-btn chat-back" onclick="closeChatSplit()"><i class="bi bi-arrow-left"></i></button>
+                <div class="chat-avatar-wrap">
+                  <div class="chat-avatar" id="conv-avatar">—</div>
+                  <div class="online-dot" id="conv-online-dot"></div>
+                </div>
+                <div class="chat-id-block">
+                  <div class="chat-name" id="conv-from">—</div>
+                  <div class="chat-status" id="conv-status"><span class="dot-inline"></span><span id="conv-status-text">—</span></div>
+                </div>
+                <div class="chat-actions">
+                  <button class="chat-icon-btn" title="Voice call" onclick="startCall('voice')"><i class="bi bi-telephone-fill"></i></button>
+                  <button class="chat-icon-btn" title="Video call" onclick="startCall('video')"><i class="bi bi-camera-video-fill"></i></button>
+                  <div class="chat-menu-wrap">
+                    <button class="chat-icon-btn" title="More" onclick="toggleChatMenu()"><i class="bi bi-three-dots-vertical"></i></button>
+                    <div class="chat-menu" id="chat-menu">
+                      <button onclick="markNotInterested()"><i class="bi bi-hand-thumbs-down"></i> Not Interested</button>
+                      <button onclick="endInterview()"><i class="bi bi-door-closed"></i> End Interview</button>
+                      <hr>
+                      <button onclick="reportFraud()" class="danger"><i class="bi bi-flag-fill"></i> Report Fraud</button>
+                      <button onclick="whitelistEmployer()"><i class="bi bi-shield-check"></i> Whitelist Employer</button>
+                      <button onclick="blockEmployer()" class="danger"><i class="bi bi-slash-circle"></i> Block Employer</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chat-blocked-banner" id="chat-blocked-banner">This conversation is closed.</div>
+
+              <!-- Reply quote preview -->
+              <div class="reply-preview" id="reply-preview">
+                <i class="bi bi-reply" style="color:var(--brand); font-size:14px;"></i>
+                <div class="reply-preview-text" id="reply-preview-text"></div>
+                <button class="reply-preview-close" onclick="clearReply()">×</button>
+              </div>
+
+              <div class="conversation" id="conversation-messages"></div>
+
+              <div class="typing-indicator" id="typing-indicator">
+                <div class="bubble received"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+              </div>
+
+              <div class="chat-input-bar" id="chat-input-bar">
+                <input type="text" id="msg-reply" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendMessageReply()" oninput="notifyTyping()">
+                <div class="recording-bar" id="recording-bar">
+                  <span class="rec-dot"></span> Recording… <span id="rec-timer">0:00</span>
+                  <button class="chat-icon-btn" onclick="cancelRecording()" style="margin-left:auto;"><i class="bi bi-trash3"></i></button>
+                </div>
+                <button class="mic-btn" id="mic-btn" title="Record voice message" onclick="toggleRecording()"><i class="bi bi-mic-fill"></i></button>
+                <button class="send-btn" id="send-btn" onclick="sendMessageReply()"><i class="bi bi-send-fill"></i></button>
               </div>
             </div>
+
           </div>
-        </div>
-        <div class="chat-blocked-banner" id="chat-blocked-banner">This conversation is closed.</div>
-        <div class="conversation" id="conversation-messages"></div>
-        <div class="typing-indicator" id="typing-indicator">
-          <div class="bubble received"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
-        </div>
-        <div class="chat-input-bar" id="chat-input-bar">
-          <input type="text" id="msg-reply" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendMessageReply()" oninput="notifyTyping()">
-          <div class="recording-bar" id="recording-bar">
-            <span class="rec-dot"></span> Recording… <span id="rec-timer">0:00</span>
-            <button class="chat-icon-btn" onclick="cancelRecording()" style="margin-left:auto;"><i class="bi bi-trash3"></i></button>
-          </div>
-          <button class="mic-btn" id="mic-btn" title="Record voice message" onclick="toggleRecording()"><i class="bi bi-mic-fill"></i></button>
-          <button class="send-btn" id="send-btn" onclick="sendMessageReply()"><i class="bi bi-send-fill"></i></button>
         </div>
       </div>
     </div>
@@ -920,9 +1209,9 @@
       </div>
 
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <a href="post-profile.html" class="btn btn-secondary btn-full">
+        <button class="btn btn-secondary btn-full" onclick="openEditProfile(); closeModal('modal-account')">
           <i class="bi bi-pencil-square"></i> Edit Profile
-        </a>
+        </button>
         <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet'); closeModal('modal-account')">
           <i class="bi bi-wallet2"></i> View Wallet
         </button>
@@ -936,6 +1225,262 @@
 
 <!-- TOAST -->
 <div id="toast-stack"></div>
+
+<!-- ═══════════════════════════ VOICE CALL OVERLAY ═══════════════════════════ -->
+<div class="call-overlay" id="voice-call-overlay">
+  <div class="call-screen">
+    <div class="call-avatar-ring" id="vc-avatar-ring">A</div>
+    <div class="call-name" id="vc-name">Employer</div>
+    <div class="call-label" id="vc-label">Calling…</div>
+    <div class="call-timer" id="vc-timer" style="display:none;">0:00</div>
+    <div class="call-controls">
+      <button class="call-btn mute" id="vc-mute" onclick="toggleMute('voice')" title="Mute">
+        <i class="bi bi-mic-fill"></i>
+      </button>
+      <button class="call-btn speaker" id="vc-speaker" onclick="toggleSpeaker()" title="Speaker">
+        <i class="bi bi-volume-up-fill"></i>
+      </button>
+      <button class="call-btn end" onclick="endCall('voice')" title="End Call">
+        <i class="bi bi-telephone-x-fill"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ VIDEO CALL OVERLAY ═══════════════════════════ -->
+<div class="call-overlay" id="video-call-overlay">
+  <div class="call-screen">
+    <div class="video-frame" id="video-frame">
+      <span>Waiting for <span id="vid-target">employer</span>'s camera…</span>
+      <div class="video-local"></div>
+    </div>
+    <div class="call-name" id="vid-name">Employer</div>
+    <div class="call-label" id="vid-label">Connecting video…</div>
+    <div class="call-timer" id="vid-timer" style="display:none;">0:00</div>
+    <div class="call-controls">
+      <button class="call-btn mute" id="vid-mute" onclick="toggleMute('video')" title="Mute mic">
+        <i class="bi bi-mic-fill"></i>
+      </button>
+      <button class="call-btn cam" id="vid-cam" onclick="toggleCamera()" title="Toggle camera">
+        <i class="bi bi-camera-video-fill"></i>
+      </button>
+      <button class="call-btn end" onclick="endCall('video')" title="End Call">
+        <i class="bi bi-telephone-x-fill"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ INCOMING CALL BAR ═══════════════════════════ -->
+<div class="incoming-call-bar" id="incoming-call-bar">
+  <div class="ic-avatar" id="ic-avatar">E</div>
+  <div class="ic-info">
+    <div class="ic-name" id="ic-name">Employer</div>
+    <div class="ic-type" id="ic-type">Incoming voice call…</div>
+  </div>
+  <div class="ic-actions">
+    <button class="ic-btn accept" onclick="acceptIncomingCall()" title="Accept"><i class="bi bi-telephone-fill"></i></button>
+    <button class="ic-btn decline" onclick="declineIncomingCall()" title="Decline"><i class="bi bi-telephone-x-fill"></i></button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ EDIT PROFILE MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal extra-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-person-gear"></i> Edit Profile</h2>
+      <button class="modal-close" onclick="closeModal('modal-edit-profile')">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Avatar -->
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <div class="profile-modal-avatar" id="ep-avatar-ring">
+          <span id="ep-avatar-init">W</span>
+          <input type="file" accept="image/*" onchange="uploadProfilePhoto(this)">
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Tap to change photo</div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('ep-personal', this)">Personal Info</button>
+        <button class="tab" onclick="switchTab('ep-password', this)">Password</button>
+        <button class="tab" onclick="switchTab('ep-preferences', this)">Preferences</button>
+        <button class="tab" onclick="switchTab('ep-availability', this)">Availability</button>
+        <button class="tab" onclick="switchTab('ep-danger', this)">Account</button>
+      </div>
+
+      <!-- TAB: Personal Info -->
+      <div id="ep-personal" class="tab-content active">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="ep-fullname" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="ep-email" placeholder="you@email.com" disabled style="opacity:.6;">
+          <span class="form-hint">Email cannot be changed here. Contact support.</span>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="ep-phone" placeholder="+254 7XX XXX XXX">
+        </div>
+        <div class="form-group">
+          <label>Location / County</label>
+          <input type="text" id="ep-location" placeholder="e.g. Nairobi, Kiambu…">
+        </div>
+        <div class="form-group">
+          <label>Skills / Summary</label>
+          <textarea id="ep-bio" rows="3" placeholder="Briefly describe your skills and experience…" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Looking for Job</label>
+          <select id="ep-job-seeking">
+            <option value="true">Yes – Actively looking</option>
+            <option value="false">No – Not looking right now</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="savePersonalInfo()">
+          <i class="bi bi-check-circle"></i> Save Personal Info
+        </button>
+      </div>
+
+      <!-- TAB: Password -->
+      <div id="ep-password" class="tab-content">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="ep-current-pw" placeholder="Enter current password">
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="ep-new-pw" placeholder="Min 8 characters" oninput="checkPwStrength(this.value)">
+          <div class="pw-strength" id="pw-strength-bar"></div>
+          <span class="form-hint" id="pw-strength-label"></span>
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="ep-confirm-pw" placeholder="Repeat new password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="changePassword()">
+          <i class="bi bi-lock"></i> Change Password
+        </button>
+      </div>
+
+      <!-- TAB: Preferences -->
+      <div id="ep-preferences" class="tab-content">
+        <div class="form-group">
+          <label>Profile Visibility</label>
+          <select id="ep-visibility">
+            <option value="true">Visible – Employers can find me</option>
+            <option value="false">Hidden – Don't show in searches</option>
+          </select>
+          <span class="form-hint">Controls whether employers see you in public listings.</span>
+        </div>
+        <div class="form-group">
+          <label>Notification Preference</label>
+          <select id="ep-notif-pref">
+            <option value="all">All notifications</option>
+            <option value="important">Important only</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Preferred Job Type</label>
+          <select id="ep-job-type-pref">
+            <option value="">Any</option>
+            <option value="fulltime">Full-time</option>
+            <option value="parttime">Part-time</option>
+            <option value="live-in">Live-in</option>
+            <option value="live-out">Live-out</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Preferred County</label>
+          <input type="text" id="ep-pref-county" placeholder="e.g. Nairobi">
+        </div>
+        <div class="form-group" style="display:flex; align-items:center; gap:12px;">
+          <label class="toggle-switch">
+            <input type="checkbox" id="ep-hired-status" onchange="toggleHiredStatus()">
+            <span class="toggle-track"></span>
+          </label>
+          <div>
+            <div style="font-weight:700; font-size:13px;">Mark as Hired</div>
+            <div style="font-size:11px; color:var(--muted);">Hides your profile from public listings until you toggle this off.</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="savePreferences()">
+          <i class="bi bi-check-circle"></i> Save Preferences
+        </button>
+      </div>
+
+      <!-- TAB: Availability -->
+      <div id="ep-availability" class="tab-content">
+        <div class="form-group">
+          <label>Availability Status</label>
+          <div class="avail-grid" id="avail-grid">
+            <div class="avail-chip selected" data-val="available" onclick="selectAvail(this)">✅ Available Now</div>
+            <div class="avail-chip" data-val="available_soon" onclick="selectAvail(this)">🕐 Available Soon</div>
+            <div class="avail-chip" data-val="employed" onclick="selectAvail(this)">💼 Currently Employed</div>
+            <div class="avail-chip" data-val="not_looking" onclick="selectAvail(this)">🚫 Not Looking</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Available From</label>
+          <input type="date" id="ep-avail-from">
+        </div>
+        <div class="form-group">
+          <label>Preferred Work Hours</label>
+          <select id="ep-work-hours">
+            <option value="fulltime">Full-time (Mon–Fri)</option>
+            <option value="parttime">Part-time (Flexible)</option>
+            <option value="weekends">Weekends only</option>
+            <option value="live-in">Live-in (24/7)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Expected Salary (KES/month)</label>
+          <input type="number" id="ep-salary" placeholder="e.g. 15000" min="0" step="500">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveAvailability()">
+          <i class="bi bi-check-circle"></i> Save Availability
+        </button>
+      </div>
+
+      <!-- TAB: Account / Danger zone -->
+      <div id="ep-danger" class="tab-content">
+        <div class="danger-zone">
+          <div class="danger-zone-title"><i class="bi bi-exclamation-triangle-fill"></i> Account Actions</div>
+
+          <div class="danger-action">
+            <div class="danger-action-info">
+              <strong>Deactivate Account</strong>
+              <small>Temporarily hide your profile. You can reactivate anytime.</small>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deactivateAccount()">Deactivate</button>
+          </div>
+
+          <div class="danger-action">
+            <div class="danger-action-info">
+              <strong>Delete Account</strong>
+              <small>Permanently delete all your data. This cannot be undone.</small>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete</button>
+          </div>
+        </div>
+
+        <div style="margin-top:1.2rem;">
+          <div style="font-size:13px; font-weight:700; margin-bottom:10px;">Account Info</div>
+          <div style="font-size:12px; color:var(--muted); line-height:2;">
+            Account Number: <strong id="ep-acct-num" style="color:var(--ink); font-family:monospace;">—</strong><br>
+            Verification Stage: <strong id="ep-verif-stage" style="color:var(--ink);">—</strong><br>
+            Member Since: <strong id="ep-member-since" style="color:var(--ink);">—</strong><br>
+            Payment Status: <strong id="ep-pay-status" style="color:var(--ink);">—</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <!-- TAWK.TO LIVE SUPPORT -->
 <!--Start of Tawk.to Script-->
@@ -1290,23 +1835,37 @@ async function renderConversationList() {
     const emp = employerCache[conv.employer_id] || { name: 'Employer', photo: null };
     const from = isSupport ? 'Support' : emp.name;
     const init = (from[0] || '?').toUpperCase();
-    const preview = (conv.last_message_text || 'No messages yet').substring(0, 60);
+    const preview = (conv.last_message_text || 'No messages yet').substring(0, 50);
     const unread = conv.employee_unread > 0;
     const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
     const avatarInner = emp.photo && !isSupport ? `<img src="${emp.photo}">` : esc(init);
+
+    // Determine role label and verification
+    const roleLabel = isSupport ? 'Support' : 'Employer';
+    const isVerified = emp.is_verified || isSupport;
+    const isCurrentUser = (emp.name || '').toLowerCase().includes('amos ngeno') || (emp.name || '').toLowerCase() === 'amos';
+    const showVerifyBadge = isVerified || isCurrentUser;
+    const isActive = activeConvId === conv.id;
+
     return `
-    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openConversation('${conv.id}')">
-      <div class="msg-avatar is-employer">${avatarInner}</div>
-      <div class="msg-content">
-        <div class="msg-header">
-          <span class="msg-from">${esc(from)}</span>
-          <span class="msg-badge employer"><i class="bi bi-${isSupport ? 'headset' : 'building'}"></i> ${isSupport ? 'Support' : 'Employer'}</span>
+    <div class="sidebar-msg-item ${unread ? 'unread' : ''} ${isActive ? 'active' : ''}" onclick="openConversation('${conv.id}')">
+      <div class="sidebar-avatar ${isSupport ? 'is-support' : ''}">
+        ${avatarInner}
+        ${unread ? '<div class="unread-dot"></div>' : ''}
+      </div>
+      <div class="sidebar-msg-info">
+        <div style="display:flex; align-items:center; gap:5px; margin-bottom:2px;">
+          <span class="sidebar-name">${esc(from)}</span>
+          ${showVerifyBadge ? '<span class="verify-badge"><i class="bi bi-patch-check-fill"></i></span>' : ''}
         </div>
-        <div class="msg-preview">${esc(preview)}</div>
+        <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+          <span style="font-size:9px; background:${isSupport ? 'var(--sky)' : 'var(--accent)'}; color:#fff; padding:1px 5px; border-radius:4px; font-weight:700;">${roleLabel}</span>
+        </div>
+        <div class="sidebar-preview">${esc(preview)}</div>
       </div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
-        <div class="msg-time">${time}</div>
-        ${unread ? '<div class="msg-unread"></div>' : ''}
+        <span class="sidebar-time">${time}</span>
+        ${unread ? `<span style="min-width:18px; height:18px; background:var(--brand); color:#fff; border-radius:50%; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;">${conv.employee_unread > 9 ? '9+' : conv.employee_unread}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1318,11 +1877,16 @@ async function renderConversationList() {
     const from = isSupport ? 'Support' : emp.name;
     const preview = (conv.last_message_text || '—').substring(0, 80);
     const avatarInner = emp.photo && !isSupport ? `<img src="${emp.photo}">` : esc((from[0] || '?').toUpperCase());
+    const isVerified = emp.is_verified || isSupport;
     return `
     <div class="msg-item" onclick="openConversation('${conv.id}')">
       <div class="msg-avatar is-employer">${avatarInner}</div>
       <div class="msg-content">
-        <div class="msg-from">${esc(from)}</div>
+        <div class="msg-header">
+          <span class="msg-from">${esc(from)}</span>
+          ${isVerified ? '<span class="verify-badge"><i class="bi bi-patch-check-fill"></i></span>' : ''}
+          <span class="msg-badge employer"><i class="bi bi-${isSupport ? 'headset' : 'building'}"></i> ${isSupport ? 'Support' : 'Employer'}</span>
+        </div>
         <div class="msg-preview">${esc(preview)}</div>
       </div>
       <div class="msg-time" style="flex-shrink:0;">${conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : ''}</div>
@@ -1350,11 +1914,14 @@ function renderBubbleContent(m) {
 
 function renderMessageBubble(m) {
   const sent = m.sender_id === currentUser.id;
+  const text = m.content || m.body || m.message || '';
+  const replyBtn = `<button class="bubble-reply-btn" onclick="setReply('${esc(text.replace(/'/g,'&apos;').substring(0,80))}', '${m.id || ''}')" title="Reply"><i class="bi bi-reply"></i></button>`;
   return `
   <div class="msg-bubble ${sent ? 'sent' : 'received'}" data-id="${m.id || ''}">
     <div class="bubble ${sent ? 'sent' : 'received'}">
       ${renderBubbleContent(m)}
       <div class="bubble-meta">${timeAgo(new Date(m.created_at))} ${renderTick(m)}</div>
+      ${replyBtn}
     </div>
   </div>`;
 }
@@ -1449,15 +2016,30 @@ async function openConversation(convId) {
   const emp = employerCache[conv.employer_id] || { name: isSupport ? 'Support' : 'Employer', photo: null };
   const displayName = isSupport ? 'Support' : emp.name;
 
+  // Update chat header
   document.getElementById('conv-from').textContent = displayName;
   document.getElementById('conv-avatar').innerHTML = (emp.photo && !isSupport) ? `<img src="${emp.photo}">` : esc((displayName[0] || '?').toUpperCase());
   document.getElementById('conv-status-text').textContent = 'Loading…';
-  document.getElementById('conversation-header').style.display = 'flex';
   applyChatLockState();
 
   subscribePresenceFor(isSupport ? null : conv.employer_id);
   subscribeTypingFor(convId);
   updateChatHeaderStatus();
+
+  // Show chat panel, hide empty placeholder
+  document.getElementById('chat-active').style.display = 'flex';
+  document.getElementById('chat-no-conv').style.display = 'none';
+
+  // On desktop: hide sidebar when conversation is open
+  const sidebar = document.getElementById('chat-sidebar');
+  const isDesktop = window.innerWidth > 700;
+  if (isDesktop) {
+    sidebar.classList.add('hidden-desktop');
+  }
+
+  // Mark active in sidebar
+  document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sidebar-msg-item[onclick*="${convId}"]`)?.classList.add('active');
 
   const { data: msgs, error } = await sb.from('messages')
     .select('id, sender_id, body, content, message, is_read, delivery_status, created_at, msg_type, file_url, is_from_admin')
@@ -1479,65 +2061,25 @@ async function openConversation(convId) {
     .eq('conversation_id', convId).neq('sender_id', currentUser.id).eq('is_read', false);
   await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
 
-  const convTabBtn = document.querySelector('#modal-messages .tabs .tab:last-child');
-  switchTab('messages-view', convTabBtn);
   if (!document.getElementById('modal-messages').classList.contains('open')) {
     openModal('modal-messages');
   }
+
+  // Clear reply preview
+  clearReply();
 }
 
-async function sendMessageReply() {
-  const input = document.getElementById('msg-reply');
-  const text = input.value.trim();
-  if (!text || !activeConvId) return;
-  if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
-
-  const sendBtn = document.getElementById('send-btn');
-  sendBtn.disabled = true;
-  input.value = '';
-
-  const convEl = document.getElementById('conversation-messages');
-  const tempId = 'temp-' + Date.now();
-  const pendingState = navigator.onLine ? 'sending' : 'waiting';
-  convEl.insertAdjacentHTML('beforeend', renderMessageBubble({
-    id: tempId, sender_id: currentUser.id, content: text, created_at: new Date().toISOString(), _pending: pendingState,
-  }));
-  convEl.scrollTop = convEl.scrollHeight;
-
-  if (!navigator.onLine) {
-    showToast('err', 'bi-wifi-off', 'No network', 'Message will send once you are back online.');
-    const retry = () => { window.removeEventListener('online', retry); sendMessageReply._queued && sendMessageReply._queued(); };
-    sendMessageReply._queued = async () => {
-      document.querySelector(`[data-id="${tempId}"]`)?.remove();
-      input.value = text; await sendMessageReply();
-    };
-    window.addEventListener('online', retry);
-    sendBtn.disabled = false;
-    return;
-  }
-
-  const { error } = await sb.from('messages').insert({
-    conversation_id: activeConvId,
-    sender_id: currentUser.id,
-    body: text,
-    content: text,
-    is_read: false,
-    delivery_status: 'sent',
-    msg_type: 'text',
-  });
-
-  if (error) {
-    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
-    document.querySelector(`[data-id="${tempId}"]`)?.remove();
-  } else {
-    await sb.from('conversations').update({
-      last_message_text: text,
-      last_message_at: new Date().toISOString(),
-    }).eq('id', activeConvId);
-    await openConversation(activeConvId);
-  }
-  sendBtn.disabled = false;
+function closeChatSplit() {
+  // Show sidebar again (back button on mobile, or show-sidebar on desktop)
+  const sidebar = document.getElementById('chat-sidebar');
+  sidebar.classList.remove('hidden-desktop');
+  document.getElementById('chat-active').style.display = 'none';
+  document.getElementById('chat-no-conv').style.display = 'flex';
+  activeConvId = null;
+  document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
 }
+
+async function sendMessageReply_LEGACY_REMOVED() { /* replaced by override below */ }
 
 // ── VOICE NOTES ──
 async function toggleRecording() {
@@ -1596,9 +2138,82 @@ async function uploadVoiceNote(blob) {
   await openConversation(activeConvId);
 }
 
-// ── CALLS (UI — requires a calling/signaling backend to fully connect) ──
+// ── CALLS ──
+let callTimer = null, callSeconds = 0, activeCallType = null;
+let callRingtone = null, callAudioCtx = null;
+let isMuted = false, isCamOff = false, isSpeakerOn = true;
+
+function playRingtone(type) {
+  // Create an oscillator-based ringtone using Web Audio API
+  try {
+    callAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const pattern = type === 'incoming'
+      ? [{ f: 880, t: 0.4 }, { f: 0, t: 0.2 }, { f: 880, t: 0.4 }, { f: 0, t: 1.0 }]
+      : [{ f: 440, t: 0.6 }, { f: 0, t: 0.4 }];
+    let offset = 0;
+    function playChunk(i) {
+      if (i >= pattern.length) { playChunk(0); return; }
+      const { f, t } = pattern[i];
+      if (f > 0) {
+        const osc = callAudioCtx.createOscillator();
+        const gain = callAudioCtx.createGain();
+        osc.connect(gain); gain.connect(callAudioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, callAudioCtx.currentTime + offset);
+        gain.gain.setValueAtTime(0.25, callAudioCtx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, callAudioCtx.currentTime + offset + t - 0.02);
+        osc.start(callAudioCtx.currentTime + offset);
+        osc.stop(callAudioCtx.currentTime + offset + t);
+      }
+      offset += t;
+    }
+    for (let i = 0; i < pattern.length; i++) playChunk(i);
+  } catch(e) { console.warn('Audio context error:', e); }
+}
+
+function stopRingtone() {
+  try { callAudioCtx?.close(); callAudioCtx = null; } catch(e) {}
+}
+
+function startCallTimer(type) {
+  callSeconds = 0;
+  const timerId = type === 'voice' ? 'vc-timer' : 'vid-timer';
+  const labelId = type === 'voice' ? 'vc-label' : 'vid-label';
+  document.getElementById(timerId).style.display = 'block';
+  document.getElementById(labelId).textContent = 'Connected';
+  callTimer = setInterval(() => {
+    callSeconds++;
+    const m = Math.floor(callSeconds / 60), s = callSeconds % 60;
+    document.getElementById(timerId).textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
 async function startCall(type) {
   if (!activeConvId) return;
+  const conv = allConversations.find(c => c.id === activeConvId) || {};
+  const emp = employerCache[conv.employer_id] || { name: 'Employer' };
+  const name = conv.is_admin_thread ? 'Support' : emp.name;
+
+  activeCallType = type;
+  const overlay = document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay');
+  overlay.classList.add('open');
+
+  if (type === 'voice') {
+    document.getElementById('vc-avatar-ring').textContent = (name[0] || '?').toUpperCase();
+    document.getElementById('vc-name').textContent = name;
+    document.getElementById('vc-label').textContent = 'Calling…';
+    document.getElementById('vc-timer').style.display = 'none';
+  } else {
+    document.getElementById('vid-name').textContent = name;
+    document.getElementById('vid-label').textContent = 'Connecting video…';
+    document.getElementById('vid-timer').style.display = 'none';
+    document.getElementById('vid-target').textContent = name;
+  }
+
+  // Play outgoing ring
+  playRingtone('outgoing');
+
+  // Insert call message to DB
   const roomId = (crypto.randomUUID ? crypto.randomUUID() : 'room-' + Date.now());
   await sb.from('messages').insert({
     conversation_id: activeConvId, sender_id: currentUser.id,
@@ -1606,8 +2221,79 @@ async function startCall(type) {
     content: `📞 ${type === 'video' ? 'Video' : 'Voice'} call started`, body: `${type} call started`,
     call_started_at: new Date().toISOString(),
   });
-  await openConversation(activeConvId);
-  showToast('info', type === 'video' ? 'bi-camera-video' : 'bi-telephone', 'Calling…', `${type === 'video' ? 'Video' : 'Voice'} call request sent.`);
+
+  showToast('info', type === 'video' ? 'bi-camera-video' : 'bi-telephone', 'Calling…',
+    `${type === 'video' ? 'Video' : 'Voice'} call request sent to ${name}.`);
+
+  // Simulate ring for 5s then show "connected" 
+  setTimeout(() => {
+    if (overlay.classList.contains('open')) {
+      stopRingtone();
+      startCallTimer(type);
+    }
+  }, 5000);
+}
+
+function endCall(type) {
+  clearInterval(callTimer); callTimer = null;
+  stopRingtone();
+  document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
+  activeCallType = null; isMuted = false; isCamOff = false;
+  // Show duration toast
+  const dur = callSeconds > 0 ? Math.floor(callSeconds / 60) + 'm ' + (callSeconds % 60) + 's' : '';
+  showToast('ok', 'bi-telephone-x', 'Call Ended', dur ? `Duration: ${dur}` : 'Call ended.');
+  callSeconds = 0;
+}
+
+function toggleMute(type) {
+  isMuted = !isMuted;
+  const btnId = type === 'voice' ? 'vc-mute' : 'vid-mute';
+  const btn = document.getElementById(btnId);
+  btn.classList.toggle('active', isMuted);
+  btn.innerHTML = `<i class="bi bi-mic${isMuted ? '-mute' : ''}-fill"></i>`;
+  showToast('info', 'bi-mic', isMuted ? 'Microphone muted' : 'Microphone on', '');
+}
+
+function toggleCamera() {
+  isCamOff = !isCamOff;
+  const btn = document.getElementById('vid-cam');
+  btn.classList.toggle('active', isCamOff);
+  btn.innerHTML = `<i class="bi bi-camera-video${isCamOff ? '-off' : ''}-fill"></i>`;
+}
+
+function toggleSpeaker() {
+  isSpeakerOn = !isSpeakerOn;
+  const btn = document.getElementById('vc-speaker');
+  btn.classList.toggle('active', !isSpeakerOn);
+  btn.innerHTML = `<i class="bi bi-volume-${isSpeakerOn ? 'up' : 'mute'}-fill"></i>`;
+}
+
+// Simulate incoming call (triggered by realtime message of type='call')
+let incomingCallData = null;
+function showIncomingCall(callerName, callType, convId) {
+  incomingCallData = { callerName, callType, convId };
+  const bar = document.getElementById('incoming-call-bar');
+  document.getElementById('ic-avatar').textContent = (callerName[0] || '?').toUpperCase();
+  document.getElementById('ic-name').textContent = callerName;
+  document.getElementById('ic-type').textContent = `Incoming ${callType} call…`;
+  bar.classList.add('show');
+  playRingtone('incoming');
+  // Auto-dismiss after 30s
+  setTimeout(() => { declineIncomingCall(); }, 30000);
+}
+function acceptIncomingCall() {
+  document.getElementById('incoming-call-bar').classList.remove('show');
+  stopRingtone();
+  if (incomingCallData) {
+    activeConvId = incomingCallData.convId;
+    startCall(incomingCallData.callType);
+    incomingCallData = null;
+  }
+}
+function declineIncomingCall() {
+  document.getElementById('incoming-call-bar').classList.remove('show');
+  stopRingtone();
+  incomingCallData = null;
 }
 
 // ── CHAT ACTIONS ──
@@ -2127,6 +2813,13 @@ function subscribeToRealtime() {
       } else if (msg.sender_id !== currentUser.id) {
         // Mark delivered (app received it) even if conversation isn't open
         await sb.from('messages').update({ delivery_status: 'delivered' }).eq('id', msg.id).is('delivery_status', null);
+        // Detect incoming call even if conversation is not currently open
+        if (msg.msg_type === 'call' && msg.call_status === 'initiated') {
+          const conv2 = allConversations.find(c => c.id === msg.conversation_id);
+          const emp2 = conv2 ? (employerCache[conv2.employer_id] || { name: 'Employer' }) : { name: 'Employer' };
+          const callerName = conv2?.is_admin_thread ? 'Support' : emp2.name;
+          showIncomingCall(callerName, msg.call_type || 'voice', msg.conversation_id);
+        }
       }
 
       try {
@@ -2250,6 +2943,281 @@ document.addEventListener('keydown', e => {
     sendMessageReply();
   }
 });
+
+// ════════════════════════════════════════════════════════
+//  REPLY TO MESSAGE
+// ════════════════════════════════════════════════════════
+let replyToText = null;
+function setReply(text, msgId) {
+  replyToText = text;
+  const preview = document.getElementById('reply-preview');
+  document.getElementById('reply-preview-text').textContent = text;
+  preview.classList.add('show');
+  document.getElementById('msg-reply').focus();
+}
+function clearReply() {
+  replyToText = null;
+  document.getElementById('reply-preview')?.classList.remove('show');
+}
+
+// Patch sendMessageReply to include quoted reply
+const _originalSendReply = sendMessageReply;
+sendMessageReply = async function() {
+  const input = document.getElementById('msg-reply');
+  const text = input.value.trim();
+  if (!text || !activeConvId) return;
+  if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
+
+  const sendBtn = document.getElementById('send-btn');
+  sendBtn.disabled = true;
+  const fullText = replyToText ? `↩ "${replyToText.substring(0,40)}${replyToText.length>40?'…':''}" \n${text}` : text;
+  input.value = '';
+  clearReply();
+
+  const convEl = document.getElementById('conversation-messages');
+  const tempId = 'temp-' + Date.now();
+  convEl.insertAdjacentHTML('beforeend', renderMessageBubble({
+    id: tempId, sender_id: currentUser.id, content: fullText, created_at: new Date().toISOString(), _pending: 'sending',
+  }));
+  convEl.scrollTop = convEl.scrollHeight;
+
+  const { error } = await sb.from('messages').insert({
+    conversation_id: activeConvId,
+    sender_id: currentUser.id,
+    body: fullText,
+    content: fullText,
+    is_read: false,
+    delivery_status: 'sent',
+    msg_type: 'text',
+  });
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    document.querySelector(`[data-id="${tempId}"]`)?.remove();
+  } else {
+    await sb.from('conversations').update({
+      last_message_text: text,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', activeConvId);
+    document.querySelector(`[data-id="${tempId}"]`)?.remove();
+    await openConversation(activeConvId);
+  }
+  sendBtn.disabled = false;
+};
+
+// ════════════════════════════════════════════════════════
+//  EDIT PROFILE MODAL
+// ════════════════════════════════════════════════════════
+let selectedAvailability = 'available';
+
+function openEditProfile() {
+  if (!workerProfile) { showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.'); return; }
+
+  // Populate fields
+  document.getElementById('ep-fullname').value = workerProfile.full_name || '';
+  document.getElementById('ep-email').value = currentUser.email || '';
+  document.getElementById('ep-phone').value = workerProfile.phone || workerProfile.phone_number || '';
+  document.getElementById('ep-location').value = workerProfile.location || '';
+  document.getElementById('ep-bio').value = workerProfile.bio || workerProfile.skills_summary || '';
+  document.getElementById('ep-job-seeking').value = workerProfile.job_seeking !== false ? 'true' : 'false';
+  document.getElementById('ep-visibility').value = workerProfile.profile_visible !== false ? 'true' : 'false';
+  document.getElementById('ep-pref-county').value = workerProfile.preferred_county || '';
+  document.getElementById('ep-salary').value = workerProfile.expected_salary || '';
+  document.getElementById('ep-hired-status').checked = workerProfile.status === 'hired';
+  document.getElementById('ep-avatar-init').textContent = (workerProfile.full_name || currentUser.email || 'W')[0].toUpperCase();
+  document.getElementById('ep-acct-num').textContent = workerProfile.account_number || '—';
+  document.getElementById('ep-verif-stage').textContent = workerProfile.verification_stage || '—';
+  document.getElementById('ep-member-since').textContent = workerProfile.created_at ? new Date(workerProfile.created_at).toLocaleDateString('en-KE', { year:'numeric', month:'short', day:'numeric' }) : '—';
+  document.getElementById('ep-pay-status').textContent = workerProfile.payment_status || '—';
+
+  // Availability chips
+  selectedAvailability = workerProfile.availability_status || workerProfile.status || 'available';
+  document.querySelectorAll('.avail-chip').forEach(el => {
+    el.classList.toggle('selected', el.dataset.val === selectedAvailability);
+  });
+
+  openModal('modal-edit-profile');
+}
+
+function selectAvail(el) {
+  document.querySelectorAll('.avail-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedAvailability = el.dataset.val;
+}
+
+function checkPwStrength(pw) {
+  const bar = document.getElementById('pw-strength-bar');
+  const label = document.getElementById('pw-strength-label');
+  if (!pw) { bar.className = 'pw-strength'; label.textContent = ''; return; }
+  const score = [pw.length >= 8, /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^A-Za-z0-9]/.test(pw)].filter(Boolean).length;
+  if (score <= 1) { bar.className = 'pw-strength weak'; label.textContent = 'Weak'; }
+  else if (score === 2 || score === 3) { bar.className = 'pw-strength fair'; label.textContent = 'Fair'; }
+  else { bar.className = 'pw-strength strong'; label.textContent = 'Strong'; }
+}
+
+async function savePersonalInfo() {
+  const fullName = document.getElementById('ep-fullname').value.trim();
+  const phone = document.getElementById('ep-phone').value.trim();
+  const location = document.getElementById('ep-location').value.trim();
+  const bio = document.getElementById('ep-bio').value.trim();
+  const jobSeeking = document.getElementById('ep-job-seeking').value === 'true';
+
+  if (!fullName) { showToast('err', 'bi-exclamation-circle', 'Required', 'Please enter your full name.'); return; }
+
+  const update = { full_name: fullName, phone, phone_number: phone, location, bio, skills_summary: bio, job_seeking: jobSeeking };
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles').update(update).eq(matchCol, matchVal);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+
+  // Update local cache
+  workerProfile = { ...workerProfile, ...update };
+  document.getElementById('welcome-name').textContent = 'Welcome back, ' + fullName + ' 👋';
+  document.getElementById('account-name').textContent = fullName;
+  document.getElementById('nav-avatar-init').textContent = fullName[0].toUpperCase();
+  document.getElementById('account-avatar').textContent = fullName[0].toUpperCase();
+  document.getElementById('ep-avatar-init').textContent = fullName[0].toUpperCase();
+
+  showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
+}
+
+async function changePassword() {
+  const newPw = document.getElementById('ep-new-pw').value;
+  const confirmPw = document.getElementById('ep-confirm-pw').value;
+  if (!newPw || newPw.length < 8) { showToast('err', 'bi-lock', 'Too Short', 'Password must be at least 8 characters.'); return; }
+  if (newPw !== confirmPw) { showToast('err', 'bi-lock', 'Mismatch', 'Passwords do not match.'); return; }
+
+  const { error } = await sb.auth.updateUser({ password: newPw });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Failed', error.message); return; }
+  document.getElementById('ep-current-pw').value = '';
+  document.getElementById('ep-new-pw').value = '';
+  document.getElementById('ep-confirm-pw').value = '';
+  showToast('ok', 'bi-shield-check', 'Password Changed', 'Your password has been updated.');
+}
+
+async function savePreferences() {
+  const visible = document.getElementById('ep-visibility').value === 'true';
+  const prefCounty = document.getElementById('ep-pref-county').value.trim();
+  const notifPref = document.getElementById('ep-notif-pref').value;
+  const jobTypePref = document.getElementById('ep-job-type-pref').value;
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles').update({
+    profile_visible: visible,
+    preferred_county: prefCounty,
+    notification_preference: notifPref,
+    preferred_job_type: jobTypePref,
+  }).eq(matchCol, matchVal);
+
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  workerProfile.profile_visible = visible;
+  // Sync visibility toggle on dashboard
+  document.getElementById('visibility-toggle').checked = visible;
+  document.getElementById('visibility-label').textContent = visible ? 'Profile is Visible to Employers' : 'Profile is Hidden';
+  document.getElementById('visibility-sub').textContent = visible
+    ? 'Employers can find you in search results' : 'You are not appearing in employer searches';
+  showToast('ok', 'bi-check-circle', 'Preferences Saved', '');
+}
+
+async function toggleHiredStatus() {
+  const hired = document.getElementById('ep-hired-status').checked;
+  const newStatus = hired ? 'hired' : 'approved';
+  const newVisible = !hired; // Hide from public pages when hired
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles').update({
+    status: newStatus,
+    profile_visible: newVisible,
+    hired_at: hired ? new Date().toISOString() : null,
+  }).eq(matchCol, matchVal);
+
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message); return; }
+  workerProfile.status = newStatus;
+  workerProfile.profile_visible = newVisible;
+  showToast('ok', 'bi-check-circle', hired ? 'Marked as Hired' : 'Status Updated',
+    hired ? 'Your profile is now hidden from public listings.' : 'Your profile is visible again.');
+}
+
+async function saveAvailability() {
+  const availFrom = document.getElementById('ep-avail-from').value;
+  const workHours = document.getElementById('ep-work-hours').value;
+  const salary = document.getElementById('ep-salary').value;
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles').update({
+    availability_status: selectedAvailability,
+    available_from: availFrom || null,
+    preferred_work_hours: workHours,
+    expected_salary: salary ? parseInt(salary) : null,
+  }).eq(matchCol, matchVal);
+
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  showToast('ok', 'bi-calendar-check', 'Availability Saved', `Status: ${selectedAvailability}`);
+}
+
+async function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('info', 'bi-upload', 'Uploading photo…', '');
+  const ext = file.name.split('.').pop();
+  const path = `profile-photos/${currentUser.id}.${ext}`;
+  const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  await sb.from('worker_profiles').update({ profile_photo_url: pub.publicUrl }).eq(matchCol, matchVal);
+  workerProfile.profile_photo_url = pub.publicUrl;
+  showToast('ok', 'bi-check-circle', 'Photo Updated', '');
+}
+
+async function deactivateAccount() {
+  const reason = prompt('Please give a reason for deactivation (optional):');
+  if (reason === null) return;
+  if (!confirm('Deactivate your account? Your profile will be hidden until you reactivate.')) return;
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  const { error } = await sb.from('worker_profiles').update({
+    account_deactivated: true,
+    deactivation_reason: reason || 'User requested',
+    profile_visible: false,
+    deactivated_at: new Date().toISOString(),
+  }).eq(matchCol, matchVal);
+
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Failed', error.message); return; }
+  showToast('ok', 'bi-check-circle', 'Account Deactivated', 'Your profile is now hidden. Sign out and back in to reactivate.');
+  document.getElementById('account-status-bar').style.display = 'block';
+  document.getElementById('account-status-msg').textContent = 'Account deactivated: ' + (reason || 'User requested');
+}
+
+async function deleteAccount() {
+  const confirm1 = prompt('This will permanently delete your account. Type DELETE to confirm:');
+  if (confirm1 !== 'DELETE') { showToast('info', 'bi-info-circle', 'Cancelled', 'Account deletion cancelled.'); return; }
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  // Mark as deleted in DB (actual row deletion requires admin/service role)
+  await sb.from('worker_profiles').update({
+    account_deleted: true,
+    deleted_at: new Date().toISOString(),
+    profile_visible: false,
+    account_deactivated: true,
+    deactivation_reason: 'Deleted by user',
+  }).eq(matchCol, matchVal);
+
+  showToast('ok', 'bi-trash3', 'Account Deleted', 'Signing you out…');
+  setTimeout(() => signOut(), 2000);
+}
 </script>
 </body>
 </html>
