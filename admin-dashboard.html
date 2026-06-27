@@ -1034,7 +1034,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
 // INIT
 // ============================================================
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4MzY4MTMsImV4cCI6MjAzMTQxMjgxM30.JRU4C_QlSQg0LwJ6eSyT7oXQV-dAjvqaXYCqqjnlh0g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
@@ -1121,8 +1121,8 @@ function setupRealtimeSubscriptions(){
 async function loadAll(){
   try{
     const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr]=await Promise.all([
-      sb.from('worker_profiles').select('*').order('created_at',{ascending:false}),
-      sb.from('employer_profiles').select('*').order('created_at',{ascending:false}),
+      sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
+      sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
       sb.from('conversations').select('*').order('last_message_at',{ascending:false}).limit(100),
       sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(50),
@@ -1835,6 +1835,7 @@ async function deleteEmployer(id){
   if(!confirm('Delete this employer?'))return;
   const e=allEmployers.find(e=>e.id===id);
   await sb.from('trash_bin').insert({entity_type:'employer_profile',entity_id:id,entity_data:e,deleted_by:currentUser.id});
+  await sb.from('employer_profiles').update({is_deleted:true}).eq('id',id);
   allEmployers=allEmployers.filter(e=>e.id!==id);renderEmployers();showToast('ok','Moved to trash');
 }
 async function toggleUserActive(id,isActive){
