@@ -1107,7 +1107,7 @@ async function submitAnonEmployee(){
 /* ── DB FETCH: WORKERS ── */
 async function loadWorkers(){
   const {data,error}=await sb.from('worker_profiles')
-    .select('id,full_name,job_title,preferred_role,county,current_town,key_skills,salary_min,salary_max,salary_range,is_verified,created_at,submitted_at,account_deactivated,is_deleted,profile_visible,status')
+    .select('id,full_name,job_title,county,skills,salary_min,salary_max,is_verified,created_at,account_deactivated,is_deleted')
     .eq('account_deactivated',false)
     .eq('is_deleted',false)
     .order('created_at',{ascending:false})
@@ -1116,44 +1116,34 @@ async function loadWorkers(){
   const feed=document.getElementById('workers-feed');
   const badge=document.getElementById('workers-badge');
 
-  if(error){
-    console.error('Workers error:',error);
-    feed.innerHTML='<div class="feed-empty"><i class="bi bi-exclamation-circle"></i>Could not load profiles.</div>';
-    return;
-  }
-  if(!data||data.length===0){
+  if(error||!data||data.length===0){
     feed.innerHTML='<div class="feed-empty"><i class="bi bi-person-slash"></i>No worker profiles yet. Be the first!</div>';
     badge.textContent='0 workers';
+    animateCounter('stat-workers',0);
     return;
   }
 
   badge.textContent=data.length+' workers';
+  animateCounter('stat-workers',data.length);
 
   feed.innerHTML=data.map(w=>{
-    // key_skills is a comma-separated text field
-    const skillsRaw = w.key_skills||'';
-    const skills = skillsRaw.split(',').map(s=>s.trim()).filter(Boolean);
-    const role = w.job_title || w.preferred_role || 'Domestic Worker';
-    const location = w.current_town ? w.current_town+(w.county?', '+w.county:'') : (w.county||'Kenya');
-    const ago = timeAgo(w.created_at||w.submitted_at);
-    // salary_range is text like "15000-25000", fall back to min/max
-    let salDisplay = salary(w.salary_min, w.salary_max);
-    if(salDisplay==='Negotiable' && w.salary_range) salDisplay = 'KES '+w.salary_range+'/mo';
+    const skills=Array.isArray(w.skills)?w.skills:(w.skills?JSON.parse(w.skills):[]);
+    const ago=timeAgo(w.created_at);
     return `
-    <div class="card" onclick="openHireModal('${w.id}','${esc(w.full_name||'Worker')}','${esc(role)}')">
+    <div class="card" onclick="openHireModal('${w.id}','${esc(w.full_name||'Worker')}','${esc(w.job_title||'')}')">
       <div class="card-header">
         <div class="card-avatar">${initials(w.full_name)}</div>
         <div class="card-meta">
           <div class="card-title">${esc(w.full_name||'—')}</div>
-          <div class="card-subtitle">${esc(role)} &middot; ${esc(location)}</div>
+          <div class="card-subtitle">${esc(w.job_title||'—')} &middot; ${esc(w.county||'Kenya')}</div>
         </div>
         ${w.is_verified?'<div class="card-verified"><i class="bi bi-check"></i></div>':''}
       </div>
-      ${skills.length?'<div class="card-tags">'+skills.slice(0,4).map(s=>'<span class="tag">'+esc(s)+'</span>').join('')+'</div>':''}
-      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salDisplay}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
+      <div class="card-tags">${skills.slice(0,4).map(s=>'<span class="tag">'+esc(s)+'</span>').join('')}</div>
+      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(w.salary_min,w.salary_max)}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
       <div class="card-footer">
-        <button class="btn-small green" onclick="event.stopPropagation();openHireModal('${w.id}','${esc(w.full_name||'')}','${esc(role)}')"><i class="bi bi-person-check-fill"></i> Hire</button>
-        <button class="btn-small outline" onclick="event.stopPropagation();openHireModal('${w.id}','${esc(w.full_name||'')}','${esc(role)}')"><i class="bi bi-chat-fill"></i> Contact</button>
+        <button class="btn-small green" onclick="event.stopPropagation();openHireModal('${w.id}','${esc(w.full_name||'')}','${esc(w.job_title||'')}')"><i class="bi bi-person-check-fill"></i> Hire</button>
+        <button class="btn-small outline" onclick="event.stopPropagation();openHireModal('${w.id}','${esc(w.full_name||'')}','${esc(w.job_title||'')}')"><i class="bi bi-chat-fill"></i> Contact</button>
       </div>
     </div>`;
   }).join('');
@@ -1162,7 +1152,7 @@ async function loadWorkers(){
 /* ── DB FETCH: JOBS ── */
 async function loadJobs(){
   const {data,error}=await sb.from('job_postings')
-    .select('id,title,company_name,county,location,job_type,work_type,job_role,category,salary_min,salary_max,salary_range,status,created_at,is_urgent,is_featured')
+    .select('id,title,company_name,county,job_type,role,salary_min,salary_max,status,created_at,is_urgent')
     .eq('status','active')
     .order('created_at',{ascending:false})
     .limit(6);
@@ -1170,43 +1160,34 @@ async function loadJobs(){
   const feed=document.getElementById('jobs-feed');
   const badge=document.getElementById('jobs-badge');
 
-  if(error){
-    console.error('Jobs error:',error);
-    feed.innerHTML='<div class="feed-empty"><i class="bi bi-exclamation-circle"></i>Could not load jobs.</div>';
-    return;
-  }
-  if(!data||data.length===0){
+  if(error||!data||data.length===0){
     feed.innerHTML='<div class="feed-empty"><i class="bi bi-briefcase"></i>No active jobs right now. Check back soon!</div>';
     badge.textContent='0 open';
+    animateCounter('stat-jobs',0);
     return;
   }
 
   badge.textContent=data.length+' open';
+  animateCounter('stat-jobs',data.length);
 
   feed.innerHTML=data.map(j=>{
-    const company = j.company_name||'Employer';
-    const ago = timeAgo(j.created_at);
-    const jobLocation = j.location||(j.county||'Kenya');
-    const role = j.job_role||j.category||'General';
-    const type = j.job_type||j.work_type||'Full Time';
-    let salDisplay = salary(j.salary_min, j.salary_max);
-    if(salDisplay==='Negotiable' && j.salary_range) salDisplay = 'KES '+j.salary_range+'/mo';
+    const company=j.company_name||'Employer';
+    const ago=timeAgo(j.created_at);
     return `
     <div class="card" onclick="openApplyModal('${j.id}','${esc(j.title||'')}','${esc(company)}')">
       <div class="card-header">
         <div class="card-avatar job">${initials(company)}</div>
         <div class="card-meta">
           <div class="card-title">${esc(j.title||'—')}</div>
-          <div class="card-subtitle">${esc(company)} &middot; ${esc(jobLocation)}</div>
+          <div class="card-subtitle">${esc(company)} &middot; ${esc(j.county||'Kenya')}</div>
         </div>
         ${j.is_urgent?'<span class="tag urgent" style="flex-shrink:0">🔥 Urgent</span>':''}
-        ${j.is_featured&&!j.is_urgent?'<span class="tag blue" style="flex-shrink:0">⭐ Featured</span>':''}
       </div>
       <div class="card-tags">
-        <span class="tag blue">${esc(role)}</span>
-        <span class="tag">${esc(type)}</span>
+        <span class="tag blue">${esc(j.role||'General')}</span>
+        <span class="tag">${esc(j.job_type||'Full Time')}</span>
       </div>
-      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salDisplay}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
+      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max)}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
       <div class="card-footer">
         <button class="btn-small blue" onclick="event.stopPropagation();openApplyModal('${j.id}','${esc(j.title||'')}','${esc(company)}')"><i class="bi bi-send-fill"></i> Apply Now</button>
         <button class="btn-small outline" onclick="event.stopPropagation();openApplyModal('${j.id}','${esc(j.title||'')}','${esc(company)}')"><i class="bi bi-eye-fill"></i> View Job</button>
@@ -1222,9 +1203,9 @@ async function loadStats(){
     sb.from('job_postings').select('*',{count:'exact',head:true}).eq('status','active'),
     sb.from('employer_profiles').select('*',{count:'exact',head:true})
   ]);
-  animateCounter('stat-workers', wc||0);
-  animateCounter('stat-jobs',    jc||0);
-  animateCounter('stat-employers', ec||0);
+  if(wc) animateCounter('stat-workers',wc);
+  if(jc) animateCounter('stat-jobs',jc);
+  if(ec) animateCounter('stat-employers',ec);
 }
 
 /* ── MODAL OPENERS ── */
