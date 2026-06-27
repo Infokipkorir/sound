@@ -1192,32 +1192,166 @@
 
 <!-- ═══════════════════════════ ACCOUNT MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-account">
-  <div class="modal">
+  <div class="modal" style="max-width:420px;">
     <div class="modal-header">
       <h2><i class="bi bi-person-circle"></i> My Account</h2>
       <button class="modal-close" onclick="closeModal('modal-account')">×</button>
     </div>
-    <div class="modal-body">
-      <div style="text-align:center; padding:1.5rem 0;">
-        <div style="width:72px; height:72px; border-radius:50%; background:var(--brand); color:#fff; font-size:1.8rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; border:3px solid var(--accent);" id="account-avatar">W</div>
-        <div style="font-size:1.1rem; font-weight:800; margin-bottom:4px;" id="account-name">—</div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:4px;" id="account-email">—</div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:1.5rem;" id="account-role">Employee</div>
-        <div id="account-status-bar" style="display:none; padding:10px; background:rgba(244,63,94,.08); border:1px solid rgba(244,63,94,.2); border-radius:10px; font-size:12px; color:var(--rose); margin-bottom:1.2rem;">
-          <i class="bi bi-exclamation-triangle-fill"></i> <span id="account-status-msg"></span>
+    <div class="modal-body" style="padding:0;">
+
+      <!-- Profile Hero Card -->
+      <div style="background:linear-gradient(135deg,var(--brand-dark),var(--brand)); padding:2rem 1.5rem 1.5rem; text-align:center; position:relative;">
+        <div id="account-avatar" style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.2);color:#fff;font-size:2rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.4);backdrop-filter:blur(4px);">W</div>
+        <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:3px;" id="account-name">—</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-bottom:6px;" id="account-email">—</div>
+        <div id="account-role-badge" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;">
+          <i class="bi bi-person-badge-fill"></i> <span id="account-role">Employee</span>
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <button class="btn btn-secondary btn-full" onclick="openEditProfile(); closeModal('modal-account')">
-          <i class="bi bi-pencil-square"></i> Edit Profile
+      <!-- Status bar (deactivated / issues) -->
+      <div id="account-status-bar" style="display:none;margin:12px 16px 0;padding:10px 12px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.25);border-radius:10px;font-size:12px;color:var(--rose);">
+        <i class="bi bi-exclamation-triangle-fill"></i> <span id="account-status-msg"></span>
+      </div>
+
+      <!-- Quick info cards row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px 16px 0;">
+        <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:10px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Verification</div>
+          <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-verif-badge">—</div>
+        </div>
+        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.2);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Payment</div>
+          <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-pay-badge">—</div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;flex-direction:column;gap:6px;padding:16px;">
+        <button class="btn btn-secondary btn-full" onclick="launchEditProfile(event)" style="justify-content:flex-start;gap:12px;">
+          <span style="width:32px;height:32px;border-radius:8px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-pencil-square" style="color:var(--brand);"></i></span>
+          <span>
+            <span style="display:block;font-weight:700;">Edit Profile</span>
+            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Update name, photo, skills & availability</span>
+          </span>
+          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
         </button>
-        <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet'); closeModal('modal-account')">
-          <i class="bi bi-wallet2"></i> View Wallet
+
+        <button class="btn btn-secondary btn-full" onclick="launchAccountSettings(event)" style="justify-content:flex-start;gap:12px;">
+          <span style="width:32px;height:32px;border-radius:8px;background:rgba(139,92,246,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-gear" style="color:var(--violet);"></i></span>
+          <span>
+            <span style="display:block;font-weight:700;">Account Settings</span>
+            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Password, deactivate or delete account</span>
+          </span>
+          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
         </button>
-        <button class="btn btn-primary btn-full" onclick="signOut()" style="margin-top:4px;">
-          <i class="bi bi-box-arrow-right"></i> Sign Out
+
+        <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet'); closeModal('modal-account')" style="justify-content:flex-start;gap:12px;">
+          <span style="width:32px;height:32px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-wallet2" style="color:var(--accent);"></i></span>
+          <span>
+            <span style="display:block;font-weight:700;">Wallet & Payments</span>
+            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Balance, fees & payment history</span>
+          </span>
+          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
         </button>
+
+        <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+
+        <button class="btn btn-full" onclick="signOut()" style="background:rgba(244,63,94,.08);color:var(--rose);border:1px solid rgba(244,63,94,.2);justify-content:flex-start;gap:12px;">
+          <span style="width:32px;height:32px;border-radius:8px;background:rgba(244,63,94,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-box-arrow-right" style="color:var(--rose);"></i></span>
+          <span style="font-weight:700;">Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ACCOUNT SETTINGS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-account-settings">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-gear"></i> Account Settings</h2>
+      <button class="modal-close" onclick="closeModal('modal-account-settings')">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Change Password Section -->
+      <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.15);border-radius:14px;padding:1.2rem;margin-bottom:1rem;">
+        <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:1rem;color:var(--brand);">
+          <i class="bi bi-shield-lock-fill"></i> Change Password
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="as-new-pw" placeholder="Min 8 characters" oninput="checkPwStrengthAs(this.value)">
+          <div class="pw-strength" id="as-pw-bar"></div>
+          <span class="form-hint" id="as-pw-label"></span>
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <input type="password" id="as-confirm-pw" placeholder="Repeat new password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="changePasswordAs()">
+          <i class="bi bi-lock"></i> Update Password
+        </button>
+      </div>
+
+      <!-- Deactivate Section -->
+      <div style="border:1px solid rgba(232,160,64,.3);border-radius:14px;padding:1.2rem;margin-bottom:1rem;">
+        <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:6px;color:var(--accent);">
+          <i class="bi bi-pause-circle-fill"></i> Deactivate Account
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6;">Temporarily pauses your account. Your profile will be hidden from employers and you will not be able to log in until you contact support to reactivate.</p>
+        <div class="form-group">
+          <label>Reason <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+          <select id="as-deact-reason">
+            <option value="">Select a reason…</option>
+            <option value="Taking a break">Taking a break</option>
+            <option value="Currently employed">Currently employed</option>
+            <option value="Personal reasons">Personal reasons</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Additional notes <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+          <textarea id="as-deact-note" rows="2" placeholder="Any extra details…" style="resize:vertical;"></textarea>
+        </div>
+        <button class="btn btn-full" onclick="openConfirmModal('deactivate')" style="background:rgba(232,160,64,.12);color:var(--accent);border:1px solid rgba(232,160,64,.3);">
+          <i class="bi bi-pause-circle"></i> Deactivate My Account
+        </button>
+      </div>
+
+      <!-- Delete Section -->
+      <div style="border:1px solid rgba(244,63,94,.3);border-radius:14px;padding:1.2rem;">
+        <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:6px;color:var(--rose);">
+          <i class="bi bi-trash3-fill"></i> Delete Account
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6;">Permanently deletes your profile and all associated data. You will be signed out immediately. <strong style="color:var(--rose);">This cannot be undone.</strong></p>
+        <button class="btn btn-danger btn-full" onclick="openConfirmModal('delete')">
+          <i class="bi bi-trash3"></i> Permanently Delete Account
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CONFIRM ACTION MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-confirm-action">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header" id="confirm-header">
+      <h2 id="confirm-title"><i class="bi bi-exclamation-triangle"></i> Confirm Action</h2>
+      <button class="modal-close" onclick="closeModal('modal-confirm-action')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-body" style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.7;"></p>
+      <!-- Delete requires typing DELETE -->
+      <div id="confirm-type-wrap" style="display:none;" class="form-group">
+        <label>Type <strong>DELETE</strong> to confirm</label>
+        <input type="text" id="confirm-type-input" placeholder="DELETE" style="font-family:monospace;text-transform:uppercase;">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-confirm-action')">Cancel</button>
+        <button class="btn btn-full" id="confirm-action-btn" style="flex:1;" onclick="executeConfirmAction()">Confirm</button>
       </div>
     </div>
   </div>
@@ -1643,6 +1777,11 @@ async function loadDashboard() {
     document.getElementById('account-name').textContent = name;
     document.getElementById('account-email').textContent = currentUser.email;
     document.getElementById('account-role').textContent = 'Employee · ' + (workerProfile?.verification_stage || 'unverified');
+    // New account modal info badges
+    const verifEl = document.getElementById('acct-verif-badge');
+    const payEl = document.getElementById('acct-pay-badge');
+    if (verifEl) verifEl.textContent = workerProfile?.verification_stage || 'Unverified';
+    if (payEl) payEl.textContent = workerProfile?.payment_status || 'Pending';
 
     // Profile completeness
     const fields = ['full_name','email','profile_visible','status','account_number','interview_fee_paid','first_salary_fee_paid'];
@@ -2932,10 +3071,148 @@ function showToast(type, icon, title, body) {
   setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 4500);
 }
 
-// Close modals on overlay click
+// Close modals on overlay click — only if clicking the overlay itself (not a button inside)
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
+
+// Helper: open a modal without the click event bubbling to the overlay
+function launchEditProfile(e) {
+  if (e) e.stopPropagation();
+  closeModal('modal-account');
+  // Small delay so the close animation doesn't fight the open
+  setTimeout(() => openEditProfile(), 50);
+}
+
+function launchAccountSettings(e) {
+  if (e) e.stopPropagation();
+  closeModal('modal-account');
+  setTimeout(() => openModal('modal-account-settings'), 50);
+}
+
+// Password change from Account Settings modal
+function checkPwStrengthAs(pw) {
+  const bar = document.getElementById('as-pw-bar');
+  const label = document.getElementById('as-pw-label');
+  if (!pw) { bar.className = 'pw-strength'; label.textContent = ''; return; }
+  const score = [pw.length >= 8, /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^A-Za-z0-9]/.test(pw)].filter(Boolean).length;
+  if (score <= 1) { bar.className = 'pw-strength weak'; label.textContent = 'Weak'; }
+  else if (score <= 3) { bar.className = 'pw-strength fair'; label.textContent = 'Fair'; }
+  else { bar.className = 'pw-strength strong'; label.textContent = 'Strong'; }
+}
+
+async function changePasswordAs() {
+  const newPw = document.getElementById('as-new-pw').value;
+  const confirmPw = document.getElementById('as-confirm-pw').value;
+  if (!newPw || newPw.length < 8) { showToast('err', 'bi-lock', 'Too Short', 'Password must be at least 8 characters.'); return; }
+  if (newPw !== confirmPw) { showToast('err', 'bi-lock', 'Mismatch', 'Passwords do not match.'); return; }
+  const btn = document.querySelector('#modal-account-settings .btn-primary');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Updating…'; }
+  const { error } = await sb.auth.updateUser({ password: newPw });
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-lock"></i> Update Password'; }
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Failed', error.message); return; }
+  document.getElementById('as-new-pw').value = '';
+  document.getElementById('as-confirm-pw').value = '';
+  document.getElementById('as-pw-bar').className = 'pw-strength';
+  document.getElementById('as-pw-label').textContent = '';
+  showToast('ok', 'bi-shield-check', 'Password Changed', 'Your password has been updated successfully.');
+}
+
+// Confirm modal for deactivate / delete
+let _pendingAction = null;
+function openConfirmModal(action) {
+  _pendingAction = action;
+  const title = document.getElementById('confirm-title');
+  const body = document.getElementById('confirm-body');
+  const btn = document.getElementById('confirm-action-btn');
+  const typeWrap = document.getElementById('confirm-type-wrap');
+  const typeInput = document.getElementById('confirm-type-input');
+
+  if (action === 'deactivate') {
+    title.innerHTML = '<i class="bi bi-pause-circle-fill" style="color:var(--accent);"></i> Deactivate Account';
+    body.innerHTML = 'Your profile will be <strong>hidden from employers</strong> and your account will be paused. You will not be able to log in again until you contact support to reactivate.<br><br>Are you sure you want to continue?';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.textContent = 'Yes, Deactivate';
+    typeWrap.style.display = 'none';
+    typeInput.value = '';
+  } else {
+    title.innerHTML = '<i class="bi bi-trash3-fill" style="color:var(--rose);"></i> Delete Account';
+    body.innerHTML = '<strong style="color:var(--rose);">This is permanent and cannot be undone.</strong><br><br>All your profile data, messages, and application history will be marked for deletion. You will be signed out immediately.';
+    btn.style.background = 'var(--rose)';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.textContent = 'Delete My Account';
+    typeWrap.style.display = 'block';
+    typeInput.value = '';
+  }
+
+  openModal('modal-confirm-action');
+}
+
+async function executeConfirmAction() {
+  if (!_pendingAction) return;
+
+  if (_pendingAction === 'delete') {
+    const typed = document.getElementById('confirm-type-input').value.trim();
+    if (typed !== 'DELETE') {
+      showToast('err', 'bi-exclamation-circle', 'Type DELETE', 'Please type DELETE exactly to confirm deletion.');
+      return;
+    }
+  }
+
+  const btn = document.getElementById('confirm-action-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing…';
+
+  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
+  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+
+  if (_pendingAction === 'deactivate') {
+    const reason = document.getElementById('as-deact-reason').value || 'User requested';
+    const note = document.getElementById('as-deact-note').value.trim();
+    const fullReason = note ? `${reason}: ${note}` : reason;
+
+    const { error } = await sb.from('worker_profiles').update({
+      account_deactivated: true,
+      deactivation_reason: fullReason,
+      profile_visible: false,
+      deactivated_at: new Date().toISOString(),
+    }).eq(matchCol, matchVal);
+
+    if (error) {
+      showToast('err', 'bi-exclamation-circle', 'Failed', error.message);
+      btn.disabled = false;
+      btn.textContent = 'Yes, Deactivate';
+      return;
+    }
+
+    showToast('ok', 'bi-pause-circle', 'Account Deactivated', 'Your profile is now hidden. Contact support to reactivate.');
+    document.getElementById('account-status-bar').style.display = 'block';
+    document.getElementById('account-status-msg').textContent = 'Account deactivated: ' + fullReason;
+    closeModal('modal-confirm-action');
+    closeModal('modal-account-settings');
+
+    // Sign out after short delay
+    setTimeout(() => signOut(), 2200);
+
+  } else if (_pendingAction === 'delete') {
+    await sb.from('worker_profiles').update({
+      account_deleted: true,
+      deleted_at: new Date().toISOString(),
+      profile_visible: false,
+      account_deactivated: true,
+      deactivation_reason: 'Deleted by user',
+    }).eq(matchCol, matchVal);
+
+    showToast('ok', 'bi-trash3', 'Account Deleted', 'Signing you out now…');
+    closeModal('modal-confirm-action');
+    setTimeout(() => signOut(), 2000);
+  }
+
+  _pendingAction = null;
+}
 
 // Enter key for message reply
 document.addEventListener('keydown', e => {
