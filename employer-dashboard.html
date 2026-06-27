@@ -4,375 +4,824 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Employer Dashboard – SoundsCare</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --ink:#0f1923;--brand:#1B6B45;--brand-dark:#134f33;--brand-soft:rgba(27,107,69,.10);
   --accent:#E8A040;--accent-soft:rgba(232,160,64,.12);
   --sky:#0ea5e9;--rose:#f43f5e;--violet:#8b5cf6;--green:#22c55e;--amber:#f59e0b;--gray:#9ca3af;
-  --surface:#fff;--card:#fff;--border:#e5e7eb;--muted:#6b7280;
-  --sidebar-dark:#0F3D28;--bg:#f9fafb;
+  --surface:#fff;--card:#fff;--border:#e5e7eb;--muted:#6b7280;--bg:#f4f6f9;
+  --sidebar-w:260px;--nav-h:62px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;min-height:100vh;}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;min-height:100vh;overflow-x:hidden;}
 
-/* NAV */
-.nav{background:#fff;padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;box-shadow:0 2px 12px rgba(0,0,0,.08);border-bottom:1px solid #e5e7eb;}
-.nav-logo{font-size:17px;font-weight:800;color:var(--brand);text-decoration:none;display:flex;align-items:center;gap:10px;}
-.logo-icon{width:32px;height:32px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
-.nav-right{display:flex;align-items:center;gap:6px;}
-.nav-btn{position:relative;background:var(--brand-soft);border:none;font-size:18px;cursor:pointer;color:var(--brand);padding:8px;border-radius:10px;transition:.18s;display:flex;}
-.nav-btn:hover{background:rgba(27,107,69,.2);}
-.nav-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;background:var(--rose);border-radius:50%;border:2px solid #fff;font-size:8px;color:#fff;font-weight:700;display:none;align-items:center;justify-content:center;}
-.nav-badge.show{display:flex;}
-.nav-avatar{width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;border:2px solid var(--brand-soft);transition:.18s;}
-.back-btn{display:flex;align-items:center;gap:6px;color:var(--brand);font-weight:600;font-size:13px;text-decoration:none;padding:6px 12px;border-radius:8px;transition:.15s;}
-.back-btn:hover{background:var(--brand-soft);}
+/* ─── SIDEBAR ─── */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:linear-gradient(180deg,#0d3a24 0%,#1B6B45 100%);z-index:400;display:flex;flex-direction:column;transition:transform .28s cubic-bezier(.4,0,.2,1);overflow:hidden;}
+.sidebar.hidden{transform:translateX(-100%);}
+.sb-head{padding:1.1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:800;flex-shrink:0;}
+.sb-logo-text{color:#fff;font-weight:800;font-size:15px;letter-spacing:-.01em;}
+.sb-logo-text span{color:var(--accent);}
+.sb-close{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:20px;line-height:1;display:none;}
+.sb-section-lbl{padding:.7rem 1.2rem .25rem;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.sb-link{display:flex;align-items:center;gap:10px;padding:.65rem 1.2rem;color:rgba(255,255,255,.7);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;font-size:13px;font-family:inherit;font-weight:500;border-left:3px solid transparent;transition:.15s;position:relative;}
+.sb-link:hover,.sb-link.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--accent);}
+.sb-link i{font-size:16px;flex-shrink:0;}
+.sb-badge{margin-left:auto;background:var(--rose);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center;}
+.sb-footer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,.1);margin-top:auto;}
+.sb-signout{width:100%;padding:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.sb-signout:hover{background:rgba(244,63,94,.25);border-color:rgba(244,63,94,.5);}
 
-/* PAGE */
-.page{max-width:1100px;margin:0 auto;padding:1.5rem 1.2rem 5rem;}
-.page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1.2rem;flex-wrap:wrap;}
-.page-head h1{font-size:1.3rem;font-weight:800;}
-.page-head p{font-size:12.5px;color:var(--muted);margin-top:2px;}
+/* ─── NAV ─── */
+.nav{position:fixed;top:0;left:var(--sidebar-w);right:0;height:var(--nav-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.4rem;gap:12px;z-index:300;box-shadow:0 1px 8px rgba(15,25,35,.06);transition:left .28s cubic-bezier(.4,0,.2,1);}
+.nav.expanded{left:0;}
+.burger{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;flex-shrink:0;}
+.nav-title{font-weight:700;font-size:14.5px;flex:1;color:var(--ink);}
+.nav-actions{display:flex;align-items:center;gap:6px;}
+.nav-icon-btn{position:relative;background:var(--brand-soft);border:none;color:var(--brand);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:.15s;}
+.nav-icon-btn:hover{background:rgba(27,107,69,.18);}
+.nav-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--rose);border-radius:50%;border:2px solid #fff;display:none;}
+.nav-dot.show{display:block;}
+.nav-avatar{width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--brand-soft);flex-shrink:0;transition:.15s;}
+.nav-avatar:hover{border-color:var(--brand);}
 
-/* STAT CARDS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:1.5rem;}
-@media(max-width:760px){.stats-row{grid-template-columns:repeat(2,1fr);}}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.1rem 1.2rem;box-shadow:0 2px 10px rgba(15,25,35,.04);}
-.stat-card .s-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
-.stat-card .s-val{font-size:1.6rem;font-weight:800;color:var(--brand);}
-.stat-card .s-val.accent{color:var(--accent);}
-.stat-card .s-val.rose{color:var(--rose);}
+/* ─── MAIN ─── */
+.main{margin-left:var(--sidebar-w);padding-top:var(--nav-h);min-height:100vh;transition:margin-left .28s cubic-bezier(.4,0,.2,1);}
+.main.expanded{margin-left:0;}
+.content{padding:1.5rem;max-width:1200px;margin:0 auto;}
 
-/* PAYMENT WALL */
-.payment-wall{background:linear-gradient(135deg,var(--sidebar-dark),var(--brand));border-radius:18px;padding:2rem;color:#fff;text-align:center;margin-bottom:1.5rem;}
-.payment-wall h2{font-size:1.5rem;font-weight:800;margin-bottom:.5rem;}
-.payment-wall p{opacity:.8;font-size:13px;margin-bottom:1.5rem;max-width:480px;margin-left:auto;margin-right:auto;}
-.pay-amount{font-size:3rem;font-weight:800;color:var(--accent);margin:.5rem 0;}
-.pay-features{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:1.5rem;}
-.pay-feature{background:rgba(255,255,255,.12);border-radius:20px;padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:6px;}
+/* ─── PANELS ─── */
+.panel{display:none;}
+.panel.active{display:block;}
 
-/* SECTION */
-.section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 2px 10px rgba(15,25,35,.04);}
-.section-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.section-title{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px;}
-.section-body{padding:1.2rem 1.5rem;}
+/* ─── GREETING CARD ─── */
+.greeting-card{border-radius:20px;padding:1.6rem 1.8rem;margin-bottom:1.4rem;background:linear-gradient(135deg,#0d3a24 0%,#1B6B45 60%,#2a9961 100%);color:#fff;position:relative;overflow:hidden;}
+.greeting-card::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06);}
+.greeting-card::after{content:'';position:absolute;bottom:-60px;right:60px;width:140px;height:140px;border-radius:50%;background:rgba(232,160,64,.12);}
+.gc-top{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1;}
+.gc-left h1{font-size:1.4rem;font-weight:800;margin-bottom:3px;}
+.gc-left p{font-size:13px;opacity:.75;}
+.gc-time-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:30px;padding:6px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.gc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:1.2rem;position:relative;z-index:1;}
+.gc-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:.8rem 1rem;}
+.gc-stat .gs-val{font-size:1.6rem;font-weight:800;line-height:1;}
+.gc-stat .gs-lbl{font-size:10.5px;opacity:.7;margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
 
-/* SEARCH */
-.search-bar{display:flex;gap:8px;padding:1rem 1.5rem;border-bottom:1px solid var(--border);}
-.search-bar input{flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;outline:none;}
-.search-bar input:focus{border-color:var(--brand);}
+/* ─── SECTION ─── */
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.4rem;box-shadow:0 1px 6px rgba(15,25,35,.05);}
+.sec-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.sec-title{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+.sec-body{padding:1.2rem 1.4rem;}
 
-/* EMPLOYEE GRID */
-.emp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:1.2rem 1.5rem;}
-.emp-card{border:1px solid var(--border);border-radius:14px;padding:1rem;transition:.15s;background:#fff;}
-.emp-card:hover{box-shadow:0 4px 14px rgba(15,25,35,.08);transform:translateY(-1px);}
-.emp-top{display:flex;gap:10px;align-items:flex-start;}
-.emp-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
-.presence-dot{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;border:2px solid #fff;}
-.presence-dot.online{background:var(--green);}
-.presence-dot.away{background:var(--amber);}
-.presence-dot.offline{background:var(--gray);}
-.emp-name{font-size:13.5px;font-weight:700;}
-.emp-role{font-size:11.5px;color:var(--muted);}
-.emp-status-line{font-size:10.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:4px;}
-.emp-status-line .dot-txt{font-weight:700;}
-.emp-status-line .dot-txt.online{color:var(--green);}
-.emp-status-line .dot-txt.away{color:var(--amber);}
-.emp-tags{display:flex;gap:6px;margin:.6rem 0;flex-wrap:wrap;}
-.emp-tag{font-size:10px;background:var(--brand-soft);color:var(--brand);border-radius:8px;padding:3px 8px;font-weight:600;}
-.emp-tag.blocked{background:rgba(244,63,94,.12);color:var(--rose);}
-.emp-actions{display:flex;gap:6px;margin-top:.5rem;}
+/* ─── WORKER CARDS ─── */
+.worker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:1.1rem 1.4rem;}
+.wcard{border:1px solid var(--border);border-radius:14px;padding:.9rem;background:#fff;transition:.15s;cursor:pointer;}
+.wcard:hover{box-shadow:0 4px 16px rgba(15,25,35,.09);transform:translateY(-1px);}
+.wcard-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:.6rem;}
+.wc-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden;}
+.wc-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.pres-dot{position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;border:2px solid #fff;}
+.pres-dot.online{background:var(--green);}
+.pres-dot.away{background:var(--amber);}
+.pres-dot.offline{background:var(--gray);}
+.wc-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.wc-role{font-size:11px;color:var(--muted);}
+.wc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.6rem;}
+.tag{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:600;}
+.tag-green{background:rgba(34,197,94,.12);color:#15803d;}
+.tag-rose{background:rgba(244,63,94,.12);color:var(--rose);}
+.tag-amber{background:rgba(245,158,11,.12);color:#92400e;}
+.tag-muted{background:var(--bg);color:var(--muted);}
+.tag-sky{background:rgba(14,165,233,.12);color:#0369a1;}
+.wc-actions{display:flex;gap:6px;}
 
-/* TABS */
-.tabs{display:flex;border-bottom:1px solid var(--border);}
-.tab-btn{padding:10px 16px;border:none;background:none;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;transition:.18s;font-family:inherit;display:flex;align-items:center;gap:6px;}
-.tab-btn:hover{color:var(--brand);}
-.tab-btn.active{color:var(--brand);border-color:var(--brand);}
-.tab-content{display:none;}
-.tab-content.active{display:block;}
+/* ─── RECENT MESSAGES ROW ─── */
+.conv-row{display:flex;align-items:center;gap:12px;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);cursor:pointer;transition:.12s;}
+.conv-row:last-child{border-bottom:none;}
+.conv-row:hover{background:var(--brand-soft);}
+.conv-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative;}
+.conv-av img{width:100%;height:100%;object-fit:cover;}
+.conv-info{flex:1;min-width:0;}
+.conv-name{font-weight:600;font-size:13px;}
+.conv-preview{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-meta{text-align:right;flex-shrink:0;}
+.conv-time{font-size:10px;color:var(--muted);}
+.conv-unread{background:var(--brand);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-top:3px;display:inline-block;}
 
-/* BUTTONS */
-.btn{padding:10px 16px;border:none;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;transition:.18s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+/* ─── INTERVIEWS LIST ─── */
+.interview-row{display:flex;align-items:center;gap:12px;padding:.85rem 1.2rem;border-bottom:1px solid var(--border);}
+.interview-row:last-child{border-bottom:none;}
+.iv-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--violet),#a78bfa);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.iv-info{flex:1;}
+.iv-name{font-weight:600;font-size:13px;}
+.iv-role{font-size:11px;color:var(--muted);}
+.iv-actions{display:flex;gap:6px;align-items:center;}
+
+/* ─── JOBS TABLE ─── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--bg);}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(27,107,69,.02);}
+
+/* ─── BUTTONS ─── */
+.btn{padding:8px 14px;border:none;border-radius:9px;cursor:pointer;font-weight:600;font-size:12.5px;transition:.15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
 .btn-primary{background:var(--brand);color:#fff;}
 .btn-primary:hover{background:var(--brand-dark);}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
 .btn-accent{background:var(--accent);color:#fff;}
 .btn-accent:hover{background:#d4892e;}
 .btn-secondary{background:var(--bg);color:var(--ink);border:1px solid var(--border);}
 .btn-secondary:hover{background:var(--border);}
-.btn-full{width:100%;justify-content:center;}
-.btn-sm{padding:6px 10px;font-size:11.5px;}
 .btn-danger{background:rgba(244,63,94,.1);color:var(--rose);border:1px solid rgba(244,63,94,.2);}
 .btn-danger:hover{background:rgba(244,63,94,.2);}
 .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
 .btn-ghost:hover{background:var(--bg);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-full{width:100%;justify-content:center;}
 
-/* CHAT MODAL (large) */
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,25,35,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;}
+.badge-green{background:rgba(34,197,94,.12);color:#15803d;}
+.badge-amber{background:rgba(245,158,11,.12);color:#92400e;}
+.badge-rose{background:rgba(244,63,94,.12);color:var(--rose);}
+.badge-sky{background:rgba(14,165,233,.12);color:#0369a1;}
+.badge-muted{background:var(--bg);color:var(--muted);}
+.badge-violet{background:rgba(139,92,246,.12);color:#5b21b6;}
+
+/* ─── FORMS ─── */
+.form-group{margin-bottom:.9rem;}
+.form-group label{display:block;font-weight:600;font-size:11px;margin-bottom:5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--card);outline:none;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(27,107,69,.1);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mpesa-wrap{display:flex;}
+.mpesa-prefix{background:var(--bg);border:1px solid var(--border);border-right:none;border-radius:9px 0 0 9px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--muted);flex-shrink:0;display:flex;align-items:center;}
+.mpesa-wrap input{border-radius:0 9px 9px 0;border-left:none;}
+
+/* ─── MODALS ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,25,35,.52);display:none;align-items:center;justify-content:center;z-index:900;padding:16px;}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:480px;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(15,25,35,.28);display:flex;flex-direction:column;}
-.modal.chat-modal{max-width:720px;height:88vh;overflow:hidden;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 60px rgba(15,25,35,.28);display:flex;flex-direction:column;}
+.modal.modal-wide{max-width:660px;}
+.modal.modal-xl{max-width:960px;height:88vh;overflow:hidden;}
 .modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);flex-shrink:0;}
-.modal-header h2{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:.18s;}
+.modal-header h2{font-size:.98rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:7px;}
 .modal-close:hover{background:var(--bg);}
-.modal-body{flex:1;overflow-y:auto;padding:1.5rem;}
-.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.modal-body{flex:1;overflow-y:auto;padding:1.4rem;}
+.modal-footer{padding:.9rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;}
 
-/* CHAT HEADER */
-.chat-modal-header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;}
-.chat-who{display:flex;align-items:center;gap:10px;min-width:0;}
-.chat-who .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0b562);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;}
-.chat-who-info{min-width:0;}
-.chat-who-name{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.chat-who-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;}
-.chat-who-status .dot{width:7px;height:7px;border-radius:50%;}
-.chat-who-status .dot.online{background:var(--green);}
-.chat-who-status .dot.away{background:var(--amber);}
-.chat-who-status .dot.offline{background:var(--gray);}
-.chat-menu-wrap{position:relative;flex-shrink:0;}
-.chat-kebab{background:var(--bg);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink);}
-.chat-kebab:hover{background:var(--border);}
-.chat-dropdown{position:absolute;top:42px;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,25,35,.18);min-width:220px;display:none;overflow:hidden;z-index:50;}
-.chat-dropdown.open{display:block;}
-.chat-dropdown button{width:100%;text-align:left;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);}
-.chat-dropdown button:hover{background:var(--bg);}
-.chat-dropdown button.danger{color:var(--rose);}
-.chat-dropdown .sep{height:1px;background:var(--border);margin:4px 0;}
+/* ─── PROFILE MODAL ─── */
+.profile-hero{display:flex;gap:14px;align-items:center;padding-bottom:1.2rem;border-bottom:1px solid var(--border);margin-bottom:1.2rem;}
+.profile-av-lg{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.profile-av-lg img{width:100%;height:100%;object-fit:cover;}
+.profile-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;}
+.pf{margin-bottom:2px;}
+.pf label{display:block;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:2px;}
+.pf span{font-size:13px;font-weight:500;}
+.profile-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
 
-/* CHAT BODY */
-.chat-modal-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--bg);}
-.chat-banner{font-size:11.5px;text-align:center;color:var(--muted);padding:6px 10px;border-radius:20px;background:#fff;border:1px solid var(--border);align-self:center;display:flex;align-items:center;gap:6px;}
-.chat-banner.admin{background:rgba(139,92,246,.08);color:var(--violet);border-color:rgba(139,92,246,.25);}
-.chat-banner.system{background:#fff;}
-.bubble-row{display:flex;gap:8px;max-width:100%;}
+/* ─── ACCOUNT SETTINGS ─── */
+.settings-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;}
+.stab{padding:9px 14px;border:none;background:none;cursor:pointer;font-weight:600;font-size:12.5px;color:var(--muted);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap;}
+.stab:hover{color:var(--brand);}
+.stab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.stab-content{display:none;padding-top:1.1rem;}
+.stab-content.active{display:block;}
+.danger-zone{border:1px solid rgba(244,63,94,.3);border-radius:12px;padding:1rem;}
+.danger-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(244,63,94,.12);}
+.danger-item:last-child{border-bottom:none;}
+.danger-item-info h4{font-size:13px;font-weight:600;}
+.danger-item-info p{font-size:11px;color:var(--muted);}
+
+/* ─── CHAT MODAL ─── */
+.chat-layout{display:flex;height:100%;overflow:hidden;flex:1;}
+.chat-sidebar{width:270px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.chat-sb-head{padding:.8rem 1rem;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px;}
+.chat-list{flex:1;overflow-y:auto;}
+.chat-list-item{display:flex;gap:9px;align-items:center;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);transition:.12s;}
+.chat-list-item:hover,.chat-list-item.active{background:var(--brand-soft);}
+.cli-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative;}
+.cli-av img{width:100%;height:100%;object-fit:cover;}
+.cli-info{flex:1;min-width:0;}
+.cli-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cli-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cli-meta{text-align:right;flex-shrink:0;}
+.cli-time{font-size:10px;color:var(--muted);}
+.cli-unread{background:var(--brand);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;margin-top:3px;display:inline-block;}
+
+/* ─── CHAT PANE ─── */
+.chat-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.chat-head{padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.chat-head-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--brand),#2a9961);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.chat-head-av img{width:100%;height:100%;object-fit:cover;}
+.chat-head-info{flex:1;}
+.chat-head-name{font-weight:700;font-size:13.5px;}
+.chat-head-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+.status-dot{width:7px;height:7px;border-radius:50%;}
+.status-dot.online{background:var(--green);}
+.status-dot.away{background:var(--amber);}
+.status-dot.offline{background:var(--gray);}
+.chat-head-actions{display:flex;gap:6px;}
+.chat-head-btn{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;color:var(--ink);transition:.12s;}
+.chat-head-btn:hover{background:var(--border);}
+.chat-head-btn.danger{color:var(--rose);}
+.chat-head-btn.success{color:var(--brand);}
+/* Kebab menu */
+.kebab-wrap{position:relative;}
+.kebab-btn{background:var(--bg);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);}
+.kebab-menu{position:absolute;top:36px;right:0;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,25,35,.15);min-width:200px;display:none;overflow:hidden;z-index:50;}
+.kebab-menu.open{display:block;}
+.kebab-item{width:100%;text-align:left;padding:10px 14px;border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);}
+.kebab-item:hover{background:var(--bg);}
+.kebab-item.danger{color:var(--rose);}
+.kebab-sep{height:1px;background:var(--border);margin:3px 0;}
+
+/* ─── CHAT BODY ─── */
+.chat-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:9px;background:#f7f8fa;}
+.chat-system{font-size:11px;text-align:center;color:var(--muted);padding:5px 12px;border-radius:20px;background:#fff;border:1px solid var(--border);align-self:center;display:flex;align-items:center;gap:5px;}
+.chat-admin-banner{align-self:center;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:20px;padding:5px 14px;font-size:11px;color:#5b21b6;display:flex;align-items:center;gap:6px;}
+.bubble-row{display:flex;gap:7px;max-width:100%;}
 .bubble-row.sent{flex-direction:row-reverse;align-self:flex-end;}
 .bubble-row.received{align-self:flex-start;}
-.bubble-row.admin-row{align-self:center;}
-.bubble-av{width:28px;height:28px;border-radius:50%;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;background:linear-gradient(135deg,var(--accent),#f0b562);}
-.bubble-av.employer{background:linear-gradient(135deg,var(--brand),#2a9961);}
-.bubble-av.admin{background:linear-gradient(135deg,var(--violet),#a78bfa);}
-.bubble-col{display:flex;flex-direction:column;max-width:420px;}
-.bubble-name{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:2px;}
-.bubble{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;}
-.bubble.received{background:#fff;border:1px solid var(--border);border-top-left-radius:4px;}
+.bubble-row.admin-msg{align-self:center;justify-content:center;}
+.bav{width:26px;height:26px;border-radius:50%;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;background:linear-gradient(135deg,var(--brand),#2a9961);overflow:hidden;cursor:pointer;}
+.bav img{width:100%;height:100%;object-fit:cover;}
+.bav.worker-av{background:linear-gradient(135deg,var(--accent),#f0b562);}
+.bav.admin-av{background:linear-gradient(135deg,var(--violet),#a78bfa);}
+.bubble-col{display:flex;flex-direction:column;max-width:380px;}
+.bubble-sender{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:2px;}
+.bubble{padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.5;word-break:break-word;}
+.bubble.recv{background:#fff;border:1px solid var(--border);border-top-left-radius:4px;}
 .bubble.sent{background:var(--brand);color:#fff;border-top-right-radius:4px;}
-.bubble.admin{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#4c2c91;border-top-left-radius:4px;}
-.bubble.file-request{background:#fff;border:1px dashed var(--accent);}
-.bubble-time{font-size:10px;color:var(--muted);margin-top:4px;}
-.bubble-row.sent .bubble-time{text-align:right;}
-.typing-row{display:flex;align-items:center;gap:8px;align-self:flex-start;padding-left:36px;}
-.typing-dots{display:flex;gap:3px;background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:14px;}
-.typing-dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce 1.2s infinite;}
+.bubble.admin{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);color:#4c1d95;border-radius:14px;}
+.bubble-meta{display:flex;align-items:center;gap:5px;margin-top:3px;}
+.bubble-time{font-size:10px;color:var(--muted);}
+.bubble-row.sent .bubble-meta{justify-content:flex-end;}
+/* Message ticks */
+.tick{font-size:12px;line-height:1;}
+.tick.waiting{color:var(--gray);}/* clock = not sent */
+.tick.sent{color:var(--gray);}/* ✓ single grey */
+.tick.delivered{color:var(--gray);}/* ✓✓ double grey */
+.tick.read{color:#0ea5e9;}/* ✓✓ double blue */
+/* Typing */
+.typing-row{display:flex;gap:7px;align-items:center;align-self:flex-start;}
+.typing-dots{background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:14px;display:flex;gap:3px;align-items:center;}
+.typing-dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:tdot 1.2s infinite;}
 .typing-dots span:nth-child(2){animation-delay:.15s;}
 .typing-dots span:nth-child(3){animation-delay:.3s;}
-@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
-
-/* CHAT INPUT */
-.chat-modal-input{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;flex-shrink:0;align-items:flex-end;}
-.chat-modal-input textarea{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-family:inherit;font-size:13px;outline:none;resize:none;max-height:90px;}
-.chat-modal-input textarea:focus{border-color:var(--brand);}
-.chat-icon-btn{background:var(--bg);border:1px solid var(--border);color:var(--brand);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;}
+@keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+/* Chat input */
+.chat-input-wrap{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:#fff;flex-shrink:0;align-items:flex-end;}
+.chat-input{flex:1;padding:9px 13px;border:1px solid var(--border);border-radius:18px;font-family:inherit;font-size:13px;outline:none;resize:none;max-height:90px;}
+.chat-input:focus{border-color:var(--brand);}
+.chat-icon-btn{background:var(--bg);border:1px solid var(--border);color:var(--brand);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:14px;}
 .chat-icon-btn:hover{background:var(--border);}
-.chat-send{background:var(--brand);color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;transition:.15s;}
-.chat-send:hover{background:var(--brand-dark);}
-.chat-send:disabled{opacity:.4;cursor:not-allowed;}
-.chat-ended-bar{padding:10px 14px;background:rgba(244,63,94,.06);border-top:1px solid rgba(244,63,94,.2);font-size:12px;color:var(--rose);text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
-.chat-blocked-bar{padding:10px 14px;background:rgba(107,114,128,.08);border-top:1px solid var(--border);font-size:12px;color:var(--muted);text-align:center;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
+.chat-send-btn{background:var(--brand);color:#fff;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;transition:.15s;}
+.chat-send-btn:hover{background:var(--brand-dark);}
+.chat-closed-bar{padding:9px 14px;text-align:center;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;}
+.chat-closed-bar.ended{background:rgba(244,63,94,.06);color:var(--rose);border-top:1px solid rgba(244,63,94,.18);}
+.chat-closed-bar.blocked{background:rgba(107,114,128,.06);color:var(--muted);border-top:1px solid var(--border);}
+.chat-closed-bar.paused{background:rgba(245,158,11,.07);color:var(--amber);border-top:1px solid rgba(245,158,11,.2);}
+.chat-placeholder{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--muted);background:#f7f8fa;}
+.chat-placeholder i{font-size:40px;opacity:.2;}
 
-/* FORM */
-.form-group{margin-bottom:1rem;}
-.form-group label{display:block;font-weight:600;font-size:12px;margin-bottom:5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--card);}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(27,107,69,.1);}
-.mpesa-input{display:flex;gap:8px;}
-.mpesa-input .prefix{background:var(--bg);border:1px solid var(--border);border-radius:10px 0 0 10px;padding:10px 12px;font-size:13px;font-weight:700;color:var(--muted);flex-shrink:0;display:flex;align-items:center;}
-.mpesa-input input{flex:1;padding:10px 12px;border:1px solid var(--border);border-left:none;border-radius:0 10px 10px 0;font-family:inherit;font-size:14px;outline:none;}
+/* ─── WORKER PROFILE MODAL (in chat) ─── */
+.worker-profile-chip{display:flex;align-items:center;gap:10px;padding:.8rem 1rem;background:var(--brand-soft);border-radius:12px;cursor:pointer;margin-bottom:.8rem;}
+.worker-profile-chip:hover{background:rgba(27,107,69,.15);}
 
-/* PAYMENT MODAL BALANCE BOX */
-.balance-box{background:linear-gradient(135deg,rgba(27,107,69,.08),rgba(232,160,64,.06));border:1px solid rgba(27,107,69,.2);border-radius:14px;padding:1.1rem;margin-bottom:1.2rem;}
+/* ─── PAYMENT MODAL ─── */
+.pay-tabs{display:flex;border-bottom:1px solid var(--border);}
+.ptab{padding:9px 16px;border:none;background:none;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;font-family:inherit;}
+.ptab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.ptab-content{display:none;padding-top:1rem;}
+.ptab-content.active{display:block;}
+.balance-box{background:linear-gradient(135deg,rgba(27,107,69,.07),rgba(232,160,64,.06));border:1px solid rgba(27,107,69,.18);border-radius:14px;padding:1.1rem;margin-bottom:1.2rem;}
 .balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 .balance-item{text-align:center;}
-.balance-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:4px;}
-.balance-amount{font-size:1.5rem;font-weight:800;color:var(--brand);}
-.balance-amount.warning{color:var(--accent);}
-.balance-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.bal-lbl{font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;margin-bottom:3px;}
+.bal-val{font-size:1.4rem;font-weight:800;color:var(--brand);}
+.bal-val.warn{color:var(--accent);}
+.receipt-box{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:1.1rem;}
+.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.receipt-row:last-child{border-bottom:none;}
+.receipt-lbl{color:var(--muted);}
+.receipt-val{font-weight:700;}
 
-/* TOAST */
-#toast-stack{position:fixed;bottom:80px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:9999;}
-.toast{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;font-size:13px;box-shadow:0 4px 16px rgba(15,25,35,.15);animation:slideIn .3s ease-out;min-width:300px;}
-@keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* ─── TOAST ─── */
+#toast-stack{position:fixed;bottom:24px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:9999;max-width:340px;}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;font-size:13px;box-shadow:0 4px 20px rgba(15,25,35,.18);animation:tsIn .3s ease-out;min-width:280px;}
+@keyframes tsIn{from{transform:translateX(350px);opacity:0}to{transform:translateX(0);opacity:1}}
 .toast.ok{border-left:3px solid var(--green);}
 .toast.ok i{color:var(--green);}
 .toast.err{border-left:3px solid var(--rose);}
 .toast.err i{color:var(--rose);}
 .toast.info{border-left:3px solid var(--sky);}
 .toast.info i{color:var(--sky);}
+.toast-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;margin-left:auto;flex-shrink:0;line-height:1;}
 
-.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
-.empty-state i{font-size:36px;opacity:.25;display:block;margin-bottom:.5rem;}
-.empty-state p{font-size:13px;}
+/* ─── EMPTY ─── */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
+.empty i{font-size:38px;opacity:.18;display:block;margin-bottom:.6rem;}
+.empty p{font-size:13px;}
 
-.receipt-box{background:var(--bg);border:1px dashed var(--border);border-radius:12px;padding:1.2rem;}
-.receipt-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.receipt-row:last-child{border-bottom:none;}
-.receipt-label{color:var(--muted);}
-.receipt-val{font-weight:700;}
+/* ─── NOTIFICATION PANEL ─── */
+.notif-item{display:flex;gap:10px;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);align-items:flex-start;cursor:pointer;transition:.12s;}
+.notif-item:hover{background:var(--bg);}
+.notif-item.unread{background:rgba(27,107,69,.04);}
+.notif-icon{width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.notif-content h4{font-size:13px;font-weight:600;margin-bottom:2px;}
+.notif-content p{font-size:12px;color:var(--muted);line-height:1.4;}
+.notif-time{font-size:10px;color:var(--muted);margin-top:3px;}
 
-@media(max-width:680px){
-  .modal.chat-modal{height:94vh;border-radius:14px;}
-  .emp-grid{grid-template-columns:1fr;}
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);z-index:500;}
+  .sidebar.open{transform:translateX(0);}
+  .sb-close{display:block;}
+  .nav,.main{left:0;margin-left:0;}
+  .nav.expanded,.main.expanded{margin-left:0;}
+  .gc-stats{grid-template-columns:repeat(2,1fr);}
+  .chat-layout{flex-direction:column;}
+  .chat-sidebar{width:100%;max-height:200px;border-right:none;border-bottom:1px solid var(--border);}
+  .form-row{grid-template-columns:1fr;}
+}
+@media(max-width:560px){
+  .gc-stats{grid-template-columns:repeat(2,1fr);}
+  .worker-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <a href="#" class="nav-logo">
-    <div class="logo-icon">SC</div>
-    <span>Sounds<strong style="color:var(--accent)">Care</strong></span>
-  </a>
-  <a href="#" class="back-btn"><i class="bi bi-arrow-left"></i> Dashboard</a>
-  <div class="nav-right">
-    <button class="nav-btn" title="Notifications">
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo-icon">SC</div>
+    <div class="sb-logo-text">Sounds<span>Care</span></div>
+    <button class="sb-close" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="sb-section-lbl">Main</div>
+  <button class="sb-link active" onclick="showPanel('dashboard',this)"><i class="bi bi-grid-fill"></i> Dashboard</button>
+  <button class="sb-link" onclick="showPanel('employees',this)"><i class="bi bi-people-fill"></i> Find Employees</button>
+  <button class="sb-link" onclick="showPanel('messages',this)"><i class="bi bi-chat-dots-fill"></i> Messages <span class="sb-badge" id="sb-msg-badge" style="display:none">0</span></button>
+  <button class="sb-link" onclick="showPanel('interviews',this)"><i class="bi bi-camera-video-fill"></i> Interviews</button>
+  <button class="sb-link" onclick="showPanel('jobs',this)"><i class="bi bi-briefcase-fill"></i> Posted Jobs</button>
+  <button class="sb-link" onclick="showPanel('hires',this)"><i class="bi bi-check-circle-fill"></i> My Hires</button>
+
+  <div class="sb-section-lbl">Account</div>
+  <button class="sb-link" onclick="openModal('pay-modal')"><i class="bi bi-wallet2"></i> Payments</button>
+  <button class="sb-link" onclick="openModal('post-job-modal')"><i class="bi bi-plus-circle-fill"></i> Post a Job</button>
+  <button class="sb-link" onclick="showPanel('fraud',this)"><i class="bi bi-flag-fill"></i> Report Fraud</button>
+
+  <div class="sb-footer">
+    <button class="sb-signout" onclick="handleSignOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+  </div>
+</aside>
+
+<!-- ═══════ NAV ═══════ -->
+<nav class="nav" id="main-nav">
+  <button class="burger" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+  <span class="nav-title" id="nav-title">Dashboard</span>
+  <div class="nav-actions">
+    <button class="nav-icon-btn" onclick="openModal('notif-modal')" title="Notifications">
       <i class="bi bi-bell"></i>
-      <div class="nav-badge show" id="notif-badge">2</div>
+      <span class="nav-dot" id="notif-dot"></span>
     </button>
-    <div class="nav-avatar" id="nav-avatar" title="Account">EM</div>
-  </div>
-</div>
-
-<!-- PAGE -->
-<div class="page">
-
-  <div class="page-head">
-    <div>
-      <h1>Employer Dashboard</h1>
-      <p>Manage workers, interviews and payments in one place.</p>
-    </div>
-    <button class="btn btn-accent" onclick="openModal('pay-modal')">
-      <i class="bi bi-credit-card-fill"></i> Make Payment
+    <button class="nav-icon-btn" onclick="showPanel('messages',null);openModal('chat-modal')" title="Messages">
+      <i class="bi bi-chat-dots"></i>
+      <span class="nav-dot" id="msg-dot"></span>
     </button>
+    <div class="nav-avatar" id="nav-avatar" onclick="openModal('profile-modal')" title="My Profile">EP</div>
   </div>
+</nav>
 
-  <!-- ACCESS CONFIRMED -->
-  <div id="access-confirmed" style="margin-bottom:1.5rem;">
-    <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-      <i class="bi bi-patch-check-fill" style="font-size:24px;color:var(--green);flex-shrink:0;"></i>
-      <div>
-        <div style="font-weight:700;font-size:14px;color:#14532d;">Full Access Active</div>
-        <div style="font-size:12px;color:var(--muted);">Your employer access fee has been confirmed. You can message and interview workers.</div>
-      </div>
-    </div>
-  </div>
+<!-- ═══════ MAIN CONTENT ═══════ -->
+<main class="main" id="main-content">
+<div class="content">
 
-  <!-- STATS -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="s-label"><i class="bi bi-people-fill"></i> Workers Listed</div>
-      <div class="s-val" id="stat-total">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label"><i class="bi bi-chat-dots-fill"></i> Active Interviews</div>
-      <div class="s-val accent" id="stat-active">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label"><i class="bi bi-check-circle-fill"></i> Ended</div>
-      <div class="s-val" id="stat-ended">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="s-label"><i class="bi bi-slash-circle-fill"></i> Blocked</div>
-      <div class="s-val rose" id="stat-blocked">—</div>
-    </div>
-  </div>
+  <!-- ── DASHBOARD PANEL ── -->
+  <div class="panel active" id="panel-dashboard">
 
-  <!-- EMPLOYEES -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-title"><i class="bi bi-people"></i> Workers</div>
-    </div>
-    <div class="search-bar">
-      <input type="text" id="emp-search" placeholder="🔍 Search workers by name or role…" oninput="renderEmployees()">
-    </div>
-    <div class="emp-grid" id="emp-grid"></div>
-  </div>
-
-</div><!-- /page -->
-
-<!-- TOAST -->
-<div id="toast-stack"></div>
-
-<!-- ═════════════ INTERVIEW / CHAT MODAL ═════════════ -->
-<div class="modal-overlay" id="chat-modal">
-  <div class="modal chat-modal">
-    <div class="chat-modal-header">
-      <div class="chat-who">
-        <div class="av" id="chat-av">—</div>
-        <div class="chat-who-info">
-          <div class="chat-who-name" id="chat-name">—</div>
-          <div class="chat-who-status" id="chat-status"><span class="dot online"></span> Online</div>
+    <!-- Greeting Card -->
+    <div class="greeting-card">
+      <div class="gc-top">
+        <div class="gc-left">
+          <h1 id="greeting-text">Good Morning 👋</h1>
+          <p id="greeting-sub">Loading your dashboard…</p>
         </div>
+        <div class="gc-time-badge" id="gc-time"><i class="bi bi-clock"></i> --:--</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="chat-state-badge" style="font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:8px;display:none;"></span>
-        <div class="chat-menu-wrap">
-          <button class="chat-kebab" onclick="toggleChatMenu()"><i class="bi bi-three-dots-vertical"></i></button>
-          <div class="chat-dropdown" id="chat-dropdown">
-            <button onclick="requestFile()"><i class="bi bi-paperclip"></i> Request a File</button>
-            <div class="sep"></div>
-            <button onclick="confirmEndInterview()" id="end-interview-btn"><i class="bi bi-stop-circle"></i> End Interview</button>
-            <div class="sep"></div>
-            <button class="danger" onclick="confirmBlockWorker()" id="block-worker-btn"><i class="bi bi-slash-circle"></i> Block Worker</button>
-            <button class="danger" onclick="openReportModal()"><i class="bi bi-flag"></i> Report Worker</button>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeModal('chat-modal')">×</button>
+      <div class="gc-stats">
+        <div class="gc-stat"><div class="gs-val" id="stat-workers">0</div><div class="gs-lbl">Workers Found</div></div>
+        <div class="gc-stat"><div class="gs-val" id="stat-interviews">0</div><div class="gs-lbl">Interviews</div></div>
+        <div class="gc-stat"><div class="gs-val" id="stat-hires">0</div><div class="gs-lbl">Hires</div></div>
+        <div class="gc-stat"><div class="gs-val" id="stat-jobs">0</div><div class="gs-lbl">Jobs Posted</div></div>
       </div>
     </div>
 
-    <div class="chat-modal-body" id="chat-body"></div>
-
-    <div id="chat-input-wrap">
-      <div class="chat-modal-input">
-        <button class="chat-icon-btn" title="Request a file" onclick="requestFile()"><i class="bi bi-paperclip"></i></button>
-        <textarea id="chat-text" rows="1" placeholder="Type a message…" oninput="onTyping()" onkeydown="onChatKeydown(event)"></textarea>
-        <button class="chat-send" id="chat-send-btn" onclick="sendChatMessage()"><i class="bi bi-send-fill"></i></button>
+    <!-- Recent Messages -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-chat-dots-fill" style="color:var(--brand)"></i> Recent Conversations</div>
+        <button class="btn btn-secondary btn-sm" onclick="showPanel('messages',null);openModal('chat-modal')"><i class="bi bi-arrow-right"></i> Open Inbox</button>
       </div>
+      <div id="recent-convs-list"><div class="empty"><i class="bi bi-chat-square-dots"></i><p>No conversations yet</p></div></div>
     </div>
-    <div class="chat-ended-bar" id="chat-ended-bar" style="display:none;">
-      <i class="bi bi-lock-fill"></i> Interview ended — conversation is view-only.
+
+    <!-- Recent Interviews -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-camera-video-fill" style="color:var(--violet)"></i> Recent Interviews</div>
+        <button class="btn btn-secondary btn-sm" onclick="showPanel('interviews',null)"><i class="bi bi-arrow-right"></i> All</button>
+      </div>
+      <div id="recent-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
     </div>
-    <div class="chat-blocked-bar" id="chat-blocked-bar" style="display:none;">
-      <i class="bi bi-slash-circle-fill"></i> Worker blocked — no further messages can be sent.
+
+    <!-- Available Workers -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-people-fill" style="color:var(--accent)"></i> Available Workers</div>
+        <button class="btn btn-secondary btn-sm" onclick="showPanel('employees',null)"><i class="bi bi-arrow-right"></i> Browse All</button>
+      </div>
+      <div class="search-bar" style="padding:.8rem 1.2rem;border-bottom:1px solid var(--border);display:flex;gap:8px;">
+        <input style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;outline:none;" type="text" placeholder="🔍 Search workers…" oninput="renderWorkerGrid('dash-worker-grid',this.value)">
+      </div>
+      <div class="worker-grid" id="dash-worker-grid"></div>
+    </div>
+
+    <!-- Posted Jobs -->
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-briefcase-fill" style="color:var(--sky)"></i> Posted Jobs</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
+      </div>
+      <div class="table-wrap" id="dash-jobs-table">
+        <div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet</p></div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ═════════════ REPORT MODAL ═════════════ -->
-<div class="modal-overlay" id="report-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="bi bi-flag-fill" style="color:var(--rose);"></i> Report Worker</h2>
-      <button class="modal-close" onclick="closeModal('report-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>Reason</label>
-        <select id="report-reason">
-          <option>Inappropriate behavior</option>
-          <option>Fraud / Scam</option>
-          <option>No-show / Unresponsive</option>
-          <option>Harassment</option>
-          <option>Other</option>
+  <!-- ── EMPLOYEES PANEL ── -->
+  <div class="panel" id="panel-employees">
+    <div class="sec-head" style="background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+      <div class="sec-title"><i class="bi bi-people-fill"></i> Browse Workers</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end;">
+        <input type="text" id="emp-search-input" placeholder="🔍 Search name, role, county…" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;outline:none;min-width:200px;" oninput="renderWorkerGrid('emp-worker-grid',this.value)">
+        <select id="emp-role-filter" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;background:var(--card);" onchange="renderWorkerGrid('emp-worker-grid','')">
+          <option value="">All Roles</option>
+          <option>House Help</option><option>Cook</option><option>Nanny</option>
+          <option>Driver</option><option>Gardener</option><option>Security</option>
+        </select>
+        <select id="emp-avail-filter" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;background:var(--card);" onchange="renderWorkerGrid('emp-worker-grid','')">
+          <option value="">Any Availability</option>
+          <option value="Live-In">Live-In</option>
+          <option value="Live-Out">Live-Out</option>
+          <option value="Part-Time">Part-Time</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Details</label>
-        <textarea id="report-details" rows="4" placeholder="Describe what happened…"></textarea>
+    </div>
+    <div class="worker-grid" id="emp-worker-grid"><div class="empty" style="grid-column:1/-1"><i class="bi bi-people"></i><p>Loading workers…</p></div></div>
+  </div>
+
+  <!-- ── MESSAGES PANEL ── -->
+  <div class="panel" id="panel-messages">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;height:calc(100vh - 110px);">
+      <div class="chat-layout">
+        <div class="chat-sidebar">
+          <div class="chat-sb-head"><i class="bi bi-chat-dots-fill" style="color:var(--brand)"></i> Conversations</div>
+          <div class="chat-list" id="conv-list"></div>
+        </div>
+        <div class="chat-pane" id="chat-pane">
+          <div class="chat-placeholder">
+            <i class="bi bi-chat-square-text"></i>
+            <p style="font-size:13px;">Select a conversation to start chatting</p>
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── INTERVIEWS PANEL ── -->
+  <div class="panel" id="panel-interviews">
+    <div class="section">
+      <div class="sec-head"><div class="sec-title"><i class="bi bi-camera-video-fill"></i> All Interviews</div></div>
+      <div id="all-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
+    </div>
+  </div>
+
+  <!-- ── JOBS PANEL ── -->
+  <div class="panel" id="panel-jobs">
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-briefcase-fill"></i> My Posted Jobs</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
+      </div>
+      <div class="table-wrap" id="jobs-table-wrap">
+        <div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HIRES PANEL ── -->
+  <div class="panel" id="panel-hires">
+    <div class="section">
+      <div class="sec-head"><div class="sec-title"><i class="bi bi-check-circle-fill"></i> My Hires</div></div>
+      <div id="hires-list"><div class="empty"><i class="bi bi-person-check"></i><p>No hires yet</p></div></div>
+    </div>
+  </div>
+
+  <!-- ── FRAUD PANEL ── -->
+  <div class="panel" id="panel-fraud">
+    <div class="section">
+      <div class="sec-head"><div class="sec-title"><i class="bi bi-flag-fill" style="color:var(--rose)"></i> Report Fraud</div></div>
+      <div class="sec-body">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Report a worker for fraudulent activity, scams, harassment or any suspicious behaviour. Our team reviews all reports within 24 hours.</p>
+        <div class="form-group"><label>Worker Name / ID</label><input type="text" id="fraud-worker" placeholder="Full name or partial ID…"></div>
+        <div class="form-group"><label>Type of Fraud</label>
+          <select id="fraud-type">
+            <option>Identity Fraud</option><option>Payment Scam</option><option>Harassment</option>
+            <option>No-Show / Unresponsive</option><option>Forged Documents</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Description</label><textarea id="fraud-desc" rows="4" placeholder="Describe what happened in detail…"></textarea></div>
+        <button class="btn btn-danger" onclick="submitFraudReport()"><i class="bi bi-flag-fill"></i> Submit Report</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<div id="toast-stack"></div>
+
+<!-- ══════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════ -->
+
+<!-- ── MY PROFILE MODAL ── -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-person-circle"></i> My Profile</h2>
+      <button class="modal-close" onclick="closeModal('profile-modal')">×</button>
+    </div>
+    <div class="modal-body" id="profile-modal-body">
+      <!-- Tabs -->
+      <div class="settings-tabs">
+        <button class="stab active" onclick="switchProfileTab('info',this)"><i class="bi bi-person"></i> My Profile</button>
+        <button class="stab" onclick="switchProfileTab('interviews',this)"><i class="bi bi-camera-video"></i> Interviews</button>
+        <button class="stab" onclick="switchProfileTab('hires-tab',this)"><i class="bi bi-check-circle"></i> Hires</button>
+        <button class="stab" onclick="switchProfileTab('payments-tab',this)"><i class="bi bi-wallet2"></i> Payments</button>
+        <button class="stab" onclick="switchProfileTab('settings-tab',this)"><i class="bi bi-gear"></i> Settings</button>
+      </div>
+
+      <!-- Info -->
+      <div class="stab-content active" id="stab-info">
+        <div class="profile-hero">
+          <div class="profile-av-lg" id="pm-avatar">EP</div>
+          <div>
+            <div style="font-size:1.1rem;font-weight:800;" id="pm-name">Loading…</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px;" id="pm-company"></div>
+            <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;" id="pm-badges"></div>
+          </div>
+        </div>
+        <div class="profile-fields" id="pm-fields"></div>
+      </div>
+
+      <!-- Interviews -->
+      <div class="stab-content" id="stab-interviews">
+        <div id="pm-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
+      </div>
+
+      <!-- Hires -->
+      <div class="stab-content" id="stab-hires-tab">
+        <div id="pm-hires-list"><div class="empty"><i class="bi bi-person-check"></i><p>No hires yet</p></div></div>
+      </div>
+
+      <!-- Payments -->
+      <div class="stab-content" id="stab-payments-tab">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openModal('pay-modal')" style="margin-bottom:1rem;"><i class="bi bi-plus"></i> Make Payment</button>
+        <div id="pm-payments-list"><div class="empty"><i class="bi bi-receipt"></i><p>No payments yet</p></div></div>
+      </div>
+
+      <!-- Account Settings -->
+      <div class="stab-content" id="stab-settings-tab">
+        <div class="form-group"><label>New Password</label><input type="password" id="new-pwd" placeholder="Min. 8 characters"></div>
+        <div class="form-group"><label>Confirm Password</label><input type="password" id="confirm-pwd" placeholder="Repeat password"></div>
+        <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-bottom:1.5rem;"><i class="bi bi-lock"></i> Reset Password</button>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1.2rem;">
+        <div class="danger-zone">
+          <div style="font-size:12px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Danger Zone</div>
+          <div class="danger-item">
+            <div class="danger-item-info"><h4>Deactivate Account</h4><p>Temporarily suspend your account</p></div>
+            <button class="btn btn-danger btn-sm" onclick="deactivateAccount()">Deactivate</button>
+          </div>
+          <div class="danger-item">
+            <div class="danger-item-info"><h4>Delete Account</h4><p>Permanently remove all your data</p></div>
+            <button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-full" style="margin-top:1.2rem;" onclick="handleSignOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAYMENT MODAL ── -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-wallet2"></i> Payments</h2>
+      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="balance-box">
+        <div class="balance-grid">
+          <div class="balance-item"><div class="bal-lbl">Access Status</div><div class="bal-val" id="pay-status-val">Checking…</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Employer account</div></div>
+          <div class="balance-item"><div class="bal-lbl">Amount Due</div><div class="bal-val warn">KES 2,000</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">One-time, non-refundable</div></div>
+        </div>
+      </div>
+      <div class="pay-tabs">
+        <button class="ptab active" onclick="switchPayTab('history',this)">Payment History</button>
+        <button class="ptab" onclick="switchPayTab('make',this)">Make Payment</button>
+      </div>
+      <div class="ptab-content active" id="ptab-history">
+        <div id="pay-history-list"><div class="empty"><i class="bi bi-receipt"></i><p>No payments yet</p></div></div>
+      </div>
+      <div class="ptab-content" id="ptab-make">
+        <div class="form-group" style="margin-top:.5rem;">
+          <label>Payment Method</label>
+          <select id="pay-method" onchange="updatePayUI()">
+            <option value="">Choose method…</option>
+            <option value="mpesa">📱 M-Pesa STK Push</option>
+            <option value="airtel">📞 Airtel Money</option>
+            <option value="card">💳 Debit / Credit Card</option>
+            <option value="paybill">🏦 Paybill Manual</option>
+          </select>
+        </div>
+        <!-- M-Pesa -->
+        <div id="pf-mpesa" style="display:none">
+          <div style="background:rgba(27,107,69,.07);border:1px solid rgba(27,107,69,.2);border-radius:10px;padding:11px;margin-bottom:.9rem;font-size:12px;line-height:1.6;"><strong style="color:var(--brand);">📱 M-Pesa STK Push</strong><br>You will receive a PIN prompt on your phone. Confirm to complete the KES 2,000 payment.</div>
+          <div class="form-group"><label>Phone Number</label>
+            <div class="mpesa-wrap"><span class="mpesa-prefix">+254</span><input type="tel" id="mpesa-phone" placeholder="7XX XXX XXX" maxlength="9"></div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('mpesa')"><i class="bi bi-phone-fill"></i> Send STK Push – KES 2,000</button>
+        </div>
+        <!-- Airtel -->
+        <div id="pf-airtel" style="display:none">
+          <div style="background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:10px;padding:11px;margin-bottom:.9rem;font-size:12px;line-height:1.6;"><strong style="color:var(--sky);">📞 Airtel Money</strong><br>Enter your Airtel number to receive a payment prompt of KES 2,000.</div>
+          <div class="form-group"><label>Airtel Phone</label>
+            <div class="mpesa-wrap"><span class="mpesa-prefix">+254</span><input type="tel" id="airtel-phone" placeholder="7XX XXX XXX" maxlength="9"></div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('airtel')"><i class="bi bi-phone"></i> Request Airtel Payment</button>
+        </div>
+        <!-- Card -->
+        <div id="pf-card" style="display:none">
+          <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:11px;margin-bottom:.9rem;font-size:12px;line-height:1.6;"><strong style="color:var(--violet);">💳 Card Payment</strong><br>Pay KES 2,000 using Visa, Mastercard or any debit card.</div>
+          <div class="form-group"><label>Card Number</label><input type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Expiry (MM/YY)</label><input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)"></div>
+            <div class="form-group"><label>CVV</label><input type="password" id="card-cvv" placeholder="•••" maxlength="3"></div>
+          </div>
+          <div class="form-group"><label>Cardholder Name</label><input type="text" id="card-name" placeholder="As on card"></div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('card')"><i class="bi bi-credit-card"></i> Pay KES 2,000</button>
+        </div>
+        <!-- Paybill -->
+        <div id="pf-paybill" style="display:none">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:.9rem;font-size:12px;line-height:1.9;">
+            <strong>Paybill Details</strong><br>
+            Paybill No: <strong style="font-family:monospace;font-size:14px;">400200</strong><br>
+            Account: <strong style="font-family:monospace;font-size:14px;">EMP-ACCESS</strong><br>
+            Amount: <strong style="font-family:monospace;font-size:14px;">KES 2,000</strong>
+          </div>
+          <div class="form-group"><label>M-Pesa Confirmation Code</label><input type="text" id="paybill-ref" placeholder="e.g. QJG3XYZABC" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+          <button class="btn btn-primary btn-full" onclick="submitPayment('paybill')"><i class="bi bi-check-circle"></i> Submit Receipt</button>
+        </div>
+        <div id="pay-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:12px;color:#991b1b;margin-top:.8rem;"></div>
+        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:11px;margin-top:1.2rem;font-size:11px;color:var(--muted);line-height:1.7;">
+          <strong style="color:var(--ink);">💡 Payment Policy</strong><br>Employer access fee is one-time and non-refundable. Unlocks messaging, interviews, full worker profiles and contact details.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECEIPT MODAL ── -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-receipt"></i> Payment Submitted</h2><button class="modal-close" onclick="closeModal('receipt-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:1.2rem;">
+        <div style="width:54px;height:54px;background:rgba(34,197,94,.14);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .6rem;"><i class="bi bi-check-circle-fill" style="font-size:26px;color:var(--green);"></i></div>
+        <div style="font-size:1rem;font-weight:800;color:#14532d;">Payment Submitted!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">Our team will verify and activate your account shortly.</div>
+      </div>
+      <div class="receipt-box">
+        <div class="receipt-row"><span class="receipt-lbl">Reference</span><span class="receipt-val" id="r-ref">—</span></div>
+        <div class="receipt-row"><span class="receipt-lbl">Method</span><span class="receipt-val" id="r-method">—</span></div>
+        <div class="receipt-row"><span class="receipt-lbl">Date</span><span class="receipt-val" id="r-date">—</span></div>
+        <div class="receipt-row"><span class="receipt-lbl">Amount</span><span class="receipt-val" style="color:var(--brand);">KES 2,000</span></div>
+        <div class="receipt-row"><span class="receipt-lbl">Status</span><span class="receipt-val" style="color:var(--accent);"><i class="bi bi-hourglass-split"></i> Pending Verification</span></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary btn-full" onclick="closeModal('receipt-modal')">Done</button></div>
+  </div>
+</div>
+
+<!-- ── POST JOB MODAL ── -->
+<div class="modal-overlay" id="post-job-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><h2><i class="bi bi-briefcase-fill"></i> Post a Job</h2><button class="modal-close" onclick="closeModal('post-job-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Job Title</label><input type="text" id="jb-title" placeholder="e.g. House Help Needed in Karen"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Job Role</label>
+          <select id="jb-role">
+            <option>House Help</option><option>Cook</option><option>Nanny / Childcare</option>
+            <option>Driver</option><option>Gardener</option><option>Security Guard</option>
+            <option>Cleaner</option><option>Caregiver</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Job Type</label>
+          <select id="jb-type">
+            <option value="full-time">Full-Time</option><option value="part-time">Part-Time</option>
+            <option value="contract">Contract</option><option value="temporary">Temporary</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Location / Town</label><input type="text" id="jb-location" placeholder="e.g. Westlands, Nairobi"></div>
+        <div class="form-group"><label>County</label><input type="text" id="jb-county" placeholder="e.g. Nairobi"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Min. Salary (KES)</label><input type="number" id="jb-sal-min" placeholder="e.g. 8000"></div>
+        <div class="form-group"><label>Max. Salary (KES)</label><input type="number" id="jb-sal-max" placeholder="e.g. 15000"></div>
+      </div>
+      <div class="form-group"><label>Work Arrangement</label>
+        <select id="jb-work-type">
+          <option value="Live-In">Live-In</option><option value="Live-Out">Live-Out</option>
+          <option value="Part-Time">Part-Time</option><option value="Flexible">Flexible</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="jb-desc" rows="4" placeholder="Describe duties, schedule, expectations…"></textarea></div>
+      <div class="form-group"><label>Requirements</label><textarea id="jb-reqs" rows="3" placeholder="Experience, qualifications, certifications…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Deadline</label><input type="date" id="jb-deadline"></div>
+        <div class="form-group"><label>Slots / Positions</label><input type="number" id="jb-slots" placeholder="1" min="1" value="1"></div>
+      </div>
+      <div style="display:flex;gap:1.2rem;margin-bottom:.6rem;">
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;"><input type="checkbox" id="jb-urgent"> Mark as Urgent</label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;"><input type="checkbox" id="jb-featured"> Feature this Job</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('post-job-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="postJob()"><i class="bi bi-send-fill"></i> Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORKER VIEW PROFILE MODAL ── -->
+<div class="modal-overlay" id="worker-profile-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><h2><i class="bi bi-person-badge"></i> Worker Profile</h2><button class="modal-close" onclick="closeModal('worker-profile-modal')">×</button></div>
+    <div class="modal-body" id="worker-profile-body">Loading…</div>
+    <div class="modal-footer" id="worker-profile-footer"></div>
+  </div>
+</div>
+
+<!-- ── NOTIFICATION MODAL ── -->
+<div class="modal-overlay" id="notif-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-bell-fill"></i> Notifications</h2>
+      <button class="modal-close" onclick="closeModal('notif-modal')">×</button>
+    </div>
+    <div class="modal-body" style="padding:0;min-height:300px;">
+      <div id="notif-list"><div class="empty"><i class="bi bi-bell-slash"></i><p>No notifications</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── REPORT MODAL ── -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-flag-fill" style="color:var(--rose)"></i> Report Worker</h2><button class="modal-close" onclick="closeModal('report-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Reason</label>
+        <select id="report-reason">
+          <option>Inappropriate Behaviour</option><option>Fraud / Scam</option>
+          <option>No-show / Unresponsive</option><option>Harassment</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Details</label><textarea id="report-details" rows="4" placeholder="Describe what happened…"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('report-modal')">Cancel</button>
@@ -381,676 +830,1079 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;backgroun
   </div>
 </div>
 
-<!-- ═════════════ PAYMENT MODAL (clone of employee wallet style) ═════════════ -->
-<div class="modal-overlay" id="pay-modal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-header">
-      <h2><i class="bi bi-wallet2"></i> Make Payment</h2>
-      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="balance-box">
-        <div class="balance-grid">
-          <div class="balance-item">
-            <div class="balance-label">Access Fee Status</div>
-            <div class="balance-amount" id="fee-status-val">Pending</div>
-            <div class="balance-sub">Employer account</div>
-          </div>
-          <div class="balance-item">
-            <div class="balance-label">Amount Due</div>
-            <div class="balance-amount warning">KES 2,000</div>
-            <div class="balance-sub">One-time, non-refundable</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchPayTab('history',this)">History</button>
-        <button class="tab-btn" onclick="switchPayTab('make',this)">Make Payment</button>
-      </div>
-
-      <div id="paytab-history" class="tab-content active" style="padding-top:1rem;">
-        <div id="pay-history-list">
-          <div class="empty-state"><i class="bi bi-receipt"></i><p>No payments yet.</p></div>
-        </div>
-      </div>
-
-      <div id="paytab-make" class="tab-content" style="padding-top:1rem;">
-        <div class="form-group">
-          <label>Fee Type</label>
-          <select id="fee-type">
-            <option value="employer_access_fee">Employer Access Fee – KES 2,000</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Payment Method</label>
-          <select id="pay-method" onchange="updatePaymentUI()">
-            <option value="">Choose…</option>
-            <option value="mpesa">📱 M-Pesa</option>
-            <option value="airtel">📞 Airtel Money</option>
-            <option value="manual">🏦 Paybill Deposit</option>
-          </select>
-        </div>
-
-        <div id="mpesa-form" style="display:none;">
-          <div style="background:rgba(27,107,69,.08);border:1px solid rgba(27,107,69,.2);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;">
-            <strong style="color:var(--brand);">📱 M-Pesa STK Push</strong><br>
-            Enter your phone number to receive an M-Pesa PIN prompt.
-          </div>
-          <div class="form-group">
-            <label>M-Pesa Phone</label>
-            <div class="mpesa-input">
-              <span class="prefix">+254</span>
-              <input type="tel" id="mpesa-phone" placeholder="7XX XXX XXX" maxlength="9">
-            </div>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="submitPayment('mpesa')"><i class="bi bi-phone-fill"></i> Send STK Push</button>
-        </div>
-
-        <div id="airtel-form" style="display:none;">
-          <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;">
-            <strong style="color:var(--sky);">📞 Airtel Money</strong><br>
-            Enter your Airtel number to receive a payment prompt.
-          </div>
-          <div class="form-group">
-            <label>Airtel Phone</label>
-            <div class="mpesa-input">
-              <span class="prefix">+254</span>
-              <input type="tel" id="airtel-phone" placeholder="7XX XXX XXX" maxlength="9">
-            </div>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="submitPayment('airtel')">Request Payment</button>
-        </div>
-
-        <div id="manual-form" style="display:none;">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:1rem;font-size:12px;line-height:1.8;">
-            <strong>Paybill Details</strong><br>
-            Paybill: <strong style="font-family:monospace;">400200</strong><br>
-            Account: <strong style="font-family:monospace;">EMP-ACCESS</strong><br>
-            Amount: <strong style="font-family:monospace;">KES 2,000</strong>
-          </div>
-          <div class="form-group">
-            <label>Receipt / Confirmation Code</label>
-            <input type="text" id="receipt-code" placeholder="e.g. QJG3XYZABC" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
-          </div>
-          <button class="btn btn-primary btn-full" onclick="submitPayment('manual')"><i class="bi bi-check-circle"></i> Verify Receipt</button>
-        </div>
-
-        <div id="pay-error" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:12px;color:#991b1b;display:none;margin-top:.75rem;"></div>
-        <div id="pay-success" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;font-size:12px;color:#14532d;display:none;margin-top:.75rem;"></div>
-
-        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:12px;margin-top:1.2rem;font-size:11px;color:var(--muted);line-height:1.7;">
-          <strong style="color:var(--ink);">💡 Payment Policy</strong><br>
-          Employer access fee is one-time and non-refundable. Unlocks messaging, interviews, full worker profiles and contact details.
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═════════════ RECEIPT MODAL ═════════════ -->
-<div class="modal-overlay" id="receipt-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2><i class="bi bi-receipt"></i> Payment Receipt</h2>
-      <button class="modal-close" onclick="closeModal('receipt-modal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div style="text-align:center;margin-bottom:1rem;">
-        <div style="width:56px;height:56px;background:rgba(34,197,94,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;">
-          <i class="bi bi-check-circle-fill" style="font-size:28px;color:var(--green);"></i>
-        </div>
-        <div style="font-size:1.1rem;font-weight:800;color:#14532d;">Payment Submitted</div>
-      </div>
-      <div class="receipt-box">
-        <div class="receipt-row"><span class="receipt-label">Reference</span><span class="receipt-val" id="r-ref">—</span></div>
-        <div class="receipt-row"><span class="receipt-label">Method</span><span class="receipt-val" id="r-method">—</span></div>
-        <div class="receipt-row"><span class="receipt-label">Date</span><span class="receipt-val" id="r-date">—</span></div>
-        <div class="receipt-row"><span class="receipt-label">Amount</span><span class="receipt-val" style="color:var(--brand);" id="r-amount">KES 2,000</span></div>
-        <div class="receipt-row"><span class="receipt-label">Status</span><span class="receipt-val" style="color:var(--accent);"><i class="bi bi-hourglass-split"></i> Pending Verification</span></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-primary btn-full" onclick="closeModal('receipt-modal')">Done</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- ─────────────────────────────────────────────
+     JAVASCRIPT
+───────────────────────────────────────────── -->
 <script>
-// ═══════════════════════════════════════════
-//   SUPABASE CONFIG
-// ═══════════════════════════════════════════
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTI4MjYxNTMsImV4cCI6MjAyODQwMjE1M30.VhjoRlnHgcpSi4JAzDQdx7bWi_DIb7bPCBi0GGsUNi4';
-const ADMIN_NAME = 'SoundsCare Support';
 
-let sb, currentUser, employerProfile;
-// workers who have active conversations with this employer
-let employees = [];       // [{id, name, role, presence, lastSeen, blocked, convoEnded, convId, workerId, photo}]
-let conversations = {};   // convId -> { messages:[], adminJoined:bool }
-let activeEmpId = null;   // active conversation id (uuid)
-let presenceMap = {};     // worker_profile.id -> {is_online, last_seen}
-let realtimeChannel = null;
+let sb, currentUser, employerProfile, employerProfileId;
+let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [];
+let presenceMap = {}, workerMap = {};
+let activeConvId = null;
+let convMessages = {}; // convId -> [{id,from,text,t,status}]
+let typingTimer = null, typingChannel = null;
+let reportTargetConvId = null;
 
-// ═══════════════════════════════════════════
-//   INIT
-// ═══════════════════════════════════════════
+// ── INIT ──
 (async () => {
   sb = window.supabaseClient || supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   if (!window.supabaseClient) window.supabaseClient = sb;
 
   const { data: { session } } = await sb.auth.getSession();
   if (!session?.user) { window.location.href = 'login.html'; return; }
+  currentUser = session.user;
 
-  const { data: { user } } = await sb.auth.getUser();
-  currentUser = user;
+  startClock();
+  await loadAll();
+  setupRealtime();
+})();
 
-  // Load employer profile
+// ── CLOCK + GREETING ──
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const h = now.getHours();
+    const greeting = h < 12 ? 'Good Morning 🌅' : h < 17 ? 'Good Afternoon ☀️' : h < 21 ? 'Good Evening 🌆' : 'Good Night 🌙';
+    document.getElementById('greeting-text').textContent = greeting;
+    document.getElementById('gc-time').innerHTML = `<i class="bi bi-clock"></i> ${now.toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})}`;
+  }
+  tick(); setInterval(tick, 30000);
+}
+
+// ── LOAD ALL DATA ──
+async function loadAll() {
+  // employer profile
   const { data: ep } = await sb.from('employer_profiles')
-    .select('id, full_name, company_name, location, profile_photo_url, is_verified, hiring_history')
-    .eq('user_id', currentUser.id)
-    .limit(1)
-    .maybeSingle();
-
+    .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at')
+    .eq('user_id', currentUser.id).maybeSingle();
   employerProfile = ep;
+  employerProfileId = ep?.id;
 
   const name = ep?.full_name || ep?.company_name || currentUser.email?.split('@')[0] || 'Employer';
   const initArr = name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
   document.getElementById('nav-avatar').textContent = initArr;
-  document.querySelector('.page-head h1').textContent = 'Welcome, ' + name.split(' ')[0];
+  document.getElementById('greeting-sub').textContent = `Welcome back, ${name.split(' ')[0]}. Here's what's happening today.`;
 
-  await loadData();
-  subscribeRealtime();
-})();
-
-// ═══════════════════════════════════════════
-//   LOAD CONVERSATIONS + WORKERS
-// ═══════════════════════════════════════════
-async function loadData() {
-  // 1. Conversations where this employer is the sender
-  const { data: convs, error: convErr } = await sb.from('conversations')
-    .select('id, employee_id, last_message_text, last_message_at, employer_unread, employer_blocked, employee_blocked, status')
+  // conversations
+  const { data: convs } = await sb.from('conversations')
+    .select('id,employee_id,last_message_text,last_message_at,last_msg_at,employer_unread,status,is_admin_thread,employer_blocked,employee_blocked,not_interested_at')
     .eq('employer_id', currentUser.id)
     .order('last_message_at', { ascending: false });
+  allConvs = convs || [];
 
-  if (convErr) console.error('conversations error:', convErr.message);
-
-  const allConvs = convs || [];
-
-  // 2. Resolve worker profiles for each conversation (flat query — no nested FK joins)
-  const workerIds = [...new Set(allConvs.map(c => c.employee_id).filter(Boolean))];
-  let workerMap = {};
-  if (workerIds.length) {
-    // worker_profiles links via session_id (text UUID), but conversations.employee_id is auth.uid
-    // Try matching session_id first, then worker_profiles where id = employee_id (some rows may have id = auth uuid)
+  // workers
+  const wids = [...new Set(allConvs.map(c=>c.employee_id).filter(Boolean))];
+  if (wids.length) {
     const { data: wps } = await sb.from('worker_profiles')
-      .select('id, session_id, full_name, preferred_role, profile_photo_url, status, county')
-      .in('session_id', workerIds.map(String));
-    (wps || []).forEach(w => { workerMap[w.session_id] = w; });
+      .select('id,session_id,full_name,preferred_role,profile_photo_url,status,county,work_arrangement,is_verified,approved_at,created_at,edu_level,about_text,availability,languages,salary_min,salary_max,experience')
+      .in('session_id', wids.map(String));
+    (wps||[]).forEach(w => { workerMap[w.session_id] = w; });
+    // presence
+    const { data: pres } = await sb.from('user_presence').select('user_id,is_online,last_seen').in('user_id', wids);
+    (pres||[]).forEach(p => { presenceMap[p.user_id] = p; });
   }
 
-  // 3. Presence for known workers
-  if (workerIds.length) {
-    const { data: pres } = await sb.from('user_presence')
-      .select('user_id, is_online, last_seen')
-      .in('user_id', workerIds);
-    (pres || []).forEach(p => { presenceMap[p.user_id] = p; });
+  // all available workers for browse
+  const { data: avail } = await sb.from('worker_profiles')
+    .select('id,session_id,full_name,preferred_role,profile_photo_url,county,work_arrangement,is_verified,availability,salary_min,salary_max,about_text,created_at,edu_level,experience,languages,is_deleted,status')
+    .eq('is_deleted', false).limit(80);
+  allWorkers = avail || [];
+
+  // jobs
+  if (employerProfileId) {
+    const { data: jobs } = await sb.from('job_postings')
+      .select('*').eq('employer_id', employerProfileId).order('created_at', { ascending: false });
+    allJobs = jobs || [];
   }
 
-  // 4. Build employees array from conversations
-  employees = allConvs.map(c => {
-    const wp = workerMap[c.employee_id] || null;
-    const pres = presenceMap[c.employee_id] || null;
-    const isOnline = pres?.is_online;
-    const lastSeen = pres?.last_seen ? new Date(pres.last_seen).getTime() : null;
-    const presenceLabel = isOnline ? 'online' : (lastSeen && Date.now()-lastSeen < 30*60*1000 ? 'away' : 'offline');
-    const blocked = c.employer_blocked || c.employee_blocked || false;
-    const ended = c.status === 'ended';
-    return {
-      id: c.id,          // convId used as the key throughout
-      convId: c.id,
-      workerId: c.employee_id,
-      name: wp?.full_name || 'Unknown Worker',
-      role: wp?.preferred_role || '—',
-      photo: wp?.profile_photo_url || null,
-      presence: presenceLabel,
-      lastSeen,
-      blocked,
-      convoEnded: ended,
-      status: blocked ? 'blocked' : ended ? 'ended' : 'active',
-      unread: c.employer_unread || 0,
-    };
-  });
+  // interviews
+  const { data: ivs } = await sb.from('interviews')
+    .select('*').eq('employer_id', currentUser.id).order('created_at', { ascending: false });
+  allInterviews = ivs || [];
 
-  // 5. Load payment history for employer (payments table: user_id = auth.uid())
+  // payments
   const { data: pays } = await sb.from('payments')
-    .select('id, transaction_id, amount, fee_type, payment_method, status, mpesa_ref, created_at')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false });
-  renderPayHistory(pays || []);
+    .select('id,transaction_id,amount,fee_type,payment_method,status,mpesa_ref,created_at')
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  allPayments = pays || [];
 
-  // 6. Show/hide access confirmed banner based on any confirmed employer access fee
-  const hasPaid = (pays || []).some(p => p.fee_type === 'employer_access_fee' && p.status === 'confirmed');
-  document.getElementById('access-confirmed').style.display = hasPaid ? 'block' : 'none';
+  // notifications
+  const { data: notifs } = await sb.from('notifications')
+    .select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(30);
+  allNotifs = notifs || [];
 
-  renderEmployees();
+  renderAll();
 }
 
-// ═══════════════════════════════════════════
-//   REALTIME SUBSCRIPTIONS
-// ═══════════════════════════════════════════
-function subscribeRealtime() {
-  if (realtimeChannel) sb.removeChannel(realtimeChannel);
-  realtimeChannel = sb.channel('employer-dash-' + currentUser.id)
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'messages',
-    }, async (payload) => {
-      const msg = payload.new;
-      if (!msg?.conversation_id) return;
-      const emp = employees.find(e => e.convId === msg.conversation_id);
-      if (!emp) return;
-      // append to in-memory conversation if open
-      if (conversations[emp.id]) {
-        const fromSelf = msg.sender_id === currentUser.id;
-        conversations[emp.id].messages.push({
-          from: fromSelf ? 'employer' : 'worker',
-          text: msg.body || msg.content || msg.message || '',
-          t: new Date(msg.created_at).getTime(),
-          id: msg.id,
-        });
-        if (activeEmpId === emp.id) renderMessages();
-      }
-      // refresh unread badge
-      await loadData();
-    })
-    .on('postgres_changes', {
-      event: '*', schema: 'public', table: 'conversations',
-      filter: `employer_id=eq.${currentUser.id}`
-    }, async () => { await loadData(); })
-    .subscribe();
+function renderAll() {
+  renderGreetingStats();
+  renderRecentConvs();
+  renderRecentInterviews();
+  renderWorkerGrid('dash-worker-grid','');
+  renderWorkerGrid('emp-worker-grid','');
+  renderConvList();
+  renderJobsTable();
+  renderInterviewsPanel();
+  renderHiresPanel();
+  renderPayHistory();
+  renderProfileModal();
+  renderNotifs();
+  updateBadges();
 }
 
-// ═══════════════════════════════════════════
-//   RENDER EMPLOYEES
-// ═══════════════════════════════════════════
-function renderEmployees(){
-  const q = (document.getElementById('emp-search').value || '').toLowerCase();
-  const grid = document.getElementById('emp-grid');
-  const filtered = employees.filter(e => e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q));
+// ── STATS ──
+function renderGreetingStats() {
+  document.getElementById('stat-workers').textContent = allConvs.length;
+  document.getElementById('stat-interviews').textContent = allInterviews.length;
+  document.getElementById('stat-hires').textContent = employerProfile?.hiring_history || 0;
+  document.getElementById('stat-jobs').textContent = allJobs.length;
+}
 
-  if (!filtered.length){
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="bi bi-people"></i><p>No worker conversations yet.</p></div>';
-  } else {
-    grid.innerHTML = filtered.map(e => `
-      <div class="emp-card">
-        <div class="emp-top">
-          <div class="emp-av">${e.photo ? `<img src="${esc(e.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : initials(e.name)}<span class="presence-dot ${e.presence}"></span></div>
-          <div>
-            <div class="emp-name">${esc(e.name)}</div>
-            <div class="emp-role">${esc(e.role)}</div>
-            <div class="emp-status-line">${presenceLbl(e)}</div>
-          </div>
+// ── RECENT CONVS (dashboard) ──
+function renderRecentConvs() {
+  const el = document.getElementById('recent-convs-list');
+  const top = allConvs.slice(0, 5);
+  if (!top.length) { el.innerHTML = '<div class="empty"><i class="bi bi-chat-square-dots"></i><p>No conversations yet</p></div>'; return; }
+  el.innerHTML = top.map(c => {
+    const wp = workerMap[c.employee_id];
+    const name = wp?.full_name || 'Worker';
+    const unread = c.employer_unread || 0;
+    const t = c.last_message_at || c.last_msg_at;
+    return `<div class="conv-row" onclick="openConvInMessages('${c.id}')">
+      <div class="conv-av">${wp?.profile_photo_url?`<img src="${esc(wp.profile_photo_url)}">`:''}${ini(name)}</div>
+      <div class="conv-info">
+        <div class="conv-name">${esc(name)}</div>
+        <div class="conv-preview">${esc(c.last_message_text||'No messages yet')}</div>
+      </div>
+      <div class="conv-meta">
+        <div class="conv-time">${timeAgo(t)}</div>
+        ${unread ? `<div class="conv-unread">${unread}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RECENT INTERVIEWS (dashboard) ──
+function renderRecentInterviews() {
+  const el = document.getElementById('recent-interviews-list');
+  const top = allInterviews.slice(0, 4);
+  if (!top.length) { el.innerHTML = '<div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div>'; return; }
+  el.innerHTML = top.map(iv => {
+    const conv = allConvs.find(c => c.employee_id === iv.worker_id) || {};
+    const wp = Object.values(workerMap).find(w => w.id === iv.worker_id);
+    const name = wp?.full_name || 'Worker';
+    const statusMap = { scheduled:'badge-sky',completed:'badge-green',cancelled:'badge-rose',rescheduled:'badge-amber',no_show:'badge-muted' };
+    return `<div class="interview-row">
+      <div class="iv-av">${ini(name)}</div>
+      <div class="iv-info"><div class="iv-name">${esc(name)}</div><div class="iv-role">${iv.interview_type||'Initial'} · ${fmtDate(iv.scheduled_at)}</div></div>
+      <div class="iv-actions">
+        <span class="badge ${statusMap[iv.status]||'badge-muted'}">${iv.status||'scheduled'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── WORKER GRID ──
+function renderWorkerGrid(targetId, q) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const roleF = document.getElementById('emp-role-filter')?.value || '';
+  const availF = document.getElementById('emp-avail-filter')?.value || '';
+  const qr = (q||'').toLowerCase();
+  let list = allWorkers.filter(w => {
+    const matchQ = !qr || (w.full_name||'').toLowerCase().includes(qr) || (w.preferred_role||'').toLowerCase().includes(qr) || (w.county||'').toLowerCase().includes(qr);
+    const matchR = !roleF || (w.preferred_role||'').toLowerCase().includes(roleF.toLowerCase());
+    const matchA = !availF || (w.work_arrangement||w.availability||'').includes(availF);
+    return matchQ && matchR && matchA;
+  });
+  if (!list.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="bi bi-people"></i><p>No workers found</p></div>'; return; }
+  el.innerHTML = list.map(w => {
+    const pres = presenceMap[w.session_id];
+    const presClass = pres?.is_online ? 'online' : (pres?.last_seen && Date.now()-new Date(pres.last_seen)<30*60*1000 ? 'away' : 'offline');
+    const hasConv = allConvs.find(c => c.employee_id === w.session_id);
+    return `<div class="wcard" onclick="viewWorkerProfile('${w.id}','${w.session_id||''}')">
+      <div class="wcard-top">
+        <div class="wc-av">
+          ${w.profile_photo_url ? `<img src="${esc(w.profile_photo_url)}" onerror="this.style.display='none'">` : ini(w.full_name)}
+          <span class="pres-dot ${presClass}"></span>
         </div>
-        <div class="emp-tags">
-          ${e.blocked ? '<span class="emp-tag blocked"><i class="bi bi-slash-circle"></i> Blocked</span>' : ''}
-          ${e.convoEnded && !e.blocked ? '<span class="emp-tag"><i class="bi bi-check-circle"></i> Interview Ended</span>' : ''}
-          ${!e.blocked && !e.convoEnded ? `<span class="emp-tag"><i class="bi bi-chat-dots"></i> Open Conversation</span>${e.unread > 0 ? `<span class="emp-tag" style="background:rgba(244,63,94,.12);color:var(--rose);">${e.unread} new</span>` : ''}` : ''}
-        </div>
-        <div class="emp-actions">
-          <button class="btn btn-primary btn-sm" onclick="openInterview('${e.id}')">
-            <i class="bi bi-chat-dots-fill"></i> ${e.convoEnded ? 'View Chat' : 'Interview'}
-          </button>
+        <div>
+          <div class="wc-name">${esc(w.full_name||'Unknown')}</div>
+          <div class="wc-role">${esc(w.preferred_role||'—')} ${w.county ? '· '+esc(w.county) : ''}</div>
         </div>
       </div>
-    `).join('');
-  }
-  updateStats();
+      <div class="wc-tags">
+        ${w.is_verified ? '<span class="tag tag-green"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+        ${w.work_arrangement ? `<span class="tag tag-sky">${esc(w.work_arrangement)}</span>` : ''}
+        ${w.salary_min ? `<span class="tag tag-muted">KES ${(+w.salary_min).toLocaleString()}${w.salary_max?'–'+(+w.salary_max).toLocaleString():''}</span>` : ''}
+      </div>
+      <div class="wc-actions">
+        ${hasConv ? `<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openConvInMessages('${hasConv.id}')"><i class="bi bi-chat-dots-fill"></i> Message</button>` :
+          `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();startConversation('${w.session_id||w.id}','${esc(w.full_name||'Worker')}')"><i class="bi bi-chat-dots"></i> Message</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();viewWorkerProfile('${w.id}','${w.session_id||''}')"><i class="bi bi-eye"></i> View</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function presenceLbl(e){
-  if (e.presence === 'online') return '<span class="dot-txt online">● Online</span>';
-  if (e.presence === 'away') return '<span class="dot-txt away">● Away</span> · last seen '+timeAgo(e.lastSeen);
-  return '<span>Offline</span>' + (e.lastSeen ? ' · last seen '+timeAgo(e.lastSeen) : '');
+// ── CONV LIST (messages panel) ──
+function renderConvList() {
+  const el = document.getElementById('conv-list');
+  if (!el) return;
+  if (!allConvs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-chat-square"></i><p>No conversations</p></div>'; return; }
+  el.innerHTML = allConvs.map(c => {
+    const wp = workerMap[c.employee_id];
+    const name = wp?.full_name || 'Worker';
+    const unread = c.employer_unread || 0;
+    const t = c.last_message_at || c.last_msg_at;
+    return `<div class="chat-list-item ${activeConvId===c.id?'active':''}" onclick="openConv('${c.id}')">
+      <div class="cli-av">${wp?.profile_photo_url?`<img src="${esc(wp.profile_photo_url)}" onerror="this.remove()">`:''}${ini(name)}</div>
+      <div class="cli-info">
+        <div class="cli-name">${esc(name)}</div>
+        <div class="cli-preview">${esc(c.last_message_text||'No messages yet')}</div>
+      </div>
+      <div class="cli-meta">
+        <div class="cli-time">${timeAgo(t)}</div>
+        ${unread ? `<div class="cli-unread">${unread}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function initials(name){ return (name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+// ── OPEN CONVERSATION ──
+async function openConv(convId) {
+  activeConvId = convId;
+  document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.chat-list-item[onclick="openConv('${convId}')"]`)?.classList.add('active');
 
-function updateStats(){
-  document.getElementById('stat-total').textContent = employees.length;
-  document.getElementById('stat-active').textContent = employees.filter(e=>!e.blocked && !e.convoEnded).length;
-  document.getElementById('stat-ended').textContent = employees.filter(e=>e.convoEnded).length;
-  document.getElementById('stat-blocked').textContent = employees.filter(e=>e.blocked).length;
-}
+  const conv = allConvs.find(c => c.id === convId);
+  const wp = workerMap[conv?.employee_id];
+  const name = wp?.full_name || 'Worker';
+  const pres = presenceMap[conv?.employee_id];
+  const presClass = pres?.is_online ? 'online' : 'offline';
+  const presLabel = pres?.is_online ? 'Online' : pres?.last_seen ? 'Last seen '+timeAgo(pres.last_seen) : 'Offline';
 
-// ═══════════════════════════════════════════
-//   CHAT / INTERVIEW
-// ═══════════════════════════════════════════
-async function openInterview(id){
-  activeEmpId = id;
-  const e = employees.find(x=>x.id===id);
-  document.getElementById('chat-av').textContent = initials(e.name);
-  document.getElementById('chat-name').textContent = e.name;
-  renderChatStatus(e);
-  renderChatState(e);
+  // Build chat pane HTML
+  const pane = document.getElementById('chat-pane');
+  const isClosed = conv?.status === 'closed' || conv?.status === 'archived';
+  const isBlocked = conv?.employer_blocked || conv?.employee_blocked;
+  const isNotInterested = !!conv?.not_interested_at;
 
-  // Load messages if not cached
-  if (!conversations[id]) {
-    conversations[id] = { messages: [], adminJoined: false };
+  pane.innerHTML = `
+    <div class="chat-head">
+      <div class="chat-head-av" onclick="viewWorkerProfile('${wp?.id||''}','${conv?.employee_id||''}')" style="cursor:pointer" title="View Profile">
+        ${wp?.profile_photo_url?`<img src="${esc(wp.profile_photo_url)}" onerror="this.style.display='none'">`:''}${ini(name)}
+      </div>
+      <div class="chat-head-info">
+        <div class="chat-head-name">${esc(name)} <span style="font-size:10px;color:var(--muted);font-weight:500;">& You</span></div>
+        <div class="chat-head-status"><span class="status-dot ${presClass}"></span>${presLabel}</div>
+      </div>
+      <div class="chat-head-actions">
+        <button class="chat-head-btn success" onclick="scheduleInterview('${convId}','${esc(name)}')" title="Schedule Interview"><i class="bi bi-camera-video-fill"></i> Interview</button>
+        <button class="chat-head-btn" onclick="hireWorker('${conv?.employee_id||''}','${convId}')" title="Hire this worker"><i class="bi bi-check-circle-fill"></i> Hire</button>
+        <div class="kebab-wrap">
+          <button class="kebab-btn" onclick="toggleKebab(event)" title="More options"><i class="bi bi-three-dots-vertical"></i></button>
+          <div class="kebab-menu" id="kebab-${convId}">
+            <button class="kebab-item" onclick="viewWorkerProfile('${wp?.id||''}','${conv?.employee_id||''}');closeKebab()"><i class="bi bi-person"></i> View Profile</button>
+            <div class="kebab-sep"></div>
+            <button class="kebab-item" onclick="markNotInterested('${convId}');closeKebab()"><i class="bi bi-hand-thumbs-down"></i> Not Interested</button>
+            <button class="kebab-item danger" onclick="endConversation('${convId}');closeKebab()"><i class="bi bi-stop-circle"></i> End Interview</button>
+            <button class="kebab-item danger" onclick="blockWorker('${convId}');closeKebab()"><i class="bi bi-slash-circle"></i> Block Worker</button>
+            <button class="kebab-item danger" onclick="reportTargetConvId='${convId}';closeKebab();openModal('report-modal')"><i class="bi bi-flag"></i> Report</button>
+          </div>
+        </div>
+        <button style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--muted);width:30px;height:30px;display:flex;align-items:center;justify-content:center;" onclick="closeModal('chat-modal')">×</button>
+      </div>
+    </div>
+    <div class="chat-body" id="chat-body-${convId}">
+      <div class="chat-system"><i class="bi bi-shield-check" style="color:var(--brand)"></i> This conversation is end-to-end monitored for safety</div>
+      <div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px;" id="msgs-loading">Loading messages…</div>
+    </div>
+    ${!isClosed && !isBlocked && !isNotInterested ? `
+    <div class="chat-input-wrap" id="chat-input-${convId}">
+      <button class="chat-icon-btn" onclick="requestFile('${convId}')" title="Request file"><i class="bi bi-paperclip"></i></button>
+      <textarea class="chat-input" id="chat-input-text" rows="1" placeholder="Type a message…"
+        oninput="onTypingInput('${convId}')" onkeydown="onChatKey(event,'${convId}')"></textarea>
+      <button class="chat-send-btn" onclick="sendMsg('${convId}')"><i class="bi bi-send-fill"></i></button>
+    </div>` : `
+    <div class="chat-closed-bar ${isBlocked?'blocked':isNotInterested?'paused':'ended'}">
+      <i class="bi bi-${isBlocked?'slash-circle-fill':isNotInterested?'hand-thumbs-down-fill':'lock-fill'}"></i>
+      ${isBlocked ? 'Worker blocked — messaging disabled.' : isNotInterested ? 'Marked as not interested.' : 'Interview ended — conversation is view-only.'}
+    </div>`}
+  `;
+
+  // Load messages
+  if (!convMessages[convId]) {
     const { data: msgs } = await sb.from('messages')
-      .select('id, sender_id, body, content, message, created_at, is_from_admin, msg_type')
-      .eq('conversation_id', e.convId)
-      .order('created_at', { ascending: true });
-    (msgs || []).forEach(m => {
-      const fromSelf = m.sender_id === currentUser.id;
-      const fromAdmin = m.is_from_admin;
-      conversations[id].messages.push({
-        from: fromAdmin ? 'admin' : fromSelf ? 'employer' : 'worker',
-        text: m.body || m.content || m.message || '',
-        t: new Date(m.created_at).getTime(),
-        id: m.id,
-      });
-    });
-    // Mark employer unread = 0
-    await sb.from('conversations').update({ employer_unread: 0 }).eq('id', e.convId).eq('employer_id', currentUser.id);
-    e.unread = 0;
+      .select('id,sender_id,body,content,message,created_at,is_from_admin,msg_type,delivery_status,is_read,sender_type')
+      .eq('conversation_id', convId).order('created_at', { ascending: true });
+    convMessages[convId] = (msgs||[]).map(m => ({
+      id: m.id,
+      from: m.is_from_admin ? 'admin' : m.sender_id === currentUser.id ? 'employer' : 'worker',
+      text: m.body || m.content || m.message || '',
+      t: new Date(m.created_at).getTime(),
+      status: m.delivery_status || 'sent',
+      senderType: m.sender_type,
+    }));
   }
 
-  renderMessages();
-  openModal('chat-modal');
+  renderMessages(convId);
+
+  // Mark read
+  await sb.from('conversations').update({ employer_unread: 0 }).eq('id', convId).eq('employer_id', currentUser.id);
+  const c = allConvs.find(x => x.id === convId);
+  if (c) c.employer_unread = 0;
+  updateBadges();
+  renderConvList();
+
+  // Subscribe typing
+  subscribeTyping(convId);
 }
 
-function renderChatStatus(e){
-  const dotClass = e.presence;
-  let label = e.presence === 'online' ? 'Online' : (e.presence === 'away' ? 'Away · last seen '+timeAgo(e.lastSeen) : 'Last seen '+(e.lastSeen ? timeAgo(e.lastSeen) : 'a while ago'));
-  document.getElementById('chat-status').innerHTML = `<span class="dot ${dotClass}"></span> ${label}`;
+function openConvInMessages(convId) {
+  showPanel('messages', null);
+  setTimeout(() => openConv(convId), 50);
 }
 
-// renderEmployees, openInterview, renderChatStatus defined above near Supabase init
+// ── RENDER MESSAGES ──
+function renderMessages(convId) {
+  const body = document.getElementById(`chat-body-${convId}`);
+  if (!body) return;
+  const msgs = convMessages[convId] || [];
+  const conv = allConvs.find(c => c.id === convId);
+  const wp = workerMap[conv?.employee_id];
+  const empName = employerProfile?.full_name || 'You';
+  const wrkName = wp?.full_name || 'Worker';
 
-function renderChatState(e){
-  const badge = document.getElementById('chat-state-badge');
-  const endedBar = document.getElementById('chat-ended-bar');
-  const blockedBar = document.getElementById('chat-blocked-bar');
-  const inputWrap = document.getElementById('chat-input-wrap');
-  const endBtn = document.getElementById('end-interview-btn');
-  const blockBtn = document.getElementById('block-worker-btn');
-
-  badge.style.display = 'none';
-  endedBar.style.display = 'none';
-  blockedBar.style.display = 'none';
-  inputWrap.style.display = 'flex';
-
-  if (e.blocked){
-    badge.textContent = 'Blocked';
-    badge.style.background = 'rgba(244,63,94,.12)'; badge.style.color = 'var(--rose)';
-    badge.style.display = 'inline-block';
-    blockedBar.style.display = 'flex';
-    inputWrap.style.display = 'none';
-    endBtn.disabled = true; endBtn.style.opacity='.4'; endBtn.style.pointerEvents='none';
-    blockBtn.style.display = 'none';
-  } else if (e.convoEnded){
-    badge.textContent = 'Ended';
-    badge.style.background = 'rgba(107,114,128,.12)'; badge.style.color = 'var(--muted)';
-    badge.style.display = 'inline-block';
-    endedBar.style.display = 'flex';
-    inputWrap.style.display = 'none';
-    endBtn.style.opacity='.4'; endBtn.style.pointerEvents='none';
-    blockBtn.style.opacity='1'; blockBtn.style.pointerEvents='auto';
-  } else {
-    endBtn.style.opacity='1'; endBtn.style.pointerEvents='auto';
-    blockBtn.style.opacity='1'; blockBtn.style.pointerEvents='auto';
-  }
-}
-
-function renderMessages(){
-  const e = employees.find(x=>x.id===activeEmpId);
-  const convo = conversations[activeEmpId];
-  const body = document.getElementById('chat-body');
-  body.innerHTML = convo.messages.map(m => renderMessageRow(m, e)).join('');
+  const html = msgs.map(m => renderBubble(m, wp, empName, wrkName)).join('');
+  body.innerHTML = `<div class="chat-system"><i class="bi bi-shield-check" style="color:var(--brand)"></i> Monitored for safety</div>` + html;
   body.scrollTop = body.scrollHeight;
 }
 
-function renderMessageRow(m, e){
-  if (m.from === 'system'){
-    return `<div class="chat-banner admin"><i class="bi bi-shield-check"></i> ${esc(m.text)} <span style="opacity:.6;">· ${fmtTime(m.t)}</span></div>`;
-  }
-  if (m.from === 'admin'){
-    return `
-      <div class="bubble-row admin-row">
-        <div class="bubble-av admin">SC</div>
-        <div class="bubble-col">
-          <div class="bubble-name">${ADMIN_NAME}</div>
-          <div class="bubble admin">${esc(m.text)}</div>
-          <div class="bubble-time">${fmtTime(m.t)}</div>
-        </div>
-      </div>`;
-  }
-  if (m.from === 'file-request'){
-    return `
-      <div class="bubble-row sent">
-        <div class="bubble-av employer">EM</div>
-        <div class="bubble-col">
-          <div class="bubble file-request"><i class="bi bi-paperclip" style="color:var(--accent);"></i> ${esc(m.text)}</div>
-          <div class="bubble-time">${fmtTime(m.t)}</div>
-        </div>
-      </div>`;
+function renderBubble(m, wp, empName, wrkName) {
+  if (m.from === 'admin') {
+    return `<div class="chat-admin-banner"><i class="bi bi-headset"></i> <strong>SoundsCare Support:</strong> ${esc(m.text)} <span style="opacity:.5;margin-left:5px;">${fmtTime(m.t)}</span></div>`;
   }
   const sent = m.from === 'employer';
+  const avHtml = sent
+    ? `<div class="bav">${ini(empName)}</div>`
+    : `<div class="bav worker-av" onclick="viewWorkerProfile('${wp?.id||''}','')" title="View Profile" style="cursor:pointer">
+        ${wp?.profile_photo_url ? `<img src="${esc(wp.profile_photo_url)}" onerror="this.style.display='none'">` : ini(wrkName)}
+       </div>`;
+
+  const tick = sent ? renderTick(m.status) : '';
   return `
     <div class="bubble-row ${sent?'sent':'received'}">
-      <div class="bubble-av ${sent?'employer':''}">${sent?'EM':initials(e.name)}</div>
+      ${!sent ? avHtml : ''}
       <div class="bubble-col">
-        <div class="bubble ${sent?'sent':'received'}">${esc(m.text)}</div>
-        <div class="bubble-time">${fmtTime(m.t)}</div>
+        ${!sent ? `<div class="bubble-sender">${esc(wrkName)}</div>` : ''}
+        <div class="bubble ${sent?'sent':'recv'}">${esc(m.text)}</div>
+        <div class="bubble-meta">
+          <span class="bubble-time">${fmtTime(m.t)}</span>
+          ${tick}
+        </div>
       </div>
+      ${sent ? avHtml : ''}
     </div>`;
 }
 
-function showTyping(on){
-  const body = document.getElementById('chat-body');
-  let row = document.getElementById('typing-row');
-  if (on){
-    if (!row){
-      row = document.createElement('div');
-      row.id = 'typing-row';
-      row.className = 'typing-row';
-      row.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-      body.appendChild(row);
-      body.scrollTop = body.scrollHeight;
-    }
-  } else if (row) row.remove();
+function renderTick(status) {
+  if (status === 'waiting') return `<span class="tick waiting" title="Sending…"><i class="bi bi-clock"></i></span>`;
+  if (status === 'sent') return `<span class="tick sent" title="Sent"><i class="bi bi-check"></i></span>`;
+  if (status === 'delivered') return `<span class="tick delivered" title="Delivered"><i class="bi bi-check-all"></i></span>`;
+  if (status === 'read') return `<span class="tick read" title="Seen"><i class="bi bi-check-all"></i></span>`;
+  return `<span class="tick sent"><i class="bi bi-check"></i></span>`;
 }
 
-function onTyping(){
-  // demo: notify presence the employer is typing (no-op visually for employer's own side)
-}
-
-function onChatKeydown(ev){
-  if (ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); sendChatMessage(); }
-}
-
-async function sendChatMessage(){
-  const e = employees.find(x=>x.id===activeEmpId);
-  if (!e || e.blocked || e.convoEnded) return;
-  const input = document.getElementById('chat-text');
+// ── SEND MESSAGE ──
+async function sendMsg(convId) {
+  const conv = allConvs.find(c => c.id === convId);
+  if (!conv || conv.status === 'closed' || conv.employer_blocked || conv.employee_blocked || conv.not_interested_at) return;
+  const input = document.getElementById('chat-input-text');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
 
-  const { error } = await sb.from('messages').insert({
-    conversation_id: e.convId,
+  // Optimistic
+  const tmpId = 'tmp-' + Date.now();
+  if (!convMessages[convId]) convMessages[convId] = [];
+  convMessages[convId].push({ id: tmpId, from: 'employer', text, t: Date.now(), status: 'waiting' });
+  renderMessages(convId);
+
+  const { data: newMsg, error } = await sb.from('messages').insert({
+    conversation_id: convId,
     sender_id: currentUser.id,
     body: text,
     sender_type: 'employer',
-  });
-  if (error) { showToast('err','bi-x-circle','Send Failed', error.message); input.value = text; return; }
+    delivery_status: 'sent',
+    employer_id: currentUser.id,
+  }).select('id,created_at,delivery_status').maybeSingle();
 
-  // Optimistic UI
-  if (!conversations[activeEmpId]) conversations[activeEmpId] = { messages:[], adminJoined:false };
-  conversations[activeEmpId].messages.push({ from:'employer', text, t: Date.now() });
-  renderMessages();
+  if (error) {
+    const msgs = convMessages[convId];
+    const tmp = msgs.find(m => m.id === tmpId);
+    if (tmp) tmp.status = 'waiting';
+    renderMessages(convId);
+    showToast('err', 'bi-x-circle', 'Send Failed', error.message);
+    return;
+  }
 
-  // Update last message on conversation
+  // Replace tmp with real
+  const msgs = convMessages[convId];
+  const idx = msgs.findIndex(m => m.id === tmpId);
+  if (idx !== -1) { msgs[idx].id = newMsg.id; msgs[idx].status = 'sent'; }
+  renderMessages(convId);
+
   await sb.from('conversations').update({
     last_message_text: text,
     last_message_at: new Date().toISOString(),
     employer_unread: 0,
-  }).eq('id', e.convId);
+    employee_unread: conv.employee_unread || 0 + 1,
+  }).eq('id', convId);
+
+  conv.last_message_text = text;
+  conv.last_message_at = new Date().toISOString();
+  renderConvList();
+  stopTyping(convId);
 }
 
-function requestFile(){
-  const e = employees.find(x=>x.id===activeEmpId);
-  if (!e || e.blocked || e.convoEnded){ showToast('err','bi-x-circle','Unavailable','This conversation is closed.'); return; }
-  conversations[activeEmpId].messages.push({ from:'file-request', text:'Requested: ID document / certificate upload from worker.', t: Date.now() });
-  renderMessages();
-  toggleChatMenu(true);
-  showToast('ok','bi-paperclip','File Requested','The worker has been asked to upload a file.');
+function onChatKey(ev, convId) {
+  if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); sendMsg(convId); }
 }
 
-function toggleChatMenu(forceClose){
-  const dd = document.getElementById('chat-dropdown');
-  if (forceClose) { dd.classList.remove('open'); return; }
-  dd.classList.toggle('open');
+// ── TYPING ──
+function onTypingInput(convId) {
+  if (!typingChannel) return;
+  typingChannel.send({ type: 'broadcast', event: 'typing', payload: { user_id: currentUser.id, conv_id: convId, is_typing: true } });
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => stopTyping(convId), 2000);
 }
-document.addEventListener('click', e => {
-  const wrap = document.querySelector('.chat-menu-wrap');
-  if (wrap && !wrap.contains(e.target)) document.getElementById('chat-dropdown')?.classList.remove('open');
-});
+function stopTyping(convId) {
+  if (!typingChannel) return;
+  typingChannel.send({ type: 'broadcast', event: 'typing', payload: { user_id: currentUser.id, conv_id: convId, is_typing: false } });
+}
+function subscribeTyping(convId) {
+  if (typingChannel) sb.removeChannel(typingChannel);
+  typingChannel = sb.channel(`typing-${convId}`)
+    .on('broadcast', { event: 'typing' }, ({ payload }) => {
+      if (payload.user_id === currentUser.id) return;
+      showTyping(convId, payload.is_typing);
+    }).subscribe();
+}
+function showTyping(convId, on) {
+  const body = document.getElementById(`chat-body-${convId}`);
+  if (!body) return;
+  let row = document.getElementById('typing-indicator');
+  if (on && !row) {
+    row = document.createElement('div');
+    row.id = 'typing-indicator';
+    row.className = 'typing-row';
+    row.innerHTML = `<div class="bav worker-av" style="font-size:8px">W</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+    body.appendChild(row);
+    body.scrollTop = body.scrollHeight;
+  } else if (!on && row) row.remove();
+}
 
-async function confirmEndInterview(){
-  const e = employees.find(x=>x.id===activeEmpId);
-  if (!e || e.convoEnded || e.blocked) return;
-  toggleChatMenu(true);
-  if (!confirm('End this interview? You will no longer be able to send messages, but the full conversation history will remain visible.')) return;
-  const { error } = await sb.from('conversations').update({ status: 'ended' }).eq('id', e.convId).eq('employer_id', currentUser.id);
-  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
-  e.convoEnded = true; e.status = 'ended';
-  if (conversations[e.id]) conversations[e.id].messages.push({ from:'system', text:'Interview ended by employer', t: Date.now() });
-  renderMessages(); renderChatState(e); renderEmployees();
+// ── START CONVERSATION ──
+async function startConversation(workerSessionId, workerName) {
+  if (!workerSessionId) { showToast('err','bi-x-circle','Error','Worker session not found'); return; }
+  // Check if conversation already exists
+  const existing = allConvs.find(c => c.employee_id === workerSessionId);
+  if (existing) { openConvInMessages(existing.id); return; }
+
+  const { data: conv, error } = await sb.from('conversations').insert({
+    employer_id: currentUser.id,
+    employee_id: workerSessionId,
+    status: 'active',
+    employer_unread: 0,
+    employee_unread: 1,
+  }).select('id,employee_id,last_message_text,last_message_at,employer_unread,status').maybeSingle();
+
+  if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+  allConvs.unshift({ ...conv, employer_blocked: false, employee_blocked: false });
+  renderConvList();
+  showToast('ok','bi-chat-dots-fill','Conversation Started','You can now message '+workerName);
+  openConvInMessages(conv.id);
+}
+
+// ── CONVERSATION ACTIONS ──
+async function endConversation(convId) {
+  if (!confirm('End this interview? Messages will be view-only.')) return;
+  await sb.from('conversations').update({ status: 'closed' }).eq('id', convId);
+  const c = allConvs.find(x => x.id === convId);
+  if (c) c.status = 'closed';
+  openConv(convId);
   showToast('info','bi-stop-circle','Interview Ended','Conversation is now view-only.');
 }
-
-function confirmBlockWorker(){
-  const e = employees.find(x=>x.id===activeEmpId);
-  if (!e || e.blocked) return;
-  toggleChatMenu(true);
-  if (!confirm('Block this worker? They will no longer be able to message you.')) return;
-  e.blocked = true; e.status = 'blocked';
-  conversations[activeEmpId].messages.push({ from:'system', text:'Worker blocked by employer', t: Date.now() });
-  renderMessages(); renderChatState(e); renderEmployees();
-  showToast('err','bi-slash-circle','Worker Blocked','This worker can no longer contact you.');
+async function blockWorker(convId) {
+  if (!confirm('Block this worker? They cannot message you.')) return;
+  await sb.from('conversations').update({ employer_blocked: true }).eq('id', convId);
+  const c = allConvs.find(x => x.id === convId);
+  if (c) c.employer_blocked = true;
+  openConv(convId);
+  showToast('err','bi-slash-circle','Worker Blocked','Messaging is disabled.');
+}
+async function markNotInterested(convId) {
+  if (!confirm('Mark this worker as "not interested"? You can still view the conversation.')) return;
+  await sb.from('conversations').update({ not_interested_at: new Date().toISOString() }).eq('id', convId);
+  const c = allConvs.find(x => x.id === convId);
+  if (c) c.not_interested_at = new Date().toISOString();
+  openConv(convId);
+  showToast('info','bi-hand-thumbs-down','Noted','Worker marked as not interested.');
 }
 
-let reportTargetId = null;
-function openReportModal(){
-  reportTargetId = activeEmpId;
-  toggleChatMenu(true);
-  openModal('report-modal');
-}
-function submitReport(){
-  const reason = document.getElementById('report-reason').value;
-  const details = document.getElementById('report-details').value.trim();
-  closeModal('report-modal');
-  document.getElementById('report-details').value = '';
-  showToast('ok','bi-flag-fill','Report Submitted', reason + ' — our team will review this within 24 hours.');
+// ── REQUEST FILE ──
+function requestFile(convId) {
+  const conv = allConvs.find(c => c.id === convId);
+  if (!conv || conv.status === 'closed') return;
+  if (!convMessages[convId]) convMessages[convId] = [];
+  convMessages[convId].push({ id:'file-'+Date.now(), from:'employer', text:'📎 Requested: ID document / certificate upload from worker.', t:Date.now(), status:'sent' });
+  renderMessages(convId);
+  showToast('ok','bi-paperclip','File Requested','Worker notified to upload a file.');
 }
 
-function timeAgo(t){
-  if (!t) return 'now';
-  const diff = (Date.now() - t) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff/60)+'m ago';
-  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
-  return Math.floor(diff/86400)+'d ago';
-}
-function fmtTime(t){
-  return new Date(t).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'});
-}
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ── SCHEDULE INTERVIEW ──
+async function scheduleInterview(convId, workerName) {
+  const conv = allConvs.find(c => c.id === convId);
+  if (!conv) return;
+  const wp = Object.values(workerMap).find(w => w.session_id === conv.employee_id);
+  if (!wp) { showToast('err','bi-x-circle','Error','Worker profile not found.'); return; }
 
-// ═══════════════════════════════════════════
-//   PAYMENT MODAL
-// ═══════════════════════════════════════════
-function switchPayTab(id, btn){
-  document.querySelectorAll('#pay-modal .tab-content').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('#pay-modal .tab-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('paytab-'+id).classList.add('active');
-  btn.classList.add('active');
+  const { error } = await sb.from('interviews').insert({
+    job_id: null,
+    employer_id: currentUser.id,
+    worker_id: wp.id,
+    scheduled_at: new Date(Date.now() + 24*3600*1000).toISOString(),
+    interview_type: 'initial',
+    status: 'scheduled',
+    fee_amount: 300,
+  });
+  if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+  showToast('ok','bi-camera-video-fill','Interview Scheduled',`Interview with ${workerName} scheduled.`);
+  await loadAll();
 }
-function updatePaymentUI(){
-  const method = document.getElementById('pay-method').value;
-  ['mpesa','airtel','manual'].forEach(m => document.getElementById(m+'-form').style.display = (m===method)?'block':'none');
-}
-let payHistory = [];
-function submitPayment(method){
-  const errEl = document.getElementById('pay-error'), okEl = document.getElementById('pay-success');
-  errEl.style.display='none'; okEl.style.display='none';
-  let ref = 'TXN' + Math.floor(Math.random()*900000+100000);
-  if (method === 'mpesa'){
-    const phone = document.getElementById('mpesa-phone').value.trim();
-    if (!/^[0-9]{9}$/.test(phone)){ errEl.textContent='Enter a valid 9-digit phone number.'; errEl.style.display='block'; return; }
-  } else if (method === 'airtel'){
-    const phone = document.getElementById('airtel-phone').value.trim();
-    if (!/^[0-9]{9}$/.test(phone)){ errEl.textContent='Enter a valid 9-digit phone number.'; errEl.style.display='block'; return; }
-  } else if (method === 'manual'){
-    const code = document.getElementById('receipt-code').value.trim();
-    if (!code){ errEl.textContent='Enter your receipt / confirmation code.'; errEl.style.display='block'; return; }
-    ref = code;
+
+// ── HIRE WORKER ──
+async function hireWorker(workerSessionId, convId) {
+  if (!confirm('Mark this worker as hired? This will update their hiring status.')) return;
+  const wp = workerMap[workerSessionId];
+  if (!wp) { showToast('err','bi-x-circle','Error','Worker not found.'); return; }
+
+  // Update conversation to closed and increment hiring_history
+  await sb.from('conversations').update({ status: 'closed' }).eq('id', convId);
+  if (employerProfileId) {
+    await sb.from('employer_profiles').update({ hiring_history: (employerProfile?.hiring_history||0) + 1 }).eq('id', employerProfileId);
   }
-  okEl.textContent = '✓ Payment submitted for verification!';
-  okEl.style.display = 'block';
-  payHistory.unshift({ ref, method, date: Date.now(), status:'pending' });
+  showToast('ok','bi-check-circle-fill','Hired!',`${wp.full_name} has been hired. Congratulations!`);
+  await loadAll();
+}
+
+// ── JOBS ──
+function renderJobsTable() {
+  const targets = ['dash-jobs-table','jobs-table-wrap'];
+  targets.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!allJobs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'post-job-modal\')">Post a Job</button></p></div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead>
+      <tbody>${allJobs.map(j => `<tr>
+        <td><strong>${esc(j.title)}</strong>${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}</td>
+        <td>${j.job_type||'—'}</td>
+        <td>${j.location||'—'}</td>
+        <td><span class="badge badge-${j.status==='active'?'green':j.status==='closed'?'rose':'amber'}">${j.status||'active'}</span></td>
+        <td>${fmtDate(j.created_at)}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="closeJob('${j.id}')"><i class="bi bi-x-circle"></i> Close</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  });
+}
+
+async function postJob() {
+  const title = document.getElementById('jb-title').value.trim();
+  if (!title) { showToast('err','bi-x-circle','Required','Job title is required.'); return; }
+  if (!employerProfileId) { showToast('err','bi-x-circle','Error','Employer profile not found.'); return; }
+  const data = {
+    title, employer_id: employerProfileId, posted_by: currentUser.id,
+    job_role: document.getElementById('jb-role').value,
+    job_type: document.getElementById('jb-type').value,
+    location: document.getElementById('jb-location').value,
+    county: document.getElementById('jb-county').value,
+    work_type: document.getElementById('jb-work-type').value,
+    salary_min: parseInt(document.getElementById('jb-sal-min').value)||null,
+    salary_max: parseInt(document.getElementById('jb-sal-max').value)||null,
+    salary_range: [document.getElementById('jb-sal-min').value, document.getElementById('jb-sal-max').value].filter(Boolean).join('-'),
+    description: document.getElementById('jb-desc').value,
+    requirements: document.getElementById('jb-reqs').value,
+    deadline: document.getElementById('jb-deadline').value || null,
+    slots: parseInt(document.getElementById('jb-slots').value)||1,
+    is_urgent: document.getElementById('jb-urgent').checked,
+    is_featured: document.getElementById('jb-featured').checked,
+    status: 'active', posting_type: 'individual',
+  };
+  const { error } = await sb.from('job_postings').insert(data);
+  if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+  closeModal('post-job-modal');
+  showToast('ok','bi-briefcase-fill','Job Posted','Your job listing is now live!');
+  await loadAll();
+}
+
+async function closeJob(jobId) {
+  if (!confirm('Close this job listing?')) return;
+  await sb.from('job_postings').update({ status:'closed',is_closed:true }).eq('id', jobId);
+  showToast('info','bi-x-circle','Job Closed','Listing is now closed.');
+  await loadAll();
+}
+
+// ── INTERVIEWS PANEL ──
+function renderInterviewsPanel() {
+  const el = document.getElementById('all-interviews-list');
+  if (!el) return;
+  if (!allInterviews.length) { el.innerHTML = '<div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div>'; return; }
+  const statusMap = { scheduled:'badge-sky',completed:'badge-green',cancelled:'badge-rose',rescheduled:'badge-amber',no_show:'badge-muted' };
+  el.innerHTML = allInterviews.map(iv => {
+    const wp = Object.values(workerMap).find(w => w.id === iv.worker_id);
+    const name = wp?.full_name || 'Worker';
+    return `<div class="interview-row">
+      <div class="iv-av">${ini(name)}</div>
+      <div class="iv-info"><div class="iv-name">${esc(name)}</div>
+      <div class="iv-role">${iv.interview_type||'Initial'} · ${fmtDate(iv.scheduled_at)} ${iv.fee_amount?'· KES '+iv.fee_amount:''}</div></div>
+      <div class="iv-actions">
+        <span class="badge ${statusMap[iv.status]||'badge-muted'}">${iv.status||'scheduled'}</span>
+        ${iv.status==='scheduled'?`<button class="btn btn-danger btn-sm" onclick="cancelInterview('${iv.id}')"><i class="bi bi-x-circle"></i> Cancel</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Also render in profile modal
+  const pm = document.getElementById('pm-interviews-list');
+  if (pm) pm.innerHTML = el.innerHTML;
+}
+
+async function cancelInterview(ivId) {
+  if (!confirm('Cancel this interview?')) return;
+  await sb.from('interviews').update({ status:'cancelled' }).eq('id', ivId);
+  showToast('info','bi-x-circle','Interview Cancelled','');
+  await loadAll();
+}
+
+// ── HIRES ──
+function renderHiresPanel() {
+  const count = employerProfile?.hiring_history || 0;
+  const el = document.getElementById('hires-list');
+  const pm = document.getElementById('pm-hires-list');
+  const html = count ? `<div style="padding:1.2rem"><div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:1rem;text-align:center;"><div style="font-size:2rem;font-weight:800;color:var(--brand)">${count}</div><div style="font-size:13px;color:var(--muted)">Total Hires Made</div></div></div>` :
+    '<div class="empty"><i class="bi bi-person-check"></i><p>No hires yet. Start interviewing workers to make your first hire.</p></div>';
+  if (el) el.innerHTML = html;
+  if (pm) pm.innerHTML = html;
+}
+
+// ── PAYMENTS ──
+async function submitPayment(method) {
+  const errEl = document.getElementById('pay-error');
+  errEl.style.display = 'none';
+  let ref = '';
+
+  if (method === 'mpesa') {
+    const phone = document.getElementById('mpesa-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 9-digit M-Pesa number.'; errEl.style.display='block'; return; }
+    ref = 'MPE-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'airtel') {
+    const phone = document.getElementById('airtel-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 9-digit Airtel number.'; errEl.style.display='block'; return; }
+    ref = 'AIR-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'card') {
+    const num = document.getElementById('card-number').value.replace(/\s/g,'');
+    if (num.length < 16) { errEl.textContent = 'Enter a valid 16-digit card number.'; errEl.style.display='block'; return; }
+    if (!document.getElementById('card-name').value.trim()) { errEl.textContent = 'Enter cardholder name.'; errEl.style.display='block'; return; }
+    ref = 'CRD-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'paybill') {
+    ref = document.getElementById('paybill-ref').value.trim();
+    if (!ref) { errEl.textContent = 'Enter the M-Pesa confirmation code.'; errEl.style.display='block'; return; }
+  }
+
+  // Save to DB
+  const { error } = await sb.from('payments').insert({
+    user_id: currentUser.id,
+    amount: 2000,
+    fee_type: 'employer_access_fee',
+    payment_method: method,
+    status: 'pending',
+    mpesa_ref: method === 'mpesa' ? ref : null,
+    airtel_ref: method === 'airtel' ? ref : null,
+    phone_used: method === 'mpesa' ? '+254'+document.getElementById('mpesa-phone').value : method === 'airtel' ? '+254'+document.getElementById('airtel-phone').value : null,
+    transaction_id: ref,
+  });
+  if (error) { errEl.textContent = error.message; errEl.style.display='block'; return; }
 
   document.getElementById('r-ref').textContent = ref;
   document.getElementById('r-method').textContent = method.toUpperCase();
   document.getElementById('r-date').textContent = new Date().toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'});
 
-  setTimeout(()=>{
-    closeModal('pay-modal');
-    openModal('receipt-modal');
-    renderPayHistory();
-    showToast('ok','bi-check-circle-fill','Payment Submitted','Our team will verify and activate your account shortly.');
-  }, 1200);
-}
-function renderPayHistory(){
-  const el = document.getElementById('pay-history-list');
-  if (!payHistory.length){ el.innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>No payments yet.</p></div>'; return; }
-  el.innerHTML = payHistory.map(p => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
-      <div style="width:38px;height:38px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="bi bi-credit-card"></i></div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:700;">${p.ref}</div>
-        <div style="font-size:11px;color:var(--muted);">${p.method.toUpperCase()}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:14px;font-weight:700;color:var(--brand);">KES 2,000</div>
-        <div style="font-size:10px;color:var(--muted);">${new Date(p.date).toLocaleDateString('en-KE',{day:'numeric',month:'short'})}</div>
-      </div>
-    </div>
-  `).join('');
+  closeModal('pay-modal');
+  openModal('receipt-modal');
+  showToast('ok','bi-check-circle-fill','Payment Submitted','Our team will verify your payment shortly.');
+  await loadAll();
 }
 
-// ═══════════════════════════════════════════
-//   MODAL HELPERS / TOAST
-// ═══════════════════════════════════════════
-function openModal(id){ document.getElementById(id)?.classList.add('open'); }
-function closeModal(id){ document.getElementById(id)?.classList.remove('open'); }
+function renderPayHistory() {
+  const el = document.getElementById('pay-history-list');
+  const pm = document.getElementById('pm-payments-list');
+  const methodIcon = { mpesa:'bi-phone-fill',airtel:'bi-phone',card:'bi-credit-card-fill',paybill:'bi-bank' };
+  const statusCls = { pending:'badge-amber',confirmed:'badge-green',failed:'badge-rose',completed:'badge-green' };
+  const html = allPayments.length ? allPayments.map(p => `
+    <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);align-items:center;">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;">
+        <i class="bi ${methodIcon[p.payment_method]||'bi-receipt'}"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;">${p.transaction_id||p.mpesa_ref||'—'}</div>
+        <div style="font-size:11px;color:var(--muted);">${(p.payment_method||'').toUpperCase()} · ${fmtDate(p.created_at)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:700;color:var(--brand);">KES ${(+p.amount).toLocaleString()}</div>
+        <span class="badge ${statusCls[p.status]||'badge-muted'}">${p.status||'pending'}</span>
+      </div>
+    </div>`).join('') : '<div class="empty"><i class="bi bi-receipt"></i><p>No payments yet</p></div>';
+  if (el) el.innerHTML = html;
+  if (pm) pm.innerHTML = `<button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openModal('pay-modal')" style="margin-bottom:1rem;"><i class="bi bi-plus"></i> Make Payment</button>${html}`;
+
+  // Update access status display
+  const paid = allPayments.some(p => (p.status==='confirmed'||p.status==='completed') && p.fee_type==='employer_access_fee');
+  const statusEl = document.getElementById('pay-status-val');
+  if (statusEl) { statusEl.textContent = paid ? 'Active ✓' : 'Pending'; statusEl.style.color = paid ? 'var(--green)' : 'var(--accent)'; }
+}
+
+function updatePayUI() {
+  const m = document.getElementById('pay-method').value;
+  ['mpesa','airtel','card','paybill'].forEach(k => document.getElementById('pf-'+k).style.display = m===k?'block':'none');
+}
+function formatCard(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function formatExpiry(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 2) v = v.slice(0,2)+'/'+v.slice(2,4);
+  el.value = v;
+}
+
+// ── PROFILE MODAL ──
+function renderProfileModal() {
+  const ep = employerProfile;
+  if (!ep) return;
+  const name = ep.full_name || ep.company_name || 'Employer';
+  const ini_ = name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('pm-avatar').innerHTML = ep.profile_photo_url ? `<img src="${esc(ep.profile_photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini_;
+  document.getElementById('pm-name').textContent = name;
+  document.getElementById('pm-company').textContent = ep.company_name || currentUser.email || '';
+  document.getElementById('pm-badges').innerHTML = `
+    ${ep.is_verified ? '<span class="badge badge-green"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-muted">Unverified</span>'}
+    <span class="badge badge-sky">${ep.hiring_history||0} Hires</span>`;
+  document.getElementById('pm-fields').innerHTML = `
+    <div class="pf"><label>Email</label><span>${esc(currentUser.email||'—')}</span></div>
+    <div class="pf"><label>Phone</label><span>${esc(ep.phone_number||ep.phone||'—')}</span></div>
+    <div class="pf"><label>Location</label><span>${esc(ep.location||'—')}</span></div>
+    <div class="pf"><label>County</label><span>${esc(ep.county||'—')}</span></div>
+    <div class="pf"><label>Member Since</label><span>${fmtDate(ep.created_at)}</span></div>`;
+}
+
+function switchProfileTab(id, btn) {
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.stab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('stab-'+id)?.classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── WORKER PROFILE MODAL ──
+async function viewWorkerProfile(workerId, sessionId) {
+  const body = document.getElementById('worker-profile-body');
+  const footer = document.getElementById('worker-profile-footer');
+  body.innerHTML = '<div class="empty"><i class="bi bi-person"></i><p>Loading…</p></div>';
+  footer.innerHTML = '';
+  openModal('worker-profile-modal');
+
+  let wp = allWorkers.find(w => w.id === workerId);
+  if (!wp && sessionId) wp = workerMap[sessionId];
+  if (!wp && workerId) {
+    const { data } = await sb.from('worker_profiles').select('*').eq('id', workerId).maybeSingle();
+    wp = data;
+  }
+  if (!wp) { body.innerHTML = '<div class="empty"><i class="bi bi-x-circle"></i><p>Profile not found</p></div>'; return; }
+
+  const pres = presenceMap[wp.session_id];
+  const presClass = pres?.is_online ? 'online' : 'offline';
+  const presLabel = pres?.is_online ? 'Online' : pres?.last_seen ? 'Last seen '+timeAgo(pres.last_seen) : 'Offline';
+  const joined = fmtDate(wp.created_at);
+  const existingConv = allConvs.find(c => c.employee_id === (wp.session_id||wp.id));
+
+  body.innerHTML = `
+    <div class="profile-hero">
+      <div class="profile-av-lg">${wp.profile_photo_url?`<img src="${esc(wp.profile_photo_url)}" onerror="this.style.display='none'">`:''}${ini(wp.full_name)}</div>
+      <div>
+        <div style="font-size:1.1rem;font-weight:800;">${esc(wp.full_name||'—')}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px;">${esc(wp.preferred_role||'—')} ${wp.county?'· '+esc(wp.county):''}</div>
+        <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+          ${wp.is_verified?'<span class="badge badge-green"><i class="bi bi-patch-check-fill"></i> Verified</span>':''}
+          ${wp.work_arrangement?`<span class="badge badge-sky">${esc(wp.work_arrangement)}</span>`:''}
+          <span class="badge badge-muted"><span class="status-dot ${presClass}" style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;"></span>${presLabel}</span>
+        </div>
+      </div>
+    </div>
+    <div class="profile-sec-title">About</div>
+    <p style="font-size:13px;line-height:1.7;color:var(--muted);margin-bottom:1.2rem;">${esc(wp.about_text||'No bio provided.')}</p>
+    <div class="profile-sec-title">Details</div>
+    <div class="profile-fields">
+      <div class="pf"><label>Education</label><span>${esc(wp.edu_level||wp.education||'—')}</span></div>
+      <div class="pf"><label>Availability</label><span>${esc(wp.availability||wp.work_arrangement||'—')}</span></div>
+      <div class="pf"><label>Salary Range</label><span>${wp.salary_min&&wp.salary_max?`KES ${(+wp.salary_min).toLocaleString()}–${(+wp.salary_max).toLocaleString()}`:esc(wp.salary_range||'—')}</span></div>
+      <div class="pf"><label>Languages</label><span>${esc(Array.isArray(wp.languages)?wp.languages.join(', '):(wp.languages||'—'))}</span></div>
+      <div class="pf"><label>County</label><span>${esc(wp.county||'—')}</span></div>
+      <div class="pf"><label>Member Since</label><span>${joined}</span></div>
+    </div>
+    ${wp.experience||wp.experiences||wp.work_experience?`
+    <div class="profile-sec-title">Experience</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:1.2rem;">${esc(JSON.stringify(wp.experience||wp.experiences||wp.work_experience||'').replace(/[{}"[\]]/g,'').replace(/,/g,' · '))}</div>
+    `:''}
+  `;
+
+  footer.innerHTML = `
+    ${existingConv
+      ? `<button class="btn btn-primary" onclick="closeModal('worker-profile-modal');openConvInMessages('${existingConv.id}')"><i class="bi bi-chat-dots-fill"></i> Open Chat</button>`
+      : `<button class="btn btn-primary" onclick="closeModal('worker-profile-modal');startConversation('${wp.session_id||wp.id}','${esc(wp.full_name||'Worker')}')"><i class="bi bi-chat-dots"></i> Message Worker</button>`}
+    <button class="btn btn-secondary" onclick="closeModal('worker-profile-modal')">Close</button>`;
+}
+
+// ── NOTIFICATIONS ──
+function renderNotifs() {
+  const el = document.getElementById('notif-list');
+  if (!el) return;
+  if (!allNotifs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-bell-slash"></i><p>No notifications</p></div>'; return; }
+  el.innerHTML = allNotifs.map(n => `
+    <div class="notif-item ${!n.is_read?'unread':''}" onclick="markNotifRead('${n.id}')">
+      <div class="notif-icon"><i class="bi bi-bell-fill"></i></div>
+      <div class="notif-content">
+        <h4>${esc(n.title||'Notification')}</h4>
+        <p>${esc(n.message||'')}</p>
+        <div class="notif-time">${timeAgo(n.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+async function markNotifRead(id) {
+  await sb.from('notifications').update({ is_read: true }).eq('id', id);
+  const n = allNotifs.find(x => x.id === id);
+  if (n) n.is_read = true;
+  renderNotifs();
+  updateBadges();
+}
+
+// ── BADGES ──
+function updateBadges() {
+  const unreadMsgs = allConvs.reduce((s,c) => s+(c.employer_unread||0), 0);
+  const unreadNotifs = allNotifs.filter(n => !n.is_read).length;
+  const msgDot = document.getElementById('msg-dot');
+  const notifDot = document.getElementById('notif-dot');
+  const sbMsg = document.getElementById('sb-msg-badge');
+  if (msgDot) { msgDot.classList.toggle('show', unreadMsgs > 0); }
+  if (notifDot) { notifDot.classList.toggle('show', unreadNotifs > 0); }
+  if (sbMsg) { sbMsg.style.display = unreadMsgs ? 'inline-block' : 'none'; sbMsg.textContent = unreadMsgs; }
+}
+
+// ── REALTIME ──
+function setupRealtime() {
+  sb.channel('employer-realtime-'+currentUser.id)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, async (payload) => {
+      const msg = payload.new;
+      if (!msg?.conversation_id) return;
+      const conv = allConvs.find(c => c.id === msg.conversation_id);
+      if (!conv) return;
+      if (msg.sender_id === currentUser.id) return; // own msg already optimistically added
+      const newMsg = {
+        id: msg.id,
+        from: msg.is_from_admin ? 'admin' : 'worker',
+        text: msg.body || msg.content || msg.message || '',
+        t: new Date(msg.created_at).getTime(),
+        status: 'delivered',
+      };
+      if (!convMessages[msg.conversation_id]) convMessages[msg.conversation_id] = [];
+      convMessages[msg.conversation_id].push(newMsg);
+      conv.last_message_text = newMsg.text;
+      conv.last_message_at = msg.created_at;
+      if (activeConvId !== msg.conversation_id) {
+        conv.employer_unread = (conv.employer_unread || 0) + 1;
+      } else {
+        renderMessages(msg.conversation_id);
+        await sb.from('conversations').update({ employer_unread: 0 }).eq('id', msg.conversation_id);
+      }
+      renderConvList();
+      updateBadges();
+    })
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'messages' }, (payload) => {
+      const msg = payload.new;
+      if (!msg?.conversation_id) return;
+      const msgs = convMessages[msg.conversation_id];
+      if (!msgs) return;
+      const m = msgs.find(x => x.id === msg.id);
+      if (m) { m.status = msg.delivery_status || m.status; }
+      if (activeConvId === msg.conversation_id) renderMessages(msg.conversation_id);
+    })
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${currentUser.id}` }, (payload) => {
+      allNotifs.unshift(payload.new);
+      renderNotifs();
+      updateBadges();
+      showToast('info','bi-bell-fill',payload.new.title||'Notification',payload.new.message||'');
+    })
+    .subscribe();
+}
+
+// ── ACCOUNT SETTINGS ──
+async function changePassword() {
+  const pwd = document.getElementById('new-pwd').value;
+  const confirm_ = document.getElementById('confirm-pwd').value;
+  if (!pwd || pwd.length < 8) { showToast('err','bi-x-circle','Error','Password must be at least 8 characters.'); return; }
+  if (pwd !== confirm_) { showToast('err','bi-x-circle','Mismatch','Passwords do not match.'); return; }
+  const { error } = await sb.auth.updateUser({ password: pwd });
+  if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+  showToast('ok','bi-lock-fill','Password Updated','Your password has been changed.');
+  document.getElementById('new-pwd').value = '';
+  document.getElementById('confirm-pwd').value = '';
+}
+async function deactivateAccount() {
+  if (!confirm('Deactivate your account? You can reactivate by logging in again.')) return;
+  showToast('info','bi-pause-circle','Account Deactivated','Your account has been temporarily suspended. Contact support to reactivate.');
+}
+async function deleteAccount() {
+  const confirmed = prompt('Type "DELETE" to permanently delete your account:');
+  if (confirmed !== 'DELETE') return;
+  showToast('err','bi-trash3-fill','Request Sent','Your deletion request has been submitted. Our team will process it within 48 hours.');
+}
+async function handleSignOut() {
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── FRAUD REPORT ──
+async function submitFraudReport() {
+  const worker = document.getElementById('fraud-worker').value.trim();
+  const type = document.getElementById('fraud-type').value;
+  const desc = document.getElementById('fraud-desc').value.trim();
+  if (!worker || !desc) { showToast('err','bi-x-circle','Required','Please fill in all fields.'); return; }
+  const { error } = await sb.from('message_reports').insert({
+    reported_by: currentUser.id,
+    reported_user: currentUser.id, // placeholder — ideally resolved to worker's user_id
+    reason: type,
+    details: `Worker: ${worker}\n\n${desc}`,
+    status: 'pending',
+  });
+  if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+  document.getElementById('fraud-worker').value = '';
+  document.getElementById('fraud-desc').value = '';
+  showToast('ok','bi-flag-fill','Report Submitted','Our team will review this within 24 hours.');
+}
+
+// ── REPORT IN CHAT ──
+async function submitReport() {
+  const reason = document.getElementById('report-reason').value;
+  const details = document.getElementById('report-details').value.trim();
+  if (!details) { showToast('err','bi-x-circle','Required','Please describe what happened.'); return; }
+  await sb.from('message_reports').insert({
+    reported_by: currentUser.id,
+    reported_user: currentUser.id,
+    conversation_id: reportTargetConvId || null,
+    reason, details, status: 'pending',
+  });
+  closeModal('report-modal');
+  document.getElementById('report-details').value = '';
+  showToast('ok','bi-flag-fill','Report Submitted','Thank you. Our team will review within 24 hours.');
+}
+
+// ── PANELS ──
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+id)?.classList.add('active');
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const titles = { dashboard:'Dashboard',employees:'Browse Workers',messages:'Messages',interviews:'Interviews',jobs:'Posted Jobs',hires:'My Hires',fraud:'Report Fraud' };
+  document.getElementById('nav-title').textContent = titles[id]||id;
+  if (window.innerWidth <= 900) closeSidebar();
+  if (id === 'messages') renderConvList();
+}
+
+// ── SIDEBAR ──
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const nav = document.getElementById('main-nav');
+  const main = document.getElementById('main-content');
+  const wide = window.innerWidth > 900;
+  if (wide) {
+    const hidden = s.classList.toggle('hidden');
+    nav.classList.toggle('expanded', hidden);
+    main.classList.toggle('expanded', hidden);
+  } else {
+    s.classList.toggle('open');
+  }
+}
+function closeSidebar() {
+  if (window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+// ── KEBAB MENU ──
+function toggleKebab(e) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.kebab-menu').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+function closeKebab() { document.querySelectorAll('.kebab-menu').forEach(m => m.classList.remove('open')); }
+document.addEventListener('click', () => closeKebab());
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(el => {
   el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
-function showToast(type, icon, title, body){
+
+// ── SWITCH TABS ──
+function switchPayTab(id, btn) {
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.ptab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('ptab-'+id)?.classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── TOAST ──
+function showToast(type, icon, title, body) {
   const stack = document.getElementById('toast-stack');
   const t = document.createElement('div');
   t.className = 'toast ' + type;
-  t.innerHTML = `<i class="bi ${icon}" style="font-size:18px;flex-shrink:0;"></i>
-    <div><strong>${esc(title)}</strong>${body ? '<br><span style="color:var(--muted);font-size:11px;">'+esc(body)+'</span>' : ''}</div>`;
+  t.innerHTML = `<i class="bi ${icon}" style="font-size:17px;flex-shrink:0;"></i>
+    <div style="flex:1"><strong>${esc(title)}</strong>${body?`<br><span style="color:var(--muted);font-size:11.5px;">${esc(body)}</span>`:''}
+    </div><button class="toast-close" onclick="this.closest('.toast').remove()">×</button>`;
   stack.appendChild(t);
-  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 4500);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 5000);
 }
 
-// INIT
-renderEmployees();
+// ── HELPERS ──
+function ini(name) { return (name||'?').split(' ').map(p=>p[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s||''); return d.innerHTML; }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtTime(t) { return new Date(t).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}); }
+function timeAgo(t) {
+  if (!t) return '';
+  const diff = (Date.now() - new Date(t)) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60)+'m ago';
+  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
+  if (diff < 604800) return Math.floor(diff/86400)+'d ago';
+  return fmtDate(t);
+}
 </script>
 </body>
 </html>
