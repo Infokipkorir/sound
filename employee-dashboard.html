@@ -340,23 +340,124 @@
     .btn-full { width: 100%; justify-content: center; }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
 
-    /* CONVERSATION */
+    /* CHAT HEADER */
+    .chat-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 4px 12px; margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-header .chat-back { display: none; }
+    @media (max-width: 600px) { .chat-header .chat-back { display: inline-flex; } }
+    .chat-avatar-wrap { position: relative; flex-shrink: 0; }
+    .chat-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--brand-soft); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; overflow: hidden;
+    }
+    .chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .online-dot {
+      position: absolute; bottom: -1px; right: -1px;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: #25D366; border: 2px solid var(--card); display: none;
+    }
+    .online-dot.show { display: block; }
+    .chat-id-block { flex: 1; min-width: 0; }
+    .chat-name { font-weight: 700; font-size: 14.5px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-status { font-size: 11.5px; color: var(--muted); line-height: 1.3; display: flex; align-items: center; gap: 5px; }
+    .chat-status .dot-inline { width: 7px; height: 7px; border-radius: 50%; background: #25D366; display: none; }
+    .chat-status.online .dot-inline { display: inline-block; }
+    .chat-status.online { color: #1b6b45; font-weight: 600; }
+    .chat-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .chat-icon-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      color: var(--brand); font-size: 17px; transition: 0.15s;
+    }
+    .chat-icon-btn:hover { background: var(--brand-soft); }
+    .chat-menu-wrap { position: relative; }
+    .chat-menu {
+      position: absolute; top: 42px; right: 0; background: var(--card);
+      border: 1px solid var(--border); border-radius: 10px; min-width: 200px;
+      box-shadow: 0 8px 24px rgba(15,25,35,.18); z-index: 50; display: none; overflow: hidden;
+    }
+    .chat-menu.show { display: block; }
+    .chat-menu button {
+      width: 100%; text-align: left; padding: 11px 14px; background: none; border: none;
+      font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 9px; color: var(--ink);
+    }
+    .chat-menu button:hover { background: var(--surface); }
+    .chat-menu button.danger { color: var(--rose); }
+    .chat-menu hr { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+
+    /* CONVERSATION (whatsapp style) */
     .conversation {
-      max-height: 380px; overflow-y: auto;
-      border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; margin-bottom: 1rem;
-      background: var(--surface);
+      max-height: 420px; overflow-y: auto;
+      border-radius: 12px;
+      padding: 14px 10px; margin-bottom: 10px;
+      background: #efe7da;
+      background-image: radial-gradient(rgba(0,0,0,.025) 1px, transparent 1px);
+      background-size: 16px 16px;
     }
-    .msg-bubble { margin-bottom: 12px; }
-    .msg-bubble.sent { text-align: right; }
+    .msg-bubble { margin-bottom: 8px; display: flex; }
+    .msg-bubble.sent { justify-content: flex-end; }
+    .msg-bubble.received { justify-content: flex-start; }
     .bubble {
-      display: inline-block; max-width: 85%;
-      padding: 10px 14px; border-radius: 12px;
-      font-size: 13px; line-height: 1.4; word-wrap: break-word;
+      display: inline-block; max-width: 78%;
+      padding: 7px 9px 6px 10px; border-radius: 9px;
+      font-size: 13.5px; line-height: 1.4; word-wrap: break-word;
+      color: #111; box-shadow: 0 1px 1px rgba(0,0,0,.08);
+      position: relative;
     }
-    .bubble.received { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
-    .bubble.sent { background: var(--brand); color: #fff; }
-    .bubble-meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .bubble.received { background: #ffffff; }
+    .bubble.sent { background: #d9fdd3; }
+    .bubble-text { white-space: pre-wrap; }
+    .bubble-meta {
+      font-size: 10.5px; color: rgba(0,0,0,.45); margin-top: 2px;
+      display: flex; align-items: center; justify-content: flex-end; gap: 3px; float: right;
+      margin-left: 8px; transform: translateY(2px);
+    }
+    .tick { font-size: 13px; line-height: 1; }
+    .tick.grey { color: rgba(0,0,0,.4); }
+    .tick.blue { color: #53bdeb; }
+    .tick.waiting { color: rgba(0,0,0,.4); }
+    .bubble-audio { display: flex; align-items: center; gap: 8px; min-width: 180px; }
+    .bubble-audio audio { height: 32px; max-width: 180px; }
+
+    /* TYPING INDICATOR */
+    .typing-indicator { display: none; align-items: center; gap: 4px; padding: 6px 10px; }
+    .typing-indicator.show { display: flex; }
+    .typing-indicator .bubble.received { padding: 10px 12px; display: flex; gap: 3px; align-items: center; }
+    .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,.35); animation: typingBounce 1.2s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+    /* CHAT INPUT BAR */
+    .chat-input-bar { display: flex; gap: 8px; align-items: center; }
+    .chat-input-bar input[type="text"] {
+      flex: 1; padding: 11px 14px; border: 1px solid var(--border); border-radius: 22px; font-family: inherit; font-size: 13.5px;
+    }
+    .mic-btn, .send-btn {
+      width: 40px; height: 40px; border-radius: 50%; border: none; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;
+    }
+    .mic-btn { background: var(--surface); color: var(--brand); }
+    .mic-btn.recording { background: var(--rose); color: #fff; animation: pulseRec 1s infinite; }
+    @keyframes pulseRec { 0%,100% { box-shadow: 0 0 0 0 rgba(244,63,94,.4); } 50% { box-shadow: 0 0 0 8px rgba(244,63,94,0); } }
+    .send-btn { background: var(--brand); color: #fff; }
+    .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .recording-bar {
+      display: none; align-items: center; gap: 10px; flex: 1;
+      padding: 9px 14px; background: var(--surface); border-radius: 22px; font-size: 13px; color: var(--rose); font-weight: 600;
+    }
+    .recording-bar.show { display: flex; }
+    .rec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rose); animation: pulseRec 1s infinite; }
+    .chat-blocked-banner {
+      display: none; text-align: center; padding: 10px; background: rgba(244,63,94,.08);
+      color: var(--rose); font-size: 12.5px; border-radius: 10px; margin-bottom: 8px; font-weight: 600;
+    }
+    .chat-blocked-banner.show { display: block; }
 
     /* BALANCE CARD */
     .balance-box {
@@ -595,14 +696,45 @@
       </div>
 
       <div id="messages-view" class="tab-content">
-        <div id="conversation-header" style="display:none; margin-bottom:1.2rem; padding-bottom:1rem; border-bottom:1px solid var(--border);">
-          <div style="font-weight:700; font-size:14px; margin-bottom:2px;" id="conv-from">—</div>
-          <div style="font-size:12px; color:var(--muted);" id="conv-status">—</div>
+        <div id="conversation-header" class="chat-header" style="display:none;">
+          <button class="chat-icon-btn chat-back" onclick="switchTab('messages-list', document.querySelector('#modal-messages .tabs .tab:first-child'))"><i class="bi bi-arrow-left"></i></button>
+          <div class="chat-avatar-wrap">
+            <div class="chat-avatar" id="conv-avatar">—</div>
+            <div class="online-dot" id="conv-online-dot"></div>
+          </div>
+          <div class="chat-id-block">
+            <div class="chat-name" id="conv-from">—</div>
+            <div class="chat-status" id="conv-status"><span class="dot-inline"></span><span id="conv-status-text">—</span></div>
+          </div>
+          <div class="chat-actions">
+            <button class="chat-icon-btn" title="Voice call" onclick="startCall('voice')"><i class="bi bi-telephone-fill"></i></button>
+            <button class="chat-icon-btn" title="Video call" onclick="startCall('video')"><i class="bi bi-camera-video-fill"></i></button>
+            <div class="chat-menu-wrap">
+              <button class="chat-icon-btn" title="More" onclick="toggleChatMenu()"><i class="bi bi-three-dots-vertical"></i></button>
+              <div class="chat-menu" id="chat-menu">
+                <button onclick="markNotInterested()"><i class="bi bi-hand-thumbs-down"></i> Not Interested</button>
+                <button onclick="endInterview()"><i class="bi bi-door-closed"></i> End Interview</button>
+                <hr>
+                <button onclick="reportFraud()" class="danger"><i class="bi bi-flag-fill"></i> Report Fraud</button>
+                <button onclick="whitelistEmployer()"><i class="bi bi-shield-check"></i> Whitelist Employer</button>
+                <button onclick="blockEmployer()" class="danger"><i class="bi bi-slash-circle"></i> Block Employer</button>
+              </div>
+            </div>
+          </div>
         </div>
+        <div class="chat-blocked-banner" id="chat-blocked-banner">This conversation is closed.</div>
         <div class="conversation" id="conversation-messages"></div>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="msg-reply" placeholder="Type your reply…" style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit;">
-          <button class="btn btn-primary" onclick="sendMessageReply()"><i class="bi bi-send"></i> Send</button>
+        <div class="typing-indicator" id="typing-indicator">
+          <div class="bubble received"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+        </div>
+        <div class="chat-input-bar" id="chat-input-bar">
+          <input type="text" id="msg-reply" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendMessageReply()" oninput="notifyTyping()">
+          <div class="recording-bar" id="recording-bar">
+            <span class="rec-dot"></span> Recording… <span id="rec-timer">0:00</span>
+            <button class="chat-icon-btn" onclick="cancelRecording()" style="margin-left:auto;"><i class="bi bi-trash3"></i></button>
+          </div>
+          <button class="mic-btn" id="mic-btn" title="Record voice message" onclick="toggleRecording()"><i class="bi bi-mic-fill"></i></button>
+          <button class="send-btn" id="send-btn" onclick="sendMessageReply()"><i class="bi bi-send-fill"></i></button>
         </div>
       </div>
     </div>
@@ -847,6 +979,9 @@ let sb, currentUser;
 let workerProfile = null;
 let allConversations = [];
 let activeConvId = null;
+let activeConvMeta = null; // { employer_id, is_admin_thread, employer_blocked, employee_blocked, status }
+let mediaRecorder = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
+let typingChannel = null, typingTimeout = null, presenceChannel = null;
 let allJobs = [];
 
 // ════════════════════════════════════════════════════════
@@ -992,7 +1127,7 @@ async function loadDashboard() {
     // 2. conversations (RLS: employee_id = auth.uid()) — get threads
     console.log('🔍 Loading conversations where employee_id =', currentUser.id);
     const { data: convs, error: convErr } = await sb.from('conversations')
-      .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status')
+      .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status, is_admin_thread, employer_blocked, employee_blocked, not_interested_at, employer_whitelisted')
       .eq('employee_id', currentUser.id)
       .eq('is_deleted', false)
       .order('last_message_at', { ascending: false })
@@ -1117,6 +1252,14 @@ async function loadDashboard() {
 // ════════════════════════════════════════════════════════
 //  CONVERSATIONS / MESSAGES
 // ════════════════════════════════════════════════════════
+let employerCache = {}; // user_id -> {name, photo, is_admin_thread}
+
+function twoWordName(full) {
+  if (!full) return 'Employer';
+  const parts = full.trim().split(/\s+/);
+  return parts.slice(0, 2).join(' ');
+}
+
 async function renderConversationList() {
   const inbox = document.getElementById('messages-inbox');
   const recent = document.getElementById('recent-messages');
@@ -1128,31 +1271,36 @@ async function renderConversationList() {
     return;
   }
 
-  // Fetch employer names for all convs
+  // Fetch employer names/photos for all convs
   const employerIds = [...new Set(allConversations.map(c => c.employer_id).filter(Boolean))];
-  let employers = {};
   if (employerIds.length) {
     const { data } = await sb.from('employer_profiles')
-      .select('user_id, full_name, company_name')
+      .select('user_id, full_name, company_name, profile_photo_url')
       .in('user_id', employerIds);
     (data || []).forEach(e => {
-      employers[e.user_id] = e.company_name || e.full_name || 'Employer';
+      employerCache[e.user_id] = {
+        name: twoWordName(e.company_name || e.full_name || 'Employer'),
+        photo: e.profile_photo_url || null,
+      };
     });
   }
 
-  const html = allConversations.map((conv, i) => {
-    const from = employers[conv.employer_id] || 'Employer';
-    const init = from[0].toUpperCase();
+  const html = allConversations.map((conv) => {
+    const isSupport = conv.is_admin_thread;
+    const emp = employerCache[conv.employer_id] || { name: 'Employer', photo: null };
+    const from = isSupport ? 'Support' : emp.name;
+    const init = (from[0] || '?').toUpperCase();
     const preview = (conv.last_message_text || 'No messages yet').substring(0, 60);
     const unread = conv.employee_unread > 0;
     const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
+    const avatarInner = emp.photo && !isSupport ? `<img src="${emp.photo}">` : esc(init);
     return `
-    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openConversation('${conv.id}', '${esc(from)}')">
-      <div class="msg-avatar is-employer">${esc(init)}</div>
+    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openConversation('${conv.id}')">
+      <div class="msg-avatar is-employer">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
           <span class="msg-from">${esc(from)}</span>
-          <span class="msg-badge employer"><i class="bi bi-building"></i> Employer</span>
+          <span class="msg-badge employer"><i class="bi bi-${isSupport ? 'headset' : 'building'}"></i> ${isSupport ? 'Support' : 'Employer'}</span>
         </div>
         <div class="msg-preview">${esc(preview)}</div>
       </div>
@@ -1164,12 +1312,15 @@ async function renderConversationList() {
   }).join('');
 
   inbox.innerHTML = html;
-  recent.innerHTML = allConversations.slice(0, 2).map((conv, i) => {
-    const from = employers[conv.employer_id] || 'Employer';
+  recent.innerHTML = allConversations.slice(0, 2).map((conv) => {
+    const isSupport = conv.is_admin_thread;
+    const emp = employerCache[conv.employer_id] || { name: 'Employer', photo: null };
+    const from = isSupport ? 'Support' : emp.name;
     const preview = (conv.last_message_text || '—').substring(0, 80);
+    const avatarInner = emp.photo && !isSupport ? `<img src="${emp.photo}">` : esc((from[0] || '?').toUpperCase());
     return `
-    <div class="msg-item" onclick="openConversation('${conv.id}', '${esc(from)}')">
-      <div class="msg-avatar is-employer">${esc(from[0].toUpperCase())}</div>
+    <div class="msg-item" onclick="openConversation('${conv.id}')">
+      <div class="msg-avatar is-employer">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-from">${esc(from)}</div>
         <div class="msg-preview">${esc(preview)}</div>
@@ -1179,15 +1330,137 @@ async function renderConversationList() {
   }).join('');
 }
 
-async function openConversation(convId, fromName) {
-  activeConvId = convId;
-  document.getElementById('conv-from').textContent = fromName;
-  document.getElementById('conv-status').textContent = 'Loading conversation…';
-  document.getElementById('conversation-header').style.display = 'block';
+function renderTick(m) {
+  if (m.sender_id !== currentUser.id) return '';
+  if (m._pending === 'waiting') return '<i class="bi bi-clock tick waiting" title="Waiting for network"></i>';
+  if (m._pending === 'sending') return '<i class="bi bi-clock tick waiting" title="Sending"></i>';
+  const ds = m.delivery_status;
+  if (ds === 'seen' || m.is_read) return '<i class="bi bi-check2-all tick blue" title="Seen"></i>';
+  if (ds === 'delivered') return '<i class="bi bi-check2-all tick grey" title="Delivered"></i>';
+  return '<i class="bi bi-check2 tick grey" title="Sent"></i>';
+}
 
-  // messages RLS: conversation_id must exist in conversations where employer_id or employee_id = auth.uid()
+function renderBubbleContent(m) {
+  if (m.msg_type === 'audio' && m.file_url) {
+    return `<div class="bubble-audio"><audio controls src="${m.file_url}"></audio></div>`;
+  }
+  const text = m.content || m.body || m.message || '';
+  return `<span class="bubble-text">${esc(text)}</span>`;
+}
+
+function renderMessageBubble(m) {
+  const sent = m.sender_id === currentUser.id;
+  return `
+  <div class="msg-bubble ${sent ? 'sent' : 'received'}" data-id="${m.id || ''}">
+    <div class="bubble ${sent ? 'sent' : 'received'}">
+      ${renderBubbleContent(m)}
+      <div class="bubble-meta">${timeAgo(new Date(m.created_at))} ${renderTick(m)}</div>
+    </div>
+  </div>`;
+}
+
+async function updateChatHeaderStatus() {
+  const isSupport = !!activeConvMeta?.is_admin_thread;
+  const dotEl = document.getElementById('conv-online-dot');
+  const statusWrap = document.getElementById('conv-status');
+  const statusText = document.getElementById('conv-status-text');
+
+  if (isSupport) {
+    dotEl.classList.add('show');
+    statusWrap.classList.add('online');
+    statusText.textContent = 'Always online';
+    return;
+  }
+
+  const employerId = activeConvMeta?.employer_id;
+  if (!employerId) { statusText.textContent = ''; return; }
+
+  const { data } = await sb.from('user_presence').select('is_online, last_seen').eq('user_id', employerId).maybeSingle();
+  if (data?.is_online) {
+    dotEl.classList.add('show');
+    statusWrap.classList.add('online');
+    statusText.textContent = 'Online';
+  } else {
+    dotEl.classList.remove('show');
+    statusWrap.classList.remove('online');
+    statusText.textContent = data?.last_seen ? 'last seen ' + timeAgo(new Date(data.last_seen)) : 'offline';
+  }
+}
+
+function subscribePresenceFor(employerId) {
+  if (presenceChannel) { sb.removeChannel(presenceChannel); presenceChannel = null; }
+  if (!employerId) return;
+  presenceChannel = sb.channel('presence-' + employerId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'user_presence', filter: `user_id=eq.${employerId}` }, () => {
+      updateChatHeaderStatus();
+    })
+    .subscribe();
+}
+
+function subscribeTypingFor(convId) {
+  if (typingChannel) { sb.removeChannel(typingChannel); typingChannel = null; }
+  typingChannel = sb.channel('typing-' + convId)
+    .on('broadcast', { event: 'typing' }, (payload) => {
+      if (payload.payload?.from === currentUser.id) return;
+      const ind = document.getElementById('typing-indicator');
+      ind.classList.add('show');
+      document.getElementById('conversation-messages').scrollTop = document.getElementById('conversation-messages').scrollHeight;
+      clearTimeout(window._typingHideTimer);
+      window._typingHideTimer = setTimeout(() => ind.classList.remove('show'), 3000);
+    })
+    .subscribe();
+}
+
+let lastTypingSent = 0;
+function notifyTyping() {
+  if (!typingChannel || !activeConvId) return;
+  const now = Date.now();
+  if (now - lastTypingSent < 1500) return;
+  lastTypingSent = now;
+  typingChannel.send({ type: 'broadcast', event: 'typing', payload: { from: currentUser.id } });
+}
+
+function toggleChatMenu() {
+  document.getElementById('chat-menu').classList.toggle('show');
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('chat-menu');
+  if (menu && !e.target.closest('.chat-menu-wrap') && menu.classList.contains('show')) menu.classList.remove('show');
+});
+
+function applyChatLockState() {
+  const banner = document.getElementById('chat-blocked-banner');
+  const bar = document.getElementById('chat-input-bar');
+  const closed = activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked;
+  if (closed) {
+    banner.classList.add('show');
+    bar.style.display = 'none';
+  } else {
+    banner.classList.remove('show');
+    bar.style.display = 'flex';
+  }
+}
+
+async function openConversation(convId) {
+  activeConvId = convId;
+  const conv = allConversations.find(c => c.id === convId) || {};
+  activeConvMeta = conv;
+  const isSupport = !!conv.is_admin_thread;
+  const emp = employerCache[conv.employer_id] || { name: isSupport ? 'Support' : 'Employer', photo: null };
+  const displayName = isSupport ? 'Support' : emp.name;
+
+  document.getElementById('conv-from').textContent = displayName;
+  document.getElementById('conv-avatar').innerHTML = (emp.photo && !isSupport) ? `<img src="${emp.photo}">` : esc((displayName[0] || '?').toUpperCase());
+  document.getElementById('conv-status-text').textContent = 'Loading…';
+  document.getElementById('conversation-header').style.display = 'flex';
+  applyChatLockState();
+
+  subscribePresenceFor(isSupport ? null : conv.employer_id);
+  subscribeTypingFor(convId);
+  updateChatHeaderStatus();
+
   const { data: msgs, error } = await sb.from('messages')
-    .select('id, sender_id, body, content, is_read, created_at, msg_type, is_from_admin')
+    .select('id, sender_id, body, content, message, is_read, delivery_status, created_at, msg_type, file_url, is_from_admin')
     .eq('conversation_id', convId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true });
@@ -1198,21 +1471,13 @@ async function openConversation(convId, fromName) {
   }
 
   const convEl = document.getElementById('conversation-messages');
-  convEl.innerHTML = (msgs || []).map(m => {
-    const sent = m.sender_id === currentUser.id;
-    const text = m.content || m.body || '';
-    return `
-    <div class="msg-bubble ${sent ? 'sent' : ''}">
-      <div class="bubble ${sent ? 'sent' : 'received'}">${esc(text)}</div>
-      <div class="bubble-meta">${timeAgo(new Date(m.created_at))}</div>
-    </div>`;
-  }).join('');
-
-  // Mark as read — update conversation employee_unread
-  await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
-
+  convEl.innerHTML = (msgs || []).map(renderMessageBubble).join('');
   convEl.scrollTop = convEl.scrollHeight;
-  document.getElementById('conv-status').textContent = msgs?.length + ' messages';
+
+  // Mark incoming messages as seen + clear unread badge
+  await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() })
+    .eq('conversation_id', convId).neq('sender_id', currentUser.id).eq('is_read', false);
+  await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
 
   const convTabBtn = document.querySelector('#modal-messages .tabs .tab:last-child');
   switchTab('messages-view', convTabBtn);
@@ -1222,35 +1487,179 @@ async function openConversation(convId, fromName) {
 }
 
 async function sendMessageReply() {
-  const text = document.getElementById('msg-reply').value.trim();
+  const input = document.getElementById('msg-reply');
+  const text = input.value.trim();
   if (!text || !activeConvId) return;
+  if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
 
-  const btn = document.querySelector('#modal-messages .btn-primary');
-  btn.disabled = true;
+  const sendBtn = document.getElementById('send-btn');
+  sendBtn.disabled = true;
+  input.value = '';
 
-  // messages INSERT RLS: sender_id = auth.uid() AND conversation exists where employer/employee = auth.uid()
+  const convEl = document.getElementById('conversation-messages');
+  const tempId = 'temp-' + Date.now();
+  const pendingState = navigator.onLine ? 'sending' : 'waiting';
+  convEl.insertAdjacentHTML('beforeend', renderMessageBubble({
+    id: tempId, sender_id: currentUser.id, content: text, created_at: new Date().toISOString(), _pending: pendingState,
+  }));
+  convEl.scrollTop = convEl.scrollHeight;
+
+  if (!navigator.onLine) {
+    showToast('err', 'bi-wifi-off', 'No network', 'Message will send once you are back online.');
+    const retry = () => { window.removeEventListener('online', retry); sendMessageReply._queued && sendMessageReply._queued(); };
+    sendMessageReply._queued = async () => {
+      document.querySelector(`[data-id="${tempId}"]`)?.remove();
+      input.value = text; await sendMessageReply();
+    };
+    window.addEventListener('online', retry);
+    sendBtn.disabled = false;
+    return;
+  }
+
   const { error } = await sb.from('messages').insert({
     conversation_id: activeConvId,
     sender_id: currentUser.id,
     body: text,
     content: text,
     is_read: false,
+    delivery_status: 'sent',
     msg_type: 'text',
   });
 
   if (error) {
     showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    document.querySelector(`[data-id="${tempId}"]`)?.remove();
   } else {
-    document.getElementById('msg-reply').value = '';
-    // Update conversation last_message_at
     await sb.from('conversations').update({
       last_message_text: text,
       last_message_at: new Date().toISOString(),
     }).eq('id', activeConvId);
-    await openConversation(activeConvId, document.getElementById('conv-from').textContent);
-    showToast('ok', 'bi-check-circle', 'Sent', 'Message delivered.');
+    await openConversation(activeConvId);
   }
-  btn.disabled = false;
+  sendBtn.disabled = false;
+}
+
+// ── VOICE NOTES ──
+async function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') { stopRecording(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(recordingTimer);
+      document.getElementById('recording-bar').classList.remove('show');
+      document.getElementById('mic-btn').classList.remove('recording');
+      if (mediaRecorder._cancelled) return;
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      await uploadVoiceNote(blob);
+    };
+    mediaRecorder.start();
+    recordingSeconds = 0;
+    document.getElementById('recording-bar').classList.add('show');
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('rec-timer').textContent = '0:00';
+    recordingTimer = setInterval(() => {
+      recordingSeconds++;
+      const m = Math.floor(recordingSeconds / 60), s = recordingSeconds % 60;
+      document.getElementById('rec-timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+  } catch (err) {
+    showToast('err', 'bi-mic-mute', 'Microphone blocked', 'Please allow microphone access to record a voice message.');
+  }
+}
+function stopRecording() { mediaRecorder._cancelled = false; mediaRecorder.stop(); }
+function cancelRecording() {
+  if (mediaRecorder) { mediaRecorder._cancelled = true; mediaRecorder.stop(); }
+  clearInterval(recordingTimer);
+  document.getElementById('recording-bar').classList.remove('show');
+  document.getElementById('mic-btn').classList.remove('recording');
+}
+async function uploadVoiceNote(blob) {
+  if (!activeConvId) return;
+  showToast('info', 'bi-mic', 'Uploading', 'Sending voice message…');
+  const path = `voice-notes/${activeConvId}/${Date.now()}.webm`;
+  const { error: upErr } = await sb.storage.from('Media').upload(path, blob, { contentType: 'audio/webm' });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+  const { error } = await sb.from('messages').insert({
+    conversation_id: activeConvId,
+    sender_id: currentUser.id,
+    body: '[Voice message]', content: '[Voice message]',
+    msg_type: 'audio', file_url: pub.publicUrl, file_name: 'voice-note.webm', file_type: 'audio/webm',
+    is_read: false, delivery_status: 'sent',
+  });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Error', error.message); return; }
+  await sb.from('conversations').update({ last_message_text: '🎤 Voice message', last_message_at: new Date().toISOString() }).eq('id', activeConvId);
+  await openConversation(activeConvId);
+}
+
+// ── CALLS (UI — requires a calling/signaling backend to fully connect) ──
+async function startCall(type) {
+  if (!activeConvId) return;
+  const roomId = (crypto.randomUUID ? crypto.randomUUID() : 'room-' + Date.now());
+  await sb.from('messages').insert({
+    conversation_id: activeConvId, sender_id: currentUser.id,
+    msg_type: 'call', call_type: type, call_status: 'initiated', room_id: roomId,
+    content: `📞 ${type === 'video' ? 'Video' : 'Voice'} call started`, body: `${type} call started`,
+    call_started_at: new Date().toISOString(),
+  });
+  await openConversation(activeConvId);
+  showToast('info', type === 'video' ? 'bi-camera-video' : 'bi-telephone', 'Calling…', `${type === 'video' ? 'Video' : 'Voice'} call request sent.`);
+}
+
+// ── CHAT ACTIONS ──
+async function markNotInterested() {
+  if (!activeConvId) return;
+  toggleChatMenu();
+  const reason = prompt('You\'re marking this employer as Not Interested. Please give a brief reason:');
+  if (reason === null) return;
+  await sb.from('conversations').update({ not_interested_at: new Date().toISOString(), not_interested_by: currentUser.id, not_interested_reason: reason || null, status: 'closed' }).eq('id', activeConvId);
+  showToast('ok', 'bi-check-circle', 'Noted', 'Marked as not interested. Conversation closed.');
+  activeConvMeta.status = 'closed';
+  applyChatLockState();
+  await loadDashboard();
+}
+async function endInterview() {
+  if (!activeConvId) return;
+  toggleChatMenu();
+  if (!confirm('End this interview? Communication with this employer will stop.')) return;
+  await sb.from('conversations').update({ status: 'closed' }).eq('id', activeConvId);
+  showToast('ok', 'bi-door-closed', 'Ended', 'Interview ended. Conversation closed.');
+  activeConvMeta.status = 'closed';
+  applyChatLockState();
+  await loadDashboard();
+}
+async function reportFraud() {
+  if (!activeConvId) return;
+  toggleChatMenu();
+  const reason = prompt('Describe the fraudulent behavior you experienced:');
+  if (!reason) return;
+  const { error } = await sb.from('message_reports').insert({
+    reported_by: currentUser.id, reported_user: activeConvMeta?.employer_id,
+    conversation_id: activeConvId, reason: 'fraud', details: reason, status: 'pending',
+  });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Error', error.message); return; }
+  showToast('ok', 'bi-flag-fill', 'Reported', 'Our team will review this report.');
+}
+async function whitelistEmployer() {
+  if (!activeConvId) return;
+  toggleChatMenu();
+  if (!confirm('Whitelist this employer as trusted?')) return;
+  await sb.from('conversations').update({ employer_whitelisted: true }).eq('id', activeConvId);
+  showToast('ok', 'bi-shield-check', 'Whitelisted', 'Employer marked as trusted.');
+}
+async function blockEmployer() {
+  if (!activeConvId) return;
+  toggleChatMenu();
+  if (!confirm('Block this employer? They will no longer be able to message you.')) return;
+  await sb.from('conversations').update({ employee_blocked: true, status: 'closed' }).eq('id', activeConvId);
+  showToast('ok', 'bi-slash-circle', 'Blocked', 'Employer has been blocked.');
+  activeConvMeta.employee_blocked = true; activeConvMeta.status = 'closed';
+  applyChatLockState();
+  await loadDashboard();
 }
 
 // ════════════════════════════════════════════════════════
@@ -1706,14 +2115,18 @@ function subscribeToRealtime() {
 
       // If conversation is open, append message live
       if (activeConvId === msg.conversation_id) {
-        const sent = msg.sender_id === currentUser.id;
-        const text = msg.content || msg.body || '';
+        document.querySelector('.msg-bubble[data-id^="temp-"]')?.remove();
         const convEl = document.getElementById('conversation-messages');
-        const bubble = document.createElement('div');
-        bubble.className = `msg-bubble ${sent ? 'sent' : ''}`;
-        bubble.innerHTML = `<div class="bubble ${sent ? 'sent' : 'received'}">${esc(text)}</div><div class="bubble-meta">just now</div>`;
-        convEl.appendChild(bubble);
+        convEl.insertAdjacentHTML('beforeend', renderMessageBubble(msg));
         convEl.scrollTop = convEl.scrollHeight;
+        document.getElementById('typing-indicator').classList.remove('show');
+        // If this message is from the employer and the conversation is open, mark it seen immediately
+        if (msg.sender_id !== currentUser.id) {
+          await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() }).eq('id', msg.id);
+        }
+      } else if (msg.sender_id !== currentUser.id) {
+        // Mark delivered (app received it) even if conversation isn't open
+        await sb.from('messages').update({ delivery_status: 'delivered' }).eq('id', msg.id).is('delivery_status', null);
       }
 
       try {
@@ -1723,6 +2136,16 @@ function subscribeToRealtime() {
       console.error('❌ renderConversationList failed:', renderErr.message);
       document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
     }
+    })
+    .subscribe();
+
+  // Message status updates (delivered/seen ticks)
+  sb.channel('emp-message-status')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+      const msg = payload.new;
+      if (activeConvId !== msg.conversation_id) return;
+      const el = document.querySelector(`.msg-bubble[data-id="${msg.id}"] .bubble-meta`);
+      if (el) el.innerHTML = `${timeAgo(new Date(msg.created_at))} ${renderTick(msg)}`;
     })
     .subscribe();
 
