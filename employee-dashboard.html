@@ -637,98 +637,258 @@
     .chat-main-empty i { font-size: 2.5rem; opacity: 0.3; }
     .chat-main-empty p { font-size: 13px; }
 
-    /* ─── CALL MODAL ─── */
+    /* ═══════════════════════════════════
+       SOUNDSCARE IN-APP CALLING SYSTEM
+       ═══════════════════════════════════ */
+
+    /* ─── CALL OVERLAY (full-screen) ─── */
     .call-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(10,18,30,0.92);
-      display: none; align-items: center; justify-content: center;
-      z-index: 1500; flex-direction: column; gap: 0;
+      position: fixed; inset: 0;
+      background: linear-gradient(160deg, #0a121e 0%, #0f1e14 60%, #0a121e 100%);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 1500; overflow: hidden;
     }
     .call-overlay.open { display: flex; }
+
+    /* Animated background rings */
+    .call-bg-rings {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+    }
+    .call-bg-rings::before, .call-bg-rings::after {
+      content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(27,107,69,0.15);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+      animation: bgRingExpand 3s ease-out infinite;
+    }
+    .call-bg-rings::before { width: 300px; height: 300px; animation-delay: 0s; }
+    .call-bg-rings::after  { width: 500px; height: 500px; animation-delay: 1.5s; }
+    @keyframes bgRingExpand {
+      0%   { opacity: 0.5; transform: translate(-50%,-50%) scale(0.8); }
+      100% { opacity: 0;   transform: translate(-50%,-50%) scale(1.6); }
+    }
+
+    /* ─── VOICE CALL SCREEN ─── */
     .call-screen {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 16px; color: #fff; text-align: center;
-      padding: 2rem;
-    }
-    .call-avatar-ring {
-      width: 110px; height: 110px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--brand), #2a9961);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2.8rem; font-weight: 800; color: #fff;
-      position: relative; animation: callPulse 1.8s infinite;
-    }
-    @keyframes callPulse {
-      0% { box-shadow: 0 0 0 0 rgba(27,107,69,0.6), 0 0 0 0 rgba(27,107,69,0.3); }
-      70% { box-shadow: 0 0 0 20px rgba(27,107,69,0), 0 0 0 40px rgba(27,107,69,0); }
-      100% { box-shadow: 0 0 0 0 rgba(27,107,69,0), 0 0 0 0 rgba(27,107,69,0); }
-    }
-    .call-name { font-size: 1.4rem; font-weight: 800; margin-top: 8px; }
-    .call-label { font-size: 13px; opacity: 0.65; }
-    .call-timer { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,0.8); }
-    .call-controls {
-      display: flex; gap: 20px; align-items: center; margin-top: 28px;
-    }
-    .call-btn {
-      width: 60px; height: 60px; border-radius: 50%; border: none;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; cursor: pointer; transition: 0.18s;
-      color: #fff;
-    }
-    .call-btn.end { background: var(--rose); }
-    .call-btn.end:hover { background: #d4234a; }
-    .call-btn.mute { background: rgba(255,255,255,0.15); }
-    .call-btn.mute:hover { background: rgba(255,255,255,0.25); }
-    .call-btn.cam { background: rgba(255,255,255,0.15); }
-    .call-btn.cam:hover { background: rgba(255,255,255,0.25); }
-    .call-btn.speaker { background: rgba(255,255,255,0.15); }
-    .call-btn.speaker:hover { background: rgba(255,255,255,0.25); }
-    .call-btn.active { background: rgba(255,255,255,0.9); color: var(--ink); }
-    /* Video call specific */
-    .video-frame {
-      width: 100%; max-width: 420px; height: 260px;
-      background: #111; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      color: rgba(255,255,255,0.3); font-size: 13px;
-      overflow: hidden; position: relative;
-    }
-    .video-local {
-      position: absolute; bottom: 10px; right: 10px;
-      width: 90px; height: 70px; border-radius: 8px;
-      background: #222; border: 2px solid rgba(255,255,255,0.2);
+      gap: 12px; color: #fff; text-align: center;
+      padding: 2rem; position: relative; z-index: 1; width: 100%;
     }
 
-    /* Incoming call notification */
-    .incoming-call-bar {
-      position: fixed; top: 70px; right: 20px;
-      background: var(--ink); color: #fff;
-      border-radius: 16px; padding: 14px 18px;
-      display: none; align-items: center; gap: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      z-index: 2000; min-width: 300px;
-      animation: slideIn 0.3s ease-out;
-    }
-    .incoming-call-bar.show { display: flex; }
-    .incoming-call-bar .ic-avatar {
-      width: 46px; height: 46px; border-radius: 50%;
-      background: var(--brand); color: #fff;
+    /* Avatar pulse ring */
+    .call-avatar-ring {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #2a9961);
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 700; flex-shrink: 0;
-      animation: callPulse 1.4s infinite;
+      font-size: 3rem; font-weight: 800; color: #fff;
+      position: relative; margin-bottom: 8px;
+      overflow: hidden;
     }
-    .ic-info { flex: 1; }
-    .ic-name { font-weight: 700; font-size: 14px; }
-    .ic-type { font-size: 11px; opacity: 0.7; margin-top: 2px; }
-    .ic-actions { display: flex; gap: 8px; }
+    .call-avatar-ring img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .call-avatar-ring::before, .call-avatar-ring::after {
+      content: ''; position: absolute; border-radius: 50%;
+      border: 2px solid rgba(27,107,69,0.5);
+      inset: -12px; animation: avatarPulse 2s ease-out infinite;
+    }
+    .call-avatar-ring::after { inset: -24px; animation-delay: 0.6s; border-color: rgba(27,107,69,0.25); }
+    @keyframes avatarPulse {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.3); }
+    }
+
+    .call-name { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.3px; }
+    .call-role { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    .call-status-line {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.65); margin: 4px 0;
+    }
+    .call-status-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .call-timer-display {
+      font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.9);
+      font-variant-numeric: tabular-nums; letter-spacing: 1px;
+      display: none;
+    }
+    .call-timer-display.show { display: block; }
+
+    /* Call control buttons grid */
+    .call-controls {
+      display: flex; gap: 16px; align-items: center;
+      margin-top: 32px; flex-wrap: wrap; justify-content: center;
+    }
+    .call-btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .call-btn-label { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .call-btn {
+      width: 58px; height: 58px; border-radius: 50%; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; transition: all 0.18s;
+      color: #fff; position: relative;
+    }
+    .call-btn.ctrl { background: rgba(255,255,255,0.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); }
+    .call-btn.ctrl:hover { background: rgba(255,255,255,0.22); transform: scale(1.06); }
+    .call-btn.ctrl.active { background: rgba(255,255,255,0.88); color: var(--ink); }
+    .call-btn.ctrl.active:hover { background: #fff; }
+    .call-btn.end-call {
+      background: var(--rose); width: 68px; height: 68px; font-size: 26px;
+      box-shadow: 0 4px 20px rgba(244,63,94,0.5);
+    }
+    .call-btn.end-call:hover { background: #d4234a; transform: scale(1.08); }
+    .call-btn.accept-call {
+      background: var(--green); width: 68px; height: 68px; font-size: 26px;
+      box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+    }
+    .call-btn.accept-call:hover { background: #18a64a; transform: scale(1.08); }
+
+    /* ─── VIDEO CALL SCREEN ─── */
+    .video-call-screen {
+      position: fixed; inset: 0; background: #060d0a;
+      display: none; flex-direction: column;
+      z-index: 1500;
+    }
+    .video-call-screen.open { display: flex; }
+
+    /* Remote video fills the screen */
+    .video-remote-wrap {
+      flex: 1; position: relative; overflow: hidden; background: #0a0f0d;
+    }
+    #video-remote {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .video-remote-placeholder {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px; color: rgba(255,255,255,0.4);
+    }
+    .video-remote-placeholder .avatar-lg {
+      width: 90px; height: 90px; border-radius: 50%;
+      background: rgba(27,107,69,0.3); display: flex; align-items: center;
+      justify-content: center; font-size: 2.4rem; font-weight: 800; color: rgba(255,255,255,0.6);
+    }
+    .video-remote-placeholder .vid-name { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.7); }
+    .video-remote-placeholder .vid-status { font-size: 12px; }
+
+    /* Local pip camera */
+    .video-local-pip {
+      position: absolute; bottom: 110px; right: 16px;
+      width: 100px; height: 76px; border-radius: 10px;
+      background: #1a2a1f; border: 2px solid rgba(255,255,255,0.15);
+      overflow: hidden; cursor: move; z-index: 2;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    #video-local { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .pip-cam-off {
+      position: absolute; inset: 0; background: #1a2a1f;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4); font-size: 1.4rem;
+    }
+
+    /* Video call info bar at top */
+    .video-top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+      z-index: 3;
+    }
+    .video-top-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(27,107,69,0.6); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; flex-shrink: 0;
+    }
+    .video-top-info { flex: 1; }
+    .video-top-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .video-top-status { font-size: 11px; color: rgba(255,255,255,0.6); }
+    .video-top-timer { font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* Video controls bar at bottom */
+    .video-controls-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 16px 20px 24px;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; z-index: 3;
+    }
+
+    /* ─── INCOMING CALL NOTIFICATION ─── */
+    .incoming-call-toast {
+      position: fixed; top: 70px; right: 16px;
+      background: rgba(10,18,30,0.96); backdrop-filter: blur(20px);
+      border: 1px solid rgba(27,107,69,0.3);
+      border-radius: 20px; padding: 16px 18px;
+      display: none; align-items: flex-start; gap: 14px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+      z-index: 2100; min-width: 310px; max-width: 360px;
+      transform: translateX(120%); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .incoming-call-toast.show { display: flex; transform: translateX(0); }
+    .ic-avatar-wrap { position: relative; flex-shrink: 0; }
+    .ic-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #2a9961); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; overflow: hidden;
+    }
+    .ic-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .ic-type-badge {
+      position: absolute; bottom: -3px; right: -3px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--green); border: 2px solid #0a121e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #fff;
+    }
+    .ic-body { flex: 1; min-width: 0; }
+    .ic-calling-label { font-size: 10px; color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .ic-name { font-weight: 800; font-size: 15px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ic-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+    .ic-timer-bar {
+      height: 2px; background: rgba(255,255,255,0.1); border-radius: 1px;
+      margin-top: 8px; overflow: hidden;
+    }
+    .ic-timer-fill {
+      height: 100%; background: var(--rose); border-radius: 1px;
+      width: 100%; animation: ringCountdown 30s linear forwards;
+    }
+    @keyframes ringCountdown { from { width: 100%; } to { width: 0%; } }
+    .ic-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
     .ic-btn {
-      width: 42px; height: 42px; border-radius: 50%; border: none;
+      flex: 1; padding: 8px 12px; border: none; border-radius: 12px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 18px; color: #fff; transition: 0.15s;
+      gap: 6px; font-size: 12px; font-weight: 700; transition: 0.18s;
+      font-family: inherit; color: #fff;
     }
     .ic-btn.accept { background: var(--green); }
     .ic-btn.accept:hover { background: #18a64a; }
     .ic-btn.decline { background: var(--rose); }
     .ic-btn.decline:hover { background: #d4234a; }
+
+    /* ─── USER STATUS PILL ─── */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .status-online    { background: rgba(34,197,94,.15); color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
+    .status-online .status-dot    { background: #22c55e; }
+    .status-offline   { background: rgba(107,114,128,.12); color: #9ca3af; border: 1px solid rgba(107,114,128,.2); }
+    .status-offline .status-dot   { background: #9ca3af; }
+    .status-away      { background: rgba(232,160,64,.12); color: var(--accent); border: 1px solid rgba(232,160,64,.25); }
+    .status-away .status-dot      { background: var(--accent); }
+    .status-busy      { background: rgba(244,63,94,.1); color: var(--rose); border: 1px solid rgba(244,63,94,.2); }
+    .status-busy .status-dot      { background: var(--rose); }
+    .status-in_call   { background: rgba(139,92,246,.12); color: var(--violet); border: 1px solid rgba(139,92,246,.25); }
+    .status-in_call .status-dot   { background: var(--violet); animation: blink 1.2s infinite; }
+    .status-dnd       { background: rgba(244,63,94,.08); color: #fb7185; border: 1px solid rgba(244,63,94,.15); }
+    .status-dnd .status-dot       { background: #fb7185; }
+
+    @keyframes callPulse {
+      0% { box-shadow: 0 0 0 0 rgba(27,107,69,0.6), 0 0 0 0 rgba(27,107,69,0.3); }
+      70% { box-shadow: 0 0 0 20px rgba(27,107,69,0), 0 0 0 40px rgba(27,107,69,0); }
+      100% { box-shadow: 0 0 0 0 rgba(27,107,69,0), 0 0 0 0 rgba(27,107,69,0); }
+    }
 
     /* ─── EDIT PROFILE MODAL ─── */
     .modal.extra-wide { max-width: 780px; }
@@ -812,8 +972,8 @@
     <span>Sounds<strong style="color: var(--accent)">Care</strong></span>
   </a>
   <div class="nav-right">
-    <div class="online-pill" id="online-status" style="margin-right: 8px;">
-      <span class="online-dot"></span> Online
+    <div class="status-pill status-online" id="online-status" style="margin-right: 8px;">
+      <span class="status-dot"></span> Online
     </div>
     <button class="nav-btn" onclick="openModal('modal-notifications')" title="Notifications">
       <i class="bi bi-bell"></i>
@@ -1360,61 +1520,150 @@
 <!-- TOAST -->
 <div id="toast-stack"></div>
 
-<!-- ═══════════════════════════ VOICE CALL OVERLAY ═══════════════════════════ -->
+<!-- ═══════════════════════ VOICE CALL OVERLAY ═══════════════════════ -->
 <div class="call-overlay" id="voice-call-overlay">
+  <div class="call-bg-rings"></div>
   <div class="call-screen">
-    <div class="call-avatar-ring" id="vc-avatar-ring">A</div>
-    <div class="call-name" id="vc-name">Employer</div>
-    <div class="call-label" id="vc-label">Calling…</div>
-    <div class="call-timer" id="vc-timer" style="display:none;">0:00</div>
+
+    <!-- Avatar with pulse -->
+    <div class="call-avatar-ring" id="vc-avatar-ring">
+      <span id="vc-avatar-init">?</span>
+    </div>
+
+    <!-- Identity -->
+    <div class="call-name" id="vc-name">—</div>
+    <div class="call-role" id="vc-role">Employer</div>
+
+    <!-- Status -->
+    <div class="call-status-line">
+      <span class="call-status-dot" id="vc-status-dot"></span>
+      <span id="vc-label">Calling…</span>
+    </div>
+    <div class="call-timer-display" id="vc-timer">0:00</div>
+
+    <!-- Controls -->
     <div class="call-controls">
-      <button class="call-btn mute" id="vc-mute" onclick="toggleMute('voice')" title="Mute">
-        <i class="bi bi-mic-fill"></i>
-      </button>
-      <button class="call-btn speaker" id="vc-speaker" onclick="toggleSpeaker()" title="Speaker">
-        <i class="bi bi-volume-up-fill"></i>
-      </button>
-      <button class="call-btn end" onclick="endCall('voice')" title="End Call">
-        <i class="bi bi-telephone-x-fill"></i>
-      </button>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vc-mute" onclick="toggleMute('voice')" title="Mute">
+          <i class="bi bi-mic-fill"></i>
+        </button>
+        <span class="call-btn-label">Mute</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vc-speaker" onclick="toggleSpeaker()" title="Speaker">
+          <i class="bi bi-volume-up-fill"></i>
+        </button>
+        <span class="call-btn-label">Speaker</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn end-call" onclick="endCall('voice')" title="End Call">
+          <i class="bi bi-telephone-x-fill"></i>
+        </button>
+        <span class="call-btn-label" style="color:rgba(255,255,255,0.6);">End</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vc-switch-video" onclick="switchToVideo()" title="Switch to Video">
+          <i class="bi bi-camera-video-fill"></i>
+        </button>
+        <span class="call-btn-label">Video</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vc-keypad" onclick="toggleKeypad()" title="Keypad" style="font-size:18px;">
+          <i class="bi bi-grid-3x3-gap-fill"></i>
+        </button>
+        <span class="call-btn-label">Keypad</span>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ VIDEO CALL OVERLAY ═══════════════════════════ -->
-<div class="call-overlay" id="video-call-overlay">
-  <div class="call-screen">
-    <div class="video-frame" id="video-frame">
-      <span>Waiting for <span id="vid-target">employer</span>'s camera…</span>
-      <div class="video-local"></div>
+<!-- ═══════════════════════ VIDEO CALL SCREEN ═══════════════════════ -->
+<div class="video-call-screen" id="video-call-overlay">
+
+  <!-- Remote video fills screen -->
+  <div class="video-remote-wrap">
+    <video id="video-remote" autoplay playsinline></video>
+
+    <!-- Placeholder when remote cam is off -->
+    <div class="video-remote-placeholder" id="vid-remote-placeholder">
+      <div class="avatar-lg" id="vid-remote-avatar">?</div>
+      <div class="vid-name" id="vid-name">—</div>
+      <div class="vid-status" id="vid-status-text">Connecting…</div>
     </div>
-    <div class="call-name" id="vid-name">Employer</div>
-    <div class="call-label" id="vid-label">Connecting video…</div>
-    <div class="call-timer" id="vid-timer" style="display:none;">0:00</div>
-    <div class="call-controls">
-      <button class="call-btn mute" id="vid-mute" onclick="toggleMute('video')" title="Mute mic">
-        <i class="bi bi-mic-fill"></i>
-      </button>
-      <button class="call-btn cam" id="vid-cam" onclick="toggleCamera()" title="Toggle camera">
-        <i class="bi bi-camera-video-fill"></i>
-      </button>
-      <button class="call-btn end" onclick="endCall('video')" title="End Call">
-        <i class="bi bi-telephone-x-fill"></i>
-      </button>
+
+    <!-- Top info bar -->
+    <div class="video-top-bar">
+      <div class="video-top-avatar" id="vid-top-avatar">?</div>
+      <div class="video-top-info">
+        <div class="video-top-name" id="vid-top-name">—</div>
+        <div class="video-top-status" id="vid-top-status">Video Call</div>
+      </div>
+      <div class="video-top-timer" id="vid-timer">0:00</div>
+    </div>
+
+    <!-- Local PiP camera -->
+    <div class="video-local-pip" id="video-local-pip">
+      <video id="video-local" autoplay muted playsinline></video>
+      <div class="pip-cam-off" id="pip-cam-off" style="display:none;">
+        <i class="bi bi-camera-video-off-fill"></i>
+      </div>
+    </div>
+
+    <!-- Video controls -->
+    <div class="video-controls-bar">
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vid-mute" onclick="toggleMute('video')" title="Mute mic">
+          <i class="bi bi-mic-fill"></i>
+        </button>
+        <span class="call-btn-label">Mic</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vid-cam" onclick="toggleCamera()" title="Camera on/off">
+          <i class="bi bi-camera-video-fill"></i>
+        </button>
+        <span class="call-btn-label">Camera</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn end-call" onclick="endCall('video')" title="End Call">
+          <i class="bi bi-telephone-x-fill"></i>
+        </button>
+        <span class="call-btn-label" style="color:rgba(255,255,255,0.6);">End</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vid-switch-cam" onclick="switchCamera()" title="Switch camera">
+          <i class="bi bi-arrow-repeat"></i>
+        </button>
+        <span class="call-btn-label">Flip</span>
+      </div>
+      <div class="call-btn-wrap">
+        <button class="call-btn ctrl" id="vid-speaker" onclick="toggleSpeakerVideo()" title="Speaker">
+          <i class="bi bi-volume-up-fill"></i>
+        </button>
+        <span class="call-btn-label">Speaker</span>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════ INCOMING CALL BAR ═══════════════════════════ -->
-<div class="incoming-call-bar" id="incoming-call-bar">
-  <div class="ic-avatar" id="ic-avatar">E</div>
-  <div class="ic-info">
-    <div class="ic-name" id="ic-name">Employer</div>
-    <div class="ic-type" id="ic-type">Incoming voice call…</div>
+<!-- ═══════════════════════ INCOMING CALL TOAST ═══════════════════════ -->
+<div class="incoming-call-toast" id="incoming-call-bar">
+  <div class="ic-avatar-wrap">
+    <div class="ic-avatar" id="ic-avatar"><span id="ic-avatar-init">?</span></div>
+    <div class="ic-type-badge" id="ic-type-badge"><i class="bi bi-telephone-fill"></i></div>
   </div>
-  <div class="ic-actions">
-    <button class="ic-btn accept" onclick="acceptIncomingCall()" title="Accept"><i class="bi bi-telephone-fill"></i></button>
-    <button class="ic-btn decline" onclick="declineIncomingCall()" title="Decline"><i class="bi bi-telephone-x-fill"></i></button>
+  <div class="ic-body">
+    <div class="ic-calling-label" id="ic-calling-label">Incoming Voice Call</div>
+    <div class="ic-name" id="ic-name">—</div>
+    <div class="ic-sub" id="ic-sub">SoundsCare</div>
+    <div class="ic-timer-bar"><div class="ic-timer-fill" id="ic-timer-fill"></div></div>
+    <div class="ic-actions">
+      <button class="ic-btn decline" onclick="declineIncomingCall()">
+        <i class="bi bi-telephone-x-fill"></i> Decline
+      </button>
+      <button class="ic-btn accept" onclick="acceptIncomingCall()">
+        <i class="bi bi-telephone-fill"></i> Accept
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1658,10 +1907,11 @@ let sb, currentUser;
 let workerProfile = null;
 let allConversations = [];
 let activeConvId = null;
-let activeConvMeta = null; // { employer_id, is_admin_thread, employer_blocked, employee_blocked, status }
+let activeConvMeta = null;
 let mediaRecorder = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
 let typingChannel = null, typingTimeout = null, presenceChannel = null;
 let allJobs = [];
+let callAudioCtx = null; // for voice message recording audio ctx (separate from ringtone)
 
 // ════════════════════════════════════════════════════════
 //  INIT
@@ -1700,10 +1950,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   try {
     subscribeToRealtime();
+    subscribeIncomingCalls();
     console.log('✅ Realtime subscriptions active');
   } catch (err) {
     console.warn('⚠️  Realtime subscription error:', err.message);
   }
+  requestNotifPermission();
 });
 
 // ════════════════════════════════════════════════════════
@@ -2277,127 +2529,444 @@ async function uploadVoiceNote(blob) {
   await openConversation(activeConvId);
 }
 
-// ── CALLS ──
-let callTimer = null, callSeconds = 0, activeCallType = null;
-let callRingtone = null, callAudioCtx = null;
-let isMuted = false, isCamOff = false, isSpeakerOn = true;
+// ════════════════════════════════════════════════════════════════════
+//  SOUNDSCARE IN-APP CALL ENGINE
+//  WebRTC peer-to-peer + Supabase Realtime signaling
+// ════════════════════════════════════════════════════════════════════
 
-function playRingtone(type) {
-  // Create an oscillator-based ringtone using Web Audio API
-  try {
-    callAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const pattern = type === 'incoming'
-      ? [{ f: 880, t: 0.4 }, { f: 0, t: 0.2 }, { f: 880, t: 0.4 }, { f: 0, t: 1.0 }]
-      : [{ f: 440, t: 0.6 }, { f: 0, t: 0.4 }];
-    let offset = 0;
-    function playChunk(i) {
-      if (i >= pattern.length) { playChunk(0); return; }
-      const { f, t } = pattern[i];
-      if (f > 0) {
-        const osc = callAudioCtx.createOscillator();
-        const gain = callAudioCtx.createGain();
-        osc.connect(gain); gain.connect(callAudioCtx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, callAudioCtx.currentTime + offset);
-        gain.gain.setValueAtTime(0.25, callAudioCtx.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, callAudioCtx.currentTime + offset + t - 0.02);
-        osc.start(callAudioCtx.currentTime + offset);
-        osc.stop(callAudioCtx.currentTime + offset + t);
-      }
-      offset += t;
+// ── State ──
+let activeCallId     = null;   // calls.id
+let activeCallType   = null;   // 'voice' | 'video'
+let activeCallRole   = null;   // 'caller' | 'callee'
+let activeCallPeer   = null;   // remote user name
+let callTimer        = null;
+let callSeconds      = 0;
+let isMuted          = false;
+let isCamOff         = false;
+let isSpeakerOn      = true;
+let localStream      = null;
+let remoteStream     = null;
+let peerConnection   = null;
+let incomingCallData = null;
+let callSignalChan   = null;   // Supabase realtime channel for this call
+let ringtoneCtx      = null;
+let ringtoneNode     = null;
+let missedCallTimeout = null;
+let currentCameraFacing = 'user';
+
+// ── ICE / STUN-TURN servers ──
+const ICE_SERVERS = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    // Free TURN via metered.ca (replace with own creds for production)
+    {
+      urls: 'turn:a.relay.metered.ca:80',
+      username: 'soundscare',
+      credential: 'soundscare2026'
     }
-    for (let i = 0; i < pattern.length; i++) playChunk(i);
-  } catch(e) { console.warn('Audio context error:', e); }
-}
+  ]
+};
 
-function stopRingtone() {
-  try { callAudioCtx?.close(); callAudioCtx = null; } catch(e) {}
-}
-
-function startCallTimer(type) {
-  callSeconds = 0;
-  const timerId = type === 'voice' ? 'vc-timer' : 'vid-timer';
-  const labelId = type === 'voice' ? 'vc-label' : 'vid-label';
-  document.getElementById(timerId).style.display = 'block';
-  document.getElementById(labelId).textContent = 'Connected';
-  callTimer = setInterval(() => {
-    callSeconds++;
-    const m = Math.floor(callSeconds / 60), s = callSeconds % 60;
-    document.getElementById(timerId).textContent = `${m}:${s.toString().padStart(2,'0')}`;
-  }, 1000);
-}
-
+// ────────────────────────────────────────────────────────
+//  1. INITIATE CALL (caller side)
+// ────────────────────────────────────────────────────────
 async function startCall(type) {
-  if (!activeConvId) return;
+  if (!activeConvId) { showToast('err', 'bi-exclamation-circle', 'No Conversation', 'Open a conversation first.'); return; }
+  if (activeCallId)  { showToast('info', 'bi-telephone', 'Already in a Call', 'End the current call first.'); return; }
+
   const conv = allConversations.find(c => c.id === activeConvId) || {};
-  const emp = employerCache[conv.employer_id] || { name: 'Employer' };
+  const emp  = employerCache[conv.employer_id] || { name: 'Employer' };
   const name = conv.is_admin_thread ? 'Support' : emp.name;
+  const receiverId = conv.is_admin_thread ? null : conv.employer_id;
 
-  activeCallType = type;
-  const overlay = document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay');
-  overlay.classList.add('open');
+  if (!receiverId) { showToast('err', 'bi-exclamation-circle', 'Cannot Call', 'Cannot call Support via this channel.'); return; }
 
-  if (type === 'voice') {
-    document.getElementById('vc-avatar-ring').textContent = (name[0] || '?').toUpperCase();
-    document.getElementById('vc-name').textContent = name;
-    document.getElementById('vc-label').textContent = 'Calling…';
-    document.getElementById('vc-timer').style.display = 'none';
-  } else {
-    document.getElementById('vid-name').textContent = name;
-    document.getElementById('vid-label').textContent = 'Connecting video…';
-    document.getElementById('vid-timer').style.display = 'none';
-    document.getElementById('vid-target').textContent = name;
+  // 1a. Request media
+  const constraints = type === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (err) {
+    showToast('err', 'bi-mic-mute', 'Permission Denied', 'Allow microphone access and try again.');
+    return;
   }
 
-  // Play outgoing ring
-  playRingtone('outgoing');
+  // 1b. Create calls record in DB
+  const roomId = crypto.randomUUID ? crypto.randomUUID() : 'r-' + Date.now();
+  const { data: callRow, error: callErr } = await sb.from('calls').insert({
+    caller_id: currentUser.id,
+    receiver_id: receiverId,
+    call_type: type,
+    status: 'ringing',
+    room_id: roomId,
+    started_at: new Date().toISOString(),
+  }).select().single();
 
-  // Insert call message to DB
-  const roomId = (crypto.randomUUID ? crypto.randomUUID() : 'room-' + Date.now());
+  if (callErr) { showToast('err', 'bi-exclamation-circle', 'Call Failed', callErr.message); stopLocalStream(); return; }
+
+  activeCallId   = callRow.id;
+  activeCallType = type;
+  activeCallRole = 'caller';
+  activeCallPeer = name;
+
+  // 1c. Show outgoing call screen
+  showCallScreen(type, name, emp.photo || null, 'Calling…', 'caller');
+
+  // 1d. Subscribe to signaling channel for this call
+  subscribeCallSignaling(callRow.id, roomId);
+
+  // 1e. Create WebRTC peer + send offer after a tick
+  await createPeerConnection(type);
+
+  const offer = await peerConnection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: type === 'video' });
+  await peerConnection.setLocalDescription(offer);
+
+  // 1f. Send signal row (offer) — receiver picks this up via realtime
+  await sb.from('calls').update({
+    sdp_offer: JSON.stringify(offer)
+  }).eq('id', callRow.id);
+
+  // 1g. Also send a chat message so realtime reaches the other user
   await sb.from('messages').insert({
     conversation_id: activeConvId, sender_id: currentUser.id,
-    msg_type: 'call', call_type: type, call_status: 'initiated', room_id: roomId,
-    content: `📞 ${type === 'video' ? 'Video' : 'Voice'} call started`, body: `${type} call started`,
-    call_started_at: new Date().toISOString(),
+    msg_type: 'call', call_type: type, call_status: 'initiated',
+    call_id: callRow.id, room_id: roomId,
+    content: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
+    body: `${type} call`,
   });
 
-  showToast('info', type === 'video' ? 'bi-camera-video' : 'bi-telephone', 'Calling…',
-    `${type === 'video' ? 'Video' : 'Voice'} call request sent to ${name}.`);
+  playRingtone('outgoing');
 
-  // Simulate ring for 5s then show "connected" 
-  setTimeout(() => {
-    if (overlay.classList.contains('open')) {
-      stopRingtone();
-      startCallTimer(type);
-    }
-  }, 5000);
+  // Auto-cancel after 30s if not answered
+  missedCallTimeout = setTimeout(() => missedCall(), 30000);
 }
 
-function endCall(type) {
-  clearInterval(callTimer); callTimer = null;
+// ────────────────────────────────────────────────────────
+//  2. SHOW CALL SCREEN
+// ────────────────────────────────────────────────────────
+function showCallScreen(type, name, photo, statusText, role) {
+  if (type === 'voice') {
+    const ov = document.getElementById('voice-call-overlay');
+    const init = (name[0] || '?').toUpperCase();
+    document.getElementById('vc-avatar-init').textContent = init;
+    document.getElementById('vc-name').textContent = name;
+    document.getElementById('vc-role').textContent = role === 'caller' ? 'Outgoing Call' : 'Incoming Call';
+    document.getElementById('vc-label').textContent = statusText;
+    document.getElementById('vc-timer').classList.remove('show');
+    ov.classList.add('open');
+  } else {
+    const ov = document.getElementById('video-call-overlay');
+    const init = (name[0] || '?').toUpperCase();
+    document.getElementById('vid-remote-avatar').textContent = init;
+    document.getElementById('vid-name').textContent = name;
+    document.getElementById('vid-status-text').textContent = statusText;
+    document.getElementById('vid-top-name').textContent = name;
+    document.getElementById('vid-top-status').textContent = type === 'video' ? 'Video Call' : 'Voice Call';
+    document.getElementById('vid-top-avatar').textContent = init;
+    document.getElementById('vid-timer').textContent = '0:00';
+    ov.classList.add('open');
+
+    // Attach local stream to local video pip
+    if (localStream) {
+      const lv = document.getElementById('video-local');
+      lv.srcObject = localStream;
+    }
+  }
+  updateUserCallStatus('in_call');
+}
+
+// ────────────────────────────────────────────────────────
+//  3. SHOW INCOMING CALL TOAST (callee side)
+// ────────────────────────────────────────────────────────
+function showIncomingCall(callerName, callType, convId, callId, roomId, photo) {
+  incomingCallData = { callerName, callType, convId, callId, roomId };
+
+  const toast = document.getElementById('incoming-call-bar');
+  const init = (callerName[0] || '?').toUpperCase();
+  document.getElementById('ic-avatar-init').textContent = init;
+  document.getElementById('ic-name').textContent = callerName;
+  document.getElementById('ic-calling-label').textContent = `Incoming ${callType === 'video' ? 'Video' : 'Voice'} Call`;
+  document.getElementById('ic-sub').textContent = 'SoundsCare';
+  document.getElementById('ic-type-badge').innerHTML = `<i class="bi bi-${callType === 'video' ? 'camera-video' : 'telephone'}-fill"></i>`;
+
+  // Reset countdown bar
+  const fill = document.getElementById('ic-timer-fill');
+  fill.style.animation = 'none';
+  fill.offsetHeight; // reflow
+  fill.style.animation = '';
+
+  toast.classList.add('show');
+  playRingtone('incoming');
+
+  // Request notification permission + show browser notification
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(`${callType === 'video' ? '🎥' : '📞'} Incoming ${callType} call from ${callerName}`, {
+      body: 'SoundsCare · Tap to answer',
+      icon: '/favicon.ico',
+    });
+  }
+
+  // Auto-dismiss as missed after 30s
+  missedCallTimeout = setTimeout(() => { declineIncomingCall(); missedCallNotify(callerName); }, 30000);
+}
+
+// ────────────────────────────────────────────────────────
+//  4. ACCEPT INCOMING CALL
+// ────────────────────────────────────────────────────────
+async function acceptIncomingCall() {
+  if (!incomingCallData) return;
+  document.getElementById('incoming-call-bar').classList.remove('show');
+  clearTimeout(missedCallTimeout);
   stopRingtone();
+
+  const { callerName, callType, convId, callId, roomId } = incomingCallData;
+  incomingCallData = null;
+
+  activeCallId   = callId;
+  activeCallType = callType;
+  activeCallRole = 'callee';
+  activeCallPeer = callerName;
+  activeConvId   = convId;
+
+  // Get media
+  const constraints = callType === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (err) {
+    showToast('err', 'bi-mic-mute', 'Permission Denied', 'Allow microphone access to answer.'); return;
+  }
+
+  showCallScreen(callType, callerName, null, 'Connecting…', 'callee');
+  subscribeCallSignaling(callId, roomId);
+  await createPeerConnection(callType);
+
+  // Fetch the offer from DB
+  const { data: callRow } = await sb.from('calls').select('sdp_offer').eq('id', callId).single();
+  if (callRow?.sdp_offer) {
+    const offer = JSON.parse(callRow.sdp_offer);
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    await sb.from('calls').update({
+      status: 'accepted',
+      sdp_answer: JSON.stringify(answer),
+    }).eq('id', callId);
+  }
+
+  updateUserCallStatus('in_call');
+}
+
+// ────────────────────────────────────────────────────────
+//  5. DECLINE INCOMING CALL
+// ────────────────────────────────────────────────────────
+async function declineIncomingCall() {
+  document.getElementById('incoming-call-bar').classList.remove('show');
+  clearTimeout(missedCallTimeout);
+  stopRingtone();
+
+  if (incomingCallData?.callId) {
+    await sb.from('calls').update({ status: 'rejected', ended_at: new Date().toISOString() }).eq('id', incomingCallData.callId);
+  }
+  incomingCallData = null;
+}
+
+// ────────────────────────────────────────────────────────
+//  6. END ACTIVE CALL
+// ────────────────────────────────────────────────────────
+async function endCall(type) {
+  clearInterval(callTimer); callTimer = null;
+  clearTimeout(missedCallTimeout);
+  stopRingtone();
+
+  // Update DB
+  if (activeCallId) {
+    await sb.from('calls').update({
+      status: 'ended',
+      ended_at: new Date().toISOString(),
+      duration: callSeconds,
+    }).eq('id', activeCallId);
+
+    // Update participant left_at
+    await sb.from('call_participants').update({ left_at: new Date().toISOString() })
+      .eq('call_id', activeCallId).eq('user_id', currentUser.id);
+  }
+
+  // Cleanup WebRTC
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  stopLocalStream();
+
+  // Close overlay
   document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
-  activeCallType = null; isMuted = false; isCamOff = false;
-  // Show duration toast
-  const dur = callSeconds > 0 ? Math.floor(callSeconds / 60) + 'm ' + (callSeconds % 60) + 's' : '';
+
+  // Toast with duration
+  const dur = callSeconds > 0 ? `${Math.floor(callSeconds/60)}m ${callSeconds%60}s` : '';
   showToast('ok', 'bi-telephone-x', 'Call Ended', dur ? `Duration: ${dur}` : 'Call ended.');
   callSeconds = 0;
+
+  // Unsubscribe signal channel
+  if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
+
+  activeCallId = null; activeCallType = null; activeCallRole = null;
+  isMuted = false; isCamOff = false; isSpeakerOn = true;
+  updateUserCallStatus('online');
 }
 
+async function missedCall() {
+  if (!activeCallId) return;
+  await sb.from('calls').update({ status: 'missed', ended_at: new Date().toISOString() }).eq('id', activeCallId);
+  const type = activeCallType || 'voice';
+  document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
+  stopLocalStream(); stopRingtone();
+  showToast('info', 'bi-telephone-missed', 'No Answer', `${activeCallPeer || 'User'} didn't answer.`);
+  activeCallId = null; activeCallType = null; activeCallRole = null;
+  updateUserCallStatus('online');
+}
+
+function missedCallNotify(name) {
+  showToast('info', 'bi-telephone-missed', 'Missed Call', `Missed ${activeCallType || 'voice'} call from ${name}.`);
+}
+
+// ────────────────────────────────────────────────────────
+//  7. WEBRTC PEER CONNECTION
+// ────────────────────────────────────────────────────────
+async function createPeerConnection(type) {
+  peerConnection = new RTCPeerConnection(ICE_SERVERS);
+
+  // Add local tracks
+  if (localStream) {
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  }
+
+  // ICE candidates — send via Supabase
+  peerConnection.onicecandidate = async (evt) => {
+    if (evt.candidate && activeCallId) {
+      await sb.from('call_ice_candidates').insert({
+        call_id: activeCallId,
+        user_id: currentUser.id,
+        candidate: JSON.stringify(evt.candidate),
+      }).then(() => {}).catch(() => {});
+    }
+  };
+
+  // Remote stream received
+  peerConnection.ontrack = (evt) => {
+    remoteStream = evt.streams[0];
+    if (type === 'video') {
+      const rv = document.getElementById('video-remote');
+      rv.srcObject = remoteStream;
+      document.getElementById('vid-remote-placeholder').style.display = 'none';
+    }
+    // Start call timer when remote track arrives
+    if (!callTimer) startCallTimer(type);
+  };
+
+  peerConnection.onconnectionstatechange = () => {
+    const s = peerConnection?.connectionState;
+    if (s === 'connected') {
+      if (type === 'voice') {
+        document.getElementById('vc-label').textContent = 'Connected';
+        document.getElementById('vc-status-dot').style.background = 'var(--green)';
+      }
+    } else if (s === 'failed' || s === 'disconnected') {
+      showToast('err', 'bi-wifi-off', 'Connection Lost', 'The call was interrupted.');
+      endCall(type);
+    }
+  };
+}
+
+// ────────────────────────────────────────────────────────
+//  8. SUPABASE SIGNALING SUBSCRIPTION
+// ────────────────────────────────────────────────────────
+function subscribeCallSignaling(callId, roomId) {
+  callSignalChan = sb.channel(`call-signal-${callId}`)
+    // Listen for call status changes (accepted/rejected/ended)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls', filter: `id=eq.${callId}` }, async (payload) => {
+      const row = payload.new;
+
+      if (row.status === 'accepted' && activeCallRole === 'caller' && row.sdp_answer) {
+        // Caller receives the answer
+        const answer = JSON.parse(row.sdp_answer);
+        if (peerConnection && peerConnection.signalingState !== 'stable') {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      }
+
+      if (row.status === 'rejected') {
+        stopRingtone();
+        const overlay = document.getElementById(activeCallType === 'voice' ? 'voice-call-overlay' : 'video-call-overlay');
+        overlay.classList.remove('open');
+        showToast('info', 'bi-telephone-x', 'Call Declined', `${activeCallPeer} declined the call.`);
+        stopLocalStream(); clearInterval(callTimer); callTimer = null;
+        activeCallId = null; activeCallType = null; activeCallRole = null;
+        updateUserCallStatus('online');
+      }
+
+      if (row.status === 'ended' && activeCallRole === 'callee') {
+        endCall(activeCallType || 'voice');
+      }
+    })
+    // ICE candidates from the other side
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'call_ice_candidates',
+        filter: `call_id=eq.${callId}` }, async (payload) => {
+      const row = payload.new;
+      if (row.user_id === currentUser.id) return; // skip own candidates
+      if (peerConnection && row.candidate) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(JSON.parse(row.candidate)));
+        } catch (e) { console.warn('ICE candidate error:', e); }
+      }
+    })
+    .subscribe();
+}
+
+// ────────────────────────────────────────────────────────
+//  9. CALL TIMER
+// ────────────────────────────────────────────────────────
+function startCallTimer(type) {
+  stopRingtone();
+  callSeconds = 0;
+  if (type === 'voice') {
+    document.getElementById('vc-label').textContent = 'Connected';
+    const timerEl = document.getElementById('vc-timer');
+    timerEl.classList.add('show');
+    callTimer = setInterval(() => {
+      callSeconds++;
+      const m = Math.floor(callSeconds/60), s = callSeconds%60;
+      timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+  } else {
+    callTimer = setInterval(() => {
+      callSeconds++;
+      const m = Math.floor(callSeconds/60), s = callSeconds%60;
+      document.getElementById('vid-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  10. MIC / CAMERA / SPEAKER TOGGLES
+// ────────────────────────────────────────────────────────
 function toggleMute(type) {
   isMuted = !isMuted;
+  if (localStream) {
+    localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+  }
   const btnId = type === 'voice' ? 'vc-mute' : 'vid-mute';
   const btn = document.getElementById(btnId);
   btn.classList.toggle('active', isMuted);
   btn.innerHTML = `<i class="bi bi-mic${isMuted ? '-mute' : ''}-fill"></i>`;
-  showToast('info', 'bi-mic', isMuted ? 'Microphone muted' : 'Microphone on', '');
+  showToast('info', isMuted ? 'bi-mic-mute-fill' : 'bi-mic-fill', isMuted ? 'Microphone Muted' : 'Microphone On', '');
 }
 
 function toggleCamera() {
   isCamOff = !isCamOff;
+  if (localStream) {
+    localStream.getVideoTracks().forEach(t => { t.enabled = !isCamOff; });
+  }
   const btn = document.getElementById('vid-cam');
   btn.classList.toggle('active', isCamOff);
   btn.innerHTML = `<i class="bi bi-camera-video${isCamOff ? '-off' : ''}-fill"></i>`;
+  document.getElementById('pip-cam-off').style.display = isCamOff ? 'flex' : 'none';
 }
 
 function toggleSpeaker() {
@@ -2405,35 +2974,246 @@ function toggleSpeaker() {
   const btn = document.getElementById('vc-speaker');
   btn.classList.toggle('active', !isSpeakerOn);
   btn.innerHTML = `<i class="bi bi-volume-${isSpeakerOn ? 'up' : 'mute'}-fill"></i>`;
+  showToast('info', isSpeakerOn ? 'bi-volume-up-fill' : 'bi-volume-mute-fill', isSpeakerOn ? 'Speaker On' : 'Speaker Off', '');
 }
 
-// Simulate incoming call (triggered by realtime message of type='call')
-let incomingCallData = null;
-function showIncomingCall(callerName, callType, convId) {
-  incomingCallData = { callerName, callType, convId };
-  const bar = document.getElementById('incoming-call-bar');
-  document.getElementById('ic-avatar').textContent = (callerName[0] || '?').toUpperCase();
-  document.getElementById('ic-name').textContent = callerName;
-  document.getElementById('ic-type').textContent = `Incoming ${callType} call…`;
-  bar.classList.add('show');
-  playRingtone('incoming');
-  // Auto-dismiss after 30s
-  setTimeout(() => { declineIncomingCall(); }, 30000);
+function toggleSpeakerVideo() {
+  isSpeakerOn = !isSpeakerOn;
+  const rv = document.getElementById('video-remote');
+  if (rv) rv.muted = !isSpeakerOn;
+  const btn = document.getElementById('vid-speaker');
+  btn.classList.toggle('active', !isSpeakerOn);
+  btn.innerHTML = `<i class="bi bi-volume-${isSpeakerOn ? 'up' : 'mute'}-fill"></i>`;
 }
-function acceptIncomingCall() {
-  document.getElementById('incoming-call-bar').classList.remove('show');
-  stopRingtone();
-  if (incomingCallData) {
-    activeConvId = incomingCallData.convId;
-    startCall(incomingCallData.callType);
-    incomingCallData = null;
+
+// Switch camera (front/back) during video call
+async function switchCamera() {
+  if (!localStream) return;
+  currentCameraFacing = currentCameraFacing === 'user' ? 'environment' : 'user';
+  const newStream = await navigator.mediaDevices.getUserMedia({
+    audio: true, video: { facingMode: currentCameraFacing }
+  }).catch(() => null);
+  if (!newStream) return;
+  const videoTrack = newStream.getVideoTracks()[0];
+  localStream.getVideoTracks().forEach(t => t.stop());
+  localStream = new MediaStream([...newStream.getAudioTracks(), videoTrack]);
+  document.getElementById('video-local').srcObject = localStream;
+  // Replace track in peer connection
+  if (peerConnection) {
+    const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
+    if (sender) sender.replaceTrack(videoTrack);
+  }
+  showToast('info', 'bi-arrow-repeat', `Camera Switched`, `Now using ${currentCameraFacing === 'user' ? 'front' : 'rear'} camera.`);
+}
+
+// Switch from voice call to video call mid-call
+async function switchToVideo() {
+  if (activeCallType === 'video') return;
+  try {
+    const newStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    localStream = newStream;
+    document.getElementById('voice-call-overlay').classList.remove('open');
+    showCallScreen('video', activeCallPeer, null, 'Connected', activeCallRole);
+    activeCallType = 'video';
+    if (peerConnection) {
+      const videoTrack = newStream.getVideoTracks()[0];
+      peerConnection.addTrack(videoTrack, newStream);
+    }
+    document.getElementById('video-local').srcObject = newStream;
+  } catch (e) {
+    showToast('err', 'bi-camera-video-off', 'Camera Unavailable', 'Could not switch to video.');
   }
 }
-function declineIncomingCall() {
-  document.getElementById('incoming-call-bar').classList.remove('show');
-  stopRingtone();
-  incomingCallData = null;
+
+function toggleKeypad() {
+  showToast('info', 'bi-grid-3x3-gap', 'Keypad', 'Dial-pad — coming soon.');
 }
+
+// ────────────────────────────────────────────────────────
+//  11. USER STATUS
+// ────────────────────────────────────────────────────────
+const USER_STATUSES = {
+  online:  { label: 'Online',           color: '#22c55e' },
+  offline: { label: 'Offline',          color: '#9ca3af' },
+  away:    { label: 'Away',             color: '#E8A040' },
+  busy:    { label: 'Busy',             color: '#f43f5e' },
+  in_call: { label: 'In Call',          color: '#8b5cf6' },
+  dnd:     { label: 'Do Not Disturb',   color: '#fb7185' },
+};
+
+let myStatus = 'online';
+
+async function updateUserCallStatus(status) {
+  myStatus = status;
+  const def = USER_STATUSES[status] || USER_STATUSES.online;
+  // Update pill in nav
+  const pill = document.getElementById('online-status');
+  if (pill) {
+    pill.className = `status-pill status-${status}`;
+    pill.innerHTML = `<span class="status-dot"></span>${def.label}`;
+  }
+  // Push to DB
+  await sb.from('user_presence').upsert({
+    user_id: currentUser.id,
+    status,
+    is_online: status !== 'offline',
+    last_seen: new Date().toISOString(),
+  }, { onConflict: 'user_id' }).catch(() => {});
+}
+
+// Helper: render a status pill HTML string
+function renderStatusPill(status, lastSeen) {
+  const def = USER_STATUSES[status] || USER_STATUSES.offline;
+  if (status === 'offline' && lastSeen) {
+    const ago = timeAgo(new Date(lastSeen));
+    return `<span class="status-pill status-offline"><span class="status-dot"></span>Last seen ${ago}</span>`;
+  }
+  return `<span class="status-pill status-${status}"><span class="status-dot"></span>${def.label}</span>`;
+}
+
+// ────────────────────────────────────────────────────────
+//  12. RINGTONE (Web Audio API)
+// ────────────────────────────────────────────────────────
+function playRingtone(mode) {
+  stopRingtone();
+  try {
+    ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let phase = 0;
+    const masterGain = ringtoneCtx.createGain();
+    masterGain.gain.value = 0.18;
+    masterGain.connect(ringtoneCtx.destination);
+
+    function beep(freq, startT, dur) {
+      const osc = ringtoneCtx.createOscillator();
+      const g   = ringtoneCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0, startT);
+      g.gain.linearRampToValueAtTime(1, startT + 0.02);
+      g.gain.linearRampToValueAtTime(0, startT + dur - 0.02);
+      osc.connect(g); g.connect(masterGain);
+      osc.start(startT); osc.stop(startT + dur);
+    }
+
+    if (mode === 'incoming') {
+      // Two-tone ring pattern
+      for (let i = 0; i < 20; i++) {
+        const t = ringtoneCtx.currentTime + i * 1.8;
+        beep(480, t, 0.4);
+        beep(620, t + 0.04, 0.4);
+      }
+    } else {
+      // Outgoing: gentle single tone repeating
+      for (let i = 0; i < 20; i++) {
+        const t = ringtoneCtx.currentTime + i * 1.5;
+        beep(520, t, 0.5);
+      }
+    }
+    ringtoneNode = masterGain;
+  } catch (e) { console.warn('Ringtone error:', e); }
+}
+
+function stopRingtone() {
+  try { if (ringtoneCtx) { ringtoneCtx.close(); ringtoneCtx = null; ringtoneNode = null; } } catch(e) {}
+}
+
+// ────────────────────────────────────────────────────────
+//  13. CLEANUP
+// ────────────────────────────────────────────────────────
+function stopLocalStream() {
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+}
+
+// Request notification permission on load
+async function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission().catch(() => {});
+  }
+}
+
+// ────────────────────────────────────────────────────────
+//  14. SUBSCRIBE TO INCOMING CALLS VIA REALTIME
+// ────────────────────────────────────────────────────────
+function subscribeIncomingCalls() {
+  // Listen for new calls where I am the receiver
+  sb.channel('incoming-calls')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls',
+      filter: `receiver_id=eq.${currentUser.id}` }, async (payload) => {
+      const row = payload.new;
+      if (row.status !== 'ringing') return;
+      if (activeCallId) {
+        // Already in a call — auto-reject
+        await sb.from('calls').update({ status: 'rejected' }).eq('id', row.id);
+        return;
+      }
+      // Find caller name
+      const { data: callerProfile } = await sb.from('worker_profiles').select('full_name').eq('session_id', row.caller_id).maybeSingle()
+        .catch(() => ({ data: null }));
+      const { data: empProfile } = await sb.from('employer_profiles').select('full_name, company_name').eq('user_id', row.caller_id).maybeSingle()
+        .catch(() => ({ data: null }));
+      const callerName = callerProfile?.full_name || empProfile?.full_name || empProfile?.company_name || 'Unknown Caller';
+
+      // Find conversation
+      const conv = allConversations.find(c => c.employer_id === row.caller_id || c.employee_id === row.caller_id);
+      showIncomingCall(callerName, row.call_type || 'voice', conv?.id || null, row.id, row.room_id, null);
+    })
+    .subscribe();
+}
+
+// SQL for new tables (for reference / run in Supabase SQL editor):
+/*
+CREATE TABLE IF NOT EXISTS calls (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  caller_id uuid REFERENCES auth.users(id),
+  receiver_id uuid REFERENCES auth.users(id),
+  call_type text CHECK (call_type IN ('voice','video')) DEFAULT 'voice',
+  status text CHECK (status IN ('ringing','accepted','rejected','ended','missed')) DEFAULT 'ringing',
+  room_id text,
+  sdp_offer text,
+  sdp_answer text,
+  started_at timestamptz DEFAULT now(),
+  ended_at timestamptz,
+  duration integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE calls ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "users_own_calls" ON calls USING (caller_id = auth.uid() OR receiver_id = auth.uid());
+
+CREATE TABLE IF NOT EXISTS call_participants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  call_id uuid REFERENCES calls(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id),
+  joined_at timestamptz DEFAULT now(),
+  left_at timestamptz,
+  microphone_enabled boolean DEFAULT true,
+  camera_enabled boolean DEFAULT true
+);
+ALTER TABLE call_participants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "participants_own" ON call_participants USING (user_id = auth.uid());
+
+CREATE TABLE IF NOT EXISTS call_ice_candidates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  call_id uuid REFERENCES calls(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id),
+  candidate text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE call_ice_candidates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ice_by_call_members" ON call_ice_candidates
+  USING (EXISTS (SELECT 1 FROM calls WHERE id = call_id AND (caller_id = auth.uid() OR receiver_id = auth.uid())));
+
+CREATE TABLE IF NOT EXISTS call_settings (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id),
+  allow_voice_calls boolean DEFAULT true,
+  allow_video_calls boolean DEFAULT true,
+  auto_accept_calls boolean DEFAULT false,
+  do_not_disturb boolean DEFAULT false,
+  blocked_users uuid[] DEFAULT '{}',
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE call_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own_call_settings" ON call_settings USING (user_id = auth.uid());
+*/
 
 // ── CHAT ACTIONS ──
 async function markNotInterested() {
@@ -2957,7 +3737,7 @@ function subscribeToRealtime() {
           const conv2 = allConversations.find(c => c.id === msg.conversation_id);
           const emp2 = conv2 ? (employerCache[conv2.employer_id] || { name: 'Employer' }) : { name: 'Employer' };
           const callerName = conv2?.is_admin_thread ? 'Support' : emp2.name;
-          showIncomingCall(callerName, msg.call_type || 'voice', msg.conversation_id);
+          showIncomingCall(callerName, msg.call_type || 'voice', msg.conversation_id, msg.call_id || null, msg.room_id || null, emp2.photo || null);
         }
       }
 
