@@ -88,11 +88,6 @@ input.ok{border-color:var(--green)}
 .fhint.ok{color:var(--green)}
 .fhint .spinner-mini{width:11px;height:11px;border:1.6px solid rgba(107,114,128,.25);border-top-color:var(--text-muted);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
 
-/* ID FIELD WRAP — only for workers */
-#idNumberGroup{display:none}
-.id-note{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:#0369A1;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;padding:7px 10px;margin-top:6px;line-height:1.5}
-.id-note i{margin-top:1px;flex-shrink:0}
-
 /* COUNTRY */
 .country-wrap{position:relative}
 .cs-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:200;display:none;overflow:hidden}
@@ -307,23 +302,6 @@ input.ok{border-color:var(--green)}
         </div>
       </div>
 
-      <!-- ID NUMBER — workers only, for duplicate-account prevention -->
-      <div class="fg" id="idNumberGroup">
-        <label>National ID / Passport Number <span class="req">*</span></label>
-        <div class="iw has-ico has-sfx">
-          <span class="ico"><i class="bi bi-card-text"></i></span>
-          <input type="text" id="idNumber" placeholder="e.g. 32145678" autocomplete="off" oninput="onIdNumberInput()">
-          <button type="button" class="sfx" onclick="liveCheckIdNumber()" title="Check availability">
-            <i class="bi bi-check-circle"></i>
-          </button>
-        </div>
-        <div class="fhint" id="idNumberHint">Used once to confirm you don't already have an account.</div>
-        <div class="id-note">
-          <i class="bi bi-shield-lock"></i>
-          <span>We only use this to prevent duplicate accounts. It's never shared with employers.</span>
-        </div>
-      </div>
-
       <!-- COUNTRY -->
       <div class="fg">
         <label>Country <span class="req">*</span></label>
@@ -494,7 +472,6 @@ var currentRole = 'employee';
 var otpInterval = null;
 var pendingUser = null;
 var emailConfirmedAvailable = false;
-var idConfirmedAvailable = false;
 
 // ============================================================
 // INIT
@@ -504,7 +481,6 @@ var idConfirmedAvailable = false;
   if (p.get('type') === 'employer') selectRole('employer');
   checkIp();
   buildCS('');
-  updateIdNumberVisibility();
 })();
 
 // ============================================================
@@ -531,17 +507,6 @@ function selectRole(role) {
   document.getElementById('btn-employee').classList.toggle('active', role === 'employee');
   document.getElementById('btn-employer').classList.toggle('active', role === 'employer');
   updateEmailProviderNote(document.getElementById('email').value.trim());
-  updateIdNumberVisibility();
-}
-
-function updateIdNumberVisibility() {
-  var group = document.getElementById('idNumberGroup');
-  group.style.display = (currentRole === 'employee') ? 'block' : 'none';
-  if (currentRole !== 'employee') {
-    idConfirmedAvailable = false;
-    document.getElementById('idNumber').value = '';
-    resetIdNumberHint();
-  }
 }
 
 // ============================================================
@@ -749,62 +714,6 @@ function checkEmailStatus(email, live) {
 }
 
 // ============================================================
-// NATIONAL ID / PASSPORT — duplicate-account check (workers only)
-// ============================================================
-function onIdNumberInput() {
-  idConfirmedAvailable = false;
-  resetIdNumberHint();
-}
-function resetIdNumberHint() {
-  document.getElementById('idNumberHint').textContent = "Used once to confirm you don't already have an account.";
-  document.getElementById('idNumberHint').className = 'fhint';
-  document.getElementById('idNumber').className = '';
-}
-function setIdNumberHint(msg, type, loading) {
-  var hint = document.getElementById('idNumberHint');
-  var inp  = document.getElementById('idNumber');
-  hint.innerHTML = (loading ? '<span class="spinner-mini"></span>' : '') + '<span>' + msg + '</span>';
-  hint.className = 'fhint' + (type ? ' ' + type : '');
-  inp.className = type || '';
-}
-
-function liveCheckIdNumber() {
-  var idNum = document.getElementById('idNumber').value.trim();
-  if (!idNum || idNum.length < 5) { setIdNumberHint('Enter your full ID/passport number.', 'err'); return; }
-  setIdNumberHint('Checking against existing worker records…', '', true);
-  checkIdNumberStatus(idNum, true);
-}
-
-// Checks the REAL "worker_profiles" table (id_number / national_id columns) for a duplicate.
-function checkIdNumberStatus(idNum, live) {
-  return dbClient
-    .from('worker_profiles')
-    .select('id,full_name,is_deleted')
-    .or('id_number.eq.' + idNum + ',national_id.eq.' + idNum)
-    .limit(1)
-    .then(function(result) {
-      var rows = (result.data || []).filter(function(r){ return !r.is_deleted; });
-      if (rows.length) {
-        var msg = 'An account with this ID/passport number already exists. Please sign in instead.';
-        idConfirmedAvailable = false;
-        if (live) setIdNumberHint(msg, 'err');
-        return Promise.reject({ type: 'exists', msg: msg, alertType: 'info' });
-      }
-      idConfirmedAvailable = true;
-      if (live) setIdNumberHint('ID number is available ✓', 'ok');
-      return true;
-    })
-    .catch(function(e) {
-      if (e && e.type) {
-        if (live) setIdNumberHint(e.msg, 'err');
-        return Promise.reject(e);
-      }
-      if (live) setIdNumberHint('Could not verify right now. We will re-check on submit.', '');
-      return true;
-    });
-}
-
-// ============================================================
 // PASSWORD STRENGTH
 // ============================================================
 function checkStrength() {
@@ -877,7 +786,6 @@ function handleRegister() {
   var firstName = document.getElementById('firstName').value.trim();
   var lastName  = document.getElementById('lastName').value.trim();
   var phone     = document.getElementById('phone').value.trim();
-  var idNumber  = document.getElementById('idNumber').value.trim();
   var country   = document.getElementById('countryName').value;
   var email     = document.getElementById('email').value.trim().toLowerCase();
   var pw        = document.getElementById('password').value;
@@ -886,9 +794,6 @@ function handleRegister() {
 
   if (!firstName || !lastName) { showAlert('alertMain','alertMainText','Please enter your first and last name.'); return; }
   if (!phone)   { showAlert('alertMain','alertMainText','Phone number is required.'); return; }
-  if (currentRole === 'employee' && (!idNumber || idNumber.length < 5)) {
-    showAlert('alertMain','alertMainText','Please enter your National ID or Passport number.'); return;
-  }
   if (!country) { showAlert('alertMain','alertMainText','Please select your country.'); return; }
   if (!email || email.indexOf('@') < 1) { showAlert('alertMain','alertMainText','Please enter a valid email address.'); return; }
   if (!isValidEmailDomain(email)) {
@@ -904,28 +809,20 @@ function handleRegister() {
   setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Checking your details…');
   showChecking('Confirming your email is not already registered…');
 
-  // STEP A — confirm email is not already a registered account
+  // Confirm email is not already a registered account
   checkEmailStatus(email, false)
-    .then(function() {
-      // STEP B — for workers, also confirm the ID number is not already on file
-      if (currentRole === 'employee') {
-        showChecking('Confirming your ID number is not already on file…');
-        return checkIdNumberStatus(idNumber, false);
-      }
-      return true;
-    })
     .then(async function() {
       hideChecking();
       setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending code…');
 
-      pendingUser = { firstName, lastName, phone, idNumber, country, email, role: currentRole,
+      pendingUser = { firstName, lastName, phone, country, email, role: currentRole,
         receiveUpdates: document.getElementById('updates').checked };
 
       const { error } = await dbClient.auth.signUp({
         email,
         password: pw,
         options: {
-          data: { first_name: firstName, last_name: lastName, role: currentRole, id_number: idNumber || null },
+          data: { first_name: firstName, last_name: lastName, role: currentRole },
           emailRedirectTo: null
         }
       });

@@ -4,60 +4,71 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign In — SoundsCare</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --green:#1B6B45;--green-dark:#155235;--green-light:#EEF7F2;--green-mid:#C8E6D6;
+  --green:#1B6B45;--green-dark:#114B30;--green-light:#EEF7F2;--green-mid:#C8E6D6;
   --accent:#E8A040;--accent-light:#FEF3E2;
   --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
-  --surface:#FFFFFF;--bg:#F9FAFB;
+  --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
   --amber:#D97706;--blue:#2563EB;
-  --shadow:0 4px 28px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
-  --radius:12px;--radius-sm:8px;
+  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 16px 50px rgba(17,75,48,.14);
+  --radius:12px;--radius-sm:8px;--radius-lg:22px;
   --font:'DM Sans',system-ui,sans-serif;
+  --serif:'Playfair Display',serif;
 }
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem}
-.page-wrap{width:100%;max-width:460px}
+body{
+  font-family:var(--font);color:var(--text);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(27,107,69,.07), transparent 38%),
+    radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
+    var(--bg);
+}
+.page-wrap{width:100%;max-width:480px}
 
 /* BRAND */
-.brand{text-align:center;margin-bottom:1.5rem}
-.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:'Playfair Display',serif}
-.brand-icon{width:40px;height:40px;background:var(--green);border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
-.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px}
+.brand{text-align:center;margin-bottom:1.6rem}
+.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
+.brand-icon{width:42px;height:42px;background:linear-gradient(155deg,var(--green),var(--green-dark));border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 6px 16px rgba(27,107,69,.30)}
+.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem 2rem 1.8rem;box-shadow:var(--shadow)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
 /* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
-.step-title{font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.4rem}
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
 
 /* ROLE */
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.4rem}
-.role-option{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.role-option{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;background:var(--surface)}
 .role-option:hover{border-color:#A7F3D0;background:var(--green-light)}
 .role-option.active{border-color:var(--green);background:var(--green-light);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-.role-icon{font-size:26px;margin-bottom:5px;line-height:1}
+.role-icon{font-size:26px;margin-bottom:5px;line-height:1;color:var(--text-muted)}
+.role-option.active .role-icon{color:var(--green-dark)}
 .role-label{font-size:13px;font-weight:700;color:var(--text-mid)}
 .role-option.active .role-label{color:var(--green-dark)}
 
 /* SECTION LABELS */
-.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;padding:12px 0 9px;border-top:1px solid var(--border);margin-top:2px}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
 .sec-lbl.no-border{border-top:none;padding-top:0}
 
 /* FORM */
-.fg{margin-bottom:.9rem}
+.fg{margin-bottom:.95rem}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
 .iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px}
 .iw .sfx:hover{color:var(--text)}
-input[type=email],input[type=password],input[type=text]{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+input[type=email],input[type=password],input[type=text]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .iw.has-ico input{padding-left:38px}
 .iw.has-sfx input{padding-right:40px}
 input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
@@ -71,14 +82,14 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .forgot-link{font-size:12.5px;color:var(--green);font-weight:600;text-decoration:none;white-space:nowrap}
 .forgot-link:hover{text-decoration:underline}
 
-/* SESSION INFO PILL */
+/* SAVED EMAIL PILL — convenience only, never auto-signs in */
 .session-pill{display:none;align-items:center;gap:7px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:8px 12px;font-size:12.5px;color:var(--green-dark);margin-bottom:12px;font-weight:500}
 .session-pill.show{display:flex}
 .session-pill i{font-size:14px;flex-shrink:0}
 .session-pill .pill-clear{background:none;border:none;color:var(--green-dark);font-size:12px;font-family:var(--font);cursor:pointer;text-decoration:underline;padding:0;margin-left:auto;font-weight:600}
 
 /* ALERTS */
-.alert{border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;font-weight:500;margin-bottom:12px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
 .alert.show{display:flex}
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
@@ -87,27 +98,25 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
 
 /* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:11.5px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
-.btn-primary{background:var(--green);color:#fff}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
-.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* SOCIAL */
-.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.2rem 0 .8rem}
+/* SOCIAL — Google + Facebook only */
+.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem}
-.social-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;color:var(--text-mid);transition:all .15s;position:relative;font-family:var(--font)}
-.social-btn:hover{border-color:#9CA3AF;background:var(--bg)}
-.social-btn img{width:18px;height:18px;object-fit:contain}
-.social-btn .coming-soon-tag{position:absolute;top:-7px;right:6px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
-.social-btn.disabled-soon{opacity:.7;cursor:default}
-.social-btn.disabled-soon:hover{border-color:var(--border);background:var(--surface)}
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.6rem}
+.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font)}
+.social-btn:hover{border-color:#9CA3AF;background:var(--bg);transform:translateY(-1px)}
+.social-btn:active{transform:translateY(0)}
+.social-btn img{width:19px;height:19px;object-fit:contain}
 
 /* FOOTER */
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.1rem}
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem}
 .auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
 .auth-foot a:hover{text-decoration:underline}
 .admin-link{text-align:center;font-size:12px;margin-top:.4rem}
@@ -123,13 +132,16 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .back-btn{background:none;border:none;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px}
 .back-btn:hover{color:var(--text)}
 
-/* OAUTH LOADING */
-.oauth-loading{display:none;text-align:center;padding:2.5rem 0}
-.oauth-loading i{font-size:36px;color:var(--green);animation:spin 1s linear infinite}
-.oauth-loading p{margin-top:12px;font-size:14px;color:var(--text-muted)}
+/* TOAST (Coming soon) */
+.toast-wrap{position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;background:#111827;color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(-8px);transition:all .25s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast i{color:var(--accent);font-size:16px}
 </style>
 </head>
 <body>
+
+<div class="toast-wrap" id="toastWrap"></div>
 
 <div class="page-wrap">
 
@@ -144,12 +156,6 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 
   <div class="card">
 
-    <!-- OAUTH LOADING -->
-    <div class="oauth-loading" id="oauthLoading">
-      <i class="bi bi-arrow-repeat"></i>
-      <p id="oauthLoadingText">Completing sign-in…</p>
-    </div>
-
     <!-- ===== LOGIN PANEL ===== -->
     <div id="login-panel">
 
@@ -159,10 +165,10 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         <span>VPN or proxy detected. Please disable it for a secure sign-in experience.</span>
       </div>
 
-      <!-- Saved session pill -->
+      <!-- Saved email pill — convenience only, never signs you in automatically -->
       <div class="session-pill" id="sessionPill">
         <i class="bi bi-person-check-fill"></i>
-        <span id="sessionPillText">Welcome back! Signing you in…</span>
+        <span id="sessionPillText">Welcome back! Enter your password to continue.</span>
         <button class="pill-clear" onclick="clearSavedSession()" type="button">Not you?</button>
       </div>
 
@@ -171,17 +177,17 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         Welcome Back
       </div>
       <div class="step-title">Sign in to your account</div>
-      <div class="step-sub">Select your role and enter your credentials below.</div>
+      <div class="step-sub">Select your role and enter your credentials below. For your security, you must sign in every time — saved sessions are never used to skip this page.</div>
 
       <!-- ROLE -->
       <div class="sec-lbl no-border">I am signing in as</div>
       <div class="role-grid">
         <div class="role-option active" id="btn-employee" onclick="selectRole('employee')">
-          <div class="role-icon"><i class="bi bi-person-badge" style="font-size:28px;color:var(--green)"></i></div>
+          <div class="role-icon"><i class="bi bi-person-badge"></i></div>
           <div class="role-label">Domestic Worker</div>
         </div>
         <div class="role-option" id="btn-employer" onclick="selectRole('employer')">
-          <div class="role-icon"><i class="bi bi-building" style="font-size:28px;color:var(--green-dark)"></i></div>
+          <div class="role-icon"><i class="bi bi-building"></i></div>
           <div class="role-label">Employer / Family</div>
         </div>
       </div>
@@ -222,7 +228,7 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
       <div class="bottom-row">
         <label class="remember-me">
           <input type="checkbox" id="rememberMe">
-          <span>Remember me</span>
+          <span>Remember my email</span>
         </label>
         <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
       </div>
@@ -232,36 +238,22 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         <span id="loginBtnText">Sign In</span>
       </button>
 
-      <!-- SOCIAL -->
+      <!-- SOCIAL — Google & Facebook only -->
       <div class="divider"><span>or sign in with</span></div>
 
       <div class="social-grid">
-        <!-- Google -->
         <button class="social-btn" onclick="oauthLogin('google')" type="button">
           <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
           Google
         </button>
-        <!-- Facebook -->
         <button class="social-btn" onclick="oauthLogin('facebook')" type="button">
           <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
           Facebook
         </button>
-        <!-- Bright Monday -->
-        <button class="social-btn disabled-soon" type="button" disabled>
-          <span class="coming-soon-tag">Soon</span>
-          <i class="bi bi-brightness-high-fill" style="color:#F59E0B;font-size:18px"></i>
-          Bright Monday
-        </button>
-        <!-- LinkedIn -->
-        <button class="social-btn disabled-soon" type="button" disabled>
-          <span class="coming-soon-tag">Soon</span>
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDA3N0I1Ij48cGF0aCBkPSJNMjAuNDQ3IDIwLjQ1MmgtMy41NTR2LTUuNTY5YzAtMS4zMjgtLjAyNy0zLjAzNy0xLjg1Mi0zLjAzNy0xLjg1MyAwLTIuMTM2IDEuNDQ1LTIuMTM2IDIuOTM5djUuNjY3SDkuMzUxVjloMy40MTR2MS41NjFoLjA0NmMuNDc3LS45IDEuNjM3LTEuODUgMy4zNy0xLjg1IDMuNjAxIDAgNC4yNjcgMi4zNyA0LjI2NyA1LjQ1NXY2LjI4NnpNNS4zMzcgNy40MzNjLTEuMTQ0IDAtMi4wNjMtLjkyNi0yLjA2My0yLjA2NSAwLTEuMTM4LjkyLTIuMDYzIDIuMDYzLTIuMDYzIDEuMTQgMCAyLjA2NC45MjUgMi4wNjQgMi4wNjMgMCAxLjEzOS0uOTI1IDIuMDY1LTIuMDY0IDIuMDY1em0xLjc4MiAxMy4wMTlIMy41NTVWOWgzLjU2NHYxMS40NTJ6TTIyLjIyNSAwSDEuNzcxQy43OTIgMCAwIC43NzQgMCAxLjcyOXYyMC41NDJDMCAyMy4yMjcuNzkyIDI0IDEuNzcxIDI0aDIwLjQ1MUMyMy4yIDI0IDI0IDIzLjIyNyAyNCAyMi4yNzFWMS43MjlDMjQgLjc3NCAyMy4yIDAgMjIuMjIyIDBoLjAwM3oiLz48L3N2Zz4=" alt="LinkedIn">
-          LinkedIn
-        </button>
       </div>
 
       <div class="auth-foot">Don't have an account? <a href="register.html">Create one</a></div>
-    
+
     </div>
 
     <!-- ===== FORGOT PASSWORD PANEL ===== -->
@@ -307,7 +299,7 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
   </div><!-- .card -->
 
   <div style="text-align:center;font-size:12px;color:#9CA3AF;margin-top:1rem">
-    &copy; 2026 SoundsCare. Secure &amp; encrypted. &nbsp;|&nbsp;.
+    &copy; 2026 SoundsCare. Secure &amp; encrypted.
   </div>
 
 </div><!-- .page-wrap -->
@@ -329,41 +321,39 @@ var COOKIE_DAYS  = 30;
 
 // ============================================================
 // INIT
+// This page ALWAYS requires a fresh login. It never auto-redirects
+// based on an existing Supabase session or a "remember me" cookie —
+// any existing session found here is explicitly signed out so the
+// person must re-enter their credentials.
 // ============================================================
 (async function init() {
-  // URL param role pre-fill
   var p = new URLSearchParams(window.location.search);
   if (p.get('type') === 'employer') selectRole('employer');
 
-  // Handle OAuth redirect
-  var hash = window.location.hash;
-  if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-    showOauthLoading('Completing sign-in…');
-    const { data, error } = await dbClient.auth.getSession();
-    if (error || !data.session) {
-      hideOauthLoading();
-      showAlert('alertLogin','alertLoginText','Sign-in was cancelled. Please try again.','error');
-      return;
+  // Strip any OAuth redirect hash without acting on it (OAuth login is
+  // disabled for now — see oauthLogin()).
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+
+  // Force sign-out of any existing session — this page never skips the
+  // login form because a session or cookie already exists.
+  try {
+    var sessRes = await dbClient.auth.getSession();
+    if (sessRes.data && sessRes.data.session) {
+      await dbClient.auth.signOut();
     }
-    await redirectByRole(data.session.user.id);
-    return;
+  } catch (e) {
+    // Non-fatal — proceed to show the login form regardless.
   }
 
-  // Check existing Supabase session first
-  var sessRes = await dbClient.auth.getSession();
-  if (sessRes.data && sessRes.data.session) {
-    showOauthLoading('You\'re already signed in. Redirecting…');
-    await redirectByRole(sessRes.data.session.user.id);
-    return;
-  }
-
-  // Check Remember Me cookie
+  // "Remember me" only pre-fills the email field for convenience.
+  // It never logs the person in or redirects them.
   var saved = getCookie(COOKIE_NAME);
   if (saved) {
     try {
       var cData = JSON.parse(atob(saved));
       if (cData.email && cData.expiry && Date.now() < cData.expiry) {
-        // Pre-fill email and show welcome pill
         document.getElementById('email').value = cData.email;
         document.getElementById('rememberMe').checked = true;
         if (cData.name) {
@@ -393,33 +383,27 @@ function selectRole(role) {
 }
 
 // ============================================================
-// OAUTH
+// SOCIAL SIGN IN — Google & Facebook (Coming Soon for now)
 // ============================================================
-async function oauthLogin(provider) {
-  localStorage.setItem('sc_pending_role', currentRole);
-  showOauthLoading('Connecting to ' + (provider === 'google' ? 'Google' : 'Facebook') + '…');
-  const { error } = await dbClient.auth.signInWithOAuth({
-    provider: provider,
-    options: {
-      redirectTo: window.location.href.split('?')[0].split('#')[0],
-      scopes: provider === 'facebook' ? 'public_profile,email' : 'profile email'
-    }
-  });
-  if (error) {
-    hideOauthLoading();
-    showAlert('alertLogin','alertLoginText','Could not connect. Please try again or use email.','error');
-  }
+function oauthLogin(provider) {
+  var label = provider === 'google' ? 'Google' : 'Facebook';
+  showToast('Sign in with ' + label + ' is coming soon. Please use email and password for now.', 'bi-rocket-takeoff');
 }
 
-function showOauthLoading(msg) {
-  document.getElementById('login-panel').style.display = 'none';
-  document.getElementById('forgot-panel').style.display = 'none';
-  document.getElementById('oauthLoading').style.display = 'block';
-  document.getElementById('oauthLoadingText').textContent = msg;
-}
-function hideOauthLoading() {
-  document.getElementById('oauthLoading').style.display = 'none';
-  document.getElementById('login-panel').style.display = 'block';
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, icon) {
+  var wrap = document.getElementById('toastWrap');
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<i class="bi ' + (icon || 'bi-clock-history') + '"></i><span>' + msg + '</span>';
+  wrap.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function() {
+    t.classList.remove('show');
+    setTimeout(function(){ t.remove(); }, 250);
+  }, 3200);
 }
 
 // ============================================================
@@ -488,11 +472,10 @@ function onEnter(e)       { if (e.key === 'Enter') handleLogin(); }
 function onForgotEnter(e) { if (e.key === 'Enter') handleForgot(); }
 
 // ============================================================
-// REMEMBER ME — COOKIES
+// REMEMBER ME — COOKIES (email pre-fill convenience only)
 // ============================================================
 function setCookie(name, value, days) {
   var expires = new Date(Date.now() + days * 864e5).toUTCString();
-  // HttpOnly not available in JS — use Secure + SameSite=Strict for best JS-accessible cookie
   document.cookie = name + '=' + value + ';expires=' + expires + ';path=/;SameSite=Strict' +
     (location.protocol === 'https:' ? ';Secure' : '');
 }
@@ -521,43 +504,7 @@ function clearSavedSession() {
 }
 
 // ============================================================
-// REDIRECT BY ROLE (reads profile table)
-// ============================================================
-async function redirectByRole(userId) {
-  try {
-    var profileRes = await dbClient
-      .from('profiles')
-      .select('role, first_name, status')
-      .eq('id', userId)
-      .single();
-
-    var profile = profileRes.data || {};
-    var role    = profile.role || 'employee';
-    var status  = profile.status || 'active';
-
-    if (status === 'banned') {
-      hideOauthLoading();
-      showAlert('alertLogin','alertLoginText',
-        'Your account has been suspended. Contact support@soundscare.co.ke for help.','error');
-      await dbClient.auth.signOut();
-      return;
-    }
-    if (status === 'deactivated') {
-      hideOauthLoading();
-      showAlert('alertLogin','alertLoginText',
-        'This account is deactivated. Email support@soundscare.co.ke to reactivate.','warn');
-      await dbClient.auth.signOut();
-      return;
-    }
-
-    window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'employee-dashboard.html';
-  } catch(e) {
-    window.location.href = currentRole === 'employer' ? 'employer-dashboard.html' : 'employee-dashboard.html';
-  }
-}
-
-// ============================================================
-// LOGIN
+// LOGIN — always requires submitting the form on this page
 // ============================================================
 async function handleLogin() {
   hideAlert('alertLogin');
@@ -591,34 +538,27 @@ async function handleLogin() {
     pwEl.classList.add('err');
     var msg = friendlyLoginError(result.error.message);
     showAlert('alertLogin','alertLoginText', msg);
-    // Clear password on failure for security
     pwEl.value = '';
     return;
   }
 
   var user = result.data.user;
 
-  // Fetch profile for role, name, status
-  var profileRes = await dbClient
-    .from('profiles')
-    .select('role, first_name, status')
+  // Look up the account in the real "users" table for role, name, and status
+  var userRes = await dbClient
+    .from('users')
+    .select('role, full_name, is_active')
     .eq('id', user.id)
     .single();
 
-  var profile    = profileRes.data || {};
-  var role       = profile.role   || currentRole;
-  var firstName  = profile.first_name || '';
-  var status     = profile.status || 'active';
+  var account    = userRes.data || {};
+  var role       = account.role || currentRole;
+  var fullName   = account.full_name || '';
+  var firstName  = fullName ? fullName.split(' ')[0] : '';
+  var isActive   = account.is_active !== false;
 
-  // Account status gates
-  if (status === 'banned') {
-    await dbClient.auth.signOut();
-    setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
-    showAlert('alertLogin','alertLoginText',
-      'Your account has been suspended. Contact support@soundscare.co.ke if this is an error.','error');
-    return;
-  }
-  if (status === 'deactivated') {
+  // Account status gate
+  if (!isActive) {
     await dbClient.auth.signOut();
     setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
     showAlert('alertLogin','alertLoginText',
@@ -626,7 +566,7 @@ async function handleLogin() {
     return;
   }
 
-  // Remember Me — save cookie
+  // Remember Me — email pre-fill only, never used to skip sign-in
   if (remember) {
     saveRememberMe(email, firstName);
   } else {
@@ -656,7 +596,6 @@ function friendlyLoginError(msg) {
     return 'No account found with this email. Would you like to register?';
   if (m.includes('network') || m.includes('fetch'))
     return 'Connection error. Please check your internet and try again.';
-  // Catch-all — never show raw Supabase/DB message
   return 'Sign in failed. Please check your credentials and try again.';
 }
 
