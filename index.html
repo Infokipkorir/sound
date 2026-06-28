@@ -744,12 +744,12 @@
           <div class="form-group">
             <label>Benefits Offered</label>
             <div class="checkbox-group" id="ae-benefits">
-              <label class="checkbox-pill"><input type="checkbox" value="Accommodation"> 🏠 Accommodation</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Lunch"> 🍱 Lunch</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Transport"> 🚌 Transport</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Off Days"> 📅 Off Days</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Allowance"> 💰 Allowance</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Medical"> 🏥 Medical</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Accommodation"><i class="bi bi-house-fill"></i> Accommodation</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Lunch"><i class="bi bi-egg-fried"></i> Lunch</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Transport"><i class="bi bi-bus-front-fill"></i> Transport</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Off Days"><i class="bi bi-calendar-check-fill"></i> Off Days</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Allowance"><i class="bi bi-cash-stack"></i> Allowance</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Medical"><i class="bi bi-heart-pulse-fill"></i> Medical</label>
             </div>
           </div>
 
@@ -929,14 +929,14 @@
           <div class="form-group">
             <label>Skills / Abilities</label>
             <div class="checkbox-group" id="emp-skills">
-              <label class="checkbox-pill"><input type="checkbox" value="Childcare"> 👶 Childcare</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Cooking"> 🍳 Cooking</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Cleaning"> 🧹 Cleaning</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Laundry"> 👕 Laundry</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Driving"> 🚗 Driving</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Gardening"> 🌿 Gardening</label>
-              <label class="checkbox-pill"><input type="checkbox" value="Elderly Care"> 👴 Elderly Care</label>
-              <label class="checkbox-pill"><input type="checkbox" value="First Aid"> 🩺 First Aid</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Childcare"><i class="bi bi-emoji-smile-fill"></i> Childcare</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Cooking"><i class="bi bi-fire"></i> Cooking</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Cleaning"><i class="bi bi-stars"></i> Cleaning</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Laundry"><i class="bi bi-basket2-fill"></i> Laundry</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Driving"><i class="bi bi-car-front-fill"></i> Driving</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Gardening"><i class="bi bi-tree-fill"></i> Gardening</label>
+              <label class="checkbox-pill"><input type="checkbox" value="Elderly Care"><i class="bi bi-person-heart"></i> Elderly Care</label>
+              <label class="checkbox-pill"><input type="checkbox" value="First Aid"><i class="bi bi-bandaid-fill"></i> First Aid</label>
             </div>
           </div>
 
@@ -1178,27 +1178,47 @@ async function submitAnonEmployer(){
   const btn=document.querySelector('#ae-step-form .submit-btn');
   btn.disabled=true; btn.innerHTML='<i class="bi bi-hourglass-split"></i> Submitting…';
 
+  const jobloc = document.getElementById('ae-jobloc').value.trim()||null;
+  const benefitsArr = getChecked('ae-benefits');
   const payload={
+    // Contact (new columns)
     legal_first_name: fname,
     legal_last_name: lname,
     phone: phone,
     email: document.getElementById('ae-email').value.trim()||null,
+    // Company
     company_name: document.getElementById('ae-company').value.trim()||null,
-    country, county,
-    city,
+    // Location
+    country, county, city,
     street: document.getElementById('ae-street').value.trim()||null,
+    // Job — map to BOTH old col names and new
     job_title: jobtitle,
+    title: jobtitle,                        // old col
     job_type: document.getElementById('ae-jobtype').value,
-    job_location: document.getElementById('ae-jobloc').value.trim()||null,
+    job_location: jobloc,
+    location: jobloc,                       // old col
     job_description: desc,
+    description: desc,                      // old col
+    category: jobtitle,                     // old col (category)
+    // Salary
     salary_min: parseInt(document.getElementById('ae-salmin').value)||null,
     salary_max: parseInt(document.getElementById('ae-salmax').value)||null,
-    benefits: getChecked('ae-benefits'),
+    salary_range: (() => {
+      const mn=parseInt(document.getElementById('ae-salmin').value)||null;
+      const mx=parseInt(document.getElementById('ae-salmax').value)||null;
+      return (mn&&mx) ? mn+'-'+mx : (mn||mx) ? String(mn||mx) : null;
+    })(),
+    // Benefits & requirements
+    benefits: benefitsArr.length ? benefitsArr : null,
+    requirements: benefitsArr.length ? 'Benefits: '+benefitsArr.join(', ') : null, // old col
+    // Expectations
     age_min: ageMin,
     age_max: parseInt(document.getElementById('ae-agemax').value)||null,
     experience_min: parseInt(document.getElementById('ae-exp').value)||0,
     preferred_tribe: document.getElementById('ae-tribe').value||null,
     dealbreakers: document.getElementById('ae-dealbreakers').value.trim()||null,
+    // Meta
+    posting_type: 'anonymous',              // old col
     status: 'pending',
     is_anonymous: true,
     created_at: new Date().toISOString()
