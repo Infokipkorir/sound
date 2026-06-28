@@ -2531,8 +2531,6 @@ function closeChatSplit() {
   document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
 }
 
-async function sendMessageReply_LEGACY_REMOVED() { /* replaced by override below */ }
-
 // ── VOICE NOTES ──
 async function toggleRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') { stopRecording(); return; }
@@ -4088,24 +4086,32 @@ function clearReply() {
   document.getElementById('reply-preview')?.classList.remove('show');
 }
 
-// Patch sendMessageReply to include quoted reply
-const _originalSendReply = sendMessageReply;
-sendMessageReply = async function() {
+async function sendMessageReply() {
   const input = document.getElementById('msg-reply');
   const text = input.value.trim();
+
   if (!text || !activeConvId) return;
   if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
 
   const sendBtn = document.getElementById('send-btn');
   sendBtn.disabled = true;
-  const fullText = replyToText ? `↩ "${replyToText.substring(0,40)}${replyToText.length>40?'…':''}" \n${text}` : text;
+
+  const fullText = replyToText
+    ? `↩ "${replyToText.substring(0,40)}${replyToText.length > 40 ? '…' : ''}" \n${text}`
+    : text;
+
   input.value = '';
   clearReply();
 
   const convEl = document.getElementById('conversation-messages');
   const tempId = 'temp-' + Date.now();
+
   convEl.insertAdjacentHTML('beforeend', renderMessageBubble({
-    id: tempId, sender_id: currentUser.id, content: fullText, created_at: new Date().toISOString(), _pending: 'sending',
+    id: tempId,
+    sender_id: currentUser.id,
+    content: fullText,
+    created_at: new Date().toISOString(),
+    _pending: 'sending',
   }));
   convEl.scrollTop = convEl.scrollHeight;
 
@@ -4127,11 +4133,13 @@ sendMessageReply = async function() {
       last_message_text: text,
       last_message_at: new Date().toISOString(),
     }).eq('id', activeConvId);
+
     document.querySelector(`[data-id="${tempId}"]`)?.remove();
     await openConversation(activeConvId);
   }
+
   sendBtn.disabled = false;
-};
+}
 
 // ════════════════════════════════════════════════════════
 //  EDIT PROFILE MODAL
