@@ -1051,17 +1051,17 @@
     </div>
   </div>
 
-  <!-- RECENT MESSAGES PREVIEW -->
+  <!-- RECENT INTERVIEWS PREVIEW -->
   <div class="section">
     <div class="section-title">
-      <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
-      Recent Messages
+      <i class="bi bi-calendar-check" style="color: var(--brand);"></i>
+      Recent Interviews
       <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-messages')">View All</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-interviews'); loadRecentInterviews()">View All</button>
       </span>
     </div>
-    <div id="recent-messages">
-      <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
+    <div id="recent-interviews">
+      <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
     </div>
   </div>
 
@@ -1085,6 +1085,21 @@
   </div>
 
 </div><!-- /page -->
+
+<!-- ═══════════════════════════ INTERVIEWS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-interviews">
+  <div class="modal wide" style="max-width:680px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-calendar-check"></i> Interviews</h2>
+      <button class="modal-close" onclick="closeModal('modal-interviews')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="interviews-list">
+        <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════ NOTIFICATIONS MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-notifications">
@@ -2087,6 +2102,7 @@ async function loadDashboard() {
     try {
       await renderConversationList();
       console.log('✅ Conversation list rendered');
+      await loadRecentInterviews();
     } catch (renderErr) {
       console.error('❌ renderConversationList failed:', renderErr.message);
       document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
@@ -2198,27 +2214,39 @@ function twoWordName(full) {
 
 async function renderConversationList() {
   const inbox = document.getElementById('messages-inbox');
-  const recent = document.getElementById('recent-messages');
 
   if (!allConversations.length) {
     const empty = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>No messages yet. Employers will contact you here.</p></div>';
     inbox.innerHTML = empty;
-    recent.innerHTML = empty;
     return;
   }
 
   // Fetch employer names/photos for all convs
+  // Uses RPC to bypass RLS on employer_profiles (workers can't read other users' rows directly)
   const employerIds = [...new Set(allConversations.map(c => c.employer_id).filter(Boolean))];
   if (employerIds.length) {
-    const { data } = await sb.from('employer_profiles')
-      .select('user_id, full_name, company_name, profile_photo_url')
-      .in('user_id', employerIds);
-    (data || []).forEach(e => {
-      employerCache[e.user_id] = {
-        name: twoWordName(e.company_name || e.full_name || 'Employer'),
-        photo: e.profile_photo_url || null,
-      };
-    });
+    // Try RPC first (security definer — bypasses RLS)
+    const { data: rpcData, error: rpcErr } = await sb.rpc('get_employer_names', { employer_ids: employerIds });
+    if (!rpcErr && rpcData) {
+      (rpcData || []).forEach(e => {
+        employerCache[e.user_id] = {
+          name: twoWordName(e.company_name || e.full_name || 'Employer'),
+          photo: e.profile_photo_url || null,
+        };
+      });
+    } else {
+      // Fallback: direct query (works if RLS allows it or is disabled)
+      console.warn('get_employer_names RPC failed, falling back to direct query:', rpcErr?.message);
+      const { data } = await sb.from('employer_profiles')
+        .select('user_id, full_name, company_name, profile_photo_url')
+        .in('user_id', employerIds);
+      (data || []).forEach(e => {
+        employerCache[e.user_id] = {
+          name: twoWordName(e.company_name || e.full_name || 'Employer'),
+          photo: e.profile_photo_url || null,
+        };
+      });
+    }
   }
 
   const html = allConversations.map((conv) => {
@@ -2262,27 +2290,60 @@ async function renderConversationList() {
   }).join('');
 
   inbox.innerHTML = html;
-  recent.innerHTML = allConversations.slice(0, 2).map((conv) => {
-    const isSupport = conv.is_admin_thread;
+}
+
+// ════════════════════════════════════════════════════════
+//  INTERVIEWS
+// ════════════════════════════════════════════════════════
+async function loadRecentInterviews() {
+  const recentEl = document.getElementById('recent-interviews');
+  const listEl   = document.getElementById('interviews-list');
+  if (!currentUser) return;
+
+  // Interviews = conversations where status = 'active' (i.e. employer is actively engaging)
+  // We re-use allConversations if already loaded, else fetch
+  const convs = allConversations.length
+    ? allConversations
+    : (await sb.from('conversations')
+        .select('id, employer_id, employee_id, last_message_text, last_message_at, status, is_admin_thread')
+        .eq('employee_id', currentUser.id)
+        .order('last_message_at', { ascending: false })
+        .limit(10)
+      ).data || [];
+
+  // Filter to active (not closed / blocked) and non-admin threads as "interviews"
+  const interviews = convs.filter(c => !c.is_admin_thread && c.status !== 'closed');
+
+  function renderInterviewCard(conv, short) {
     const emp = employerCache[conv.employer_id] || { name: 'Employer', photo: null };
-    const from = isSupport ? 'Support' : emp.name;
-    const preview = (conv.last_message_text || '—').substring(0, 80);
-    const avatarInner = emp.photo && !isSupport ? `<img src="${emp.photo}">` : esc((from[0] || '?').toUpperCase());
-    const isVerified = emp.is_verified || isSupport;
+    const name = emp.name;
+    const init = (name[0] || '?').toUpperCase();
+    const preview = (conv.last_message_text || 'No messages yet').substring(0, short ? 60 : 100);
+    const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
+    const avatarInner = emp.photo ? `<img src="${esc(emp.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : esc(init);
     return `
-    <div class="msg-item" onclick="openConversation('${conv.id}')">
-      <div class="msg-avatar is-employer">${avatarInner}</div>
+    <div class="msg-item" onclick="openConversation('${conv.id}'); closeModal('modal-interviews'); openModal('modal-messages');" style="cursor:pointer;">
+      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
-          <span class="msg-from">${esc(from)}</span>
-          ${isVerified ? '<span class="verify-badge"><i class="bi bi-patch-check-fill"></i></span>' : ''}
-          <span class="msg-badge employer"><i class="bi bi-${isSupport ? 'headset' : 'building'}"></i> ${isSupport ? 'Support' : 'Employer'}</span>
+          <span class="msg-from">${esc(name)}</span>
+          <span class="msg-badge employer"><i class="bi bi-building"></i> Employer</span>
         </div>
         <div class="msg-preview">${esc(preview)}</div>
       </div>
-      <div class="msg-time" style="flex-shrink:0;">${conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : ''}</div>
+      <div class="msg-time" style="flex-shrink:0;">${time}</div>
     </div>`;
-  }).join('');
+  }
+
+  if (!interviews.length) {
+    const empty = '<div class="empty-state"><i class="bi bi-calendar-check"></i><p>No active interviews yet. Employers will contact you here.</p></div>';
+    if (recentEl) recentEl.innerHTML = empty;
+    if (listEl) listEl.innerHTML = empty;
+    return;
+  }
+
+  if (recentEl) recentEl.innerHTML = interviews.slice(0, 2).map(c => renderInterviewCard(c, true)).join('');
+  if (listEl) listEl.innerHTML = interviews.map(c => renderInterviewCard(c, false)).join('');
 }
 
 function renderTick(m) {
@@ -3814,7 +3875,14 @@ async function signOut() {
 // ════════════════════════════════════════════════════════
 //  UI UTILITIES
 // ════════════════════════════════════════════════════════
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  // Briefly mark as just-opened so the overlay click listener won't immediately close it
+  el.dataset.justOpened = '1';
+  setTimeout(() => { delete el.dataset.justOpened; }, 300);
+}
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 function switchTab(tabId, btn) {
@@ -3853,15 +3921,18 @@ function showToast(type, icon, title, body) {
 
 // Close modals on overlay click — only if clicking the overlay itself (not a button inside)
 document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  el.addEventListener('click', e => {
+    if (e.target === el && !el.dataset.justOpened) el.classList.remove('open');
+  });
 });
 
 // Helper: open a modal without the click event bubbling to the overlay
 function launchEditProfile(e) {
-  if (e) e.stopPropagation();
+  if (e) { e.stopPropagation(); e.preventDefault(); }
   closeModal('modal-account');
-  // Small delay so the close animation doesn't fight the open
-  setTimeout(() => openEditProfile(), 50);
+  // Wait for the account modal to fully close before opening edit modal.
+  // The longer delay prevents the same click from immediately closing the newly-opened modal.
+  setTimeout(() => openEditProfile(), 150);
 }
 
 function launchAccountSettings(e) {
