@@ -4,77 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Create Account — SoundsCare</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --green:#1B6B45;--green-dark:#155235;--green-light:#EEF7F2;--green-mid:#C8E6D6;
+  --green:#1B6B45;--green-dark:#114B30;--green-light:#EEF7F2;--green-mid:#C8E6D6;
   --accent:#E8A040;--accent-light:#FEF3E2;
   --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
-  --surface:#FFFFFF;--bg:#F9FAFB;
+  --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
   --amber:#D97706;--blue:#2563EB;
-  --shadow:0 4px 28px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
-  --radius:12px;--radius-sm:8px;
+  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 16px 50px rgba(17,75,48,.14);
+  --radius:12px;--radius-sm:8px;--radius-lg:22px;
   --font:'DM Sans',system-ui,sans-serif;
+  --serif:'Playfair Display',serif;
 }
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem}
-.page-wrap{width:100%;max-width:540px}
+body{
+  font-family:var(--font);color:var(--text);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(27,107,69,.07), transparent 38%),
+    radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
+    var(--bg);
+}
+.page-wrap{width:100%;max-width:560px}
 
 /* BRAND */
-.brand{text-align:center;margin-bottom:1.5rem}
-.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:'Playfair Display',serif}
-.brand-icon{width:40px;height:40px;background:var(--green);border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
-.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px}
+.brand{text-align:center;margin-bottom:1.6rem}
+.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
+.brand-icon{width:42px;height:42px;background:linear-gradient(155deg,var(--green),var(--green-dark));border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 6px 16px rgba(27,107,69,.30)}
+.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
+
+/* PROGRESS */
+.progress-track{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.5rem}
+.progress-seg{height:4px;width:64px;border-radius:4px;background:var(--border);transition:background .25s}
+.progress-seg.done,.progress-seg.active{background:var(--green)}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem 2rem 1.8rem;box-shadow:var(--shadow)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
 /* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
-.step-title{font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.4rem}
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
 
 /* ROLE GRID */
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.4rem}
-.role-option{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;position:relative}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.role-option{border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;position:relative;background:var(--surface)}
 .role-option:hover{border-color:#A7F3D0;background:var(--green-light)}
 .role-option.active{border-color:var(--green);background:var(--green-light);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-.role-icon{font-size:26px;margin-bottom:5px;line-height:1}
-.role-label{font-size:13px;font-weight:700;color:var(--text-mid)}
+.role-icon{font-size:27px;margin-bottom:6px;line-height:1;color:var(--text-muted)}
+.role-option.active .role-icon{color:var(--green-dark)}
+.role-label{font-size:13.5px;font-weight:700;color:var(--text-mid)}
 .role-option.active .role-label{color:var(--green-dark)}
-.role-tag{position:absolute;top:-8px;right:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}
+.role-desc{font-size:11px;color:var(--text-muted);margin-top:2px}
 
 /* SECTION LABELS */
-.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;padding:12px 0 9px;border-top:1px solid var(--border);margin-top:2px}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
 .sec-lbl:first-of-type{border-top:none;padding-top:0}
 
 /* FORM */
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:480px){.form-row{grid-template-columns:1fr}}
-.fg{margin-bottom:.9rem}
+.fg{margin-bottom:.95rem}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
 .fg label .req{color:var(--red);margin-left:2px}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
 .iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px}
 .iw .sfx:hover{color:var(--text)}
-input[type=text],input[type=email],input[type=tel],input[type=password],select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+input[type=text],input[type=email],input[type=tel],input[type=password],select{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .iw.has-ico input,.iw.has-ico select{padding-left:38px}
 .iw.has-sfx input{padding-right:40px}
 input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
 input.err,select.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 input.ok{border-color:var(--green)}
-.fhint{font-size:11.5px;color:var(--text-muted);margin-top:4px}
+.fhint{font-size:11.5px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:5px}
 .fhint.err{color:var(--red)}
 .fhint.ok{color:var(--green)}
+.fhint .spinner-mini{width:11px;height:11px;border:1.6px solid rgba(107,114,128,.25);border-top-color:var(--text-muted);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
 
-/* EMAIL PROVIDER BADGES */
-.provider-note{display:none;font-size:11.5px;margin-top:5px;padding:7px 10px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;color:#0369A1}
-.provider-note.show{display:block}
-.provider-note i{margin-right:4px}
+/* ID FIELD WRAP — only for workers */
+#idNumberGroup{display:none}
+.id-note{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:#0369A1;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;padding:7px 10px;margin-top:6px;line-height:1.5}
+.id-note i{margin-top:1px;flex-shrink:0}
 
 /* COUNTRY */
 .country-wrap{position:relative}
@@ -100,15 +117,13 @@ input.ok{border-color:var(--green)}
 .pw-lbl{font-size:11.5px;color:var(--text-muted);margin-top:3px}
 
 /* SOCIAL AUTH */
-.divider{display:flex;align-items:center;gap:10px;margin:1.2rem 0;color:var(--text-muted);font-size:12px;font-weight:600}
+.divider{display:flex;align-items:center;gap:10px;margin:1.3rem 0;color:var(--text-muted);font-size:12px;font-weight:600}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
-.social-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;color:var(--text-mid);transition:all .15s;position:relative;font-family:var(--font)}
-.social-btn:hover{border-color:#9CA3AF;background:var(--bg)}
-.social-btn img{width:18px;height:18px;object-fit:contain}
-.social-btn .coming-soon-tag{position:absolute;top:-7px;right:6px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;text-transform:uppercase;letter-spacing:.05em}
-.social-btn.disabled-soon{opacity:.7;cursor:default}
-.social-btn.disabled-soon:hover{border-color:var(--border);background:var(--surface)}
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font)}
+.social-btn:hover{border-color:#9CA3AF;background:var(--bg);transform:translateY(-1px)}
+.social-btn:active{transform:translateY(0)}
+.social-btn img{width:19px;height:19px;object-fit:contain}
 
 /* CHECKBOX */
 .chk-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:.85rem}
@@ -118,7 +133,7 @@ input.ok{border-color:var(--green)}
 .chk-row a:hover{text-decoration:underline}
 
 /* ALERTS */
-.alert{border-radius:var(--radius-sm);padding:10px 13px;font-size:13px;font-weight:500;margin-bottom:12px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
 .alert.show{display:flex}
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
@@ -127,11 +142,11 @@ input.ok{border-color:var(--green)}
 .alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
 
 /* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:11.5px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
-.btn-primary{background:var(--green);color:#fff}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
-.btn-primary:disabled{opacity:.55;cursor:not-allowed}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .btn-outline{background:var(--surface);color:var(--text-mid);border:1.5px solid var(--border)}
 .btn-outline:hover{border-color:#9CA3AF;background:var(--bg)}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
@@ -146,11 +161,17 @@ input.ok{border-color:var(--green)}
 .vpn-banner{background:#FEF2F2;border:1px solid var(--red-border);border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px}
 .vpn-banner.show{display:flex}
 
+/* TOAST (Coming soon) */
+.toast-wrap{position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;background:#111827;color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(-8px);transition:all .25s ease;white-space:nowrap}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast i{color:var(--accent);font-size:16px}
+
 /* OTP */
 #step-otp{display:none}
 .otp-info{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;color:var(--green-dark);margin-bottom:1.4rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
 .otp-boxes{display:flex;gap:6px;justify-content:center;margin:1rem 0}
-.otp-box{width:42px;height:50px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);padding:0}
+.otp-box{width:43px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);padding:0}
 .otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.12);background:var(--surface)}
 .otp-box.filled{border-color:var(--green);background:var(--green-light)}
 .otp-box.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
@@ -161,17 +182,19 @@ input.ok{border-color:var(--green)}
 
 /* SUCCESS */
 #step-success{display:none;text-align:center;padding:.5rem 0}
-.success-icon{width:68px;height:68px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:32px;color:var(--green)}
-.success-title{font-size:22px;font-weight:800;margin-bottom:8px;font-family:'Playfair Display',serif}
+.success-icon{width:70px;height:70px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:33px;color:var(--green)}
+.success-title{font-size:23px;font-weight:800;margin-bottom:8px;font-family:var(--serif)}
 .success-body{font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:1.5rem}
 
-/* OAUTH LOADING */
-.oauth-loading{display:none;text-align:center;padding:2rem 0}
+/* INLINE LOADER (checking…) */
+.oauth-loading{display:none;text-align:center;padding:2.2rem 0}
 .oauth-loading i{font-size:36px;color:var(--green);animation:spin 1s linear infinite}
 .oauth-loading p{margin-top:12px;font-size:14px;color:var(--text-muted)}
 </style>
 </head>
 <body>
+
+<div class="toast-wrap" id="toastWrap"></div>
 
 <div class="page-wrap">
 
@@ -184,12 +207,18 @@ input.ok{border-color:var(--green)}
     <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
   </div>
 
+  <!-- PROGRESS -->
+  <div class="progress-track" id="progressTrack">
+    <div class="progress-seg active" id="seg1"></div>
+    <div class="progress-seg" id="seg2"></div>
+  </div>
+
   <div class="card">
 
-    <!-- OAUTH LOADING OVERLAY -->
-    <div class="oauth-loading" id="oauthLoading">
+    <!-- INLINE LOADING (checking availability before OTP) -->
+    <div class="oauth-loading" id="checkingLoading">
       <i class="bi bi-arrow-repeat"></i>
-      <p id="oauthLoadingText">Connecting to provider…</p>
+      <p id="checkingLoadingText">Checking your details…</p>
     </div>
 
     <!-- ===== STEP 1: FORM ===== -->
@@ -212,20 +241,20 @@ input.ok{border-color:var(--green)}
         Step 1 of 2 &mdash; Account Details
       </div>
       <div class="step-title">Create your account</div>
-      <div class="step-sub">Join thousands of domestic service professionals on SoundsCare.</div>
+      <div class="step-sub">Join thousands of domestic service professionals and families on SoundsCare.</div>
 
       <!-- ROLE SELECTION -->
       <div class="sec-lbl" style="border-top:none;padding-top:0">I am registering as</div>
       <div class="role-grid">
         <div class="role-option active" id="btn-employee" onclick="selectRole('employee')">
-          <div class="role-tag">New</div>
-          <div class="role-icon"><i class="bi bi-person-badge" style="font-size:28px;color:var(--green)"></i></div>
+          <div class="role-icon"><i class="bi bi-person-badge"></i></div>
           <div class="role-label">Domestic Worker</div>
+          <div class="role-desc">Find a job</div>
         </div>
         <div class="role-option" id="btn-employer" onclick="selectRole('employer')">
-          <div class="role-tag">Now</div>
-          <div class="role-icon"><i class="bi bi-building" style="font-size:28px;color:var(--green-dark)"></i></div>
+          <div class="role-icon"><i class="bi bi-building"></i></div>
           <div class="role-label">Employer / Family</div>
+          <div class="role-desc">Hire a worker</div>
         </div>
       </div>
 
@@ -238,27 +267,13 @@ input.ok{border-color:var(--green)}
       <!-- SOCIAL / OAUTH -->
       <div class="sec-lbl" style="border-top:none;padding-top:0;margin-top:0">Sign up faster</div>
       <div class="social-grid">
-        <!-- Google -->
         <button class="social-btn" onclick="oauthSignUp('google')" type="button">
           <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
           Google
         </button>
-        <!-- Facebook -->
         <button class="social-btn" onclick="oauthSignUp('facebook')" type="button">
           <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
           Facebook
-        </button>
-        <!-- Bright Monday — Coming Soon -->
-        <button class="social-btn disabled-soon" type="button" disabled>
-          <span class="coming-soon-tag">Soon</span>
-          <i class="bi bi-brightness-high-fill" style="color:#F59E0B;font-size:18px"></i>
-          Bright Monday
-        </button>
-        <!-- LinkedIn — Coming Soon -->
-        <button class="social-btn disabled-soon" type="button" disabled>
-          <span class="coming-soon-tag">Soon</span>
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDA3N0I1Ij48cGF0aCBkPSJNMjAuNDQ3IDIwLjQ1MmgtMy41NTR2LTUuNTY5YzAtMS4zMjgtLjAyNy0zLjAzNy0xLjg1Mi0zLjAzNy0xLjg1MyAwLTIuMTM2IDEuNDQ1LTIuMTM2IDIuOTM5djUuNjY3SDkuMzUxVjloMy40MTR2MS41NjFoLjA0NmMuNDc3LS45IDEuNjM3LTEuODUgMy4zNy0xLjg1IDMuNjAxIDAgNC4yNjcgMi4zNyA0LjI2NyA1LjQ1NXY2LjI4NnpNNS4zMzcgNy40MzNjLTEuMTQ0IDAtMi4wNjMtLjkyNi0yLjA2My0yLjA2NSAwLTEuMTM4LjkyLTIuMDYzIDIuMDYzLTIuMDYzIDEuMTQgMCAyLjA2NC45MjUgMi4wNjQgMi4wNjMgMCAxLjEzOS0uOTI1IDIuMDY1LTIuMDY0IDIuMDY1em0xLjc4MiAxMy4wMTlIMy41NTVWOWgzLjU2NHYxMS40NTJ6TTIyLjIyNSAwSDEuNzcxQy43OTIgMCAwIC43NzQgMCAxLjcyOXYyMC41NDJDMCAyMy4yMjcuNzkyIDI0IDEuNzcxIDI0aDIwLjQ1MUMyMy4yIDI0IDI0IDIzLjIyNyAyNCAyMi4yNzFWMS43MjlDMjQgLjc3NCAyMy4yIDAgMjIuMjIyIDBoLjAwM3oiLz48L3N2Zz4=" alt="LinkedIn">
-          LinkedIn
         </button>
       </div>
 
@@ -289,6 +304,23 @@ input.ok{border-color:var(--green)}
         <div class="iw has-ico">
           <span class="ico"><i class="bi bi-telephone"></i></span>
           <input type="tel" id="phone" placeholder="+254 7XX XXX XXX" autocomplete="tel">
+        </div>
+      </div>
+
+      <!-- ID NUMBER — workers only, for duplicate-account prevention -->
+      <div class="fg" id="idNumberGroup">
+        <label>National ID / Passport Number <span class="req">*</span></label>
+        <div class="iw has-ico has-sfx">
+          <span class="ico"><i class="bi bi-card-text"></i></span>
+          <input type="text" id="idNumber" placeholder="e.g. 32145678" autocomplete="off" oninput="onIdNumberInput()">
+          <button type="button" class="sfx" onclick="liveCheckIdNumber()" title="Check availability">
+            <i class="bi bi-check-circle"></i>
+          </button>
+        </div>
+        <div class="fhint" id="idNumberHint">Used once to confirm you don't already have an account.</div>
+        <div class="id-note">
+          <i class="bi bi-shield-lock"></i>
+          <span>We only use this to prevent duplicate accounts. It's never shared with employers.</span>
         </div>
       </div>
 
@@ -326,7 +358,7 @@ input.ok{border-color:var(--green)}
           </button>
         </div>
         <div class="fhint" id="emailHint">We will send a 6-digit verification code to this address.</div>
-        <div class="provider-note" id="providerNote">
+        <div class="provider-note" id="providerNote" style="display:none;font-size:11.5px;margin-top:5px;padding:7px 10px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;color:#0369A1">
           <i class="bi bi-info-circle"></i>
           <span id="providerNoteText"></span>
         </div>
@@ -461,36 +493,35 @@ var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var currentRole = 'employee';
 var otpInterval = null;
 var pendingUser = null;
+var emailConfirmedAvailable = false;
+var idConfirmedAvailable = false;
 
 // ============================================================
-// INIT — handle OAuth callback on page load
+// INIT
 // ============================================================
-(async function init() {
-  // Pre-fill role from URL
+(function init() {
   var p = new URLSearchParams(window.location.search);
   if (p.get('type') === 'employer') selectRole('employer');
-
-  // Check if we're returning from an OAuth redirect
-  var hash = window.location.hash;
-  if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-    showOauthLoading('Completing sign-up…');
-    const { data, error } = await dbClient.auth.getSession();
-    if (error || !data.session) {
-      hideOauthLoading();
-      showAlert('alertMain','alertMainText','Sign-up was cancelled or failed. Please try again.','error');
-      return;
-    }
-    const user = data.session.user;
-    // Determine pending role from localStorage
-    var savedRole = localStorage.getItem('sc_pending_role') || 'employee';
-    localStorage.removeItem('sc_pending_role');
-    await finalizeOAuthAccount(user, savedRole);
-    return;
-  }
-
   checkIp();
   buildCS('');
+  updateIdNumberVisibility();
 })();
+
+// ============================================================
+// TOAST (used for "Coming soon" + general notices)
+// ============================================================
+function showToast(msg, icon) {
+  var wrap = document.getElementById('toastWrap');
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<i class="bi ' + (icon || 'bi-clock-history') + '"></i><span>' + msg + '</span>';
+  wrap.appendChild(t);
+  requestAnimationFrame(function(){ t.classList.add('show'); });
+  setTimeout(function() {
+    t.classList.remove('show');
+    setTimeout(function(){ t.remove(); }, 250);
+  }, 3200);
+}
 
 // ============================================================
 // ROLE SELECTION
@@ -499,133 +530,26 @@ function selectRole(role) {
   currentRole = role;
   document.getElementById('btn-employee').classList.toggle('active', role === 'employee');
   document.getElementById('btn-employer').classList.toggle('active', role === 'employer');
-  // Update email hint for employer
   updateEmailProviderNote(document.getElementById('email').value.trim());
+  updateIdNumberVisibility();
 }
 
-// ============================================================
-// OAUTH — Google & Facebook
-// ============================================================
-async function oauthSignUp(provider) {
-  if (provider === 'google' || provider === 'facebook') {
-    // Save role to localStorage before redirect
-    localStorage.setItem('sc_pending_role', currentRole);
-    showOauthLoading('Connecting to ' + (provider === 'google' ? 'Google' : 'Facebook') + '…');
-    const { error } = await dbClient.auth.signInWithOAuth({
-      provider: provider,
-      options: {
-        redirectTo: window.location.href.split('?')[0].split('#')[0],
-        scopes: provider === 'facebook' ? 'public_profile,email' : 'profile email',
-        queryParams: provider === 'google' ? { access_type: 'offline', prompt: 'consent' } : {}
-      }
-    });
-    if (error) {
-      hideOauthLoading();
-      showAlert('alertMain','alertMainText','Could not connect. Please try again or use email.','error');
-    }
-    // Redirect happens automatically — no further action needed
+function updateIdNumberVisibility() {
+  var group = document.getElementById('idNumberGroup');
+  group.style.display = (currentRole === 'employee') ? 'block' : 'none';
+  if (currentRole !== 'employee') {
+    idConfirmedAvailable = false;
+    document.getElementById('idNumber').value = '';
+    resetIdNumberHint();
   }
 }
 
-function showOauthLoading(msg) {
-  document.getElementById('step-form').style.display = 'none';
-  document.getElementById('oauthLoading').style.display = 'block';
-  document.getElementById('oauthLoadingText').textContent = msg || 'Please wait…';
-}
-function hideOauthLoading() {
-  document.getElementById('oauthLoading').style.display = 'none';
-  document.getElementById('step-form').style.display = 'block';
-}
-
 // ============================================================
-// FINALIZE OAUTH ACCOUNT
+// SOCIAL SIGN UP — Google & Facebook (Coming Soon for now)
 // ============================================================
-async function finalizeOAuthAccount(user, role) {
-  try {
-    var meta = user.user_metadata || {};
-    var firstName = meta.given_name || meta.full_name?.split(' ')[0] || meta.name?.split(' ')[0] || '';
-    var lastName  = meta.family_name || meta.full_name?.split(' ').slice(1).join(' ') || meta.name?.split(' ').slice(1).join(' ') || '';
-    var avatarUrl = meta.avatar_url || meta.picture || null;
-    var email     = user.email || '';
-    var country   = meta.locale ? localeToCountry(meta.locale) : 'Kenya';
-
-    // Check if profile already exists
-    var { data: existingProfile } = await dbClient
-      .from('profiles')
-      .select('id,role')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!existingProfile) {
-      // New user — insert profile
-      await dbClient.from('profiles').upsert({
-        id: user.id,
-        email: email,
-        first_name: firstName,
-        last_name: lastName,
-        country: country,
-        role: role,
-        avatar_url: avatarUrl,
-        status: 'active',
-        created_at: new Date().toISOString()
-      }, { onConflict: 'id' });
-
-      // Welcome notification
-      var welcomeMsg = role === 'employer'
-        ? `Welcome to SoundsCare, ${firstName}! 🎉 Your employer account is ready. Start hiring top domestic workers today.`
-        : `Welcome to SoundsCare, ${firstName}! 🎉 Your account is live. Complete your profile to get discovered by employers.`;
-
-      await dbClient.from('notifications').insert({
-        user_id: user.id,
-        user_email: email,
-        type: 'welcome',
-        title: 'Welcome to SoundsCare! 👋',
-        message: welcomeMsg,
-        is_read: false,
-        created_at: new Date().toISOString()
-      });
-
-      // Trigger admin notification
-      await triggerAdminNewAccount({ id: user.id, email, firstName, lastName, role, provider: 'oauth' });
-    }
-
-    // Show success
-    hideOauthLoading();
-    document.getElementById('step-success').style.display = 'block';
-    document.getElementById('successName').textContent = firstName || email;
-    document.getElementById('successEmail').textContent = email;
-    document.getElementById('successLink').href = (role === 'employer') ? 'employer-dashboard.html' : 'post-profile.html';
-
-  } catch (e) {
-    console.warn('[SoundsCare] OAuth finalize error:', e);
-    hideOauthLoading();
-    showAlert('alertMain','alertMainText','Account setup failed. Please try again or use email registration.','error');
-  }
-}
-
-function localeToCountry(locale) {
-  var map = { ke: 'Kenya', ug: 'Uganda', tz: 'Tanzania', gb: 'United Kingdom', us: 'United States', in: 'India', za: 'South Africa' };
-  var code = (locale || '').split('_').pop().toLowerCase();
-  return map[code] || 'Kenya';
-}
-
-// ============================================================
-// ADMIN NOTIFICATION — new account trigger
-// ============================================================
-async function triggerAdminNewAccount(info) {
-  try {
-    await dbClient.from('admin_notifications').insert({
-      type: 'new_account',
-      title: 'New Account Registered',
-      message: `New ${info.role} account: ${info.firstName} ${info.lastName} (${info.email}) via ${info.provider || 'email'}`,
-      data: JSON.stringify({ user_id: info.id, email: info.email, role: info.role, provider: info.provider }),
-      is_read: false,
-      created_at: new Date().toISOString()
-    });
-  } catch(e) {
-    console.warn('[SoundsCare] Admin notification error:', e);
-    // Non-fatal
-  }
+function oauthSignUp(provider) {
+  var label = provider === 'google' ? 'Google' : 'Facebook';
+  showToast('Sign up with ' + label + ' is coming soon. Please use email for now.', 'bi-rocket-takeoff');
 }
 
 // ============================================================
@@ -637,7 +561,7 @@ function checkIp() {
     .then(function(d) {
       if (d.proxy || d.tor || d.hosting) {
         document.getElementById('vpnBannerText').textContent =
-          'VPN, proxy, or hosting IP detected. For account security, please disable it before registering. (Coming soon: VPN users will need to verify via phone.)';
+          'VPN, proxy, or hosting IP detected. For account security, please disable it before registering.';
         document.getElementById('vpnBanner').classList.add('show');
       } else {
         var highRisk = ['RU','CN','KP','IR','BY'].indexOf(d.country_code) > -1;
@@ -680,41 +604,6 @@ var COUNTRIES = [
   {code:'GH',name:'Ghana',flag:'\uD83C\uDDEC\uD83C\uDDED'},
   {code:'IN',name:'India',flag:'\uD83C\uDDEE\uD83C\uDDF3'},
   {code:'ID',name:'Indonesia',flag:'\uD83C\uDDEE\uD83C\uDDE9'},
-  {code:'IQ',name:'Iraq',flag:'\uD83C\uDDEE\uD83C\uDDF6'},
-  {code:'IT',name:'Italy',flag:'\uD83C\uDDEE\uD83C\uDDF9'},
-  {code:'JP',name:'Japan',flag:'\uD83C\uDDEF\uD83C\uDDF5'},
-  {code:'JO',name:'Jordan',flag:'\uD83C\uDDEF\uD83C\uDDF4'},
-  {code:'MG',name:'Madagascar',flag:'\uD83C\uDDF2\uD83C\uDDEC'},
-  {code:'MW',name:'Malawi',flag:'\uD83C\uDDF2\uD83C\uDDFC'},
-  {code:'ML',name:'Mali',flag:'\uD83C\uDDF2\uD83C\uDDF1'},
-  {code:'MR',name:'Mauritania',flag:'\uD83C\uDDF2\uD83C\uDDF7'},
-  {code:'MX',name:'Mexico',flag:'\uD83C\uDDF2\uD83C\uDDFD'},
-  {code:'MA',name:'Morocco',flag:'\uD83C\uDDF2\uD83C\uDDE6'},
-  {code:'MZ',name:'Mozambique',flag:'\uD83C\uDDF2\uD83C\uDDFF'},
-  {code:'NL',name:'Netherlands',flag:'\uD83C\uDDF3\uD83C\uDDF1'},
-  {code:'NZ',name:'New Zealand',flag:'\uD83C\uDDF3\uD83C\uDDFF'},
-  {code:'NG',name:'Nigeria',flag:'\uD83C\uDDF3\uD83C\uDDEC'},
-  {code:'NO',name:'Norway',flag:'\uD83C\uDDF3\uD83C\uDDF4'},
-  {code:'PK',name:'Pakistan',flag:'\uD83C\uDDF5\uD83C\uDDF0'},
-  {code:'PH',name:'Philippines',flag:'\uD83C\uDDF5\uD83C\uDDED'},
-  {code:'QA',name:'Qatar',flag:'\uD83C\uDDF6\uD83C\uDDE6'},
-  {code:'RW',name:'Rwanda',flag:'\uD83C\uDDF7\uD83C\uDDFC'},
-  {code:'SA',name:'Saudi Arabia',flag:'\uD83C\uDDF8\uD83C\uDDE6'},
-  {code:'SN',name:'Senegal',flag:'\uD83C\uDDF8\uD83C\uDDF3'},
-  {code:'SL',name:'Sierra Leone',flag:'\uD83C\uDDF8\uD83C\uDDF1'},
-  {code:'SO',name:'Somalia',flag:'\uD83C\uDDF8\uD83C\uDDF4'},
-  {code:'ZA',name:'South Africa',flag:'\uD83C\uDDFF\uD83C\uDDE6'},
-  {code:'SS',name:'South Sudan',flag:'\uD83C\uDDF8\uD83C\uDDF8'},
-  {code:'ES',name:'Spain',flag:'\uD83C\uDDEA\uD83C\uDDF8'},
-  {code:'SD',name:'Sudan',flag:'\uD83C\uDDF8\uD83C\uDDE9'},
-  {code:'SE',name:'Sweden',flag:'\uD83C\uDDF8\uD83C\uDDEA'},
-  {code:'CH',name:'Switzerland',flag:'\uD83C\uDDE8\uD83C\uDDED'},
-  {code:'TH',name:'Thailand',flag:'\uD83C\uDDF9\uD83C\uDDED'},
-  {code:'TG',name:'Togo',flag:'\uD83C\uDDF9\uD83C\uDDEC'},
-  {code:'AE',name:'United Arab Emirates',flag:'\uD83C\uDDE6\uD83C\uDDEA'},
-  {code:'GB',name:'United Kingdom',flag:'\uD83C\uDDEC\uD83C\uDDE7'},
-  {code:'US',name:'United States',flag:'\uD83C\uDDFA\uD83C\uDDF8'},
-  {code:'VN',name:'Vietnam',flag:'\uD83C\uDDFB\uD83C\uDDF3'},
   {code:'YE',name:'Yemen',flag:'\uD83C\uDDFE\uD83C\uDDEA'},
   {code:'ZM',name:'Zambia',flag:'\uD83C\uDDFF\uD83C\uDDF2'},
   {code:'ZW',name:'Zimbabwe',flag:'\uD83C\uDDFF\uD83C\uDDFC'}
@@ -769,6 +658,7 @@ document.addEventListener('click', function(e){
 var PERSONAL_PROVIDERS = ['gmail.com','yahoo.com','yahoo.co.uk','yahoo.co.ke','outlook.com','hotmail.com','hotmail.co.uk','live.com','icloud.com','me.com','protonmail.com','proton.me','aol.com','mail.com'];
 
 function onEmailInput() {
+  emailConfirmedAvailable = false;
   resetEmailHint();
   updateEmailProviderNote(document.getElementById('email').value.trim());
 }
@@ -776,17 +666,17 @@ function onEmailInput() {
 function updateEmailProviderNote(email) {
   var note = document.getElementById('providerNote');
   var noteText = document.getElementById('providerNoteText');
-  if (!email || email.indexOf('@') < 1) { note.classList.remove('show'); return; }
+  if (!email || email.indexOf('@') < 1) { note.style.display = 'none'; return; }
   var domain = email.split('@')[1].toLowerCase();
   var isPersonal = PERSONAL_PROVIDERS.indexOf(domain) > -1;
   if (currentRole === 'employer' && isPersonal) {
     noteText.textContent = 'Tip: Employers can also use a professional/company email for a verified badge.';
-    note.classList.add('show');
+    note.style.display = 'block';
   } else if (currentRole === 'employee' && !isPersonal) {
     noteText.textContent = 'We accept Gmail, Yahoo, Outlook, Hotmail, and professional email addresses.';
-    note.classList.add('show');
+    note.style.display = 'block';
   } else {
-    note.classList.remove('show');
+    note.style.display = 'none';
   }
 }
 
@@ -794,9 +684,7 @@ function isValidEmailDomain(email) {
   var domain = (email.split('@')[1] || '').toLowerCase();
   if (!domain) return false;
   if (PERSONAL_PROVIDERS.indexOf(domain) > -1) return true;
-  // Employer may use professional email — domain with valid TLD is OK
   if (currentRole === 'employer') return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain);
-  // Worker must use known personal provider
   return false;
 }
 
@@ -805,10 +693,10 @@ function resetEmailHint() {
   document.getElementById('emailHint').className = 'fhint';
   document.getElementById('email').className = '';
 }
-function setEmailHint(msg, type) {
+function setEmailHint(msg, type, loading) {
   var hint = document.getElementById('emailHint');
   var inp  = document.getElementById('email');
-  hint.textContent = msg;
+  hint.innerHTML = (loading ? '<span class="spinner-mini"></span>' : '') + '<span>' + msg + '</span>';
   hint.className = 'fhint' + (type ? ' ' + type : '');
   inp.className = type || '';
 }
@@ -822,33 +710,30 @@ function liveCheckEmail() {
       : 'Please use Gmail, Yahoo, Outlook, or Hotmail.';
     setEmailHint(hint, 'err'); return;
   }
-  setEmailHint('Checking availability…','');
+  setEmailHint('Checking availability against our records…','',true);
   checkEmailStatus(email, true);
 }
 
+// Checks the REAL "users" table (the live account table) for an existing email.
 function checkEmailStatus(email, live) {
   return dbClient
-    .from('profiles')
-    .select('id,status,role')
+    .from('users')
+    .select('id,role,is_active')
     .eq('email', email)
     .maybeSingle()
     .then(function(result) {
       var data = result.data;
       if (data) {
-        var s = data.status || 'active';
-        var msgs = {
-          banned:      'This account has been suspended. Contact support if this is an error.',
-          deactivated: 'This account is deactivated. Email support@soundscare.co.ke to reactivate.',
-          deleted:     'This email is linked to a closed account. Please use a different email.',
-          active:      'An account with this email already exists. Please sign in.',
-          verified:    'An account with this email already exists. Please sign in.'
-        };
-        var alertTypes = { banned:'error', deactivated:'warn', deleted:'warn', active:'info', verified:'info' };
-        var msg = msgs[s] || msgs['active'];
-        var alertType = alertTypes[s] || 'info';
+        var active = data.is_active !== false;
+        var msg = active
+          ? 'An account with this email already exists. Please sign in instead.'
+          : 'This account has been deactivated. Email support@soundscare.co.ke to reactivate.';
+        var alertType = active ? 'info' : 'warn';
+        emailConfirmedAvailable = false;
         if (live) setEmailHint(msg, 'err');
-        return Promise.reject({ type: s, msg: msg, alertType: alertType });
+        return Promise.reject({ type: 'exists', msg: msg, alertType: alertType });
       }
+      emailConfirmedAvailable = true;
       if (live) setEmailHint('Email is available ✓', 'ok');
       return true;
     })
@@ -857,7 +742,64 @@ function checkEmailStatus(email, live) {
         if (live) setEmailHint(e.msg, 'err');
         return Promise.reject(e);
       }
-      if (live) setEmailHint('Email looks good ✓', 'ok');
+      // Network/other error — don't hard-block, but don't mark confirmed either.
+      if (live) setEmailHint('Could not verify right now. We will re-check on submit.', '');
+      return true;
+    });
+}
+
+// ============================================================
+// NATIONAL ID / PASSPORT — duplicate-account check (workers only)
+// ============================================================
+function onIdNumberInput() {
+  idConfirmedAvailable = false;
+  resetIdNumberHint();
+}
+function resetIdNumberHint() {
+  document.getElementById('idNumberHint').textContent = "Used once to confirm you don't already have an account.";
+  document.getElementById('idNumberHint').className = 'fhint';
+  document.getElementById('idNumber').className = '';
+}
+function setIdNumberHint(msg, type, loading) {
+  var hint = document.getElementById('idNumberHint');
+  var inp  = document.getElementById('idNumber');
+  hint.innerHTML = (loading ? '<span class="spinner-mini"></span>' : '') + '<span>' + msg + '</span>';
+  hint.className = 'fhint' + (type ? ' ' + type : '');
+  inp.className = type || '';
+}
+
+function liveCheckIdNumber() {
+  var idNum = document.getElementById('idNumber').value.trim();
+  if (!idNum || idNum.length < 5) { setIdNumberHint('Enter your full ID/passport number.', 'err'); return; }
+  setIdNumberHint('Checking against existing worker records…', '', true);
+  checkIdNumberStatus(idNum, true);
+}
+
+// Checks the REAL "worker_profiles" table (id_number / national_id columns) for a duplicate.
+function checkIdNumberStatus(idNum, live) {
+  return dbClient
+    .from('worker_profiles')
+    .select('id,full_name,is_deleted')
+    .or('id_number.eq.' + idNum + ',national_id.eq.' + idNum)
+    .limit(1)
+    .then(function(result) {
+      var rows = (result.data || []).filter(function(r){ return !r.is_deleted; });
+      if (rows.length) {
+        var msg = 'An account with this ID/passport number already exists. Please sign in instead.';
+        idConfirmedAvailable = false;
+        if (live) setIdNumberHint(msg, 'err');
+        return Promise.reject({ type: 'exists', msg: msg, alertType: 'info' });
+      }
+      idConfirmedAvailable = true;
+      if (live) setIdNumberHint('ID number is available ✓', 'ok');
+      return true;
+    })
+    .catch(function(e) {
+      if (e && e.type) {
+        if (live) setIdNumberHint(e.msg, 'err');
+        return Promise.reject(e);
+      }
+      if (live) setIdNumberHint('Could not verify right now. We will re-check on submit.', '');
       return true;
     });
 }
@@ -935,6 +877,7 @@ function handleRegister() {
   var firstName = document.getElementById('firstName').value.trim();
   var lastName  = document.getElementById('lastName').value.trim();
   var phone     = document.getElementById('phone').value.trim();
+  var idNumber  = document.getElementById('idNumber').value.trim();
   var country   = document.getElementById('countryName').value;
   var email     = document.getElementById('email').value.trim().toLowerCase();
   var pw        = document.getElementById('password').value;
@@ -943,6 +886,9 @@ function handleRegister() {
 
   if (!firstName || !lastName) { showAlert('alertMain','alertMainText','Please enter your first and last name.'); return; }
   if (!phone)   { showAlert('alertMain','alertMainText','Phone number is required.'); return; }
+  if (currentRole === 'employee' && (!idNumber || idNumber.length < 5)) {
+    showAlert('alertMain','alertMainText','Please enter your National ID or Passport number.'); return;
+  }
   if (!country) { showAlert('alertMain','alertMainText','Please select your country.'); return; }
   if (!email || email.indexOf('@') < 1) { showAlert('alertMain','alertMainText','Please enter a valid email address.'); return; }
   if (!isValidEmailDomain(email)) {
@@ -955,55 +901,85 @@ function handleRegister() {
   if (pw !== cpw)    { showAlert('alertMain','alertMainText','Passwords do not match.'); return; }
   if (!terms)        { showAlert('alertMain','alertMainText','You must agree to the Terms and Conditions.'); return; }
 
-  setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Checking email…');
+  setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Checking your details…');
+  showChecking('Confirming your email is not already registered…');
 
-  checkEmailStatus(email, false).then(async function() {
-    setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending code…');
-
-    pendingUser = { firstName, lastName, phone, country, email, role: currentRole,
-      receiveUpdates: document.getElementById('updates').checked };
-
-    const { error } = await dbClient.auth.signUp({
-      email,
-      password: pw,
-      options: {
-        data: { first_name: firstName, last_name: lastName, role: currentRole },
-        emailRedirectTo: null
+  // STEP A — confirm email is not already a registered account
+  checkEmailStatus(email, false)
+    .then(function() {
+      // STEP B — for workers, also confirm the ID number is not already on file
+      if (currentRole === 'employee') {
+        showChecking('Confirming your ID number is not already on file…');
+        return checkIdNumberStatus(idNumber, false);
       }
-    });
+      return true;
+    })
+    .then(async function() {
+      hideChecking();
+      setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending code…');
 
-    if (error) {
+      pendingUser = { firstName, lastName, phone, idNumber, country, email, role: currentRole,
+        receiveUpdates: document.getElementById('updates').checked };
+
+      const { error } = await dbClient.auth.signUp({
+        email,
+        password: pw,
+        options: {
+          data: { first_name: firstName, last_name: lastName, role: currentRole, id_number: idNumber || null },
+          emailRedirectTo: null
+        }
+      });
+
+      if (error) {
+        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+        var userMsg = friendlyAuthError(error.message);
+        showAlert('alertMain','alertMainText', userMsg);
+        return;
+      }
+
+      const { error: otpError } = await dbClient.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false }
+      });
+
+      if (otpError) {
+        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+        showAlert('alertMain','alertMainText', 'Failed to send verification code. Please try again.');
+        return;
+      }
+
       setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      var userMsg = friendlyAuthError(error.message);
-      showAlert('alertMain','alertMainText', userMsg);
-      return;
-    }
+      document.getElementById('otpEmailDisplay').textContent = email;
+      document.getElementById('step-form').style.display = 'none';
+      document.getElementById('step-otp').style.display = 'block';
+      setProgress(2);
+      startTimer(60);
+      document.getElementById('otp0').focus();
 
-    // Now send OTP for verification
-    const { error: otpError } = await dbClient.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false }
-    });
-
-    if (otpError) {
+    })
+    .catch(function(e) {
+      hideChecking();
       setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      showAlert('alertMain','alertMainText', 'Failed to send verification code. Please try again.');
-      return;
-    }
+      var alertType = (e && e.alertType) ? e.alertType : 'error';
+      var msg = (e && e.msg) ? e.msg : 'An error occurred. Please try again.';
+      showAlert('alertMain','alertMainText', msg, alertType);
+    });
+}
 
-    setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-    document.getElementById('otpEmailDisplay').textContent = email;
-    document.getElementById('step-form').style.display = 'none';
-    document.getElementById('step-otp').style.display = 'block';
-    startTimer(60);
-    document.getElementById('otp0').focus();
+function showChecking(msg) {
+  document.getElementById('step-form').style.display = 'none';
+  document.getElementById('checkingLoading').style.display = 'block';
+  document.getElementById('checkingLoadingText').textContent = msg || 'Checking your details…';
+}
+function hideChecking() {
+  document.getElementById('checkingLoading').style.display = 'none';
+  document.getElementById('step-form').style.display = 'block';
+}
 
-  }).catch(function(e) {
-    setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-    var alertType = (e && e.alertType) ? e.alertType : 'error';
-    var msg = (e && e.msg) ? e.msg : 'An error occurred. Please try again.';
-    showAlert('alertMain','alertMainText', msg, alertType);
-  });
+function setProgress(step) {
+  document.getElementById('seg1').classList.toggle('done', step > 1);
+  document.getElementById('seg1').classList.toggle('active', step === 1);
+  document.getElementById('seg2').classList.toggle('active', step === 2);
 }
 
 function friendlyAuthError(msg) {
@@ -1014,7 +990,6 @@ function friendlyAuthError(msg) {
   if (msg.toLowerCase().includes('invalid email')) return 'Please enter a valid email address.';
   if (msg.toLowerCase().includes('rate limit')) return 'Too many attempts. Please wait a moment and try again.';
   if (msg.toLowerCase().includes('password')) return 'Password must be at least 8 characters.';
-  // Default: don't expose raw DB or auth errors
   return 'Registration failed. Please check your details and try again.';
 }
 
@@ -1081,26 +1056,6 @@ function clearOtpBoxes(markErr) {
 }
 
 // ============================================================
-// TIMER
-// ============================================================
-function startTimer(s) {
-  clearInterval(otpInterval);
-  var left = s;
-  document.getElementById('timerWrap').style.display = 'block';
-  document.getElementById('resendWrap').style.display = 'none';
-  document.getElementById('otpCd').textContent = left;
-  otpInterval = setInterval(function(){
-    left--;
-    document.getElementById('otpCd').textContent = left;
-    if (left <= 0) {
-      clearInterval(otpInterval);
-      document.getElementById('timerWrap').style.display = 'none';
-      document.getElementById('resendWrap').style.display = 'flex';
-    }
-  }, 1000);
-}
-
-// ============================================================
 // RESEND OTP
 // ============================================================
 async function resendOtp() {
@@ -1159,24 +1114,21 @@ async function verifyOtp() {
 }
 
 // ============================================================
-// FINALIZE EMAIL ACCOUNT
+// FINALIZE ACCOUNT — writes to the real "users" table
 // ============================================================
 async function finalizeEmailAccount(authData) {
   var user = authData.user || (authData.session && authData.session.user);
   var p = pendingUser || {};
+  var fullName = ((p.firstName || '') + ' ' + (p.lastName || '')).trim();
 
   try {
-    await dbClient.from('profiles').upsert({
+    await dbClient.from('users').upsert({
       id: user ? user.id : undefined,
       email: p.email,
-      first_name: p.firstName,
-      last_name: p.lastName,
+      full_name: fullName,
       phone: p.phone,
-      country: p.country,
       role: p.role || currentRole,
-      receive_updates: p.receiveUpdates || false,
-      status: 'active',
-      created_at: new Date().toISOString()
+      is_active: true
     }, { onConflict: 'id' });
 
     var welcomeMsg = p.role === 'employer'
@@ -1189,18 +1141,18 @@ async function finalizeEmailAccount(authData) {
       type: 'welcome',
       title: 'Welcome to SoundsCare! 👋',
       message: welcomeMsg,
-      is_read: false,
-      created_at: new Date().toISOString()
+      is_read: false
     });
 
-    // Trigger admin new account notification
-    await triggerAdminNewAccount({
-      id: user ? user.id : null,
-      email: p.email,
-      firstName: p.firstName,
-      lastName: p.lastName,
-      role: p.role || currentRole,
-      provider: 'email'
+    // Admin-facing notification about the new account
+    await dbClient.from('notifications').insert({
+      user_id: user ? user.id : null,
+      user_email: p.email,
+      type: 'new_account',
+      title: 'New Account Registered',
+      message: `New ${p.role || currentRole} account: ${fullName} (${p.email}) via email`,
+      is_read: false,
+      target_role: 'admin'
     });
 
   } catch (e) {
@@ -1224,7 +1176,28 @@ function goBack() {
   clearInterval(otpInterval);
   document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-form').style.display = 'block';
+  setProgress(1);
   hideAlert('alertOtp');
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer(s) {
+  clearInterval(otpInterval);
+  var left = s;
+  document.getElementById('timerWrap').style.display = 'block';
+  document.getElementById('resendWrap').style.display = 'none';
+  document.getElementById('otpCd').textContent = left;
+  otpInterval = setInterval(function(){
+    left--;
+    document.getElementById('otpCd').textContent = left;
+    if (left <= 0) {
+      clearInterval(otpInterval);
+      document.getElementById('timerWrap').style.display = 'none';
+      document.getElementById('resendWrap').style.display = 'flex';
+    }
+  }, 1000);
 }
 
 // ============================================================
