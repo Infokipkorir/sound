@@ -951,10 +951,25 @@ function startClock() {
 
 // ── LOAD ALL DATA ──
 async function loadAll() {
-  // employer profile
-  const { data: ep } = await sb.from('employer_profiles')
+  // employer profile — fetch first
+  let { data: ep } = await sb.from('employer_profiles')
     .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at')
     .eq('user_id', currentUser.id).maybeSingle();
+
+  // Auto-create profile if missing (new signup or backfill gap)
+  if (!ep) {
+    const meta = currentUser.user_metadata || {};
+    const { data: created } = await sb.from('employer_profiles')
+      .insert({
+        user_id:   currentUser.id,
+        full_name: meta.full_name || currentUser.email?.split('@')[0] || 'Employer',
+        created_at: new Date().toISOString(),
+      })
+      .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at')
+      .single();
+    ep = created;
+  }
+
   employerProfile = ep;
   employerProfileId = ep?.id;
 
