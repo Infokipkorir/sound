@@ -337,8 +337,8 @@ tr:hover td { background: rgba(27,107,69,.02); }
       <p>Control Centre — Sign in to continue</p>
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Email Address</label>
-          <input id="auth-email" type="email" placeholder="admin@soundscare.co.ke" required>
+          <label>Username</label>
+          <input id="auth-email" type="text" placeholder="admin" autocomplete="username" required>
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -585,7 +585,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <div><h1>Job Post Requests</h1><p>Employer-submitted jobs awaiting admin approval</p></div>
       </div>
       <div class="section">
-        <div class="table-wrap"><table><thead><tr><th>Title</th><th>Employer</th><th>Role</th><th>Type</th><th>Location</th><th>Salary Range</th><th>Slots</th><th>Urgent</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="jobreqs-tbody"><tr><td colspan="11" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Title</th><th>Employer</th><th>Type</th><th>Salary</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="jobreqs-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -595,7 +595,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <div><h1>Profile Post Requests</h1><p>Worker profiles requested to be posted by employers</p></div>
       </div>
       <div class="section">
-        <div class="table-wrap"><table><thead><tr><th>Worker</th><th>Phone</th><th>Role</th><th>Employer</th><th>Job</th><th>Payment</th><th>Message</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="profilereqs-tbody"><tr><td colspan="10" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Worker</th><th>Employer</th><th>Job</th><th>Message</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="profilereqs-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -1054,42 +1054,64 @@ function checkCookieBanner(){if(!getCookie('sc_admin_cookies'))document.getEleme
 // ============================================================
 // AUTH
 // ============================================================
+let adminRecord = null; // holds the admin_users row
+
 async function handleLogin(e){
   e.preventDefault();
-  const email=document.getElementById('auth-email').value;
-  const password=document.getElementById('auth-password').value;
-  try{
-    const {data,error}=await sb.auth.signInWithPassword({email,password});
-    if(error)throw error;
-    currentUser=data.user;
+  const username = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+  try {
+    const { data, error } = await sb.from('admin_users')
+      .select('*')
+      .eq('username', username)
+      .eq('password', password)
+      .eq('status', 'Active')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error('Invalid username or password.');
+    adminRecord = data;
+    // Use a synthetic currentUser object so the rest of the dashboard works
+    currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
+    localStorage.setItem('sc_admin_session', JSON.stringify({ id: data.id, username: data.username, role: data.role, badge: data.badge }));
     document.getElementById('auth-overlay').classList.add('hidden');
-    const name=email.split('@')[0];
-    document.getElementById('sb-admin-name').textContent=name;
-    document.getElementById('sb-avatar').textContent=getInitials(name);
-    setCookie('sc_admin_session',data.session.access_token,1);
+    document.getElementById('sb-admin-name').textContent = data.username;
+    document.getElementById('sb-avatar').textContent = getInitials(data.username);
     loadAll();
     checkCookieBanner();
     setupRealtimeSubscriptions();
-  }catch(err){document.getElementById('auth-error').textContent=err.message;}
+  } catch(err) { errEl.textContent = err.message; }
 }
 async function handleLogout(){
-  await sb.auth.signOut();
-  currentUser=null;
+  adminRecord = null;
+  currentUser = null;
+  localStorage.removeItem('sc_admin_session');
   document.getElementById('auth-overlay').classList.remove('hidden');
-  document.getElementById('auth-email').value='';
-  document.getElementById('auth-password').value='';
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
 }
 (async()=>{
-  const {data:{session}}=await sb.auth.getSession();
-  if(session){
-    currentUser=session.user;
-    const name=session.user.email.split('@')[0];
-    document.getElementById('sb-admin-name').textContent=name;
-    document.getElementById('sb-avatar').textContent=getInitials(name);
-    document.getElementById('auth-overlay').classList.add('hidden');
-    loadAll();
-    checkCookieBanner();
-    setupRealtimeSubscriptions();
+  // Restore session from localStorage
+  const stored = localStorage.getItem('sc_admin_session');
+  if (stored) {
+    try {
+      const sess = JSON.parse(stored);
+      // Re-verify the account is still active
+      const { data } = await sb.from('admin_users').select('*').eq('id', sess.id).eq('status', 'Active').maybeSingle();
+      if (data) {
+        adminRecord = data;
+        currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
+        document.getElementById('sb-admin-name').textContent = data.username;
+        document.getElementById('sb-avatar').textContent = getInitials(data.username);
+        document.getElementById('auth-overlay').classList.add('hidden');
+        loadAll();
+        checkCookieBanner();
+        setupRealtimeSubscriptions();
+        return;
+      }
+    } catch(e) { /* session invalid */ }
+    localStorage.removeItem('sc_admin_session');
   }
 })();
 
@@ -1566,22 +1588,18 @@ function renderJobReqs(){
   document.getElementById('jobreqs-tbody').innerHTML=allJobReqs.map(r=>{
     const emp=allEmployers.find(e=>e.id===r.employer_id);
     return `<tr>
-      <td><strong>${esc(r.title||'—')}</strong>${r.is_urgent?'<span class="badge badge-rose" style="margin-left:5px">Urgent</span>':''}</td>
-      <td>${emp?esc(emp.full_name||emp.company_name):'<span style="color:var(--muted)">'+(r.company_name||'—')+'</span>'}</td>
-      <td>${r.job_role||'—'}</td>
+      <td><strong>${esc(r.title||'—')}</strong></td>
+      <td>${emp?esc(emp.full_name||emp.company_name):'—'}</td>
       <td>${r.job_type||'—'}</td>
-      <td>${r.location||'—'}${r.county?'<br><span style="font-size:10px;color:var(--muted)">'+esc(r.county)+'</span>':''}</td>
-      <td>${r.salary_range||((r.salary_min||r.salary_max)?'KES '+(r.salary_min||0)+' – '+(r.salary_max||'?'):'—')}</td>
-      <td>${r.slots||1}</td>
-      <td>${r.is_featured?'<span class="badge badge-sky">Featured</span>':'—'}</td>
+      <td>${r.salary_range||'—'}</td>
       <td><span class="badge badge-${r.status==='pending'?'amber':r.status==='approved'?'green':'rose'}">${r.status}</span></td>
       <td>${fmtDate(r.created_at)}</td>
       <td><div class="actions-cell">
         <button class="btn btn-sm btn-primary" onclick="viewJobReq('${r.id}')"><i class="bi bi-eye"></i> Review</button>
-        ${r.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="approveJobReq('${r.id}')">Approve</button><button class="btn btn-sm btn-danger" onclick="rejectJobReq('${r.id}')">Reject</button>`:''}
+        ${r.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="approveJobReq('${r.id}')">Approve & Post</button><button class="btn btn-sm btn-danger" onclick="rejectJobReq('${r.id}')">Reject</button>`:''}
       </div></td>
     </tr>`;
-  }).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">No requests</td></tr>';
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No requests</td></tr>';
 }
 
 // ============================================================
@@ -1592,17 +1610,10 @@ function renderProfileReqs(){
     const worker=allWorkers.find(w=>w.id===r.worker_id);
     const employer=allEmployers.find(e=>e.id===r.employer_id);
     return `<tr>
-      <td><div style="display:flex;align-items:center;gap:7px;">
-        ${worker?.profile_photo_url?`<img src="${worker.profile_photo_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">`:''}<div>
-        <div style="font-weight:600;font-size:13px;">${worker?esc(worker.full_name):'<span style="color:var(--muted)">'+(r.worker_name||'—')+'</span>'}</div>
-        ${worker?.preferred_role?`<div style="font-size:10px;color:var(--muted)">${esc(worker.preferred_role)}</div>`:''}
-        </div></div></td>
-      <td style="font-size:12px;">${worker?.phone||r.worker_phone||'—'}</td>
-      <td>${worker?.preferred_role||r.job_role||'—'}</td>
-      <td>${employer?esc(employer.full_name||employer.company_name):'<span style="color:var(--muted)">'+(r.employer_name||'—')+'</span>'}</td>
-      <td style="font-size:11px;">${r.job_posting_id?r.job_posting_id.slice(0,8)+'…':'—'}</td>
-      <td style="font-size:12px;">${r.payment_method?`<span class="badge badge-sky">${esc(r.payment_method)}</span>`:''} ${r.amount_paid?`<strong>KES ${(+r.amount_paid).toLocaleString()}</strong>`:''}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">${esc(r.message||r.notes||'—')}</td>
+      <td>${worker?esc(worker.full_name):'—'}</td>
+      <td>${employer?esc(employer.full_name||employer.company_name):'—'}</td>
+      <td>${r.job_posting_id?r.job_posting_id.slice(0,8)+'…':'—'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.message||'—')}</td>
       <td><span class="badge badge-${r.status==='pending'?'amber':r.status==='approved'?'green':'rose'}">${r.status}</span></td>
       <td>${fmtDate(r.created_at)}</td>
       <td><div class="actions-cell">
@@ -1610,7 +1621,7 @@ function renderProfileReqs(){
         ${r.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="approveProfileReq('${r.id}')">Approve</button><button class="btn btn-sm btn-danger" onclick="rejectProfileReq('${r.id}')">Reject</button>`:''}
       </div></td>
     </tr>`;
-  }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">No requests</td></tr>';
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No requests</td></tr>';
 }
 
 // ============================================================
@@ -1944,29 +1955,18 @@ async function postJobAsAdmin(){
 // ============================================================
 async function viewJobReq(id){
   const r=allJobReqs.find(r=>r.id===id);if(!r)return;
-  const emp=allEmployers.find(e=>e.id===r.employer_id);
   document.getElementById('job-req-body').innerHTML=`
     <div class="profile-section"><h3>Job Details</h3>
     <div class="profile-grid">
       <div class="profile-field"><label>Title</label><span>${esc(r.title||'—')}</span></div>
-      <div class="profile-field"><label>Company</label><span>${esc(r.company_name||emp?.company_name||emp?.full_name||'—')}</span></div>
-      <div class="profile-field"><label>Job Role</label><span>${r.job_role||'—'}</span></div>
-      <div class="profile-field"><label>Job Type</label><span>${r.job_type||'—'}</span></div>
-      <div class="profile-field"><label>Work Arrangement</label><span>${r.work_type||'—'}</span></div>
+      <div class="profile-field"><label>Company</label><span>${esc(r.company_name||'—')}</span></div>
       <div class="profile-field"><label>Location</label><span>${r.location||'—'}</span></div>
-      <div class="profile-field"><label>County</label><span>${r.county||'—'}</span></div>
-      <div class="profile-field"><label>Min Salary (KES)</label><span>${r.salary_min?Number(r.salary_min).toLocaleString():'—'}</span></div>
-      <div class="profile-field"><label>Max Salary (KES)</label><span>${r.salary_max?Number(r.salary_max).toLocaleString():'—'}</span></div>
-      <div class="profile-field"><label>Salary Range</label><span>${r.salary_range||'—'}</span></div>
-      <div class="profile-field"><label>Slots / Positions</label><span>${r.slots||1}</span></div>
-      <div class="profile-field"><label>Application Deadline</label><span>${r.deadline||'—'}</span></div>
-      <div class="profile-field"><label>Urgent</label><span>${r.is_urgent?'<span class="badge badge-rose">Yes</span>':'No'}</span></div>
-      <div class="profile-field"><label>Featured</label><span>${r.is_featured?'<span class="badge badge-sky">Yes</span>':'No'}</span></div>
-      <div class="profile-field"><label>Submitted By</label><span>${emp?esc(emp.full_name||emp.company_name):'—'}</span></div>
+      <div class="profile-field"><label>Type</label><span>${r.job_type||'—'}</span></div>
+      <div class="profile-field"><label>Salary</label><span>${r.salary_range||'—'}</span></div>
+      <div class="profile-field"><label>Deadline</label><span>${r.deadline||'—'}</span></div>
     </div></div>
     <div class="profile-section"><h3>Description</h3><p style="font-size:13px;line-height:1.6">${esc(r.description||'—')}</p></div>
-    <div class="profile-section"><h3>Requirements</h3><p style="font-size:13px;line-height:1.6">${esc(r.requirements||'—')}</p></div>
-    ${r.admin_response?`<div class="profile-section" style="background:rgba(239,68,68,.07);border-radius:8px;padding:12px;"><h3 style="color:var(--rose)">Rejection Reason</h3><p style="font-size:13px">${esc(r.admin_response)}</p></div>`:''}`;
+    <div class="profile-section"><h3>Requirements</h3><p style="font-size:13px;line-height:1.6">${esc(r.requirements||'—')}</p></div>`;
   document.getElementById('job-req-approve-btn').onclick=()=>approveJobReq(id);
   document.getElementById('job-req-reject-btn').onclick=()=>rejectJobReq(id);
   openModal('job-req-modal');
@@ -1974,13 +1974,10 @@ async function viewJobReq(id){
 async function approveJobReq(id){
   const r=allJobReqs.find(r=>r.id===id);if(!r)return;
   const {error}=await sb.from('job_postings').insert({
-    title:r.title, company_name:r.company_name, location:r.location,
-    job_type:r.job_type, job_role:r.job_role, work_type:r.work_type,
-    county:r.county, salary_range:r.salary_range, salary_min:r.salary_min,
-    salary_max:r.salary_max, description:r.description, requirements:r.requirements,
-    deadline:r.deadline, slots:r.slots||1, employer_id:r.employer_id,
-    is_urgent:r.is_urgent||false, is_featured:r.is_featured||false,
-    status:'active', posting_type:r.posting_type||'individual',
+    title:r.title,company_name:r.company_name,location:r.location,
+    job_type:r.job_type,salary_range:r.salary_range,description:r.description,
+    requirements:r.requirements,deadline:r.deadline,employer_id:r.employer_id,
+    status:'active',posting_type:r.posting_type,company_verified:r.company_verified,
     posted_by:currentUser.id,
   });
   if(error){showToast('err',error.message);return;}
@@ -2011,31 +2008,12 @@ async function viewProfileReq(id){
   const employer=allEmployers.find(e=>e.id===r.employer_id);
   document.getElementById('profile-req-body').innerHTML=`
     <div class="profile-grid">
-      <div class="profile-field"><label>Worker Name</label><span>${worker?esc(worker.full_name):'<em>'+(r.worker_name||'Unknown')+'</em>'}</span></div>
-      <div class="profile-field"><label>Worker Phone</label><span>${worker?.phone||r.worker_phone||'—'}</span></div>
-      <div class="profile-field"><label>Worker Role</label><span>${worker?.preferred_role||r.job_role||'—'}</span></div>
-      <div class="profile-field"><label>Worker Location</label><span>${worker?.location||worker?.county||'—'}</span></div>
-      <div class="profile-field"><label>Employer</label><span>${employer?esc(employer.full_name||employer.company_name):'<em>'+(r.employer_name||'Unknown')+'</em>'}</span></div>
-      <div class="profile-field"><label>Job Posting ID</label><span style="font-size:11px;font-family:monospace">${r.job_posting_id||'—'}</span></div>
-      <div class="profile-field"><label>Payment Method</label><span>${r.payment_method||'—'}</span></div>
-      <div class="profile-field"><label>Amount Paid</label><span>${r.amount_paid?'KES '+Number(r.amount_paid).toLocaleString():'—'}</span></div>
-      <div class="profile-field"><label>Transaction Ref</label><span style="font-family:monospace;font-size:11px">${r.transaction_ref||r.mpesa_ref||'—'}</span></div>
+      <div class="profile-field"><label>Worker</label><span>${worker?esc(worker.full_name):'Unknown'}</span></div>
+      <div class="profile-field"><label>Employer</label><span>${employer?esc(employer.full_name||employer.company_name):'Unknown'}</span></div>
       <div class="profile-field"><label>Status</label><span class="badge badge-${r.status==='pending'?'amber':r.status==='approved'?'green':'rose'}">${r.status}</span></div>
-      <div class="profile-field"><label>Submitted</label><span>${fmtDate(r.created_at)}</span></div>
-      <div class="profile-field"><label>Responded</label><span>${r.responded_at?fmtDate(r.responded_at):'—'}</span></div>
+      <div class="profile-field"><label>Created</label><span>${fmtDate(r.created_at)}</span></div>
     </div>
-    ${r.message?`<div class="profile-section"><h3>Message / Notes</h3><p style="font-size:13px;line-height:1.6">${esc(r.message)}</p></div>`:''}
-    ${r.admin_response?`<div class="profile-section" style="background:rgba(239,68,68,.07);border-radius:8px;padding:12px;"><h3 style="color:var(--rose)">Admin Response</h3><p style="font-size:13px">${esc(r.admin_response)}</p></div>`:''}
-    ${worker?`<div class="profile-section"><h3>Worker Details</h3><div class="profile-grid">
-      <div class="profile-field"><label>Education</label><span>${worker.edu_level||'—'}</span></div>
-      <div class="profile-field"><label>Experience</label><span>${worker.experience||'—'}</span></div>
-      <div class="profile-field"><label>Salary Range</label><span>${worker.salary_min?'KES '+Number(worker.salary_min).toLocaleString()+(worker.salary_max?' – KES '+Number(worker.salary_max).toLocaleString():''):'—'}</span></div>
-      <div class="profile-field"><label>Availability</label><span>${worker.work_arrangement||worker.availability||'—'}</span></div>
-    </div></div>`:''}`;
-  document.getElementById('profile-req-approve-btn').onclick=()=>approveProfileReq(id);
-  document.getElementById('profile-req-reject-btn').onclick=()=>rejectProfileReq(id);
-  openModal('profile-req-modal');
-}
+    ${r.message?`<div class="profile-section"><h3>Message</h3><p style="font-size:13px">${esc(r.message)}</p></div>`:''}`;
   document.getElementById('profile-req-approve-btn').onclick=()=>approveProfileReq(id);
   document.getElementById('profile-req-reject-btn').onclick=()=>rejectProfileReq(id);
   openModal('profile-req-modal');
