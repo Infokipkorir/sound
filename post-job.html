@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post a Job – SoundsCare</title>
+  <meta name="description" content="Post a job request to find verified domestic workers across East Africa.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root{
+      --green:#1A7A5E;--green-dark:#145c47;--green-light:#e8f5f0;--green-mid:#2DB877;
+      --blue:#3B8ED4;--blue-dark:#2574b8;--blue-light:#EBF4FC;
+      --surface:#f7f9f8;--surface-alt:#f0f4f2;--border:#dae3de;
+      --text:#18281f;--text-muted:#6b7c75;--red:#E24B4A;--amber:#E9A23B;
+      --dark-bg:#0d2118;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+    /* ── TOP BAR ── */
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      padding:14px 5%;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      position:sticky;
+      top:0;
+      z-index:100;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+    }
+    .back-btn{
+      display:inline-flex;align-items:center;gap:.4rem;
+      padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;
+      background:#fff;color:var(--text);font-size:13px;font-weight:600;
+      cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none;
+    }
+    .back-btn:hover{border-color:var(--green);color:var(--green)}
+    .topbar-brand{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+    .topbar-brand span{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--text)}
+    .topbar-brand small{font-size:12px;color:var(--text-muted)}
+
+    /* ── PAGE HERO ── */
+    .page-hero{
+      background:linear-gradient(135deg,var(--green) 0%,var(--green-mid) 100%);
+      padding:2.5rem 5%;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .page-hero::before{
+      content:'';position:absolute;right:-60px;top:-60px;
+      width:240px;height:240px;border-radius:50%;
+      background:rgba(255,255,255,.08);
+    }
+    .page-hero::after{
+      content:'';position:absolute;right:80px;bottom:-40px;
+      width:140px;height:140px;border-radius:50%;
+      background:rgba(255,255,255,.06);
+    }
+    .page-hero-content{position:relative;z-index:1;max-width:680px}
+    .page-hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;margin-bottom:.5rem}
+    .page-hero p{font-size:14px;opacity:.9;line-height:1.7}
+    .mode-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;margin-bottom:1rem;backdrop-filter:blur(4px)}
+
+    /* ── MAIN LAYOUT ── */
+    .page-body{max-width:720px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+    /* ── CARD ── */
+    .form-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.8rem;margin-bottom:1.4rem}
+    .form-card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+    .form-card-title i{color:var(--green);font-size:15px}
+
+    /* ── FORM ── */
+    .form-grid{display:grid;gap:.9rem}
+    .form-grid.two-col{grid-template-columns:1fr 1fr}
+    @media(max-width:540px){.form-grid.two-col{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:.35rem}
+    .form-group label{font-size:12px;font-weight:600;color:var(--text)}
+    .form-group label .req{color:var(--red)}
+    .form-group input,.form-group select,.form-group textarea{
+      border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;
+      font-size:13px;font-family:inherit;color:var(--text);background:#fff;transition:border .18s;width:100%;
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,94,.08)}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .form-group .hint{font-size:11px;color:var(--text-muted)}
+
+    /* ── CHECKBOX PILLS ── */
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.2rem}
+    .checkbox-pill{display:flex;align-items:center;gap:.3rem;background:var(--surface-alt);border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:500;transition:all .18s;user-select:none}
+    .checkbox-pill input{display:none}
+    .checkbox-pill.checked{background:var(--green-light);border-color:var(--green);color:var(--green)}
+
+    /* ── PRIVACY NOTE ── */
+    .privacy-note{background:var(--green-light);border:1px solid rgba(26,122,94,.2);border-radius:10px;padding:.8rem 1rem;font-size:12px;color:var(--text-muted);display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;margin-bottom:1.4rem}
+    .privacy-note i{color:var(--green);flex-shrink:0;font-size:14px;margin-top:.1rem}
+
+    /* ── INCOGNITO NOTICE ── */
+    .incognito-note{background:#FFF8E7;border:1px solid rgba(233,162,59,.35);border-radius:10px;padding:.8rem 1rem;font-size:12.5px;color:#7a4f10;display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;margin-bottom:1.4rem}
+    .incognito-note i{color:var(--amber);flex-shrink:0;font-size:14px;margin-top:.1rem}
+
+    /* ── SUBMIT BTN ── */
+    .submit-btn{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.4rem}
+    .submit-btn:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,122,94,.3)}
+    .submit-btn:disabled{background:var(--border);cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* ── SUCCESS ── */
+    .success-screen{display:none;text-align:center;padding:3rem 1.5rem}
+    .success-screen.visible{display:block}
+    .success-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--green),var(--green-mid));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-icon i{font-size:2rem;color:#fff}
+    .success-screen h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:.7rem;color:var(--text)}
+    .success-screen p{font-size:14px;color:var(--text-muted);line-height:1.7;max-width:440px;margin:0 auto 2rem}
+    .back-home-btn{display:inline-flex;align-items:center;gap:.5rem;padding:12px 26px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none}
+    .back-home-btn:hover{background:var(--green-dark)}
+
+    /* ── TOAST ── */
+    #toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+    .toast{display:flex;align-items:center;gap:.7rem;background:#1e2a23;color:#fff;padding:.8rem 1.1rem;border-radius:10px;font-size:13px;font-weight:500;min-width:220px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:all}
+    .toast.success i{color:#78d9b4}.toast.error i{color:#f87171}.toast.info i{color:#7dd3fc}
+    @keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes toastOut{to{transform:translateX(110%);opacity:0}}
+
+    /* ── PAGE ANIM ── */
+    .form-card{animation:fadeUp .35s ease both}
+    .form-card:nth-child(1){animation-delay:.05s}
+    .form-card:nth-child(2){animation-delay:.1s}
+    .form-card:nth-child(3){animation-delay:.15s}
+    .form-card:nth-child(4){animation-delay:.2s}
+    .form-card:nth-child(5){animation-delay:.25s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="index.html" class="back-btn"><i class="bi bi-arrow-left"></i> Back to Home</a>
+  <a href="index.html" class="topbar-brand">
+    <span>SoundsCare</span>
+    <small>Post a Job</small>
+  </a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-content">
+    <div class="mode-badge" id="mode-badge"><i class="bi bi-briefcase-fill"></i> Job Request</div>
+    <h1>Post a Job Request</h1>
+    <p>Tell us what you need — we'll match you with ID-verified domestic workers across East Africa. Your personal details stay private.</p>
+  </div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="page-body">
+
+  <!-- FORM AREA -->
+  <div id="form-area">
+
+    <div id="incognito-notice" class="incognito-note" style="display:none">
+      <i class="bi bi-incognito"></i>
+      <span>You're posting <strong>incognito</strong> — no account required. Your name and phone are collected for verification only and will never be published. Admin reviews all requests within 24 hours.</span>
+    </div>
+
+    <div class="privacy-note">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span>Your <strong>legal name</strong> is collected for verification only — it will <strong>never</strong> be published. All submissions are reviewed by our admin team before going live.</span>
+    </div>
+
+    <!-- PERSONAL DETAILS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-person-fill"></i> Your Details (Private)</div>
+      <div class="form-grid">
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Legal First Name <span class="req">*</span></label>
+            <input id="ae-fname" placeholder="e.g. John">
+          </div>
+          <div class="form-group">
+            <label>Legal Last Name <span class="req">*</span></label>
+            <input id="ae-lname" placeholder="e.g. Kamau">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Phone Number <span class="req">*</span></label>
+            <input id="ae-phone" placeholder="e.g. 0712345678" type="tel">
+          </div>
+          <div class="form-group">
+            <label>Email (Optional)</label>
+            <input id="ae-email" placeholder="you@email.com" type="email">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Company / Organisation Name <span class="hint">(optional — may be published)</span></label>
+          <input id="ae-company" placeholder="e.g. Kamau Family or Sunrise Hotel">
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-geo-alt-fill"></i> Your Location</div>
+      <div class="form-grid">
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Country <span class="req">*</span></label>
+            <select id="ae-country" onchange="fillCountyState()">
+              <option value="">Select country</option>
+              <option value="Kenya" selected>Kenya</option>
+              <option value="Uganda">Uganda</option>
+              <option value="Tanzania">Tanzania</option>
+              <option value="Rwanda">Rwanda</option>
+              <option value="Ethiopia">Ethiopia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>County / State <span class="req">*</span></label>
+            <select id="ae-county"><option value="">Select county</option></select>
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>City / Town <span class="req">*</span></label>
+            <input id="ae-city" placeholder="e.g. Westlands">
+          </div>
+          <div class="form-group">
+            <label>Street / Estate</label>
+            <input id="ae-street" placeholder="e.g. Lavington Estate">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOB DETAILS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-briefcase-fill"></i> Job Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Job Title / Position Needed <span class="req">*</span></label>
+          <select id="ae-jobtitle">
+            <option value="">Select position</option>
+            <option>Live-in Nanny</option>
+            <option>Day Nanny</option>
+            <option>House Manager</option>
+            <option>Housekeeper</option>
+            <option>Cook / Chef</option>
+            <option>Cleaner</option>
+            <option>Gardener</option>
+            <option>Driver</option>
+            <option>Watchman / Security</option>
+            <option>Caregiver (Elderly)</option>
+            <option>Caregiver (Disabled)</option>
+            <option>Laundry Person</option>
+            <option>General House Help</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Preferred Job Location (where worker will work) <span class="req">*</span></label>
+          <input id="ae-jobloc" placeholder="e.g. Kileleshwa, Nairobi">
+        </div>
+        <div class="form-group">
+          <label>Job Type</label>
+          <select id="ae-jobtype">
+            <option>Full Time</option>
+            <option>Part Time</option>
+            <option>Live-in</option>
+            <option>Day Shift</option>
+            <option>Contract</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Job Description <span class="req">*</span></label>
+          <textarea id="ae-desc" placeholder="Describe the duties and daily responsibilities…" rows="3"></textarea>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Salary Min (KES/mo)</label>
+            <input id="ae-salmin" type="number" placeholder="e.g. 15000">
+          </div>
+          <div class="form-group">
+            <label>Salary Max (KES/mo)</label>
+            <input id="ae-salmax" type="number" placeholder="e.g. 25000">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BENEFITS & EXPECTATIONS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-gift-fill"></i> Benefits &amp; Preferences</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Benefits Offered</label>
+          <div class="checkbox-group" id="ae-benefits">
+            <label class="checkbox-pill"><input type="checkbox" value="Accommodation"><i class="bi bi-house-fill"></i> Accommodation</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Lunch"><i class="bi bi-egg-fried"></i> Lunch</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Transport"><i class="bi bi-bus-front-fill"></i> Transport</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Off Days"><i class="bi bi-calendar-check-fill"></i> Off Days</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Allowance"><i class="bi bi-cash-stack"></i> Allowance</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Medical"><i class="bi bi-heart-pulse-fill"></i> Medical</label>
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Minimum Age</label>
+            <input id="ae-agemin" type="number" value="18" min="18" placeholder="18">
+            <span class="hint">Kenya law: minimum 18 yrs</span>
+          </div>
+          <div class="form-group">
+            <label>Maximum Age</label>
+            <input id="ae-agemax" type="number" placeholder="e.g. 45" min="18">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Experience Required (years, min)</label>
+          <input id="ae-exp" type="number" placeholder="e.g. 1" min="0">
+        </div>
+        <div class="form-group">
+          <label>Preferred Tribe / Community <span class="hint">(optional)</span></label>
+          <select id="ae-tribe">
+            <option value="">No preference</option>
+            <option>Kikuyu</option><option>Luhya</option><option>Luo</option><option>Kamba</option>
+            <option>Kalenjin</option><option>Meru</option><option>Kisii</option><option>Turkana</option>
+            <option>Somali</option><option>Taita</option><option>Coastal Communities</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deal-breakers / What You Do Not Want</label>
+          <textarea id="ae-dealbreakers" placeholder="e.g. No drunkards, No smokers, Must not bring children along…" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitJob()">
+      <i class="bi bi-send-fill"></i> Submit Job Request
+    </button>
+
+  </div><!-- /form-area -->
+
+  <!-- SUCCESS SCREEN -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon"><i class="bi bi-check-lg"></i></div>
+    <h2>Job Request Submitted!</h2>
+    <p>Thank you. Your job request has been sent to our admin team. We'll review and publish it within 24 hours. We may contact you on the number you provided.</p>
+    <a href="index.html" class="back-home-btn"><i class="bi bi-house-fill"></i> Back to Home</a>
+  </div>
+
+</div><!-- /page-body -->
+
+<script>
+/* ── SUPABASE ── */
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── KENYA COUNTIES ── */
+const KE_COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo',
+  'Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale',
+  'Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa',"Murang'a",
+  'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta',
+  'Tana River','Tharaka-Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'];
+
+function fillCountyState(){
+  const country = document.getElementById('ae-country').value;
+  const sel = document.getElementById('ae-county');
+  sel.innerHTML = '<option value="">Select county/state</option>';
+  if(country === 'Kenya'){
+    KE_COUNTIES.forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+    });
+  } else {
+    const o = document.createElement('option'); o.value = ''; o.textContent = 'Enter manually below'; sel.appendChild(o);
+  }
+}
+
+function getChecked(id){
+  return [...document.querySelectorAll('#'+id+' .checkbox-pill.checked input')].map(i=>i.value);
+}
+
+function showToast(msg, type='info'){
+  const icons={success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
+  const t = document.createElement('div');
+  t.className = 'toast '+type;
+  t.innerHTML = '<i class="bi '+icons[type]+'"></i><span>'+msg+'</span>';
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{ t.style.animation='toastOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ── CHECKBOX PILLS ── */
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.checkbox-pill');
+  if(pill) pill.classList.toggle('checked');
+});
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  fillCountyState();
+  const params = new URLSearchParams(location.search);
+  if(params.get('mode') === 'incognito'){
+    document.getElementById('incognito-notice').style.display = 'flex';
+    document.getElementById('mode-badge').innerHTML = '<i class="bi bi-incognito"></i> Incognito Job Post';
+  }
+});
+
+/* ── SUBMIT ── */
+async function submitJob(){
+  const fname   = document.getElementById('ae-fname').value.trim();
+  const lname   = document.getElementById('ae-lname').value.trim();
+  const phone   = document.getElementById('ae-phone').value.trim();
+  const jobtitle= document.getElementById('ae-jobtitle').value;
+  const city    = document.getElementById('ae-city').value.trim();
+  const county  = document.getElementById('ae-county').value;
+  const country = document.getElementById('ae-country').value;
+  const desc    = document.getElementById('ae-desc').value.trim();
+  const jobloc  = document.getElementById('ae-jobloc').value.trim();
+
+  if(!fname||!lname||!phone||!jobtitle||!city||!county||!country||!desc||!jobloc){
+    showToast('Please fill all required fields.','error'); return;
+  }
+
+  const ageMin = parseInt(document.getElementById('ae-agemin').value) || 18;
+  if(ageMin < 18){ showToast('Minimum age cannot be below 18 (Kenya law).','error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+
+  const benefitsArr = getChecked('ae-benefits');
+
+  const payload = {
+    legal_first_name: fname,
+    legal_last_name:  lname,
+    phone:            phone,
+    email:            document.getElementById('ae-email').value.trim() || null,
+    company_name:     document.getElementById('ae-company').value.trim() || null,
+    country,
+    county,
+    city,
+    street:           document.getElementById('ae-street').value.trim() || null,
+    job_title:        jobtitle,
+    title:            jobtitle,
+    job_type:         document.getElementById('ae-jobtype').value,
+    job_location:     jobloc,
+    location:         jobloc,
+    job_description:  desc,
+    salary_min:       parseInt(document.getElementById('ae-salmin').value) || null,
+    salary_max:       parseInt(document.getElementById('ae-salmax').value) || null,
+    benefits:         benefitsArr.join(',') || null,
+    age_min:          ageMin,
+    age_max:          parseInt(document.getElementById('ae-agemax').value) || null,
+    experience_years: parseInt(document.getElementById('ae-exp').value) || null,
+    tribe_preference: document.getElementById('ae-tribe').value || null,
+    deal_breakers:    document.getElementById('ae-dealbreakers').value.trim() || null,
+    status:           'pending',
+    source:           new URLSearchParams(location.search).get('mode') === 'incognito' ? 'incognito_page' : 'page',
+    submitted_at:     new Date().toISOString(),
+  };
+
+  const { error } = await sb.from('job_post_requests').insert([payload]);
+
+  if(error){
+    console.error('Submit error:', error);
+    showToast('Submission failed: ' + (error.message || 'Unknown error'), 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Job Request';
+    return;
+  }
+
+  document.getElementById('form-area').style.display = 'none';
+  document.getElementById('success-screen').classList.add('visible');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>

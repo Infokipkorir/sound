@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Your Profile – SoundsCare</title>
+  <meta name="description" content="Submit your worker profile to get hired by trusted employers across East Africa.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root{
+      --green:#1A7A5E;--green-dark:#145c47;--green-light:#e8f5f0;--green-mid:#2DB877;
+      --blue:#3B8ED4;--blue-dark:#2574b8;--blue-light:#EBF4FC;
+      --surface:#f7f9f8;--surface-alt:#f0f4f2;--border:#dae3de;
+      --text:#18281f;--text-muted:#6b7c75;--red:#E24B4A;--amber:#E9A23B;
+      --dark-bg:#0d2118;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+    /* ── TOP BAR ── */
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid var(--border);
+      padding:14px 5%;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      position:sticky;
+      top:0;
+      z-index:100;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+    }
+    .back-btn{
+      display:inline-flex;align-items:center;gap:.4rem;
+      padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;
+      background:#fff;color:var(--text);font-size:13px;font-weight:600;
+      cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none;
+    }
+    .back-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .topbar-brand{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+    .topbar-brand span{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--text)}
+    .topbar-brand small{font-size:12px;color:var(--text-muted)}
+
+    /* ── PAGE HERO ── */
+    .page-hero{
+      background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%);
+      padding:2.5rem 5%;
+      color:#fff;
+      position:relative;
+      overflow:hidden;
+    }
+    .page-hero::before{
+      content:'';position:absolute;right:-60px;top:-60px;
+      width:240px;height:240px;border-radius:50%;
+      background:rgba(255,255,255,.08);
+    }
+    .page-hero::after{
+      content:'';position:absolute;right:80px;bottom:-40px;
+      width:140px;height:140px;border-radius:50%;
+      background:rgba(255,255,255,.06);
+    }
+    .page-hero-content{position:relative;z-index:1;max-width:680px}
+    .page-hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;margin-bottom:.5rem}
+    .page-hero p{font-size:14px;opacity:.9;line-height:1.7}
+    .mode-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;margin-bottom:1rem;backdrop-filter:blur(4px)}
+
+    /* ── MAIN LAYOUT ── */
+    .page-body{max-width:720px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+    /* ── CARD ── */
+    .form-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.8rem;margin-bottom:1.4rem}
+    .form-card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+    .form-card-title i{color:var(--blue);font-size:15px}
+
+    /* ── FORM ── */
+    .form-grid{display:grid;gap:.9rem}
+    .form-grid.two-col{grid-template-columns:1fr 1fr}
+    @media(max-width:540px){.form-grid.two-col{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:.35rem}
+    .form-group label{font-size:12px;font-weight:600;color:var(--text)}
+    .form-group label .req{color:var(--red)}
+    .form-group input,.form-group select,.form-group textarea{
+      border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;
+      font-size:13px;font-family:inherit;color:var(--text);background:#fff;transition:border .18s;width:100%;
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,142,212,.08)}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .form-group .hint{font-size:11px;color:var(--text-muted)}
+
+    /* ── CHECKBOX PILLS ── */
+    .checkbox-group{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.2rem}
+    .checkbox-pill{display:flex;align-items:center;gap:.3rem;background:var(--surface-alt);border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:500;transition:all .18s;user-select:none}
+    .checkbox-pill input{display:none}
+    .checkbox-pill.checked{background:var(--blue-light);border-color:var(--blue);color:var(--blue-dark)}
+
+    /* ── PRIVACY NOTE ── */
+    .privacy-note{background:var(--blue-light);border:1px solid rgba(59,142,212,.2);border-radius:10px;padding:.8rem 1rem;font-size:12px;color:var(--text-muted);display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;margin-bottom:1.4rem}
+    .privacy-note i{color:var(--blue);flex-shrink:0;font-size:14px;margin-top:.1rem}
+
+    /* ── INCOGNITO NOTICE ── */
+    .incognito-note{background:#FFF8E7;border:1px solid rgba(233,162,59,.35);border-radius:10px;padding:.8rem 1rem;font-size:12.5px;color:#7a4f10;display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;margin-bottom:1.4rem}
+    .incognito-note i{color:var(--amber);flex-shrink:0;font-size:14px;margin-top:.1rem}
+
+    /* ── SUBMIT BTN ── */
+    .submit-btn{width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.4rem}
+    .submit-btn:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,142,212,.3)}
+    .submit-btn:disabled{background:var(--border);cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* ── DIVIDER ── */
+    .section-divider{text-align:center;color:var(--text-muted);font-size:11.5px;margin:.3rem 0;position:relative}
+    .section-divider::before,.section-divider::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--border)}
+    .section-divider::before{left:0}.section-divider::after{right:0}
+
+    /* ── SUCCESS ── */
+    .success-screen{display:none;text-align:center;padding:3rem 1.5rem}
+    .success-screen.visible{display:block}
+    .success-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--blue-dark),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-icon i{font-size:2rem;color:#fff}
+    .success-screen h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:.7rem;color:var(--text)}
+    .success-screen p{font-size:14px;color:var(--text-muted);line-height:1.7;max-width:440px;margin:0 auto 2rem}
+    .back-home-btn{display:inline-flex;align-items:center;gap:.5rem;padding:12px 26px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none}
+    .back-home-btn:hover{background:var(--blue-dark)}
+
+    /* ── TOAST ── */
+    #toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+    .toast{display:flex;align-items:center;gap:.7rem;background:#1e2a23;color:#fff;padding:.8rem 1.1rem;border-radius:10px;font-size:13px;font-weight:500;min-width:220px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:all}
+    .toast.success i{color:#78d9b4}.toast.error i{color:#f87171}.toast.info i{color:#7dd3fc}
+    @keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes toastOut{to{transform:translateX(110%);opacity:0}}
+
+    /* ── PAGE ANIM ── */
+    .form-card{animation:fadeUp .35s ease both}
+    .form-card:nth-child(1){animation-delay:.05s}
+    .form-card:nth-child(2){animation-delay:.1s}
+    .form-card:nth-child(3){animation-delay:.15s}
+    .form-card:nth-child(4){animation-delay:.2s}
+    .form-card:nth-child(5){animation-delay:.25s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="index.html" class="back-btn"><i class="bi bi-arrow-left"></i> Back to Home</a>
+  <a href="index.html" class="topbar-brand">
+    <span>SoundsCare</span>
+    <small>Post Your Profile</small>
+  </a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-content">
+    <div class="mode-badge" id="mode-badge"><i class="bi bi-person-badge-fill"></i> Profile Request</div>
+    <h1>Post Your Worker Profile</h1>
+    <p>Submit your details and get discovered by verified employers across East Africa. Your personal ID and referee info are kept strictly private.</p>
+  </div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="page-body">
+
+  <!-- FORM AREA -->
+  <div id="form-area">
+
+    <div id="incognito-notice" class="incognito-note" style="display:none">
+      <i class="bi bi-incognito"></i>
+      <span>You're posting <strong>incognito</strong> — no account required. Your name, ID, and phone are for verification only and will never be published. Admin reviews all requests before publishing.</span>
+    </div>
+
+    <div class="privacy-note">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span>Your <strong>full name, ID details, and referee info</strong> will <strong>never</strong> be published. Only your job title, location, experience, and salary range may appear publicly.</span>
+    </div>
+
+    <!-- PERSONAL DETAILS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-person-fill"></i> Personal Details (Private)</div>
+      <div class="form-grid">
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Legal First Name <span class="req">*</span></label>
+            <input id="emp-fname" placeholder="e.g. Amina">
+          </div>
+          <div class="form-group">
+            <label>Legal Last Name <span class="req">*</span></label>
+            <input id="emp-lname" placeholder="e.g. Hassan">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Phone Number <span class="req">*</span></label>
+            <input id="emp-phone" placeholder="0712345678" type="tel">
+          </div>
+          <div class="form-group">
+            <label>Date of Birth <span class="req">*</span></label>
+            <input id="emp-dob" type="date">
+            <span class="hint">Must be 18+ years old</span>
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="emp-gender">
+              <option value="">Prefer not to say</option>
+              <option>Female</option><option>Male</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Marital Status</label>
+            <select id="emp-marital">
+              <option value="">Prefer not to say</option>
+              <option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Disability / Special Needs <span class="hint">(optional — helps us match better)</span></label>
+          <input id="emp-disability" placeholder="e.g. None, or describe if any">
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-geo-alt-fill"></i> Location</div>
+      <div class="form-grid">
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Current City / Town <span class="req">*</span></label>
+            <input id="emp-curcity" placeholder="e.g. Nairobi">
+          </div>
+          <div class="form-group">
+            <label>Home County / Region</label>
+            <input id="emp-home" placeholder="e.g. Kakamega, Luhya region">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Preferred Job Location <span class="req">*</span></label>
+          <input id="emp-jobloc" placeholder="e.g. Nairobi, Mombasa — or 'Any'">
+        </div>
+      </div>
+    </div>
+
+    <!-- JOB & EXPERIENCE -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-briefcase-fill"></i> Job &amp; Experience</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Job / Position Seeking <span class="req">*</span></label>
+          <select id="emp-jobtitle">
+            <option value="">Select position</option>
+            <option>Live-in Nanny</option>
+            <option>Day Nanny</option>
+            <option>House Manager</option>
+            <option>Housekeeper</option>
+            <option>Cook / Chef</option>
+            <option>Cleaner</option>
+            <option>Gardener</option>
+            <option>Driver</option>
+            <option>Caregiver (Elderly)</option>
+            <option>Caregiver (Disabled)</option>
+            <option>Laundry Person</option>
+            <option>General House Help</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Years of Experience</label>
+          <input id="emp-exp" type="number" placeholder="e.g. 3" min="0">
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Salary Min Expected (KES/mo)</label>
+            <input id="emp-salmin" type="number" placeholder="e.g. 15000">
+          </div>
+          <div class="form-group">
+            <label>Salary Max Expected (KES/mo)</label>
+            <input id="emp-salmax" type="number" placeholder="e.g. 25000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Skills / Abilities</label>
+          <div class="checkbox-group" id="emp-skills">
+            <label class="checkbox-pill"><input type="checkbox" value="Childcare"><i class="bi bi-emoji-smile-fill"></i> Childcare</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Cooking"><i class="bi bi-fire"></i> Cooking</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Cleaning"><i class="bi bi-stars"></i> Cleaning</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Laundry"><i class="bi bi-basket2-fill"></i> Laundry</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Driving"><i class="bi bi-car-front-fill"></i> Driving</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Gardening"><i class="bi bi-tree-fill"></i> Gardening</label>
+            <label class="checkbox-pill"><input type="checkbox" value="Elderly Care"><i class="bi bi-person-heart"></i> Elderly Care</label>
+            <label class="checkbox-pill"><input type="checkbox" value="First Aid"><i class="bi bi-bandaid-fill"></i> First Aid</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REFEREES -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-people-fill"></i> Referees (Private — Not Published)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Referee 1 — Full Name <span class="req">*</span></label>
+          <input id="emp-ref1name" placeholder="e.g. Grace Mwangi">
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Referee 1 — ID No.</label>
+            <input id="emp-ref1id" placeholder="National ID number">
+          </div>
+          <div class="form-group">
+            <label>Referee 1 — Phone</label>
+            <input id="emp-ref1phone" placeholder="0712345678" type="tel">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Referee 1 — Relationship</label>
+            <input id="emp-ref1rel" placeholder="e.g. Former Employer">
+          </div>
+          <div class="form-group">
+            <label>Referee 1 — Current Location</label>
+            <input id="emp-ref1loc" placeholder="e.g. Westlands, Nairobi">
+          </div>
+        </div>
+
+        <div class="section-divider" style="margin:.5rem 0">Referee 2 (Optional)</div>
+
+        <div class="form-group">
+          <label>Referee 2 — Full Name</label>
+          <input id="emp-ref2name" placeholder="e.g. John Otieno">
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Referee 2 — ID No.</label>
+            <input id="emp-ref2id" placeholder="National ID number">
+          </div>
+          <div class="form-group">
+            <label>Referee 2 — Phone</label>
+            <input id="emp-ref2phone" placeholder="0712345678" type="tel">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Referee 2 — Relationship</label>
+            <input id="emp-ref2rel" placeholder="e.g. Community Leader">
+          </div>
+          <div class="form-group">
+            <label>Referee 2 — Location</label>
+            <input id="emp-ref2loc" placeholder="e.g. Kisumu">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitProfile()">
+      <i class="bi bi-send-fill"></i> Submit Profile Request
+    </button>
+
+  </div><!-- /form-area -->
+
+  <!-- SUCCESS SCREEN -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon"><i class="bi bi-check-lg"></i></div>
+    <h2>Profile Request Sent!</h2>
+    <p>Thank you. Your request has been submitted for admin review. We'll contact you on the number provided once your profile is approved and published.</p>
+    <a href="index.html" class="back-home-btn"><i class="bi bi-house-fill"></i> Back to Home</a>
+  </div>
+
+</div><!-- /page-body -->
+
+<script>
+/* ── SUPABASE ── */
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function getChecked(id){
+  return [...document.querySelectorAll('#'+id+' .checkbox-pill.checked input')].map(i=>i.value);
+}
+
+function showToast(msg, type='info'){
+  const icons={success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
+  const t = document.createElement('div');
+  t.className = 'toast '+type;
+  t.innerHTML = '<i class="bi '+icons[type]+'"></i><span>'+msg+'</span>';
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{ t.style.animation='toastOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ── CHECKBOX PILLS ── */
+document.addEventListener('click', e => {
+  const pill = e.target.closest('.checkbox-pill');
+  if(pill) pill.classList.toggle('checked');
+});
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  if(params.get('mode') === 'incognito'){
+    document.getElementById('incognito-notice').style.display = 'flex';
+    document.getElementById('mode-badge').innerHTML = '<i class="bi bi-incognito"></i> Incognito Profile Post';
+  }
+});
+
+/* ── SUBMIT ── */
+async function submitProfile(){
+  const fname   = document.getElementById('emp-fname').value.trim();
+  const lname   = document.getElementById('emp-lname').value.trim();
+  const phone   = document.getElementById('emp-phone').value.trim();
+  const dob     = document.getElementById('emp-dob').value;
+  const jobtitle= document.getElementById('emp-jobtitle').value;
+  const curcity = document.getElementById('emp-curcity').value.trim();
+  const jobloc  = document.getElementById('emp-jobloc').value.trim();
+  const ref1name= document.getElementById('emp-ref1name').value.trim();
+
+  if(!fname||!lname||!phone||!dob||!jobtitle||!curcity||!jobloc){
+    showToast('Please fill all required fields.','error'); return;
+  }
+
+  // Age check
+  const age = Math.floor((Date.now() - new Date(dob)) / 31557600000);
+  if(age < 18){ showToast('You must be at least 18 years old.','error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+
+  const skillsArr = getChecked('emp-skills');
+
+  const payload = {
+    legal_first_name:   fname,
+    legal_last_name:    lname,
+    phone:              phone,
+    date_of_birth:      dob,
+    gender:             document.getElementById('emp-gender').value || null,
+    marital_status:     document.getElementById('emp-marital').value || null,
+    disability:         document.getElementById('emp-disability').value.trim() || null,
+    current_city:       curcity,
+    home_region:        document.getElementById('emp-home').value.trim() || null,
+    preferred_location: jobloc,
+    job_title:          jobtitle,
+    experience_years:   parseInt(document.getElementById('emp-exp').value) || null,
+    salary_min:         parseInt(document.getElementById('emp-salmin').value) || null,
+    salary_max:         parseInt(document.getElementById('emp-salmax').value) || null,
+    skills:             skillsArr.join(',') || null,
+    referee1_name:      ref1name || null,
+    referee1_id:        document.getElementById('emp-ref1id').value.trim() || null,
+    referee1_phone:     document.getElementById('emp-ref1phone').value.trim() || null,
+    referee1_relation:  document.getElementById('emp-ref1rel').value.trim() || null,
+    referee1_location:  document.getElementById('emp-ref1loc').value.trim() || null,
+    referee2_name:      document.getElementById('emp-ref2name').value.trim() || null,
+    referee2_id:        document.getElementById('emp-ref2id').value.trim() || null,
+    referee2_phone:     document.getElementById('emp-ref2phone').value.trim() || null,
+    referee2_relation:  document.getElementById('emp-ref2rel').value.trim() || null,
+    referee2_location:  document.getElementById('emp-ref2loc').value.trim() || null,
+    status:             'pending',
+    source:             new URLSearchParams(location.search).get('mode') === 'incognito' ? 'incognito_page' : 'page',
+    submitted_at:       new Date().toISOString(),
+  };
+
+  const { error } = await sb.from('profile_post_requests').insert([payload]);
+
+  if(error){
+    console.error('Submit error:', error);
+    showToast('Submission failed: ' + (error.message || 'Unknown error'), 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Profile Request';
+    return;
+  }
+
+  document.getElementById('form-area').style.display = 'none';
+  document.getElementById('success-screen').classList.add('visible');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
