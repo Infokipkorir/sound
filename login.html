@@ -47,16 +47,6 @@ body{
 .step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
 .step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
 
-/* ROLE */
-.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
-.role-option{border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none;background:var(--surface)}
-.role-option:hover{border-color:#A7F3D0;background:var(--green-light)}
-.role-option.active{border-color:var(--green);background:var(--green-light);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-.role-icon{font-size:26px;margin-bottom:5px;line-height:1;color:var(--text-muted)}
-.role-option.active .role-icon{color:var(--green-dark)}
-.role-label{font-size:13px;font-weight:700;color:var(--text-mid)}
-.role-option.active .role-label{color:var(--green-dark)}
-
 /* SECTION LABELS */
 .sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
 .sec-lbl.no-border{border-top:none;padding-top:0}
@@ -173,24 +163,11 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
       </div>
 
       <div class="step-badge">
-        <i class="bi bi-box-arrow-in-right"></i>
-        Welcome Back
+        <i class="bi bi-person-badge"></i>
+        Domestic Worker
       </div>
-      <div class="step-title">Sign in to your account</div>
-      <div class="step-sub">Select your role and enter your credentials below. For your security, you must sign in every time — saved sessions are never used to skip this page.</div>
-
-      <!-- ROLE -->
-      <div class="sec-lbl no-border">I am signing in as</div>
-      <div class="role-grid">
-        <div class="role-option active" id="btn-employee" onclick="selectRole('employee')">
-          <div class="role-icon"><i class="bi bi-person-badge"></i></div>
-          <div class="role-label">Domestic Worker</div>
-        </div>
-        <div class="role-option" id="btn-employer" onclick="selectRole('employer')">
-          <div class="role-icon"><i class="bi bi-building"></i></div>
-          <div class="role-label">Employer / Family</div>
-        </div>
-      </div>
+      <div class="step-title">Worker Sign In</div>
+      <div class="step-sub">Enter your credentials below. For your security, you must sign in every time — saved sessions are never used to skip this page.</div>
 
       <!-- ALERTS -->
       <div class="alert error" id="alertLogin">
@@ -252,7 +229,7 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         </button>
       </div>
 
-      <div class="auth-foot">Don't have an account? <a href="register.html">Create one</a><br><br><span style="font-size:12px;color:var(--text-muted)">Are you an employer or family? <a href="employer_login.html" style="color:var(--green)">Sign in here</a></span></div>
+      <div class="auth-foot">Don't have an account? <a href="register.html?role=employee">Create one</a><br><br><span style="font-size:12px;color:var(--text-muted)">Are you an employer? <a href="employer_login.html" style="color:var(--green)">Employer sign in →</a></span></div>
 
     </div>
 
@@ -327,8 +304,6 @@ var COOKIE_DAYS  = 30;
 // person must re-enter their credentials.
 // ============================================================
 (async function init() {
-  var p = new URLSearchParams(window.location.search);
-  if (p.get('type') === 'employer') selectRole('employer');
 
   // Strip any OAuth redirect hash without acting on it (OAuth login is
   // disabled for now — see oauthLogin()).
@@ -372,15 +347,6 @@ var COOKIE_DAYS  = 30;
 
   checkIp();
 })();
-
-// ============================================================
-// ROLE SELECTION
-// ============================================================
-function selectRole(role) {
-  currentRole = role;
-  document.getElementById('btn-employee').classList.toggle('active', role === 'employee');
-  document.getElementById('btn-employer').classList.toggle('active', role === 'employer');
-}
 
 // ============================================================
 // SOCIAL SIGN IN — Google & Facebook (Coming Soon for now)
