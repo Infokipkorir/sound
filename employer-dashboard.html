@@ -916,7 +916,7 @@ const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 
 let sb, currentUser, employerProfile, employerProfileId;
-let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [];
+let allWorkers = [], allConvs = [], allJobs = [], allJobReqs = [], allInterviews = [], allPayments = [], allNotifs = [];
 let presenceMap = {}, workerMap = {};
 let activeConvId = null;
 let convMessages = {}; // convId -> [{id,from,text,t,status}]
@@ -1003,11 +1003,14 @@ async function loadAll() {
     .eq('is_deleted', false).limit(80);
   allWorkers = avail || [];
 
-  // jobs
+  // jobs (approved/live + pending requests)
   if (employerProfileId) {
     const { data: jobs } = await sb.from('job_postings')
       .select('*').eq('employer_id', employerProfileId).order('created_at', { ascending: false });
     allJobs = jobs || [];
+    const { data: jobReqs } = await sb.from('job_post_requests')
+      .select('*').eq('employer_id', employerProfileId).order('created_at', { ascending: false });
+    allJobReqs = jobReqs || [];
   }
 
   // interviews
@@ -1217,7 +1220,7 @@ async function openConv(convId) {
     </div>
     ${!isClosed && !isBlocked && !isNotInterested ? `
     <div class="chat-input-wrap" id="chat-input-${convId}">
-      <button class="chat-icon-btn" onclick="requestFile('${convId}')" title="Request file"><i class="bi bi-paperclip"></i></button>
+      <label class="chat-icon-btn" title="Attach file" style="cursor:pointer"><i class="bi bi-paperclip"></i><input type="file" id="chat-file-input-${convId}" style="display:none" onchange="sendFileAsEmployer('${convId}')"></label>
       <textarea class="chat-input" id="chat-input-text" rows="1" placeholder="Type a message…"
         oninput="onTypingInput('${convId}')" onkeydown="onChatKey(event,'${convId}')"></textarea>
       <button class="chat-send-btn" onclick="sendMsg('${convId}')"><i class="bi bi-send-fill"></i></button>
@@ -1231,15 +1234,17 @@ async function openConv(convId) {
   // Load messages
   if (!convMessages[convId]) {
     const { data: msgs } = await sb.from('messages')
-      .select('id,sender_id,body,content,message,created_at,is_from_admin,msg_type,delivery_status,is_read,sender_type')
+      .select('id,sender_id,body,content,message,created_at,is_from_admin,msg_type,delivery_status,is_read,sender_type,file_url,file_name')
       .eq('conversation_id', convId).order('created_at', { ascending: true });
     convMessages[convId] = (msgs||[]).map(m => ({
       id: m.id,
-      from: m.is_from_admin ? 'admin' : m.sender_id === currentUser.id ? 'employer' : 'worker',
+      from: m.is_from_admin ? 'admin' : m.sender_type === 'support' ? 'admin' : m.sender_id === currentUser.id ? 'employer' : 'worker',
       text: m.body || m.content || m.message || '',
       t: new Date(m.created_at).getTime(),
       status: m.delivery_status || 'sent',
       senderType: m.sender_type,
+      file_url: m.file_url || null,
+      file_name: m.file_name || null,
     }));
   }
 
@@ -1277,7 +1282,7 @@ function renderMessages(convId) {
 }
 
 function renderBubble(m, wp, empName, wrkName) {
-  if (m.from === 'admin') {
+  if (m.from === 'admin' || m.senderType === 'support') {
     return `<div class="chat-admin-banner"><i class="bi bi-headset"></i> <strong>SoundsCare Support:</strong> ${esc(m.text)} <span style="opacity:.5;margin-left:5px;">${fmtTime(m.t)}</span></div>`;
   }
   const sent = m.from === 'employer';
@@ -1287,13 +1292,14 @@ function renderBubble(m, wp, empName, wrkName) {
         ${wp?.profile_photo_url ? `<img src="${esc(wp.profile_photo_url)}" onerror="this.style.display='none'">` : ini(wrkName)}
        </div>`;
 
+  const fileHtml = m.file_url ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:8px;margin-top:6px;font-size:12px;"><i class="bi bi-paperclip"></i><a href="${m.file_url}" target="_blank" style="color:inherit;text-decoration:underline;">${esc(m.file_name||'Attachment')}</a></div>` : '';
   const tick = sent ? renderTick(m.status) : '';
   return `
     <div class="bubble-row ${sent?'sent':'received'}">
       ${!sent ? avHtml : ''}
       <div class="bubble-col">
         ${!sent ? `<div class="bubble-sender">${esc(wrkName)}</div>` : ''}
-        <div class="bubble ${sent?'sent':'recv'}">${esc(m.text)}</div>
+        <div class="bubble ${sent?'sent':'recv'}">${m.text ? esc(m.text) : ''}${fileHtml}</div>
         <div class="bubble-meta">
           <span class="bubble-time">${fmtTime(m.t)}</span>
           ${tick}
@@ -1301,6 +1307,38 @@ function renderBubble(m, wp, empName, wrkName) {
       </div>
       ${sent ? avHtml : ''}
     </div>`;
+}
+
+async function sendFileAsEmployer(convId) {
+  const file = document.getElementById(`chat-file-input-${convId}`)?.files?.[0];
+  if (!file || !convId) return;
+  try {
+    const path = `employer-files/${convId}/${Date.now()}-${file.name}`;
+    const { error: ue } = await sb.storage.from('Media').upload(path, file);
+    if (ue) throw ue;
+    const { data: { publicUrl } } = sb.storage.from('Media').getPublicUrl(path);
+    const body = '📎 ' + file.name;
+    await sb.from('messages').insert({
+      conversation_id: convId,
+      sender_id: currentUser.id,
+      body, content: body,
+      sender_type: 'employer',
+      delivery_status: 'sent',
+      msg_type: 'file',
+      file_url: publicUrl,
+      file_name: file.name,
+      is_read: false,
+    });
+    const conv = allConvs.find(c => c.id === convId);
+    if (!convMessages[convId]) convMessages[convId] = [];
+    convMessages[convId].push({ id: 'f-'+Date.now(), from: 'employer', text: body, file_url: publicUrl, file_name: file.name, t: Date.now(), status: 'sent' });
+    await sb.from('conversations').update({ last_message_text: body, last_message_at: new Date().toISOString() }).eq('id', convId);
+    if (conv) { conv.last_message_text = body; conv.last_message_at = new Date().toISOString(); }
+    renderMessages(convId);
+    renderConvList();
+    showToast('ok','bi-paperclip','File Sent','');
+  } catch(err) { showToast('err','bi-x-circle','Upload Failed', err.message); }
+}
 }
 
 function renderTick(status) {
@@ -1330,8 +1368,11 @@ async function sendMsg(convId) {
     conversation_id: convId,
     sender_id: currentUser.id,
     body: text,
+    content: text,
     sender_type: 'employer',
     delivery_status: 'sent',
+    msg_type: 'text',
+    is_read: false,
     employer_id: currentUser.id,
   }).select('id,created_at,delivery_status').maybeSingle();
 
@@ -1497,22 +1538,33 @@ async function hireWorker(workerSessionId, convId) {
 // ── JOBS ──
 function renderJobsTable() {
   const targets = ['dash-jobs-table','jobs-table-wrap'];
+  const pendingReqs = allJobReqs.filter(r => r.status === 'pending' || r.status === 'rejected');
+  const allItems = [...allJobs, ...pendingReqs];
   targets.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (!allJobs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'post-job-modal\')">Post a Job</button></p></div>'; return; }
+    if (!allItems.length) { el.innerHTML = '<div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'post-job-modal\')">Post a Job</button></p></div>'; return; }
+    const jobRows = allJobs.map(j => `<tr>
+      <td><strong>${esc(j.title)}</strong>${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}<span class="badge badge-green" style="margin-left:4px;font-size:9px">Live</span></td>
+      <td>${j.job_type||'—'}</td>
+      <td>${j.location||'—'}</td>
+      <td><span class="badge badge-${j.status==='active'?'green':j.status==='closed'?'rose':'amber'}">${j.status||'active'}</span></td>
+      <td>${fmtDate(j.created_at)}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="closeJob('${j.id}')"><i class="bi bi-x-circle"></i> Close</button>
+      </td>
+    </tr>`).join('');
+    const reqRows = pendingReqs.map(r => `<tr style="opacity:${r.status==='rejected'?'.7':'1'}">
+      <td><strong>${esc(r.title||'—')}</strong>${r.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}<span class="badge badge-amber" style="margin-left:4px;font-size:9px">Under Review</span></td>
+      <td>${r.job_type||'—'}</td>
+      <td>${r.location||'—'}</td>
+      <td><span class="badge badge-${r.status==='pending'?'amber':'rose'}">${r.status==='pending'?'Pending Approval':'Rejected'}</span></td>
+      <td>${fmtDate(r.created_at)}</td>
+      <td>${r.status==='rejected'?`<span style="font-size:11px;color:var(--rose)">${esc(r.admin_response||'Rejected')}</span>`:''}</td>
+    </tr>`).join('');
     el.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead>
-      <tbody>${allJobs.map(j => `<tr>
-        <td><strong>${esc(j.title)}</strong>${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}</td>
-        <td>${j.job_type||'—'}</td>
-        <td>${j.location||'—'}</td>
-        <td><span class="badge badge-${j.status==='active'?'green':j.status==='closed'?'rose':'amber'}">${j.status||'active'}</span></td>
-        <td>${fmtDate(j.created_at)}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="closeJob('${j.id}')"><i class="bi bi-x-circle"></i> Close</button>
-        </td>
-      </tr>`).join('')}</tbody>
+      <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+      <tbody>${jobRows}${reqRows}</tbody>
     </table></div>`;
   });
 }
@@ -1539,10 +1591,33 @@ async function postJob() {
     is_featured: document.getElementById('jb-featured').checked,
     status: 'active', posting_type: 'individual',
   };
-  const { error } = await sb.from('job_postings').insert(data);
+  // Submit for admin review via job_post_requests (admin approves → goes to job_postings)
+  const reqData = {
+    title: data.title,
+    employer_id: employerProfileId,
+    employer_user_id: currentUser.id,
+    company_name: employerProfile?.company_name || employerProfile?.full_name || '',
+    job_role: data.job_role,
+    job_type: data.job_type,
+    location: data.location,
+    county: data.county,
+    work_type: data.work_type,
+    salary_min: data.salary_min,
+    salary_max: data.salary_max,
+    salary_range: data.salary_range,
+    description: data.description,
+    requirements: data.requirements,
+    deadline: data.deadline,
+    slots: data.slots,
+    is_urgent: data.is_urgent,
+    is_featured: data.is_featured,
+    posting_type: 'individual',
+    status: 'pending',
+  };
+  const { error } = await sb.from('job_post_requests').insert(reqData);
   if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
   closeModal('post-job-modal');
-  showToast('ok','bi-briefcase-fill','Job Posted','Your job listing is now live!');
+  showToast('ok','bi-briefcase-fill','Job Submitted','Your job listing is under review. Admin will approve shortly.');
   await loadAll();
 }
 
@@ -1818,10 +1893,13 @@ function setupRealtime() {
       if (msg.sender_id === currentUser.id) return; // own msg already optimistically added
       const newMsg = {
         id: msg.id,
-        from: msg.is_from_admin ? 'admin' : 'worker',
+        from: msg.is_from_admin ? 'admin' : msg.sender_type === 'support' ? 'admin' : 'worker',
         text: msg.body || msg.content || msg.message || '',
         t: new Date(msg.created_at).getTime(),
         status: 'delivered',
+        senderType: msg.sender_type,
+        file_url: msg.file_url || null,
+        file_name: msg.file_name || null,
       };
       if (!convMessages[msg.conversation_id]) convMessages[msg.conversation_id] = [];
       convMessages[msg.conversation_id].push(newMsg);

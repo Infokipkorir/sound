@@ -1188,6 +1188,7 @@
               </div>
 
               <div class="chat-input-bar" id="chat-input-bar">
+                <label class="chat-icon-btn" title="Attach file" style="cursor:pointer"><i class="bi bi-paperclip"></i><input type="file" id="emp-chat-file" style="display:none" onchange="sendEmployeeFile()"></label>
                 <input type="text" id="msg-reply" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendMessageReply()" oninput="notifyTyping()">
                 <div class="recording-bar" id="recording-bar">
                   <span class="rec-dot"></span> Recording… <span id="rec-timer">0:00</span>
@@ -2359,6 +2360,10 @@ function renderTick(m) {
 function renderBubbleContent(m) {
   if (m.msg_type === 'audio' && m.file_url) {
     return `<div class="bubble-audio"><audio controls src="${m.file_url}"></audio></div>`;
+  }
+  if (m.msg_type === 'file' && m.file_url) {
+    const fname = m.file_name || 'Attachment';
+    return `<div style="display:flex;align-items:center;gap:7px;padding:6px 10px;background:rgba(255,255,255,.15);border-radius:8px;font-size:12px;"><i class="bi bi-paperclip"></i><a href="${m.file_url}" target="_blank" style="color:inherit;text-decoration:underline;">${esc(fname)}</a></div>`;
   }
   const text = m.content || m.body || m.message || '';
   return `<span class="bubble-text">${esc(text)}</span>`;
@@ -4139,6 +4144,36 @@ async function sendMessageReply() {
   }
 
   sendBtn.disabled = false;
+}
+
+async function sendEmployeeFile() {
+  const file = document.getElementById('emp-chat-file')?.files?.[0];
+  if (!file || !activeConvId) return;
+  if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const path = `employee-files/${activeConvId}/${Date.now()}-${file.name}`;
+    const { error: ue } = await sb.storage.from('Media').upload(path, file);
+    if (ue) throw ue;
+    const { data: { publicUrl } } = sb.storage.from('Media').getPublicUrl(path);
+    const body = '📎 ' + file.name;
+    const { error } = await sb.from('messages').insert({
+      conversation_id: activeConvId,
+      sender_id: currentUser.id,
+      body, content: body,
+      is_read: false,
+      delivery_status: 'sent',
+      msg_type: 'file',
+      file_url: publicUrl,
+      file_name: file.name,
+    });
+    if (error) throw error;
+    await sb.from('conversations').update({ last_message_text: body, last_message_at: new Date().toISOString() }).eq('id', activeConvId);
+    await openConversation(activeConvId);
+    showToast('ok', 'bi-paperclip', 'File Sent', '');
+  } catch(err) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', err.message); }
+  finally { if (sendBtn) sendBtn.disabled = false; document.getElementById('emp-chat-file').value = ''; }
 }
 
 // ════════════════════════════════════════════════════════
