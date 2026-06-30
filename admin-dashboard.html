@@ -32,13 +32,48 @@
 body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; min-height: 100vh; display: flex; }
 
 /* AUTH */
-#auth-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(27,107,69,.10), transparent 40%),
+    radial-gradient(circle at 88% 88%, rgba(232,160,64,.09), transparent 40%),
+    var(--bg);
+}
 #auth-overlay.hidden { display: none; }
-.auth-card { background: var(--surface); border-radius: 18px; padding: 2.5rem 2rem; box-shadow: 0 4px 20px rgba(15,25,35,.1); max-width: 420px; width: 90%; }
-.auth-logo { width: 52px; height: 52px; background: var(--brand); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; font-weight: 800; margin: 0 auto 1rem; }
-.auth-card h1 { text-align: center; font-size: 1.4rem; font-weight: 800; margin-bottom: .25rem; }
-.auth-card p { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 1.5rem; }
-.auth-error { color: var(--rose); font-size: 12px; margin-bottom: .8rem; text-align: center; }
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 2.6rem 2.2rem 2rem;
+  box-shadow: 0 20px 60px rgba(15,25,35,.13), 0 2px 8px rgba(15,25,35,.06);
+  max-width: 420px; width: 90%;
+  position: relative; overflow: hidden;
+}
+.auth-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+}
+.auth-logo-wrap {
+  display: flex; flex-direction: column; align-items: center; margin-bottom: 1.6rem;
+}
+.auth-logo {
+  width: 68px; height: 68px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 20px rgba(27,107,69,.18);
+  margin: 0 auto .9rem;
+  overflow: hidden;
+}
+.auth-logo img { width: 58px; height: 58px; object-fit: contain; }
+.auth-card h1 { text-align: center; font-size: 1.35rem; font-weight: 800; margin-bottom: .2rem; letter-spacing: -.3px; }
+.auth-card > div > p, .auth-card p.auth-sub { text-align: center; font-size: 12.5px; color: var(--muted); margin-bottom: 1.6rem; line-height: 1.5; }
+.auth-error { color: var(--rose); font-size: 12.5px; margin-bottom: .8rem; text-align: center; background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.18); border-radius: 8px; padding: 8px 12px; display: none; }
+.auth-error.show { display: block; }
+.auth-card .form-group label { font-size: 11.5px; }
 
 /* SIDEBAR */
 .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; overflow-y: auto; transition: transform .25s; }
@@ -330,24 +365,36 @@ tr:hover td { background: rgba(27,107,69,.02); }
 
 <!-- LOGIN -->
 <div id="auth-overlay">
-  <div>
-    <div class="auth-card">
-      <div class="auth-logo">🎙️</div>
+  <div class="auth-card">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo">
+        <img src="sound_logo.png" alt="SoundsCare" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\'font-size:28px\'>🎙️</span>'">
+      </div>
       <h1>SoundsCare Admin</h1>
-      <p>Control Centre — Sign in to continue</p>
-      <form onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label>Username</label>
-          <input id="auth-email" type="text" placeholder="admin" autocomplete="username" required>
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input id="auth-password" type="password" placeholder="••••••••" required>
-        </div>
-        <div class="auth-error" id="auth-error"></div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Login to Dashboard</button>
-      </form>
+      <p class="auth-sub">Control Centre — Authorised access only</p>
     </div>
+    <div class="auth-error" id="auth-error"></div>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Username</label>
+        <input id="auth-email" type="text" placeholder="admin" autocomplete="username" required style="font-size:13px">
+      </div>
+      <div class="form-group" style="position:relative">
+        <label>Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" required style="font-size:13px;padding-right:40px">
+        <button type="button" onclick="toggleAdminPw()" style="position:absolute;right:10px;bottom:10px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:2px" title="Show/hide">
+          <i class="bi bi-eye" id="auth-eye"></i>
+        </button>
+      </div>
+      <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width:100%;justify-content:center;margin-top:.3rem;padding:11px">
+        <span id="auth-btn-spinner" style="display:none;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;margin-right:6px"></span>
+        <i class="bi bi-box-arrow-in-right" id="auth-btn-icon"></i>
+        <span id="auth-btn-text">Sign In to Dashboard</span>
+      </button>
+    </form>
+    <p style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:1.2rem">
+      <i class="bi bi-shield-lock" style="margin-right:4px"></i>Secured connection — admin only
+    </p>
   </div>
 </div>
 
@@ -836,48 +883,10 @@ tr:hover td { background: rgba(27,107,69,.02); }
 
 <!-- VIEW APPLICATIONS MODAL -->
 <div id="applications-modal" class="modal-overlay">
-  <div class="modal xlarge">
-    <div class="modal-header">
-      <h2><i class="bi bi-file-earmark-person"></i> Job Applications — <span id="apps-job-title" style="color:var(--brand)"></span></h2>
-      <button class="modal-close" onclick="closeModal('applications-modal')">×</button>
-    </div>
-    <div class="modal-body" style="padding:0">
-      <!-- Summary strip -->
-      <div id="apps-summary" style="display:flex;gap:12px;flex-wrap:wrap;padding:1rem 1.5rem;background:var(--bg);border-bottom:1px solid var(--border)"></div>
-      <!-- Applicants table -->
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Role / Skills</th>
-              <th>Location</th>
-              <th>Salary Exp.</th>
-              <th>Experience</th>
-              <th>App. Status</th>
-              <th>Applied</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="applications-tbody">
-            <tr><td colspan="8" style="text-align:center">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- APPLICATION DETAIL MODAL (opens on top of applications-modal) -->
-<div id="app-detail-modal" class="modal-overlay" style="z-index:1100">
   <div class="modal wide">
-    <div class="modal-header">
-      <h2><i class="bi bi-person-badge"></i> Application Detail</h2>
-      <button class="modal-close" onclick="closeModal('app-detail-modal')">×</button>
-    </div>
-    <div class="modal-body" id="app-detail-body">Loading…</div>
-    <div class="modal-footer" id="app-detail-footer">
-      <button class="btn btn-secondary" onclick="closeModal('app-detail-modal')">Close</button>
+    <div class="modal-header"><h2><i class="bi bi-file-earmark-person"></i> Job Applications</h2><button class="modal-close" onclick="closeModal('applications-modal')">×</button></div>
+    <div class="modal-body" style="padding:0">
+      <div class="table-wrap"><table><thead><tr><th>Worker</th><th>Status</th><th>Applied</th><th>Interview</th><th>Actions</th></tr></thead><tbody id="applications-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
     </div>
   </div>
 </div>
@@ -1100,6 +1109,27 @@ async function handleLogin(e){
   const password = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
   errEl.textContent = '';
+  errEl.classList.remove('show');
+
+  // Set loading state
+  const btn = document.getElementById('auth-submit-btn');
+  const spinner = document.getElementById('auth-btn-spinner');
+  const icon = document.getElementById('auth-btn-icon');
+  const txt = document.getElementById('auth-btn-text');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  icon.style.display = 'none';
+  txt.textContent = 'Signing in…';
+
+  const showErr = (msg) => {
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    icon.style.display = '';
+    txt.textContent = 'Sign In to Dashboard';
+  };
+
   try {
     const { data, error } = await sb.from('admin_users')
       .select('*')
@@ -1108,9 +1138,8 @@ async function handleLogin(e){
       .eq('status', 'Active')
       .maybeSingle();
     if (error) throw error;
-    if (!data) throw new Error('Invalid username or password.');
+    if (!data) { showErr('Invalid username or password.'); return; }
     adminRecord = data;
-    // Use a synthetic currentUser object so the rest of the dashboard works
     currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
     localStorage.setItem('sc_admin_session', JSON.stringify({ id: data.id, username: data.username, role: data.role, badge: data.badge }));
     document.getElementById('auth-overlay').classList.add('hidden');
@@ -1119,7 +1148,13 @@ async function handleLogin(e){
     loadAll();
     checkCookieBanner();
     setupRealtimeSubscriptions();
-  } catch(err) { errEl.textContent = err.message; }
+  } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
+}
+function toggleAdminPw(){
+  const inp = document.getElementById('auth-password');
+  const icon = document.getElementById('auth-eye');
+  if(inp.type === 'password'){ inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+  else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
 }
 async function handleLogout(){
   adminRecord = null;
@@ -1182,7 +1217,7 @@ async function loadAll(){
   try{
     const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr]=await Promise.all([
       sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
-      sb.from('employer_profiles').select('*').order('created_at',{ascending:false}),
+      sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
       sb.from('conversations').select('*').order('last_message_at',{ascending:false}).limit(100),
       sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(50),
@@ -1330,37 +1365,30 @@ function renderEmployers(){
   const q=(document.getElementById('empr-search')?.value||'').toLowerCase();
   const sf=document.getElementById('empr-status-filter')?.value||'';
   let data=allEmployers.filter(e=>{
-    const m=!q||[(e.full_name||''),(e.company_name||''),(e.phone_number||''),(e.phone||''),(e.email||'')].join(' ').toLowerCase().includes(q);
-    const sm=!sf||(sf==='active'?!e.is_suspended:sf==='suspended'?e.is_suspended:true);
-    return m&&sm;
+    const m=!q||[(e.full_name||''),(e.company_name||''),(e.phone_number||'')].join(' ').toLowerCase().includes(q);
+    return m&&(!sf||true);
   });
   document.getElementById('employers-tbody').innerHTML=data.map(e=>{
-    // email: try employer row first, fall back to joined user
     const user=allUsers.find(u=>u.id===e.user_id)||{};
-    const email=e.email||user.email||'—';
-    const phone=e.phone_number||e.phone||user.phone||'—';
-    const statusBadge=e.is_suspended
-      ?'<span class="badge badge-rose">Suspended</span>'
-      :'<span class="badge badge-green">Active</span>';
     return `<tr>
       <td><div class="user-cell">
         <div class="avatar">${getInitials(e.full_name)}</div>
-        <div class="user-info"><div class="user-name">${esc(e.full_name||'—')}</div><div class="user-email">${esc(email)}</div></div>
+        <div class="user-info"><div class="user-name">${esc(e.full_name||'—')}</div><div class="user-email">${esc(user.email||'')}</div></div>
       </div></td>
       <td>${esc(e.company_name||'—')}</td>
-      <td>${esc(email)}</td>
-      <td>${esc(phone)}</td>
-      <td>${statusBadge}</td>
+      <td>${esc(user.email||'—')}</td>
+      <td>${e.phone_number||e.phone||'—'}</td>
+      <td><span class="badge badge-green">Active</span></td>
       <td>${e.is_verified?'<span class="badge badge-green">✓</span>':'<span class="badge badge-muted">No</span>'}</td>
-      <td>${e.hiring_history||e.total_hires||0}</td>
+      <td>${e.hiring_history||0}</td>
       <td><span class="badge badge-muted">Ksh 2,000</span></td>
       <td>${fmtDate(e.created_at)}</td>
       <td><div class="actions-cell">
         <button class="btn btn-sm btn-ghost" onclick="viewEmployerProfile('${e.id}')"><i class="bi bi-eye"></i></button>
         <button class="btn btn-sm btn-primary" onclick="toggleVerifyEmployer('${e.id}',${!e.is_verified})">${e.is_verified?'Unverify':'Verify'}</button>
-        <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${e.user_id||e.id}')"><i class="bi bi-cash"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${e.user_id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${e.id}')"><i class="bi bi-camera-video"></i></button>
-        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${esc(email)}','${esc(e.full_name)}')"><i class="bi bi-chat"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${user.email}','${esc(e.full_name)}')"><i class="bi bi-chat"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteEmployer('${e.id}')"><i class="bi bi-trash3"></i></button>
       </div></td>
     </tr>`;
@@ -1448,15 +1476,12 @@ async function sendAdminChatMessage(){
   const input=document.getElementById('admin-chat-input');
   const body=input.value.trim();
   if(!body)return;
-  if(!adminRecord){showToast('err','Admin session lost — please re-login');return;}
   try{
     const {error}=await sb.from('messages').insert({
       conversation_id:activeConvId,
-      sender_id:adminRecord.id,         // admin_users.id — the authoritative admin ID
-      admin_user_id:adminRecord.id,     // explicit admin column if schema has it
-      sender_name:adminRecord.username||'Admin',
+      sender_id:currentUser.id,
       body:body,
-      sender_type:'admin',
+      sender_type:'support',
       is_from_admin:true,
       created_at:new Date().toISOString()
     });
@@ -1505,68 +1530,7 @@ async function endConversation(){
   await loadAll();
   showToast('ok','Conversation ended');
 }
-// ============================================================
-// START INTERVIEW CONVERSATION FROM APPLICATION
-// ============================================================
-async function startInterviewChat(appId, workerName, jobId, jobTitle){
-  if(!adminRecord){showToast('err','Admin session lost');return;}
-  try{
-    // Look for an existing admin-interview conversation for this application
-    let {data:existing}=await sb.from('conversations')
-      .select('*')
-      .eq('application_id', appId)
-      .eq('is_admin_thread', true)
-      .maybeSingle();
-
-    let convId;
-    if(existing){
-      convId=existing.id;
-    }else{
-      // Fetch the application to get the worker's session_id / user_id
-      const {data:app}=await sb.from('job_applications').select('*').eq('id',appId).maybeSingle();
-      const worker=allWorkers.find(w=>
-        w.session_id===app?.worker_id||w.session_id===app?.applicant_id||
-        w.id===app?.worker_id||w.id===app?.applicant_id||w.id===app?.employee_id
-      );
-
-      const {data:newConv,error:ce}=await sb.from('conversations').insert({
-        employee_id: worker?.session_id||worker?.id||app?.worker_id||app?.applicant_id,
-        employer_id: adminRecord.id,      // admin is the "employer" side for interview threads
-        admin_user_id: adminRecord.id,
-        application_id: appId,
-        job_id: jobId||null,
-        status: 'active',
-        is_admin_thread: true,
-        interview_thread: true,
-        subject: `Interview: ${workerName} — ${jobTitle||'Job'}`,
-        last_message_text: '',
-        last_message_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-      }).select().maybeSingle();
-      if(ce) throw ce;
-      convId=newConv.id;
-      // Add to local list
-      allConversations.unshift(newConv);
-    }
-
-    // Close modals that may be open before opening chat
-    closeModal('app-detail-modal');
-    closeModal('applications-modal');
-    activeConvId=convId;
-    document.getElementById('chat-modal-title').innerHTML=`<i class="bi bi-camera-video"></i> Interview: <strong>${esc(workerName)}</strong>`;
-    document.getElementById('chat-paused-bar').style.display='none';
-    document.getElementById('chat-input-area').style.display='flex';
-    document.getElementById('chat-pause-btn').textContent='⏸ Pause';
-    openModal('chat-modal');
-    await loadConversationMessages(convId);
-    showToast('ok','Interview chat opened');
-  }catch(err){
-    showToast('err','Could not start interview chat: '+err.message);
-    console.error(err);
-  }
-}
-
-
+async function pauseConversation(id,isPaused){
   const newStatus=isPaused?'active':'archived';
   await sb.from('conversations').update({status:newStatus}).eq('id',id);
   await loadAll();
@@ -1666,7 +1630,7 @@ function renderJobs(){
       <td>${j.salary_min&&j.salary_max?`Ksh ${j.salary_min.toLocaleString()}–${j.salary_max.toLocaleString()}`:j.salary_range||'—'}</td>
       <td><span class="badge badge-${j.status==='active'?'green':j.status==='draft'?'amber':'rose'}">${j.status}</span></td>
       <td>${fmtDate(j.created_at)}</td>
-      <td><button class="btn btn-sm btn-sky" onclick="viewJobApplications('${j.id}','${esc(j.title)}')">${appCount} App${appCount!==1?'s':''}</button></td>
+      <td><button class="btn btn-sm btn-sky" onclick="viewJobApplications('${j.id}')">${appCount} Apps</button></td>
       <td><div class="actions-cell">
         <button class="btn btn-sm btn-amber" onclick="toggleJobStatus('${j.id}','${j.status}')">${j.status==='active'?'Close':'Activate'}</button>
         <button class="btn btn-sm btn-danger" onclick="deleteJob('${j.id}')"><i class="bi bi-trash3"></i></button>
@@ -1689,230 +1653,6 @@ async function deleteJob(id){
   allJobs=allJobs.filter(j=>j.id!==id);
   renderJobs();showToast('ok','Job moved to trash');
 }
-
-// ============================================================
-// VIEW JOB APPLICATIONS (rich modal)
-// ============================================================
-async function viewJobApplications(jobId, jobTitle){
-  const titleEl=document.getElementById('apps-job-title');
-  titleEl.textContent = jobTitle || 'Job';
-  titleEl.dataset.jobId = jobId;
-  document.getElementById('applications-tbody').innerHTML='<tr><td colspan="8" style="text-align:center"><span class="spinner"></span> Loading…</td></tr>';
-  document.getElementById('apps-summary').innerHTML='';
-  openModal('applications-modal');
-
-  try{
-    // Fetch applications fresh for this job
-    const {data:apps, error}=await sb.from('job_applications')
-      .select('*')
-      .eq('job_id', jobId)
-      .order('applied_at',{ascending:false});
-    if(error) throw error;
-
-    // Summary strip
-    const total=apps.length;
-    const pending=apps.filter(a=>a.status==='pending'||!a.status).length;
-    const shortlisted=apps.filter(a=>a.status==='shortlisted'||a.status==='interview').length;
-    const hired=apps.filter(a=>a.status==='hired').length;
-    const rejected=apps.filter(a=>a.status==='rejected').length;
-    document.getElementById('apps-summary').innerHTML=`
-      <div style="padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-align:center"><div style="font-size:1.4rem;font-weight:800">${total}</div><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div></div>
-      <div style="padding:8px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--amber)">${pending}</div><div style="font-size:10px;color:var(--amber);font-weight:600;text-transform:uppercase">Pending</div></div>
-      <div style="padding:8px 14px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:8px;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--sky)">${shortlisted}</div><div style="font-size:10px;color:var(--sky);font-weight:600;text-transform:uppercase">Shortlisted</div></div>
-      <div style="padding:8px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--green)">${hired}</div><div style="font-size:10px;color:var(--green);font-weight:600;text-transform:uppercase">Hired</div></div>
-      <div style="padding:8px 14px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:8px;text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--rose)">${rejected}</div><div style="font-size:10px;color:var(--rose);font-weight:600;text-transform:uppercase">Rejected</div></div>`;
-
-    if(!apps.length){
-      document.getElementById('applications-tbody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:2rem;display:block;opacity:.2;margin-bottom:.5rem"></i>No applications yet</td></tr>';
-      return;
-    }
-
-    document.getElementById('applications-tbody').innerHTML=apps.map(a=>{
-      // resolve worker from worker_profiles (match on session_id or user_id or worker_id)
-      const worker = allWorkers.find(w=>
-        w.session_id===a.worker_id||w.session_id===a.applicant_id||
-        w.id===a.worker_id||w.id===a.applicant_id||w.id===a.employee_id
-      );
-      const name   = worker?.full_name || a.applicant_name || a.full_name || '—';
-      const role   = worker?.preferred_role || worker?.job_title || a.applied_role || '—';
-      const skills = (worker?.key_skills||worker?.skills||'').split(',').filter(Boolean).slice(0,3);
-      const loc    = worker ? (worker.current_town||(worker.county||'Kenya')) : (a.location||'—');
-      const salMin = worker?.salary_min || a.salary_min;
-      const salMax = worker?.salary_max || a.salary_max;
-      const salDisplay = salMin&&salMax ? `Ksh ${Number(salMin).toLocaleString()}–${Number(salMax).toLocaleString()}` : worker?.salary_range || a.expected_salary || '—';
-      const expYrs = worker?.years_experience ?? worker?.experience_years ?? a.years_experience ?? '—';
-      const statusColor = {pending:'amber',shortlisted:'sky',interview:'violet',hired:'green',rejected:'rose'}[a.status]||'muted';
-
-      return `<tr>
-        <td>
-          <div class="user-cell">
-            <div class="avatar">${getInitials(name)}</div>
-            <div class="user-info">
-              <div class="user-name">${esc(name)}</div>
-              <div class="user-email">${esc(worker?.email||a.email||'—')}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div style="font-size:12px;font-weight:600;margin-bottom:3px">${esc(role)}</div>
-          <div style="display:flex;gap:3px;flex-wrap:wrap">${skills.map(s=>`<span class="badge badge-muted" style="font-size:9px">${esc(s.trim())}</span>`).join('')}</div>
-        </td>
-        <td>${esc(loc)}</td>
-        <td style="font-size:12px">${salDisplay}</td>
-        <td style="text-align:center">${expYrs} yr${expYrs!==1?'s':''}</td>
-        <td><span class="badge badge-${statusColor}">${a.status||'pending'}</span></td>
-        <td style="font-size:11px;color:var(--muted)">${fmtDate(a.applied_at||a.created_at)}</td>
-        <td>
-          <div class="actions-cell">
-            <button class="btn btn-sm btn-ghost" title="View full profile & application" onclick="openAppDetail('${a.id}')"><i class="bi bi-eye"></i></button>
-            <button class="btn btn-sm btn-sky" title="Start interview conversation" onclick="startInterviewChat('${a.id}','${esc(name)}','${jobId}','${esc(jobTitle)}')"><i class="bi bi-chat-dots"></i> Interview</button>
-            <button class="btn btn-sm btn-primary" title="Shortlist" onclick="updateAppStatus('${a.id}','shortlisted')"><i class="bi bi-star"></i></button>
-            <button class="btn btn-sm btn-danger" title="Reject" onclick="updateAppStatus('${a.id}','rejected')"><i class="bi bi-x-lg"></i></button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-  }catch(err){
-    document.getElementById('applications-tbody').innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--rose)">Error: ${esc(err.message)}</td></tr>`;
-    showToast('err','Failed to load applications: '+err.message);
-  }
-}
-
-async function updateAppStatus(appId, newStatus){
-  const {error}=await sb.from('job_applications').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',appId);
-  if(error){showToast('err',error.message);return;}
-  const a=allApplications.find(a=>a.id===appId);
-  if(a) a.status=newStatus;
-  showToast('ok',`Application marked as ${newStatus}`);
-  // Refresh the applications table inside the modal
-  const titleEl=document.getElementById('apps-job-title');
-  const jobId=titleEl?.dataset?.jobId;
-  if(jobId) viewJobApplications(jobId, titleEl.textContent);
-}
-
-// ============================================================
-// APPLICATION DETAIL MODAL (full profile + form data)
-// ============================================================
-async function openAppDetail(appId){
-  document.getElementById('app-detail-body').innerHTML='<div style="text-align:center;padding:2rem"><span class="spinner"></span></div>';
-  document.getElementById('app-detail-footer').innerHTML='<button class="btn btn-secondary" onclick="closeModal(\'app-detail-modal\')">Close</button>';
-  openModal('app-detail-modal');
-
-  try{
-    // Fetch the application row fresh
-    const {data:a,error:ae}=await sb.from('job_applications').select('*').eq('id',appId).maybeSingle();
-    if(ae) throw ae;
-    if(!a){document.getElementById('app-detail-body').innerHTML='<p style="color:var(--rose);padding:1rem">Application not found.</p>';return;}
-
-    // Resolve worker profile
-    const worker=allWorkers.find(w=>
-      w.session_id===a.worker_id||w.session_id===a.applicant_id||
-      w.id===a.worker_id||w.id===a.applicant_id||w.id===a.employee_id
-    );
-
-    const name=worker?.full_name||a.applicant_name||a.full_name||'—';
-    const fmtSalary=(min,max,range)=>min&&max?`Ksh ${Number(min).toLocaleString()} – ${Number(max).toLocaleString()}/mo`:range||'Negotiable';
-
-    // Build referees section if worker has them
-    let refSection='';
-    if(worker?.referee1_name||worker?.ref1_name){
-      const r1name=worker.referee1_name||worker.ref1_name||'—';
-      const r1phone=worker.referee1_phone||worker.ref1_phone||'—';
-      const r1rel=worker.referee1_relation||worker.ref1_relationship||'—';
-      const r2name=worker.referee2_name||worker.ref2_name||'';
-      const r2phone=worker.referee2_phone||worker.ref2_phone||'—';
-      const r2rel=worker.referee2_relation||worker.ref2_relationship||'—';
-      refSection=`<div class="profile-section"><h3>Referees (Private)</h3>
-        <div class="profile-grid">
-          <div class="profile-field"><label>Referee 1</label><span>${esc(r1name)}</span></div>
-          <div class="profile-field"><label>Phone</label><span>${esc(r1phone)}</span></div>
-          <div class="profile-field"><label>Relationship</label><span>${esc(r1rel)}</span></div>
-          ${r2name?`<div class="profile-field"><label>Referee 2</label><span>${esc(r2name)}</span></div>
-          <div class="profile-field"><label>Phone</label><span>${esc(r2phone)}</span></div>
-          <div class="profile-field"><label>Relationship</label><span>${esc(r2rel)}</span></div>`:''}
-        </div></div>`;
-    }
-
-    document.getElementById('app-detail-body').innerHTML=`
-      <!-- WORKER PROFILE HERO -->
-      <div class="profile-hero">
-        <div class="profile-avatar-lg">${worker?.profile_photo_url?`<img src="${worker.profile_photo_url}">`:''}${getInitials(name)}</div>
-        <div class="profile-info">
-          <h2>${esc(name)}</h2>
-          <p>${esc(worker?.preferred_role||worker?.job_title||'Domestic Worker')} ${worker?.county?'• '+worker.county:''}</p>
-          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-            ${worker?.is_verified?'<span class="badge badge-sky">✓ Verified</span>':''}
-            ${worker?.approved_at?'<span class="badge badge-green">Approved</span>':'<span class="badge badge-amber">Pending Approval</span>'}
-            <span class="badge badge-${({pending:'amber',shortlisted:'sky',interview:'violet',hired:'green',rejected:'rose'})[a.status]||'muted'}">${a.status||'pending'}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- PROFILE DETAILS -->
-      ${worker?`
-      <div class="profile-section"><h3>Personal Details</h3>
-      <div class="profile-grid">
-        <div class="profile-field"><label>Email</label><span>${worker.email||'—'}</span></div>
-        <div class="profile-field"><label>Phone</label><span>${worker.phone||'—'}</span></div>
-        <div class="profile-field"><label>Date of Birth</label><span>${worker.dob||worker.date_of_birth||'—'}</span></div>
-        <div class="profile-field"><label>Gender</label><span>${worker.gender||'—'}</span></div>
-        <div class="profile-field"><label>National ID</label><span>${worker.id_number||worker.national_id||'—'}</span></div>
-        <div class="profile-field"><label>Marital Status</label><span>${worker.marital_status||'—'}</span></div>
-        <div class="profile-field"><label>Current Town</label><span>${worker.current_town||'—'}</span></div>
-        <div class="profile-field"><label>County</label><span>${worker.county||'—'}</span></div>
-        <div class="profile-field"><label>Home Region</label><span>${worker.home_region||worker.home_town||'—'}</span></div>
-        <div class="profile-field"><label>Languages</label><span>${worker.languages||'—'}</span></div>
-      </div></div>
-      <div class="profile-section"><h3>Professional</h3>
-      <div class="profile-grid">
-        <div class="profile-field"><label>Role Sought</label><span>${worker.preferred_role||worker.job_title||'—'}</span></div>
-        <div class="profile-field"><label>Experience</label><span>${worker.years_experience||worker.experience_years||'—'} yrs</span></div>
-        <div class="profile-field"><label>Skills</label><span>${worker.key_skills||worker.skills||'—'}</span></div>
-        <div class="profile-field"><label>Salary Range</label><span>${fmtSalary(worker.salary_min,worker.salary_max,worker.salary_range)}</span></div>
-        <div class="profile-field"><label>Work Arrangement</label><span>${worker.work_arrangement||'—'}</span></div>
-        <div class="profile-field"><label>Availability</label><span>${worker.availability||'—'}</span></div>
-        <div class="profile-field"><label>Medical Cert</label><span>${worker.has_medical_cert?'Yes':'No'}</span></div>
-        <div class="profile-field"><label>Good Conduct</label><span>${worker.has_good_conduct?'Yes':'No'}</span></div>
-        <div class="profile-field"><label>Education</label><span>${worker.edu_level||worker.education||'—'}</span></div>
-      </div></div>`:'<p style="color:var(--muted);font-size:13px;padding:0.5rem 0">Worker profile not found in system — may be an external applicant.</p>'}
-
-      ${refSection}
-
-      <!-- APPLICATION FORM DATA -->
-      <div class="profile-section"><h3><i class="bi bi-file-earmark-text" style="color:var(--brand)"></i> Application Form Data</h3>
-      <div class="profile-grid">
-        <div class="profile-field"><label>Applied For</label><span>${esc(a.applied_role||a.job_title||'—')}</span></div>
-        <div class="profile-field"><label>Cover Letter / Message</label><span style="white-space:pre-line">${esc(a.cover_letter||a.message||a.notes||'—')}</span></div>
-        <div class="profile-field"><label>Expected Salary</label><span>${a.expected_salary?'Ksh '+Number(a.expected_salary).toLocaleString():fmtSalary(a.salary_min,a.salary_max,null)}</span></div>
-        <div class="profile-field"><label>Availability</label><span>${a.availability||'—'}</span></div>
-        <div class="profile-field"><label>How They Found Job</label><span>${esc(a.referral_source||'—')}</span></div>
-        <div class="profile-field"><label>Applied At</label><span>${fmtDate(a.applied_at||a.created_at)}</span></div>
-        ${a.admin_notes?`<div class="profile-field" style="grid-column:1/-1"><label>Admin Notes</label><span style="color:var(--amber)">${esc(a.admin_notes)}</span></div>`:''}
-      </div></div>
-
-      <!-- DOCUMENTS -->
-      ${worker&&(worker.id_front_url||worker.id_back_url||worker.selfie_url)?`
-      <div class="profile-section"><h3>Documents</h3><div class="doc-grid">
-        ${worker.id_front_url?`<div class="doc-thumb"><img src="${worker.id_front_url}" onerror="this.style.display='none'"><a href="${worker.id_front_url}" target="_blank">ID Front ↗</a></div>`:''}
-        ${worker.id_back_url?`<div class="doc-thumb"><img src="${worker.id_back_url}" onerror="this.style.display='none'"><a href="${worker.id_back_url}" target="_blank">ID Back ↗</a></div>`:''}
-        ${worker.selfie_url?`<div class="doc-thumb"><img src="${worker.selfie_url}" onerror="this.style.display='none'"><a href="${worker.selfie_url}" target="_blank">Selfie ↗</a></div>`:''}
-        ${worker.edu_cert_url?`<div class="doc-thumb"><img src="${worker.edu_cert_url}" onerror="this.style.display='none'"><a href="${worker.edu_cert_url}" target="_blank">Certificate ↗</a></div>`:''}
-      </div></div>`:''}
-    `;
-
-    // Footer with actions
-    document.getElementById('app-detail-footer').innerHTML=`
-      <button class="btn btn-secondary" onclick="closeModal('app-detail-modal')">Close</button>
-      <button class="btn btn-amber" onclick="updateAppStatus('${a.id}','shortlisted');closeModal('app-detail-modal')"><i class="bi bi-star"></i> Shortlist</button>
-      <button class="btn btn-primary" onclick="startInterviewChat('${a.id}','${esc(name)}','${a.job_id||''}','')"><i class="bi bi-chat-dots"></i> Start Interview Chat</button>
-      <button class="btn btn-danger" onclick="updateAppStatus('${a.id}','rejected');closeModal('app-detail-modal')"><i class="bi bi-x-lg"></i> Reject</button>
-    `;
-  }catch(err){
-    document.getElementById('app-detail-body').innerHTML=`<p style="color:var(--rose);padding:1rem">Error: ${esc(err.message)}</p>`;
-    showToast('err','Failed to load application: '+err.message);
-  }
-}
-
 
 // ============================================================
 // JOB POST REQUESTS
@@ -2190,8 +1930,7 @@ async function deleteEmployer(id){
   if(!confirm('Delete this employer?'))return;
   const e=allEmployers.find(e=>e.id===id);
   await sb.from('trash_bin').insert({entity_type:'employer_profile',entity_id:id,entity_data:e,deleted_by:currentUser.id});
-  // mark suspended instead of is_deleted (employer_profiles has no is_deleted column)
-  await sb.from('employer_profiles').update({is_suspended:true}).eq('id',id);
+  await sb.from('employer_profiles').update({is_deleted:true}).eq('id',id);
   allEmployers=allEmployers.filter(e=>e.id!==id);renderEmployers();showToast('ok','Moved to trash');
 }
 async function toggleUserActive(id,isActive){
