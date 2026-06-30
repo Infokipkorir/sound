@@ -7,6 +7,14 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+// SUPABASE
+// ============================================================
+var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -328,6 +336,22 @@ let userLocation = null;
 let userIP = null;
 
 // ============================================================
+// FORCE FRESH SIGN-IN — this page never auto-redirects based on
+// an existing Supabase session. Any existing session found here
+// is explicitly signed out so the person must re-enter credentials.
+// ============================================================
+(async function forceSignOut() {
+  try {
+    var sessRes = await dbClient.auth.getSession();
+    if (sessRes.data && sessRes.data.session) {
+      await dbClient.auth.signOut();
+    }
+  } catch (e) {
+    // Non-fatal — proceed to show the login form regardless.
+  }
+})();
+
+// ============================================================
 // GEOLOCATION - Detect user's real-time location on login
 // ============================================================
 async function detectUserLocationAtLogin() {
@@ -550,42 +574,81 @@ async function handleLogin() {
 
   setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', true, 'Signing in…');
 
-  try {
-    // Simulate API call - replace with actual Supabase auth
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  var result = await dbClient.auth.signInWithPassword({ email, password });
 
-    // Simulate successful login for testing
-    const firstName = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
-
-    // Remember Me - email pre-fill only
-    if (remember) {
-      saveRememberMe(email, firstName);
-    } else {
-      deleteCookie(COOKIE_NAME);
-    }
-
-    var greeting = firstName ? 'Welcome back, ' + firstName + '! ' : '';
-    showAlert('alertSuccess', 'alertSuccessText', greeting + 'Redirecting you now…');
-
+  if (result.error) {
     setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
-
-    // Log login data for security/fraud detection
-    console.log('Login successful:', {
-      email: email,
-      timestamp: new Date().toISOString(),
-      ipAddress: userIP,
-      location: userLocation,
-      role: currentRole
-    });
-
-    setTimeout(function() {
-      window.location.href = 'employee-dashboard.html';
-    }, 1500);
-
-  } catch (error) {
-    setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
-    showAlert('alertLogin', 'alertLoginText', error.message || 'Sign in failed. Please try again.');
+    emailEl.classList.add('err');
+    pwEl.classList.add('err');
+    showAlert('alertLogin', 'alertLoginText', friendlyLoginError(result.error.message));
+    pwEl.value = '';
+    return;
   }
+
+  var user = result.data.user;
+
+  // Look up the account in the real "users" table for role, name, and status
+  var userRes = await dbClient
+    .from('users')
+    .select('role, full_name, is_active')
+    .eq('id', user.id)
+    .single();
+
+  var account   = userRes.data || {};
+  var role      = account.role || currentRole;
+  var fullName  = account.full_name || '';
+  var firstName = fullName ? fullName.split(' ')[0] : '';
+  var isActive  = account.is_active !== false;
+
+  // Account status gate
+  if (!isActive) {
+    await dbClient.auth.signOut();
+    setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
+    showAlert('alertLogin', 'alertLoginText',
+      'This account is deactivated. Email support@soundscare.co.ke to reactivate.');
+    return;
+  }
+
+  // Remember Me - email pre-fill only
+  if (remember) {
+    saveRememberMe(email, firstName);
+  } else {
+    deleteCookie(COOKIE_NAME);
+  }
+
+  var greeting = firstName ? 'Welcome back, ' + firstName + '! ' : '';
+  showAlert('alertSuccess', 'alertSuccessText', greeting + 'Redirecting you now…');
+
+  setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
+
+  // Log login data for security/fraud detection
+  console.log('Login successful:', {
+    email: email,
+    timestamp: new Date().toISOString(),
+    ipAddress: userIP,
+    location: userLocation,
+    role: role
+  });
+
+  setTimeout(function() {
+    window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'employee-dashboard.html';
+  }, 900);
+}
+
+function friendlyLoginError(msg) {
+  if (!msg) return 'Sign in failed. Please try again.';
+  var m = msg.toLowerCase();
+  if (m.includes('invalid login') || m.includes('invalid_credentials') || m.includes('wrong password'))
+    return 'Incorrect email or password. Please check and try again.';
+  if (m.includes('email not confirmed') || m.includes('not confirmed'))
+    return 'Please verify your email first. Check your inbox for the confirmation link.';
+  if (m.includes('too many') || m.includes('rate limit'))
+    return 'Too many attempts. Please wait a few minutes before trying again.';
+  if (m.includes('user not found') || m.includes('no user'))
+    return 'No account found with this email. Would you like to register?';
+  if (m.includes('network') || m.includes('fetch'))
+    return 'Connection error. Please check your internet and try again.';
+  return 'Sign in failed. Please check your credentials and try again.';
 }
 
 function friendlyLoginError(msg) {
@@ -623,20 +686,21 @@ async function handleForgot() {
 
   setBtnLoading('forgotBtn', 'forgotSpinner', 'forgotBtnText', true, 'Sending…');
 
-  try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200));
-
-    // Always show success to prevent email enumeration
-    showAlert('alertForgotSuccess', 'alertForgotSuccessText',
-      'If an account exists for ' + email + ', a reset link has been sent. Check your inbox and spam folder.', 'success');
-    emailEl.value = '';
-
-  } catch (error) {
-    console.error('Password reset error:', error);
-  }
+  var res = await dbClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password.html'
+  });
 
   setBtnLoading('forgotBtn', 'forgotSpinner', 'forgotBtnText', false, 'Send Reset Link');
+
+  if (res.error) {
+    // Don't reveal if email exists or not — always show success message
+    console.warn('[SoundsCare] Reset error (hidden from user):', res.error.message);
+  }
+
+  // Always show success to prevent email enumeration
+  showAlert('alertForgotSuccess', 'alertForgotSuccessText',
+    'If an account exists for ' + email + ', a reset link has been sent. Check your inbox and spam folder.', 'success');
+  emailEl.value = '';
 }
 
 // ============================================================

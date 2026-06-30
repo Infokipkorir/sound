@@ -141,6 +141,25 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 /* IP & LOCATION INFO */
 .ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
 .ip-status i{font-size:13px}
+
+/* OTP */
+#step-otp{display:none}
+.otp-info{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;color:var(--green-dark);margin-bottom:1.4rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.otp-boxes{display:flex;gap:6px;justify-content:center;margin:1rem 0}
+.otp-box{width:43px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);padding:0}
+.otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.12);background:var(--surface)}
+.otp-box.filled{border-color:var(--green);background:var(--green-light)}
+.otp-box.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
+.otp-sep{display:flex;align-items:center;padding:0 2px;color:var(--text-muted);font-weight:700;font-size:18px}
+.otp-timer{text-align:center;font-size:13px;color:var(--text-muted);margin-top:.6rem}
+.otp-resend-btn{background:none;border:none;color:var(--green);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;padding:0}
+.otp-resend-btn:disabled{color:var(--text-muted);text-decoration:none;cursor:not-allowed}
+
+/* SUCCESS */
+#step-success{display:none;text-align:center;padding:.5rem 0}
+.success-icon{width:70px;height:70px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:33px;color:var(--green)}
+.success-title{font-size:23px;font-weight:800;margin-bottom:8px;font-family:var(--serif)}
+.success-body{font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:1.5rem}
 </style>
 </head>
 <body>
@@ -184,6 +203,7 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
       </div>
 
       <!-- FORM HEADER -->
+      <div id="step-form">
       <div class="step-badge">
         <i class="bi bi-person-fill-add"></i>
         EMPLOYEE REGISTRATION
@@ -266,6 +286,10 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
             <input type="checkbox" id="dataCheck" name="dataCheck" required>
             <label for="dataCheck">I consent to location and device data collection for security and fraud prevention</label>
           </div>
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="updatesCheck" name="updatesCheck">
+            <label for="updatesCheck">Send me job updates and new job alerts (optional)</label>
+          </div>
         </div>
 
         <!-- SUBMIT BUTTON -->
@@ -278,8 +302,73 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 
       <!-- SIGN IN LINK -->
       <div class="auth-foot">
-        Already have an account? <a href="login-employee.html">Sign In</a>
+        Already have an account? <a href="login.html">Sign In</a>
       </div>
+      </div><!-- end step-form -->
+
+      <!-- ===== OTP VERIFICATION STEP ===== -->
+      <div id="step-otp">
+        <div class="step-badge">
+          <i class="bi bi-envelope-check"></i>
+          Verify Your Email
+        </div>
+        <h1 class="step-title">Check your inbox</h1>
+        <p class="step-sub">Enter the 8-digit code to activate your account.</p>
+
+        <div class="otp-info">
+          <i class="bi bi-info-circle" style="font-size:16px;flex-shrink:0;margin-top:2px"></i>
+          <span>An 8-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes. Check spam/junk if you don't see it.</span>
+        </div>
+
+        <div class="alert error" id="alertOtp">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span id="alertOtpText"></span>
+        </div>
+
+        <div class="otp-boxes">
+          <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)" onpaste="otpPaste(event,0)">
+          <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)" onpaste="otpPaste(event,1)">
+          <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)" onpaste="otpPaste(event,2)">
+          <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)" onpaste="otpPaste(event,3)">
+          <span class="otp-sep">—</span>
+          <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)" onpaste="otpPaste(event,4)">
+          <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)" onpaste="otpPaste(event,5)">
+          <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)" onpaste="otpPaste(event,6)">
+          <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)" onpaste="otpPaste(event,7)">
+        </div>
+
+        <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
+        <div id="resendWrap" class="otp-timer" style="display:none">
+          <button class="otp-resend-btn" id="resendBtn" onclick="resendOtp()" type="button">
+            <span class="spinner" id="resendSpinner" style="border-color:rgba(27,107,69,.3);border-top-color:var(--green)"></span>
+            <span id="resendBtnText">Resend verification code</span>
+          </button>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:1.4rem">
+          <button class="btn btn-secondary" style="width:auto;padding-left:16px;padding-right:16px" onclick="goBackToForm()" type="button">
+            <i class="bi bi-arrow-left"></i> Back
+          </button>
+          <button class="btn btn-primary" id="otpBtn" onclick="verifyOtp()" type="button">
+            <span class="spinner" id="otpSpinner"></span>
+            <span id="otpBtnText">Verify &amp; Create Account</span>
+          </button>
+        </div>
+      </div><!-- end step-otp -->
+
+      <!-- ===== SUCCESS STEP ===== -->
+      <div id="step-success">
+        <div class="success-icon"><i class="bi bi-patch-check-fill"></i></div>
+        <div class="success-title">Account Created!</div>
+        <div class="success-body">
+          Welcome to SoundsCare, <strong id="successName"></strong>! 🎉<br>
+          Your email <strong id="successEmail"></strong> is verified.<br>
+          Let's get your profile set up.
+        </div>
+        <a id="successLink" href="login.html" class="btn btn-primary" style="text-decoration:none;margin-bottom:.8rem">
+          <i class="bi bi-arrow-right-circle"></i> Continue
+        </a>
+      </div><!-- end step-success -->
 
       <!-- IP & LOCATION INFO -->
       <div class="ip-status" id="ipStatus" style="display:none;">
@@ -294,6 +383,13 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 </div>
 
 <script>
+
+// ============================================================
+// SUPABASE
+// ============================================================
+var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
 // CONFIGURATION
@@ -347,7 +443,12 @@ async function getCountryFromCoordinates(lat, lng) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
     const data = await response.json();
-    const countryCode = data.address?.country_code?.toUpperCase();
+    const addr = data.address || {};
+    userLocation = userLocation || {};
+    userLocation.countryName = addr.country || null;
+    userLocation.county = addr.county || addr.state || null;
+    userLocation.town = addr.city || addr.town || addr.village || null;
+    const countryCode = addr.country_code?.toUpperCase();
     return countryCode;
   } catch (err) {
     console.warn('Reverse geocoding failed:', err);
@@ -364,6 +465,10 @@ async function getLocationFromIP() {
     const data = await response.json();
     userIP = data.ip;
     const countryCode = data.country_code?.toUpperCase();
+    userLocation = userLocation || {};
+    userLocation.countryName = data.country_name || null;
+    userLocation.county = data.region || null;
+    userLocation.town = data.city || null;
     
     document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name})`;
     document.getElementById('ipStatus').style.display = 'flex';
@@ -450,19 +555,18 @@ async function checkEmailInDatabase(email) {
   try {
     const btn = document.getElementById('emailCheckBtn');
     btn.classList.remove('checking');
-    
-    // Call your backend API to check email in database
-    const response = await fetch('/api/auth/check-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
 
-    const data = await response.json();
+    // Check the real users table for an existing account with this email
+    const result = await dbClient
+      .from('users')
+      .select('id, is_active')
+      .eq('email', email)
+      .maybeSingle();
 
-    // Handle different scenarios
-    if (data.exists) {
-      if (data.isActive) {
+    if (result.error) throw result.error;
+
+    if (result.data) {
+      if (result.data.is_active !== false) {
         // Email exists and account is ACTIVE
         emailCheckStatus = 'taken_active';
         btn.classList.add('unavailable');
@@ -471,17 +575,17 @@ async function checkEmailInDatabase(email) {
         showEmailStatusWithAction(
           'You have an active account with this email',
           'Sign in instead',
-          'login-employee.html',
+          'login.html',
           'taken-active'
         );
       } else {
-        // Email exists but account is DELETED
+        // Email exists but account is deactivated
         emailCheckStatus = 'taken_deleted';
         btn.classList.add('unavailable');
         document.getElementById('regEmail').classList.add('err');
         document.getElementById('regEmail').classList.remove('valid');
         showEmailStatusWithAction(
-          'You have a deleted account with this email',
+          'This account is deactivated',
           'Contact support',
           'mailto:support@soundscare.co.ke',
           'taken-deleted'
@@ -495,62 +599,17 @@ async function checkEmailInDatabase(email) {
       document.getElementById('regEmail').classList.remove('err');
       showEmailStatus('available', 'Email available - Ready to register', 'success');
     }
-    
+
     updateRegisterButtonState();
   } catch (err) {
-    console.error('Email check failed:', err);
-    // Fallback to simulated check
-    simulateEmailCheckFallback(email);
+    console.warn('[SoundsCare] Email check failed, will re-verify on submit:', err);
+    const btn = document.getElementById('emailCheckBtn');
+    btn.classList.remove('checking');
+    // Don't hard-block on a transient DB error — let submit re-check.
+    emailCheckStatus = null;
+    showEmailStatus('available', 'Could not verify right now — we will re-check on submit.', 'success');
+    updateRegisterButtonState();
   }
-}
-
-async function simulateEmailCheckFallback(email) {
-  const btn = document.getElementById('emailCheckBtn');
-  btn.classList.remove('checking');
-  
-  // Simulated database check for testing
-  // Replace this with real API when backend is ready
-  const reservedEmails = {
-    'admin@soundscare.co.ke': { exists: true, isActive: true },
-    'support@soundscare.co.ke': { exists: true, isActive: true },
-    'test@example.com': { exists: true, isActive: false },
-  };
-
-  const result = reservedEmails[email];
-
-  if (result) {
-    if (result.isActive) {
-      emailCheckStatus = 'taken_active';
-      btn.classList.add('unavailable');
-      document.getElementById('regEmail').classList.add('err');
-      document.getElementById('regEmail').classList.remove('valid');
-      showEmailStatusWithAction(
-        `You have an active account with ${email}`,
-        'Sign in instead',
-        'login-employee.html',
-        'taken-active'
-      );
-    } else {
-      emailCheckStatus = 'taken_deleted';
-      btn.classList.add('unavailable');
-      document.getElementById('regEmail').classList.add('err');
-      document.getElementById('regEmail').classList.remove('valid');
-      showEmailStatusWithAction(
-        `You have a deleted account with ${email}`,
-        'Contact support',
-        'mailto:support@soundscare.co.ke',
-        'taken-deleted'
-      );
-    }
-  } else {
-    emailCheckStatus = 'available';
-    btn.classList.add('available');
-    document.getElementById('regEmail').classList.add('valid');
-    document.getElementById('regEmail').classList.remove('err');
-    showEmailStatus('available', 'Email available - Ready to register', 'success');
-  }
-
-  updateRegisterButtonState();
 }
 
 function showEmailStatus(status, message, type) {
@@ -634,8 +693,11 @@ function togglePasswordVisibility(fieldId = 'regPassword') {
 }
 
 // ============================================================
-// REGISTRATION HANDLER
+// REGISTRATION HANDLER — STEP 1: create auth user, send OTP
 // ============================================================
+let pendingUser = null;
+let otpInterval = null;
+
 async function handleRegister(event) {
   event.preventDefault();
   
@@ -653,6 +715,7 @@ async function handleRegister(event) {
   const confirmPassword = document.getElementById('confirmPassword').value;
   const termsCheck = document.getElementById('termsCheck').checked;
   const dataCheck = document.getElementById('dataCheck').checked;
+  const updatesCheck = document.getElementById('updatesCheck').checked;
   
   // Clear previous alerts
   hideAllAlerts();
@@ -693,56 +756,320 @@ async function handleRegister(event) {
     return;
   }
   
-  // Set loading state
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Creating account…');
-  
-  try {
-    // Prepare registration data
-    const registrationData = {
-      fullName,
-      email,
-      phone,
-      password,
-      role: 'employee',
-      ipAddress: userIP,
-      location: userLocation,
-      registrationTime: new Date().toISOString(),
-      consentedToTerms: termsCheck,
-      consentedToDataCollection: dataCheck
-    };
-    
-    console.log('Registration data collected:', registrationData);
-    
-    // Here you would typically call your backend API
-    // For now, simulate registration
-    await simulateRegistrationAPI(registrationData);
-    
-    // Success
-    showAlert('alertSuccess', 'alertSuccessText', 'Account created successfully! Redirecting to profile setup...');
-    
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Confirming email is available…');
+
+  // Re-verify email availability against the live DB right before submitting
+  const dupCheck = await dbClient.from('users').select('id').eq('email', email).maybeSingle();
+  if (dupCheck.data) {
     setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    
-    // Redirect to profile setup after delay
-    setTimeout(() => {
-      window.location.href = 'employee-profile-setup.html';
-    }, 2000);
-    
-  } catch (error) {
-    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    showAlert('alertError', 'alertErrorText', error.message || 'Registration failed. Please try again.');
+    showAlert('alertError', 'alertErrorText', 'This email is already registered. Please sign in instead.');
+    return;
   }
+
+  // Store pending registration data — used after OTP verification
+  pendingUser = {
+    fullName, email, phone,
+    country:      userLocation && userLocation.countryName || null,
+    county:       userLocation && userLocation.county || null,
+    town:         userLocation && userLocation.town || null,
+    termsAccepted:  true,
+    receiveUpdates: updatesCheck
+  };
+
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Creating account…');
+
+  const signUpResult = await dbClient.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      data: {
+        full_name:        fullName,
+        first_name:       fullName.split(' ')[0],
+        last_name:        fullName.split(' ').slice(1).join(' '),
+        phone:             phone,
+        role:              'employee',
+        country:           pendingUser.country,
+        terms_accepted:    true,
+        receive_updates:   updatesCheck
+      },
+      emailRedirectTo: null
+    }
+  });
+
+  if (signUpResult.error) {
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', friendlyAuthError(signUpResult.error.message));
+    return;
+  }
+
+  // Send OTP via signInWithOtp
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Sending verification code…');
+  const otpResult = await dbClient.auth.signInWithOtp({
+    email: email,
+    options: { shouldCreateUser: false }
+  });
+
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+
+  if (otpResult.error) {
+    showAlert('alertError', 'alertErrorText', 'Failed to send verification code. Please try again.');
+    return;
+  }
+
+  // Move to OTP step
+  document.getElementById('otpEmailDisplay').textContent = email;
+  document.getElementById('step-form').style.display = 'none';
+  document.getElementById('step-otp').style.display = 'block';
+  startOtpTimer(60);
+  document.getElementById('otp0').focus();
 }
 
-async function simulateRegistrationAPI(data) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() > 0.1) {
-        resolve({ success: true });
-      } else {
-        reject(new Error('Server temporarily unavailable. Please try again.'));
-      }
-    }, 1500);
+function friendlyAuthError(msg) {
+  if (!msg) return 'Something went wrong. Please try again.';
+  const m = msg.toLowerCase();
+  if (m.includes('already registered') || m.includes('already been registered'))
+    return 'This email is already registered. Please sign in instead.';
+  if (m.includes('invalid email')) return 'Please enter a valid email address.';
+  if (m.includes('rate limit')) return 'Too many attempts. Please wait a moment and try again.';
+  if (m.includes('password')) return 'Password must be at least 8 characters.';
+  return 'Registration failed. Please check your details and try again.';
+}
+
+function goBackToForm() {
+  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-form').style.display = 'block';
+  hideAllAlerts();
+}
+
+// ============================================================
+// OTP TIMER
+// ============================================================
+function startOtpTimer(s) {
+  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
+  let left = s;
+  document.getElementById('timerWrap').style.display = 'block';
+  document.getElementById('resendWrap').style.display = 'none';
+  document.getElementById('otpCd').textContent = left;
+  otpInterval = setInterval(function(){
+    left--;
+    document.getElementById('otpCd').textContent = left;
+    if (left <= 0) {
+      clearInterval(otpInterval);
+      otpInterval = null;
+      document.getElementById('timerWrap').style.display = 'none';
+      document.getElementById('resendWrap').style.display = 'flex';
+    }
+  }, 1000);
+}
+
+// ============================================================
+// OTP BOXES (8-digit, indexes 0-7)
+// ============================================================
+const OTP_LEN = 8;
+
+function otpIn(i) {
+  const box = document.getElementById('otp' + i);
+  const v = box.value.replace(/\D/g, '');
+  if (v.length > 1) { distributePaste(v, i); return; }
+  box.value = v;
+  box.classList.toggle('filled', !!v);
+  box.classList.remove('err');
+  if (v && i < OTP_LEN - 1) document.getElementById('otp' + (i + 1)).focus();
+  checkAutoSubmit();
+}
+function otpKey(e, i) {
+  if (e.key === 'Backspace') {
+    const box = document.getElementById('otp' + i);
+    if (box.value) {
+      box.value = '';
+      box.classList.remove('filled');
+    } else if (i > 0) {
+      const prev = document.getElementById('otp' + (i - 1));
+      prev.value = '';
+      prev.classList.remove('filled');
+      prev.focus();
+    }
+    e.preventDefault(); return;
+  }
+  if (e.key === 'ArrowLeft'  && i > 0)           { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && i < OTP_LEN - 1) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
+}
+function otpPaste(e, i) {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+  if (!text) return;
+  distributePaste(text, i);
+}
+function distributePaste(digits, startIndex) {
+  for (let j = 0; j < digits.length && (startIndex + j) < OTP_LEN; j++) {
+    const box = document.getElementById('otp' + (startIndex + j));
+    box.value = digits[j];
+    box.classList.add('filled');
+    box.classList.remove('err');
+  }
+  const nextFocus = Math.min(startIndex + digits.length, OTP_LEN - 1);
+  document.getElementById('otp' + nextFocus).focus();
+  checkAutoSubmit();
+}
+function checkAutoSubmit() {
+  if (getOtp().length === OTP_LEN) { setTimeout(verifyOtp, 250); }
+}
+function getOtp() {
+  let code = '';
+  for (let i = 0; i < OTP_LEN; i++) {
+    code += (document.getElementById('otp' + i).value || '');
+  }
+  return code;
+}
+function clearOtpBoxes(markErr) {
+  for (let i = 0; i < OTP_LEN; i++) {
+    const b = document.getElementById('otp' + i);
+    b.value = '';
+    b.className = 'otp-box' + (markErr ? ' err' : '');
+  }
+  if (!markErr) document.getElementById('otp0').focus();
+}
+
+// ============================================================
+// RESEND OTP
+// ============================================================
+async function resendOtp() {
+  const email = pendingUser ? pendingUser.email : document.getElementById('regEmail').value.trim();
+  document.getElementById('resendBtn').disabled = true;
+  document.getElementById('resendSpinner').style.display = 'inline-block';
+  document.getElementById('resendBtnText').textContent = 'Sending…';
+
+  const result = await dbClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
+
+  document.getElementById('resendBtn').disabled = false;
+  document.getElementById('resendSpinner').style.display = 'none';
+  document.getElementById('resendBtnText').textContent = 'Resend verification code';
+
+  if (result.error) {
+    showAlert('alertOtp', 'alertOtpText', 'Failed to resend. Please wait a moment and try again.');
+    return;
+  }
+  clearOtpBoxes(false);
+  startOtpTimer(60);
+}
+
+// ============================================================
+// VERIFY OTP — STEP 2: confirm email, then write to the database
+// ============================================================
+async function verifyOtp() {
+  const email = pendingUser ? pendingUser.email : document.getElementById('regEmail').value.trim();
+  const entered = getOtp();
+
+  if (entered.length < OTP_LEN) {
+    showAlert('alertOtp', 'alertOtpText', 'Please enter all ' + OTP_LEN + ' digits.');
+    return;
+  }
+
+  setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', true, 'Verifying…');
+
+  const result = await dbClient.auth.verifyOtp({
+    email: email,
+    token: entered,
+    type: 'email'
   });
+
+  if (result.error) {
+    clearOtpBoxes(true);
+    setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', false, 'Verify & Create Account');
+    const errMsg = result.error.message && result.error.message.toLowerCase().includes('expired')
+      ? 'Code expired. Please request a new one.'
+      : 'Incorrect code. Please check and try again.';
+    showAlert('alertOtp', 'alertOtpText', errMsg);
+    return;
+  }
+
+  setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', true, 'Setting up your profile…');
+  await finalizeWorkerAccount(result.data);
+}
+
+// ============================================================
+// FINALIZE ACCOUNT — writes to users + worker_profiles tables,
+// including location, terms_accepted, and job-update preference
+// ============================================================
+async function finalizeWorkerAccount(authData) {
+  const user = authData.user || (authData.session && authData.session.user);
+  const p = pendingUser || {};
+
+  try {
+    // Sync the users table (covers anything the signup metadata trigger missed)
+    const usersResult = await dbClient.from('users').upsert({
+      id:              user ? user.id : undefined,
+      email:           p.email,
+      full_name:       p.fullName,
+      phone:           p.phone,
+      role:            'employee',
+      country:         p.country,
+      is_active:       true,
+      terms_accepted:  p.termsAccepted  || false,
+      receive_updates: p.receiveUpdates || false
+    }, { onConflict: 'id' });
+
+    if (usersResult.error) {
+      console.warn('[SoundsCare] users upsert error:', usersResult.error.message);
+    }
+
+    // Write the worker_profiles row so the worker dashboard can load,
+    // including location data captured during registration
+    if (user) {
+      const wpResult = await dbClient.from('worker_profiles').upsert({
+        session_id:    user.id,
+        full_name:     p.fullName,
+        email:         p.email,
+        phone:         p.phone,
+        phone_number:  p.phone,
+        country:       p.country,
+        county:        p.county,
+        current_town:  p.town,
+        location:      p.town || p.county || p.country,
+        notif_email:   p.receiveUpdates,
+        job_seeking:   true,
+        looking_for_job: true,
+        profile_visible: true
+      }, { onConflict: 'session_id' });
+
+      if (wpResult.error) {
+        console.warn('[SoundsCare] worker_profiles upsert error:', wpResult.error.message);
+      }
+    }
+
+    // Welcome notification
+    await dbClient.from('notifications').insert({
+      user_id:    user ? user.id : null,
+      user_email: p.email,
+      type:       'welcome',
+      title:      'Welcome to SoundsCare! 👋',
+      message:    'Welcome, ' + (p.fullName || '') + '! Your worker account is ready. Start browsing job opportunities today.',
+      is_read:    false
+    });
+
+    // Admin notification about new registration
+    await dbClient.from('notifications').insert({
+      user_id:     user ? user.id : null,
+      user_email:  p.email,
+      type:        'new_account',
+      title:       'New Worker Registered',
+      message:     'New worker account: ' + p.fullName + ' (' + p.email + ') from ' + (p.country || 'Unknown') + '. Terms accepted: ' + (p.termsAccepted ? 'Yes' : 'No') + '. Job updates: ' + (p.receiveUpdates ? 'Yes' : 'No') + '.',
+      is_read:     false,
+      target_role: 'admin'
+    });
+
+  } catch (e) {
+    // Non-fatal — show success anyway, data will be incomplete
+    console.warn('[SoundsCare] Post-verification DB error:', e);
+  }
+
+  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
+
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-success').style.display = 'block';
+  document.getElementById('successName').textContent  = p.fullName || '';
+  document.getElementById('successEmail').textContent = p.email || '';
 }
 
 // ============================================================
