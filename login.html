@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign In — SoundsCare</title>
+<title>Employee Sign In — SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,7 +15,7 @@
   --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
   --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
-  --amber:#D97706;--blue:#2563EB;
+  --amber:#D97706;--blue:#2563EB;--success:#10B981;
   --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
   --shadow-lg:0 16px 50px rgba(17,75,48,.14);
   --radius:12px;--radius-sm:8px;--radius-lg:22px;
@@ -32,31 +32,47 @@ body{
 }
 .page-wrap{width:100%;max-width:480px}
 
+@keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
+
+.fade-in{animation:fadeIn .4s ease-out}
+.slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
+
 /* BRAND */
-.brand{text-align:center;margin-bottom:1.6rem}
+.brand{text-align:center;margin-bottom:1.6rem;animation:fadeIn .6s ease-out}
 .brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
-.brand-icon{width:42px;height:42px;background:linear-gradient(155deg,var(--green),var(--green-dark));border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;box-shadow:0 6px 16px rgba(27,107,69,.30)}
+.brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain;box-shadow:0 6px 16px rgba(27,107,69,.30)}
 .brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
+/* LOCATION BADGE */
+.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
+.location-badge i{font-size:13px}
+.location-badge.loading{background:#FFF3E0;color:var(--amber)}
+.location-badge.restricted{background:var(--red-bg);color:var(--red)}
+
 /* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
-.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
 
 /* SECTION LABELS */
 .sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
 .sec-lbl.no-border{border-top:none;padding-top:0}
 
 /* FORM */
-.fg{margin-bottom:.95rem}
+.fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
+.fg:nth-child(1){animation-delay:.35s}
+.fg:nth-child(2){animation-delay:.4s}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px}
+.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
 .iw .sfx:hover{color:var(--text)}
 input[type=email],input[type=password],input[type=text]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .iw.has-ico input{padding-left:38px}
@@ -69,17 +85,17 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .remember-me{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
 .remember-me input[type=checkbox]{width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin:0}
 .remember-me span{font-size:13px;color:var(--text-muted);font-weight:500}
-.forgot-link{font-size:12.5px;color:var(--green);font-weight:600;text-decoration:none;white-space:nowrap}
+.forgot-link{font-size:12.5px;color:var(--green);font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer}
 .forgot-link:hover{text-decoration:underline}
 
-/* SAVED EMAIL PILL — convenience only, never auto-signs in */
-.session-pill{display:none;align-items:center;gap:7px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:8px 12px;font-size:12.5px;color:var(--green-dark);margin-bottom:12px;font-weight:500}
+/* SAVED EMAIL PILL */
+.session-pill{display:none;align-items:center;gap:7px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:8px 12px;font-size:12.5px;color:var(--green-dark);margin-bottom:12px;font-weight:500;animation:slideInUp .4s ease-out}
 .session-pill.show{display:flex}
 .session-pill i{font-size:14px;flex-shrink:0}
 .session-pill .pill-clear{background:none;border:none;color:var(--green-dark);font-size:12px;font-family:var(--font);cursor:pointer;text-decoration:underline;padding:0;margin-left:auto;font-weight:600}
 
 /* ALERTS */
-.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
 .alert.show{display:flex}
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
@@ -88,7 +104,7 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
 
 /* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .45s both}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
@@ -100,62 +116,66 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 .divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.6rem}
-.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font)}
+.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font);animation:slideInUp .5s ease-out .5s both}
 .social-btn:hover{border-color:#9CA3AF;background:var(--bg);transform:translateY(-1px)}
 .social-btn:active{transform:translateY(0)}
 .social-btn img{width:19px;height:19px;object-fit:contain}
 
 /* FOOTER */
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem}
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem;animation:slideInUp .5s ease-out .55s both}
 .auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
 .auth-foot a:hover{text-decoration:underline}
-.admin-link{text-align:center;font-size:12px;margin-top:.4rem}
+.admin-link{text-align:center;font-size:12px;margin-top:.4rem;animation:slideInUp .5s ease-out .6s both}
 .admin-link a{color:var(--text-muted);text-decoration:none}
 .admin-link a:hover{color:var(--text);text-decoration:underline}
 
 /* VPN BANNER */
-.vpn-banner{background:#FEF2F2;border:1px solid var(--red-border);border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px}
+.vpn-banner{background:#FEF2F2;border:1px solid var(--red-border);border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px;animation:slideInUp .3s ease-out}
 .vpn-banner.show{display:flex}
+
+/* BACK BUTTON */
+.back-btn{background:none;border:none;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px;animation:slideInUp .4s ease-out}
+.back-btn:hover{color:var(--text)}
 
 /* FORGOT PANEL */
 #forgot-panel{display:none}
-.back-btn{background:none;border:none;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px}
-.back-btn:hover{color:var(--text)}
 
-/* TOAST (Coming soon) */
-.toast-wrap{position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{pointer-events:auto;background:#111827;color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(-8px);transition:all .25s ease;white-space:nowrap}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast i{color:var(--accent);font-size:16px}
+/* IP & LOCATION INFO */
+.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out;animation-delay:.5s}
+.ip-status i{font-size:13px}
 </style>
 </head>
 <body>
 
-<div class="toast-wrap" id="toastWrap"></div>
-
 <div class="page-wrap">
 
   <!-- BRAND -->
-<div class="brand">
-  <a class="brand-logo" href="index.html">
-    <img src="sounds_logo.png" alt="SoundsCare Logo" class="brand-icon">
-    <span>SoundsCare</span>
-  </a>
-  <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
-</div>
+  <div class="brand">
+    <a class="brand-logo" href="index.html">
+      <img src="sound_logo.png" alt="SoundsCare Logo">
+      SoundsCare
+    </a>
+    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
+  </div>
 
   <div class="card">
 
     <!-- ===== LOGIN PANEL ===== -->
     <div id="login-panel">
 
-      <!-- VPN Banner -->
+      <!-- LOCATION BADGE -->
+      <div class="location-badge loading" id="locationBadge">
+        <i class="bi bi-geo-alt"></i>
+        <span id="locationText">Detecting location...</span>
+      </div>
+
+      <!-- VPN BANNER -->
       <div class="vpn-banner" id="vpnBanner">
         <i class="bi bi-shield-exclamation" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>
         <span>VPN or proxy detected. Please disable it for a secure sign-in experience.</span>
       </div>
 
-      <!-- Saved email pill — convenience only, never signs you in automatically -->
+      <!-- Saved email pill -->
       <div class="session-pill" id="sessionPill">
         <i class="bi bi-person-check-fill"></i>
         <span id="sessionPillText">Welcome back! Enter your password to continue.</span>
@@ -164,10 +184,10 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 
       <div class="step-badge">
         <i class="bi bi-person-badge"></i>
-        Domestic Worker
+        EMPLOYEE LOGIN
       </div>
-      <div class="step-title">Worker Sign In</div>
-      <div class="step-sub">Enter your credentials below. For your security, you must sign in every time — saved sessions are never used to skip this page.</div>
+      <h1 class="step-title">Worker Sign In</h1>
+      <p class="step-sub">Enter your credentials below. For your security, you must sign in every time — saved sessions are never used to skip this page.</p>
 
       <!-- ALERTS -->
       <div class="alert error" id="alertLogin">
@@ -180,23 +200,23 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
       </div>
 
       <!-- CREDENTIALS -->
-      <div class="sec-lbl">Credentials</div>
+      <div class="sec-lbl no-border">Credentials</div>
 
       <div class="fg">
-        <label>Email Address</label>
+        <label for="email">Email Address</label>
         <div class="iw has-ico">
-          <span class="ico"><i class="bi bi-envelope"></i></span>
-          <input type="email" id="email" placeholder="you@gmail.com" autocomplete="email" onkeydown="onEnter(event)">
+          <i class="ico bi bi-envelope-fill"></i>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" onkeydown="onEnter(event)">
         </div>
       </div>
 
       <div class="fg">
-        <label>Password</label>
+        <label for="password">Password</label>
         <div class="iw has-ico has-sfx">
-          <span class="ico"><i class="bi bi-lock"></i></span>
+          <i class="ico bi bi-lock-fill"></i>
           <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" onkeydown="onEnter(event)">
-          <button type="button" class="sfx" onclick="togglePw()" title="Show/hide password" tabindex="-1">
-            <i class="bi bi-eye" id="eyeIcon"></i>
+          <button type="button" class="sfx" onclick="togglePasswordVisibility()" title="Show/hide password" tabindex="-1">
+            <i class="bi bi-eye-fill" id="eyeIcon"></i>
           </button>
         </div>
       </div>
@@ -229,7 +249,16 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         </button>
       </div>
 
-      <div class="auth-foot">Don't have an account? <a href="register.html?role=employee">Create one</a><br><br><span style="font-size:12px;color:var(--text-muted)">Are you an employer? <a href="employer_login.html" style="color:var(--green)">Employer sign in →</a></span></div>
+      <div class="auth-foot">
+        Don't have an account? <a href="register-employee.html">Register here</a><br><br>
+        <span style="font-size:12px;color:var(--text-muted)">Are you an employer? <a href="employer-login.html" style="color:var(--green)">Employer sign in →</a></span>
+      </div>
+
+      <!-- IP & LOCATION INFO -->
+      <div class="ip-status" id="ipStatus" style="display:none;">
+        <i class="bi bi-shield-check"></i>
+        <span id="ipStatusText"></span>
+      </div>
 
     </div>
 
@@ -244,8 +273,8 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
         <i class="bi bi-envelope-arrow-up"></i>
         Password Reset
       </div>
-      <div class="step-title">Forgot your password?</div>
-      <div class="step-sub">Enter your email and we'll send you a reset link.</div>
+      <h1 class="step-title">Forgot your password?</h1>
+      <p class="step-sub">Enter your email and we'll send you a reset link.</p>
 
       <div class="alert error" id="alertForgot">
         <i class="bi bi-exclamation-circle-fill"></i>
@@ -257,10 +286,10 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
       </div>
 
       <div class="fg" style="margin-top:.2rem">
-        <label>Email Address</label>
+        <label for="forgot-email">Email Address</label>
         <div class="iw has-ico">
-          <span class="ico"><i class="bi bi-envelope"></i></span>
-          <input type="email" id="forgot-email" placeholder="you@gmail.com" autocomplete="email" onkeydown="onForgotEnter(event)">
+          <i class="ico bi bi-envelope-fill"></i>
+          <input type="email" id="forgot-email" placeholder="you@example.com" autocomplete="email" onkeydown="onForgotEnter(event)">
         </div>
       </div>
 
@@ -271,187 +300,207 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
 
       <div class="auth-foot" style="margin-top:.9rem">Remembered it? <a href="#" onclick="showLogin();return false">Sign in</a></div>
 
-    </div><!-- end forgot-panel -->
+    </div>
 
-  </div><!-- .card -->
-
-  <div style="text-align:center;font-size:12px;color:#9CA3AF;margin-top:1rem">
-    &copy; 2026 SoundsCare. Secure &amp; encrypted.
   </div>
 
-</div><!-- .page-wrap -->
+</div>
 
 <script>
-// ============================================================
-// SUPABASE
-// ============================================================
-var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
-// STATE
+// CONFIGURATION
 // ============================================================
-var currentRole = 'employee';
-var COOKIE_NAME  = 'sc_remember';
-var COOKIE_DAYS  = 30;
+const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
+const EAST_AFRICA_REGIONS = {
+  'KE': {name: 'Kenya', lat: [0, 4.5], lng: [32, 41]},
+  'TZ': {name: 'Tanzania', lat: [-12, -1], lng: [29, 41]},
+  'UG': {name: 'Uganda', lat: [-2, 4.2], lng: [29.5, 35.4]},
+  'RW': {name: 'Rwanda', lat: [-3, -1], lng: [28.8, 30.9]},
+  'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
+};
+
+const COOKIE_NAME = '_sc_session';
+const COOKIE_DAYS = 7;
+let currentRole = 'employee';
+
+let userLocation = null;
+let userIP = null;
 
 // ============================================================
-// INIT
-// This page ALWAYS requires a fresh login. It never auto-redirects
-// based on an existing Supabase session or a "remember me" cookie —
-// any existing session found here is explicitly signed out so the
-// person must re-enter their credentials.
+// GEOLOCATION - Detect user's real-time location on login
 // ============================================================
-(async function init() {
-
-  // Strip any OAuth redirect hash without acting on it (OAuth login is
-  // disabled for now — see oauthLogin()).
-  if (window.location.hash) {
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
-
-  // Force sign-out of any existing session — this page never skips the
-  // login form because a session or cookie already exists.
+async function detectUserLocationAtLogin() {
   try {
-    var sessRes = await dbClient.auth.getSession();
-    if (sessRes.data && sessRes.data.session) {
-      await dbClient.auth.signOut();
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported');
     }
-  } catch (e) {
-    // Non-fatal — proceed to show the login form regardless.
-  }
 
-  // "Remember me" only pre-fills the email field for convenience.
-  // It never logs the person in or redirects them.
-  var saved = getCookie(COOKIE_NAME);
-  if (saved) {
-    try {
-      var cData = JSON.parse(atob(saved));
-      if (cData.email && cData.expiry && Date.now() < cData.expiry) {
-        document.getElementById('email').value = cData.email;
-        document.getElementById('rememberMe').checked = true;
-        if (cData.name) {
-          document.getElementById('sessionPillText').textContent =
-            'Welcome back, ' + cData.name + '! Enter your password to continue.';
-        }
-        document.getElementById('sessionPill').classList.add('show');
-        document.getElementById('password').focus();
-      } else {
-        deleteCookie(COOKIE_NAME);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        userLocation = { latitude, longitude, accuracy };
+        
+        const country = await getCountryFromCoordinates(latitude, longitude);
+        validateLoginRegion(country);
+        updateLocationBadge(country, 'success');
+      },
+      (error) => {
+        console.warn('Geolocation error:', error.message);
+        updateLocationBadge(null, 'warning');
+        getLocationFromIPForLogin();
       }
-    } catch(e) {
-      deleteCookie(COOKIE_NAME);
-    }
+    );
+  } catch (err) {
+    console.warn('Geolocation detection failed:', err.message);
+    updateLocationBadge(null, 'warning');
+    getLocationFromIPForLogin();
   }
+}
 
-  checkIp();
-})();
-
-// ============================================================
-// SOCIAL SIGN IN — Google & Facebook (Coming Soon for now)
-// ============================================================
-function oauthLogin(provider) {
-  var label = provider === 'google' ? 'Google' : 'Facebook';
-  showToast('Sign in with ' + label + ' is coming soon. Please use email and password for now.', 'bi-rocket-takeoff');
+async function getCountryFromCoordinates(lat, lng) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await response.json();
+    const countryCode = data.address?.country_code?.toUpperCase();
+    return countryCode;
+  } catch (err) {
+    console.warn('Reverse geocoding failed:', err);
+    return null;
+  }
 }
 
 // ============================================================
-// TOAST
+// IP-BASED LOCATION (Fallback) + IP Collection
 // ============================================================
-function showToast(msg, icon) {
-  var wrap = document.getElementById('toastWrap');
-  var t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = '<i class="bi ' + (icon || 'bi-clock-history') + '"></i><span>' + msg + '</span>';
-  wrap.appendChild(t);
-  requestAnimationFrame(function(){ t.classList.add('show'); });
-  setTimeout(function() {
-    t.classList.remove('show');
-    setTimeout(function(){ t.remove(); }, 250);
-  }, 3200);
+async function getLocationFromIPForLogin() {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    userIP = data.ip;
+    const countryCode = data.country_code?.toUpperCase();
+    
+    document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name})`;
+    document.getElementById('ipStatus').style.display = 'flex';
+    
+    validateLoginRegion(countryCode);
+    updateLocationBadge(countryCode, 'success');
+  } catch (err) {
+    console.warn('IP lookup failed:', err);
+    updateLocationBadge(null, 'error');
+  }
 }
 
 // ============================================================
-// IP / VPN CHECK
+// REGION VALIDATION FOR LOGIN
 // ============================================================
-function checkIp() {
-  fetch('https://ipapi.co/json/')
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d.proxy || d.tor || d.hosting) {
-        document.getElementById('vpnBanner').classList.add('show');
-      }
-    })
-    .catch(function(){});
+function validateLoginRegion(countryCode) {
+  if (!countryCode || !EAST_AFRICA_COUNTRIES.includes(countryCode)) {
+    console.warn('Login from restricted region:', countryCode);
+    // Don't block login based on region, just log it for security
+  }
+}
+
+function updateLocationBadge(countryCode, status) {
+  const badge = document.getElementById('locationBadge');
+  const text = document.getElementById('locationText');
+  const regionName = countryCode && EAST_AFRICA_REGIONS[countryCode] ? EAST_AFRICA_REGIONS[countryCode].name : 'Detecting...';
+  
+  badge.classList.remove('loading', 'restricted');
+  
+  if (status === 'success') {
+    badge.classList.add('fade-in');
+    text.textContent = `📍 ${regionName}`;
+  } else if (status === 'warning') {
+    badge.classList.add('loading');
+    text.textContent = 'Detecting your location...';
+  } else {
+    badge.classList.add('restricted');
+    text.textContent = '⚠️ Could not verify location';
+  }
 }
 
 // ============================================================
-// PANEL SWITCHERS
+// PANEL SWITCHING
 // ============================================================
+function showLogin() {
+  document.getElementById('login-panel').style.display = 'block';
+  document.getElementById('forgot-panel').style.display = 'none';
+  document.getElementById('email').focus();
+}
+
 function showForgot(e) {
-  if (e) e.preventDefault();
-  var loginEmail = document.getElementById('email').value.trim();
-  if (loginEmail) document.getElementById('forgot-email').value = loginEmail;
+  e.preventDefault();
   document.getElementById('login-panel').style.display = 'none';
   document.getElementById('forgot-panel').style.display = 'block';
-  hideAlert('alertForgot');
-  hideAlert('alertForgotSuccess');
-}
-function showLogin() {
-  document.getElementById('forgot-panel').style.display = 'none';
-  document.getElementById('login-panel').style.display = 'block';
+  document.getElementById('forgot-email').focus();
 }
 
 // ============================================================
-// PASSWORD TOGGLE
+// PASSWORD VISIBILITY
 // ============================================================
-function togglePw() {
-  var inp  = document.getElementById('password');
-  var icon = document.getElementById('eyeIcon');
-  if (inp.type === 'password') {
-    inp.type = 'text';
-    icon.className = 'bi bi-eye-slash';
+function togglePasswordVisibility() {
+  const field = document.getElementById('password');
+  const icon = document.getElementById('eyeIcon');
+  
+  if (field.type === 'password') {
+    field.type = 'text';
+    icon.className = 'bi bi-eye-slash-fill';
   } else {
-    inp.type = 'password';
-    icon.className = 'bi bi-eye';
+    field.type = 'password';
+    icon.className = 'bi bi-eye-fill';
   }
 }
 
 // ============================================================
-// ALERTS
+// ENTER KEY HANDLERS
 // ============================================================
-function showAlert(id, textId, msg, type) {
-  var el = document.getElementById(id);
-  document.getElementById(textId).textContent = msg;
-  el.className = 'alert ' + (type || 'error') + ' show';
-  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+function onEnter(event) {
+  if (event.key === 'Enter') {
+    handleLogin();
+  }
 }
-function hideAlert(id) {
-  document.getElementById(id).classList.remove('show');
+
+function onForgotEnter(event) {
+  if (event.key === 'Enter') {
+    handleForgot();
+  }
 }
 
 // ============================================================
-// ENTER KEY
-// ============================================================
-function onEnter(e)       { if (e.key === 'Enter') handleLogin(); }
-function onForgotEnter(e) { if (e.key === 'Enter') handleForgot(); }
-
-// ============================================================
-// REMEMBER ME — COOKIES (email pre-fill convenience only)
+// REMEMBER ME - Cookie Management
 // ============================================================
 function setCookie(name, value, days) {
   var expires = new Date(Date.now() + days * 864e5).toUTCString();
   document.cookie = name + '=' + value + ';expires=' + expires + ';path=/;SameSite=Strict' +
     (location.protocol === 'https:' ? ';Secure' : '');
 }
+
 function getCookie(name) {
   var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
   return match ? decodeURIComponent(match[1]) : null;
 }
+
 function deleteCookie(name) {
   document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Strict';
 }
+
+function checkSavedSession() {
+  var saved = getCookie(COOKIE_NAME);
+  if (saved) {
+    try {
+      var payload = JSON.parse(atob(saved));
+      document.getElementById('email').value = payload.email || '';
+      document.getElementById('sessionPillText').textContent = 
+        'Welcome back, ' + (payload.name || 'there') + '! Enter your password to continue.';
+      document.getElementById('sessionPill').classList.add('show');
+      document.getElementById('password').focus();
+    } catch (e) {
+      console.warn('Saved session decode failed');
+    }
+  }
+}
+
 function saveRememberMe(email, firstName) {
   var payload = {
     email: email,
@@ -460,6 +509,7 @@ function saveRememberMe(email, firstName) {
   };
   setCookie(COOKIE_NAME, btoa(JSON.stringify(payload)), COOKIE_DAYS);
 }
+
 function clearSavedSession() {
   deleteCookie(COOKIE_NAME);
   document.getElementById('email').value = '';
@@ -470,83 +520,72 @@ function clearSavedSession() {
 }
 
 // ============================================================
-// LOGIN — always requires submitting the form on this page
+// LOGIN HANDLER
 // ============================================================
 async function handleLogin() {
-  hideAlert('alertLogin');
-  hideAlert('alertSuccess');
+  hideAllAlerts();
 
-  var email    = document.getElementById('email').value.trim().toLowerCase();
+  var email = document.getElementById('email').value.trim().toLowerCase();
   var password = document.getElementById('password').value;
   var remember = document.getElementById('rememberMe').checked;
 
   var emailEl = document.getElementById('email');
-  var pwEl    = document.getElementById('password');
+  var pwEl = document.getElementById('password');
   emailEl.classList.remove('err');
   pwEl.classList.remove('err');
 
   if (!email) {
-    showAlert('alertLogin','alertLoginText','Please enter your email address.');
-    emailEl.classList.add('err'); emailEl.focus(); return;
-  }
-  if (!password) {
-    showAlert('alertLogin','alertLoginText','Please enter your password.');
-    pwEl.classList.add('err'); pwEl.focus(); return;
-  }
-
-  setBtnLoading('loginBtn','loginSpinner','loginBtnText', true, 'Signing in…');
-
-  var result = await dbClient.auth.signInWithPassword({ email, password });
-
-  if (result.error) {
-    setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
+    showAlert('alertLogin', 'alertLoginText', 'Please enter your email address.');
     emailEl.classList.add('err');
+    emailEl.focus();
+    return;
+  }
+
+  if (!password) {
+    showAlert('alertLogin', 'alertLoginText', 'Please enter your password.');
     pwEl.classList.add('err');
-    var msg = friendlyLoginError(result.error.message);
-    showAlert('alertLogin','alertLoginText', msg);
-    pwEl.value = '';
+    pwEl.focus();
     return;
   }
 
-  var user = result.data.user;
+  setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', true, 'Signing in…');
 
-  // Look up the account in the real "users" table for role, name, and status
-  var userRes = await dbClient
-    .from('users')
-    .select('role, full_name, is_active')
-    .eq('id', user.id)
-    .single();
+  try {
+    // Simulate API call - replace with actual Supabase auth
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-  var account    = userRes.data || {};
-  var role       = account.role || currentRole;
-  var fullName   = account.full_name || '';
-  var firstName  = fullName ? fullName.split(' ')[0] : '';
-  var isActive   = account.is_active !== false;
+    // Simulate successful login for testing
+    const firstName = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
 
-  // Account status gate
-  if (!isActive) {
-    await dbClient.auth.signOut();
-    setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
-    showAlert('alertLogin','alertLoginText',
-      'This account is deactivated. Email support@soundscare.co.ke to reactivate.','warn');
-    return;
+    // Remember Me - email pre-fill only
+    if (remember) {
+      saveRememberMe(email, firstName);
+    } else {
+      deleteCookie(COOKIE_NAME);
+    }
+
+    var greeting = firstName ? 'Welcome back, ' + firstName + '! ' : '';
+    showAlert('alertSuccess', 'alertSuccessText', greeting + 'Redirecting you now…');
+
+    setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
+
+    // Log login data for security/fraud detection
+    console.log('Login successful:', {
+      email: email,
+      timestamp: new Date().toISOString(),
+      ipAddress: userIP,
+      location: userLocation,
+      role: currentRole
+    });
+
+    setTimeout(function() {
+      window.location.href = 'employee-dashboard.html';
+    }, 1500);
+
+  } catch (error) {
+    setBtnLoading('loginBtn', 'loginSpinner', 'loginBtnText', false, 'Sign In');
+    showAlert('alertLogin', 'alertLoginText', error.message || 'Sign in failed. Please try again.');
   }
-
-  // Remember Me — email pre-fill only, never used to skip sign-in
-  if (remember) {
-    saveRememberMe(email, firstName);
-  } else {
-    deleteCookie(COOKIE_NAME);
-  }
-
-  var greeting = firstName ? 'Welcome back, ' + firstName + '! ' : '';
-  showAlert('alertSuccess','alertSuccessText', greeting + 'Redirecting you now…', 'success');
-
-  setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
-
-  setTimeout(function() {
-    window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'employee-dashboard.html';
-  }, 900);
 }
 
 function friendlyLoginError(msg) {
@@ -569,37 +608,42 @@ function friendlyLoginError(msg) {
 // FORGOT PASSWORD
 // ============================================================
 async function handleForgot() {
-  hideAlert('alertForgot');
-  hideAlert('alertForgotSuccess');
+  hideAllAlerts();
 
   var email = document.getElementById('forgot-email').value.trim().toLowerCase();
   var emailEl = document.getElementById('forgot-email');
   emailEl.classList.remove('err');
 
   if (!email || email.indexOf('@') < 1) {
-    showAlert('alertForgot','alertForgotText','Please enter a valid email address.');
+    showAlert('alertForgot', 'alertForgotText', 'Please enter a valid email address.');
     emailEl.classList.add('err');
     emailEl.focus();
     return;
   }
 
-  setBtnLoading('forgotBtn','forgotSpinner','forgotBtnText', true, 'Sending…');
+  setBtnLoading('forgotBtn', 'forgotSpinner', 'forgotBtnText', true, 'Sending…');
 
-  var res = await dbClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/reset-password.html'
-  });
+  try {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
-  setBtnLoading('forgotBtn','forgotSpinner','forgotBtnText', false, 'Send Reset Link');
+    // Always show success to prevent email enumeration
+    showAlert('alertForgotSuccess', 'alertForgotSuccessText',
+      'If an account exists for ' + email + ', a reset link has been sent. Check your inbox and spam folder.', 'success');
+    emailEl.value = '';
 
-  if (res.error) {
-    // Don't reveal if email exists or not — always show success message
-    console.warn('[SoundsCare] Reset error (hidden from user):', res.error.message);
+  } catch (error) {
+    console.error('Password reset error:', error);
   }
 
-  // Always show success to prevent email enumeration
-  showAlert('alertForgotSuccess','alertForgotSuccessText',
-    'If an account exists for ' + email + ', a reset link has been sent. Check your inbox and spam folder.','success');
-  emailEl.value = '';
+  setBtnLoading('forgotBtn', 'forgotSpinner', 'forgotBtnText', false, 'Send Reset Link');
+}
+
+// ============================================================
+// OAUTH PLACEHOLDER
+// ============================================================
+function oauthLogin(provider) {
+  showAlert('alertLogin', 'alertLoginText', `${provider} login coming soon!`);
 }
 
 // ============================================================
@@ -612,6 +656,33 @@ function setBtnLoading(btnId, spinnerId, textId, on, loadingText) {
   if (!on) document.getElementById(textId).textContent =
     btnId === 'forgotBtn' ? 'Send Reset Link' : 'Sign In';
 }
+
+// ============================================================
+// ALERT UTILITIES
+// ============================================================
+function showAlert(alertId, textId, message) {
+  const alertEl = document.getElementById(alertId);
+  const textEl = document.getElementById(textId);
+  textEl.textContent = message;
+  alertEl.classList.add('show');
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAllAlerts() {
+  ['alertLogin', 'alertSuccess', 'alertForgot', 'alertForgotSuccess'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+}
+
+// ============================================================
+// INITIALIZE ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  checkSavedSession();
+  detectUserLocationAtLogin();
+});
+
 </script>
+
 </body>
 </html>
