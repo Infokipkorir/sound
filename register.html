@@ -36,6 +36,7 @@ body{
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 @keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
 .fade-in{animation:fadeIn .4s ease-out}
 .slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
@@ -79,12 +80,12 @@ body{
 .iw .sfx:hover{color:var(--text)}
 .iw .sfx.checking{animation:pulse 1s ease-in-out infinite;color:var(--amber)}
 .iw .sfx.available{color:var(--success);animation:checkmark .4s ease-out}
-.iw .sfx.unavailable{color:var(--red)}
+.iw .sfx.unavailable{color:var(--red);animation:shake .4s ease-out}
 input[type=email],input[type=password],input[type=text],input[type=tel]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .iw.has-ico input{padding-left:38px}
 .iw.has-sfx input{padding-right:40px}
 input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
+input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);animation:shake .3s ease-out}
 input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08)}
 
 /* ALERTS */
@@ -95,6 +96,18 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
 .alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
 .alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
+
+/* EMAIL STATUS ALERT */
+.email-status-alert{margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
+.email-status-alert.show{display:flex}
+.email-status-alert i{font-size:15px;flex-shrink:0;margin-top:1px}
+.email-status-alert.available{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
+.email-status-alert.taken-active{background:#FEE2E2;border:1px solid #FECACA;color:#991B1B}
+.email-status-alert.taken-deleted{background:#FEF3C7;border:1px solid #FDE68A;color:#92400E}
+
+/* ACTION LINK */
+.action-link{color:var(--green);text-decoration:none;font-weight:700;cursor:pointer}
+.action-link:hover{text-decoration:underline}
 
 /* CHECKBOX */
 .checkbox-group{display:flex;flex-direction:column;gap:10px;margin:1rem 0}
@@ -110,6 +123,9 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);text-decoration:none;cursor:pointer}
+.btn-secondary:hover{border-color:var(--green);background:var(--green-light)}
+.btn-secondary:active{transform:scale(.99)}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -118,34 +134,16 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* FOOTER */
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem;animation:slideInUp .5s ease-out .7s both}
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .7s both}
 .auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
 .auth-foot a:hover{text-decoration:underline}
 
 /* IP & LOCATION INFO */
 .ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
 .ip-status i{font-size:13px}
-
-/* REGION RESTRICTION OVERLAY */
-.region-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000;animation:fadeIn .3s ease-out}
-.region-overlay.show{display:flex}
-.region-restriction-card{background:var(--surface);border-radius:var(--radius-lg);padding:2rem;max-width:400px;text-align:center;box-shadow:var(--shadow-lg);animation:slideInUp .4s ease-out}
-.region-restriction-card i{font-size:48px;color:var(--red);margin-bottom:1rem}
-.region-restriction-card h2{font-size:20px;font-weight:800;margin-bottom:.5rem;font-family:var(--serif)}
-.region-restriction-card p{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:1.5rem}
-.region-restriction-card .btn{animation:none;margin-top:.5rem}
 </style>
 </head>
 <body>
-
-<div class="region-overlay" id="regionOverlay">
-  <div class="region-restriction-card">
-    <i class="bi bi-geo-alt-fill"></i>
-    <h2>Registration Restricted</h2>
-    <p>Employee registration is currently only available in East Africa region. We're expanding soon!</p>
-    <button class="btn btn-primary" onclick="window.location.href='index.html'">Return to Home</button>
-  </div>
-</div>
 
 <div class="page-wrap">
 
@@ -160,14 +158,14 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 
   <div class="card">
 
-    <!-- LOCATION DETECTION -->
-    <div class="location-badge loading" id="locationBadge">
-      <i class="bi bi-geo-alt"></i>
-      <span id="locationText">Detecting location...</span>
-    </div>
-
     <!-- MAIN PANEL -->
     <div id="register-panel">
+
+      <!-- LOCATION DETECTION -->
+      <div class="location-badge loading" id="locationBadge">
+        <i class="bi bi-geo-alt"></i>
+        <span id="locationText">Detecting location...</span>
+      </div>
 
       <!-- ALERTS -->
       <div class="alert error" id="alertError">
@@ -215,9 +213,12 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
               <i class="bi bi-check-circle-fill"></i>
             </button>
           </div>
-          <div class="alert" id="emailStatusAlert" style="margin-top:6px;">
+          <div class="email-status-alert" id="emailStatusAlert">
             <i id="emailStatusIcon"></i>
-            <span id="emailStatusText"></span>
+            <div>
+              <span id="emailStatusText"></span>
+              <a id="emailStatusAction" href="#" class="action-link" style="display:none;margin-left:4px"></a>
+            </div>
           </div>
         </div>
 
@@ -268,8 +269,8 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
         </div>
 
         <!-- SUBMIT BUTTON -->
-        <button type="submit" class="btn btn-primary" id="registerBtn">
-          <span id="registerBtnText">Create Account</span>
+        <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
+          <span id="registerBtnText">Verify Email First</span>
           <div class="spinner" id="registerSpinner"></div>
         </button>
 
@@ -277,7 +278,7 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 
       <!-- SIGN IN LINK -->
       <div class="auth-foot">
-        Already have an account? <a href="login.html">Sign In</a>
+        Already have an account? <a href="login-employee.html">Sign In</a>
       </div>
 
       <!-- IP & LOCATION INFO -->
@@ -309,6 +310,7 @@ const EAST_AFRICA_REGIONS = {
 let userLocation = null;
 let userIP = null;
 let emailValidationTimeout = null;
+let emailCheckStatus = null; // Track email validation status
 
 // ============================================================
 // GEOLOCATION - Detect user's real-time location
@@ -379,14 +381,10 @@ async function getLocationFromIP() {
 // ============================================================
 function validateRegion(countryCode) {
   if (!countryCode || !EAST_AFRICA_COUNTRIES.includes(countryCode)) {
-    showRegionRestriction();
+    showAlert('alertError', 'alertErrorText', '❌ Registration is only available in East Africa. We\'re expanding soon!');
+    document.getElementById('registerForm').style.opacity = '0.5';
+    document.getElementById('registerForm').style.pointerEvents = 'none';
   }
-}
-
-function showRegionRestriction() {
-  document.getElementById('regionOverlay').classList.add('show');
-  document.getElementById('registerForm').style.opacity = '0.5';
-  document.getElementById('registerForm').style.pointerEvents = 'none';
 }
 
 function updateLocationBadge(countryCode, status) {
@@ -398,7 +396,7 @@ function updateLocationBadge(countryCode, status) {
   
   if (status === 'success') {
     badge.classList.add('fade-in');
-    text.textContent = ` ${regionName} - Registration Available`;
+    text.textContent = `📍 ${regionName} - Registration Available`;
   } else if (status === 'warning') {
     badge.classList.add('loading');
     text.textContent = 'Detecting your location...';
@@ -409,7 +407,7 @@ function updateLocationBadge(countryCode, status) {
 }
 
 // ============================================================
-// EMAIL VALIDATION (Real-time)
+// EMAIL VALIDATION - Smart Database Checking
 // ============================================================
 document.getElementById('regEmail').addEventListener('input', function(e) {
   const email = this.value.trim().toLowerCase();
@@ -417,26 +415,29 @@ document.getElementById('regEmail').addEventListener('input', function(e) {
   const alert = document.getElementById('emailStatusAlert');
   
   clearTimeout(emailValidationTimeout);
+  emailCheckStatus = null;
   
   if (!email) {
     btn.style.display = 'none';
     alert.classList.remove('show');
+    updateRegisterButtonState();
     return;
   }
   
-  // Validate email format
+  // Step 1: Validate email format first
   if (!isValidEmailFormat(email)) {
-    showEmailStatus(false, 'Invalid email format', 'error');
+    showEmailStatus('format_invalid', 'Invalid email format', 'error');
+    updateRegisterButtonState();
     return;
   }
   
-  // Check email availability (debounced)
+  // Step 2: Check database (debounced)
   btn.classList.remove('available', 'unavailable');
   btn.classList.add('checking');
   btn.style.display = 'flex';
   
   emailValidationTimeout = setTimeout(() => {
-    checkEmailAvailability(email);
+    checkEmailInDatabase(email);
   }, 600);
 });
 
@@ -445,62 +446,174 @@ function isValidEmailFormat(email) {
   return regex.test(email);
 }
 
-async function checkEmailAvailability(email) {
+async function checkEmailInDatabase(email) {
   try {
     const btn = document.getElementById('emailCheckBtn');
-    const alert = document.getElementById('emailStatusAlert');
-    
-    // Simulated backend check (replace with actual API call)
-    const isAvailable = await simulateEmailCheck(email);
-    
     btn.classList.remove('checking');
-    alert.classList.add('show');
     
-    if (isAvailable) {
+    // Call your backend API to check email in database
+    const response = await fetch('/api/auth/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    // Handle different scenarios
+    if (data.exists) {
+      if (data.isActive) {
+        // Email exists and account is ACTIVE
+        emailCheckStatus = 'taken_active';
+        btn.classList.add('unavailable');
+        document.getElementById('regEmail').classList.add('err');
+        document.getElementById('regEmail').classList.remove('valid');
+        showEmailStatusWithAction(
+          'You have an active account with this email',
+          'Sign in instead',
+          'login-employee.html',
+          'taken-active'
+        );
+      } else {
+        // Email exists but account is DELETED
+        emailCheckStatus = 'taken_deleted';
+        btn.classList.add('unavailable');
+        document.getElementById('regEmail').classList.add('err');
+        document.getElementById('regEmail').classList.remove('valid');
+        showEmailStatusWithAction(
+          'You have a deleted account with this email',
+          'Contact support',
+          'mailto:support@soundscare.co.ke',
+          'taken-deleted'
+        );
+      }
+    } else {
+      // Email is AVAILABLE - New user
+      emailCheckStatus = 'available';
       btn.classList.add('available');
       document.getElementById('regEmail').classList.add('valid');
       document.getElementById('regEmail').classList.remove('err');
-      showEmailStatus(true, 'Email available - ready to register', 'success');
-    } else {
-      btn.classList.add('unavailable');
-      document.getElementById('regEmail').classList.add('err');
-      document.getElementById('regEmail').classList.remove('valid');
-      showEmailStatus(false, 'Email already registered with us', 'error');
+      showEmailStatus('available', 'Email available - Ready to register', 'success');
     }
+    
+    updateRegisterButtonState();
   } catch (err) {
     console.error('Email check failed:', err);
-    showEmailStatus(false, 'Could not verify email', 'error');
+    // Fallback to simulated check
+    simulateEmailCheckFallback(email);
   }
 }
 
-function showEmailStatus(isAvailable, message, type) {
+async function simulateEmailCheckFallback(email) {
+  const btn = document.getElementById('emailCheckBtn');
+  btn.classList.remove('checking');
+  
+  // Simulated database check for testing
+  // Replace this with real API when backend is ready
+  const reservedEmails = {
+    'admin@soundscare.co.ke': { exists: true, isActive: true },
+    'support@soundscare.co.ke': { exists: true, isActive: true },
+    'test@example.com': { exists: true, isActive: false },
+  };
+
+  const result = reservedEmails[email];
+
+  if (result) {
+    if (result.isActive) {
+      emailCheckStatus = 'taken_active';
+      btn.classList.add('unavailable');
+      document.getElementById('regEmail').classList.add('err');
+      document.getElementById('regEmail').classList.remove('valid');
+      showEmailStatusWithAction(
+        `You have an active account with ${email}`,
+        'Sign in instead',
+        'login-employee.html',
+        'taken-active'
+      );
+    } else {
+      emailCheckStatus = 'taken_deleted';
+      btn.classList.add('unavailable');
+      document.getElementById('regEmail').classList.add('err');
+      document.getElementById('regEmail').classList.remove('valid');
+      showEmailStatusWithAction(
+        `You have a deleted account with ${email}`,
+        'Contact support',
+        'mailto:support@soundscare.co.ke',
+        'taken-deleted'
+      );
+    }
+  } else {
+    emailCheckStatus = 'available';
+    btn.classList.add('available');
+    document.getElementById('regEmail').classList.add('valid');
+    document.getElementById('regEmail').classList.remove('err');
+    showEmailStatus('available', 'Email available - Ready to register', 'success');
+  }
+
+  updateRegisterButtonState();
+}
+
+function showEmailStatus(status, message, type) {
   const alert = document.getElementById('emailStatusAlert');
   const icon = document.getElementById('emailStatusIcon');
   const text = document.getElementById('emailStatusText');
-  
-  alert.classList.remove('show', 'error', 'success', 'warn');
-  
-  if (isAvailable) {
+  const action = document.getElementById('emailStatusAction');
+
+  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
+  action.style.display = 'none';
+
+  if (status === 'available') {
     icon.className = 'bi bi-check-circle-fill';
-    alert.classList.add('success');
+    alert.classList.add('available');
+  } else if (status === 'taken_active') {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('taken-active');
+  } else if (status === 'taken_deleted') {
+    icon.className = 'bi bi-exclamation-triangle-fill';
+    alert.classList.add('taken-deleted');
   } else {
     icon.className = 'bi bi-x-circle-fill';
-    alert.classList.add('error');
+    alert.classList.add('available');
   }
-  
+
   text.textContent = message;
   alert.classList.add('show');
 }
 
-async function simulateEmailCheck(email) {
-  // Replace this with actual API call to your backend
-  // Simulated check: emails containing 'taken' are unavailable
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const reserved = ['admin@soundscare.co.ke', 'support@soundscare.co.ke', 'test@example.com'];
-      resolve(!reserved.includes(email));
-    }, 400);
-  });
+function showEmailStatusWithAction(message, actionText, actionLink, alertType) {
+  const alert = document.getElementById('emailStatusAlert');
+  const icon = document.getElementById('emailStatusIcon');
+  const text = document.getElementById('emailStatusText');
+  const action = document.getElementById('emailStatusAction');
+
+  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
+
+  if (alertType === 'taken-active') {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('taken-active');
+  } else if (alertType === 'taken-deleted') {
+    icon.className = 'bi bi-exclamation-triangle-fill';
+    alert.classList.add('taken-deleted');
+  }
+
+  text.textContent = message;
+  action.textContent = actionText;
+  action.href = actionLink;
+  action.style.display = 'inline';
+  alert.classList.add('show');
+}
+
+function updateRegisterButtonState() {
+  const btn = document.getElementById('registerBtn');
+  const btnText = document.getElementById('registerBtnText');
+
+  if (emailCheckStatus === 'available') {
+    btn.disabled = false;
+    btnText.textContent = 'Create Account';
+  } else {
+    btn.disabled = true;
+    btnText.textContent = emailCheckStatus ? 'Please Verify Email' : 'Verify Email First';
+  }
 }
 
 // ============================================================
@@ -525,6 +638,13 @@ function togglePasswordVisibility(fieldId = 'regPassword') {
 // ============================================================
 async function handleRegister(event) {
   event.preventDefault();
+  
+  // Check if email was validated
+  if (emailCheckStatus !== 'available') {
+    showAlert('alertError', 'alertErrorText', 'Please verify your email is available before registering.');
+    document.getElementById('regEmail').focus();
+    return;
+  }
   
   const fullName = document.getElementById('fullName').value.trim();
   const email = document.getElementById('regEmail').value.trim().toLowerCase();
@@ -584,7 +704,6 @@ async function handleRegister(event) {
       phone,
       password,
       role: 'employee',
-      registrationType: 'direct',
       ipAddress: userIP,
       location: userLocation,
       registrationTime: new Date().toISOString(),
@@ -592,11 +711,10 @@ async function handleRegister(event) {
       consentedToDataCollection: dataCheck
     };
     
-    // Log data collection for fraud prevention
     console.log('Registration data collected:', registrationData);
     
     // Here you would typically call your backend API
-    // For now, simulate successful registration
+    // For now, simulate registration
     await simulateRegistrationAPI(registrationData);
     
     // Success
@@ -618,7 +736,6 @@ async function handleRegister(event) {
 async function simulateRegistrationAPI(data) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      // Simulate occasional API failures for testing
       if (Math.random() > 0.1) {
         resolve({ success: true });
       } else {
@@ -660,6 +777,7 @@ function setBtnLoading(btnId, spinnerId, textId, loading, text) {
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   detectUserLocation();
+  updateRegisterButtonState();
 });
 
 </script>
