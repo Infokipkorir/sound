@@ -882,7 +882,16 @@ async function handleRegister() {
     email: email,
     password: pw,
     options: {
-      data: { first_name: firstName, last_name: lastName, role: currentRole },
+      data: {
+        first_name:      firstName,
+        last_name:       lastName,
+        full_name:       (firstName + ' ' + lastName).trim(),
+        phone:            phone,
+        role:             currentRole,
+        country:          country,
+        terms_accepted:   true,
+        receive_updates:  updates
+      },
       emailRedirectTo: null
     }
   });
@@ -1102,13 +1111,16 @@ async function finalizeAccount(authData) {
 
     // Write employer_profiles stub so dashboard can load
     if ((p.role || currentRole) === 'employer' && user) {
-      await dbClient.from('employer_profiles').upsert({
+      var epResult = await dbClient.from('employer_profiles').upsert({
         user_id:   user.id,
         full_name: fullName,
         email:     p.email,
-        phone:     p.phone,
-        country:   p.country || null
+        phone:     p.phone
       }, { onConflict: 'user_id' });
+
+      if (epResult.error) {
+        console.warn('[SoundsCare] employer_profiles upsert error:', epResult.error.message);
+      }
     }
 
     // Welcome notification to user
