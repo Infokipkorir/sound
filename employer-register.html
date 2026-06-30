@@ -318,7 +318,7 @@ input.ok{border-color:var(--green)}
             <i class="bi bi-check-circle"></i>
           </button>
         </div>
-        <div class="fhint" id="emailHint">We will send a 6-digit verification code to this address.</div>
+        <div class="fhint" id="emailHint">We will send an 8-digit verification code to this address.</div>
         <div class="provider-note" id="providerNote" style="display:none;font-size:11.5px;margin-top:5px;padding:7px 10px;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;color:#0369A1">
           <i class="bi bi-info-circle"></i>
           <span id="providerNoteText"></span>
@@ -376,11 +376,11 @@ input.ok{border-color:var(--green)}
         Step 2 of 2 &mdash; Email Verification
       </div>
       <div class="step-title">Check your inbox</div>
-      <div class="step-sub">Enter the 6-digit code to activate your account.</div>
+      <div class="step-sub">Enter the 8-digit code to activate your account.</div>
 
       <div class="otp-info">
         <i class="bi bi-info-circle" style="font-size:16px;flex-shrink:0;margin-top:2px"></i>
-        <span>A 6-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes. Check spam/junk if you don't see it.</span>
+        <span>An 8-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes. Check spam/junk if you don't see it.</span>
       </div>
 
       <div class="alert error" id="alertOtp">
@@ -392,10 +392,12 @@ input.ok{border-color:var(--green)}
         <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)" onpaste="otpPaste(event,0)">
         <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)" onpaste="otpPaste(event,1)">
         <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)" onpaste="otpPaste(event,2)">
-        <span class="otp-sep">—</span>
         <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)" onpaste="otpPaste(event,3)">
+        <span class="otp-sep">—</span>
         <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)" onpaste="otpPaste(event,4)">
         <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)" onpaste="otpPaste(event,5)">
+        <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)" onpaste="otpPaste(event,6)">
+        <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)" onpaste="otpPaste(event,7)">
       </div>
 
       <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
@@ -444,11 +446,15 @@ input.ok{border-color:var(--green)}
 
 <script>
 // ============================================================
-// SUPABASE
+// SUPABASE CLIENT (singleton guard)
 // ============================================================
 var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+var dbClient = (function(){
+  if (window._scClient) return window._scClient;
+  window._scClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return window._scClient;
+})();
 
 // ============================================================
 // STATE
@@ -456,20 +462,18 @@ var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 var currentRole = 'employer';
 var otpInterval = null;
 var pendingUser = null;
-var emailConfirmedAvailable = false;
+var emailCheckTimer = null;
 
 // ============================================================
 // INIT
 // ============================================================
 (function init() {
-  var p = new URLSearchParams(window.location.search);
-  if (p.get('type') === 'employer') selectRole('employer');
   checkIp();
   buildCS('');
 })();
 
 // ============================================================
-// TOAST (used for "Coming soon" + general notices)
+// TOAST
 // ============================================================
 function showToast(msg, icon) {
   var wrap = document.getElementById('toastWrap');
@@ -485,17 +489,7 @@ function showToast(msg, icon) {
 }
 
 // ============================================================
-// ROLE SELECTION
-// ============================================================
-function selectRole(role) {
-  currentRole = role;
-  document.getElementById('btn-employee').classList.toggle('active', role === 'employee');
-  document.getElementById('btn-employer').classList.toggle('active', role === 'employer');
-  updateEmailProviderNote(document.getElementById('email').value.trim());
-}
-
-// ============================================================
-// SOCIAL SIGN UP — Google & Facebook (Coming Soon for now)
+// SOCIAL SIGN UP — Coming Soon
 // ============================================================
 function oauthSignUp(provider) {
   var label = provider === 'google' ? 'Google' : 'Facebook';
@@ -546,7 +540,6 @@ var COUNTRIES = [
   {code:'CA',name:'Canada',flag:'\uD83C\uDDE8\uD83C\uDDE6'},
   {code:'CN',name:'China',flag:'\uD83C\uDDE8\uD83C\uDDF3'},
   {code:'CD',name:'Congo (DRC)',flag:'\uD83C\uDDE8\uD83C\uDDE9'},
-  {code:'CI',name:"Côte d'Ivoire",flag:'\uD83C\uDDE8\uD83C\uDDEE'},
   {code:'EG',name:'Egypt',flag:'\uD83C\uDDEA\uD83C\uDDEC'},
   {code:'ET',name:'Ethiopia',flag:'\uD83C\uDDEA\uD83C\uDDF9'},
   {code:'FR',name:'France',flag:'\uD83C\uDDEB\uD83C\uDDF7'},
@@ -599,103 +592,149 @@ function closeCS() {
   document.getElementById('csQ').value = '';
 }
 document.addEventListener('click', function(e){
-  if (!document.getElementById('countryWrap').contains(e.target)) closeCS();
+  var wrap = document.getElementById('countryWrap');
+  if (wrap && !wrap.contains(e.target)) closeCS();
 });
 
 // ============================================================
-// EMAIL VALIDATION & PROVIDER CHECK
+// EMAIL FORMAT VALIDATION
 // ============================================================
-var PERSONAL_PROVIDERS = ['gmail.com','yahoo.com','yahoo.co.uk','yahoo.co.ke','outlook.com','hotmail.com','hotmail.co.uk','live.com','icloud.com','me.com','protonmail.com','proton.me','aol.com','mail.com'];
+var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+var PERSONAL_PROVIDERS = ['gmail.com','yahoo.com','yahoo.co.uk','yahoo.co.ke','outlook.com',
+  'hotmail.com','hotmail.co.uk','live.com','icloud.com','me.com','protonmail.com','proton.me',
+  'aol.com','mail.com'];
 
-function onEmailInput() {
-  emailConfirmedAvailable = false;
-  resetEmailHint();
-  updateEmailProviderNote(document.getElementById('email').value.trim());
-}
-
-function updateEmailProviderNote(email) {
-  var note = document.getElementById('providerNote');
-  var noteText = document.getElementById('providerNoteText');
-  if (!email || email.indexOf('@') < 1) { note.style.display = 'none'; return; }
-  var domain = email.split('@')[1].toLowerCase();
-  var isPersonal = PERSONAL_PROVIDERS.indexOf(domain) > -1;
-  if (currentRole === 'employer' && isPersonal) {
-    noteText.textContent = 'Tip: Employers can also use a professional/company email for a verified badge.';
-    note.style.display = 'block';
-  } else if (currentRole === 'employee' && !isPersonal) {
-    noteText.textContent = 'We accept Gmail, Yahoo, Outlook, Hotmail, and professional email addresses.';
-    note.style.display = 'block';
-  } else {
-    note.style.display = 'none';
-  }
+function isValidEmailFormat(email) {
+  return EMAIL_REGEX.test(email);
 }
 
 function isValidEmailDomain(email) {
   var domain = (email.split('@')[1] || '').toLowerCase();
   if (!domain) return false;
   if (PERSONAL_PROVIDERS.indexOf(domain) > -1) return true;
-  if (currentRole === 'employer') return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain);
-  return false;
+  // Allow any valid domain for employers (company email)
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain);
+}
+
+function onEmailInput() {
+  clearTimeout(emailCheckTimer);
+  resetEmailHint();
+  updateEmailProviderNote(document.getElementById('email').value.trim());
+  // Auto-check after 700ms pause in typing
+  var email = document.getElementById('email').value.trim().toLowerCase();
+  if (isValidEmailFormat(email)) {
+    emailCheckTimer = setTimeout(function(){ liveCheckEmail(); }, 700);
+  }
+}
+
+function updateEmailProviderNote(email) {
+  var note = document.getElementById('providerNote');
+  var noteText = document.getElementById('providerNoteText');
+  if (!email || !isValidEmailFormat(email)) { note.style.display = 'none'; return; }
+  var domain = email.split('@')[1].toLowerCase();
+  var isPersonal = PERSONAL_PROVIDERS.indexOf(domain) > -1;
+  if (isPersonal) {
+    note.style.display = 'none';
+  } else {
+    noteText.textContent = 'Tip: Employers can also use a professional/company email for a verified badge.';
+    note.style.display = 'block';
+  }
 }
 
 function resetEmailHint() {
-  document.getElementById('emailHint').textContent = 'We will send a 6-digit verification code to this address.';
+  document.getElementById('emailHint').textContent = 'We will send an 8-digit verification code to this address.';
   document.getElementById('emailHint').className = 'fhint';
-  document.getElementById('email').className = '';
+  document.getElementById('email').classList.remove('err','ok');
 }
+
 function setEmailHint(msg, type, loading) {
   var hint = document.getElementById('emailHint');
   var inp  = document.getElementById('email');
   hint.innerHTML = (loading ? '<span class="spinner-mini"></span>' : '') + '<span>' + msg + '</span>';
   hint.className = 'fhint' + (type ? ' ' + type : '');
-  inp.className = type || '';
+  inp.classList.remove('err','ok');
+  if (type) inp.classList.add(type);
 }
 
-function liveCheckEmail() {
-  var email = document.getElementById('email').value.trim();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailHint('Enter a valid email first.','err'); return; }
-  if (!isValidEmailDomain(email)) {
-    var hint = currentRole === 'employer'
-      ? 'Please use a valid email address (professional or Gmail/Yahoo/Outlook).'
-      : 'Please use Gmail, Yahoo, Outlook, or Hotmail.';
-    setEmailHint(hint, 'err'); return;
+// ============================================================
+// EMAIL AVAILABILITY — DB CHECK
+// Queries the users table. Runs on blur, on the check button,
+// and again on submit to be certain.
+// ============================================================
+async function liveCheckEmail() {
+  var email = document.getElementById('email').value.trim().toLowerCase();
+
+  if (!email) {
+    setEmailHint('Enter your email address.', 'err');
+    return;
   }
-  setEmailHint('Checking availability against our records…','',true);
-  checkEmailStatus(email, true);
+  if (!isValidEmailFormat(email)) {
+    setEmailHint('Please enter a valid email address (e.g. you@gmail.com).', 'err');
+    document.getElementById('email').classList.add('err');
+    return;
+  }
+  if (!isValidEmailDomain(email)) {
+    setEmailHint('Please use Gmail, Yahoo, Outlook, Hotmail, or a company email.', 'err');
+    document.getElementById('email').classList.add('err');
+    return;
+  }
+
+  setEmailHint('Checking availability…', '', true);
+
+  try {
+    var result = await dbClient
+      .from('users')
+      .select('id, role, is_active')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (result.error) {
+      // DB error — don't hard block, warn only
+      setEmailHint('Could not verify right now. We will re-check on submit.', '');
+      return;
+    }
+
+    if (result.data) {
+      var active = result.data.is_active !== false;
+      if (active) {
+        setEmailHint('This email is already registered. Please sign in instead.', 'err');
+        document.getElementById('email').classList.add('err');
+      } else {
+        setEmailHint('This account is deactivated. Contact support@soundscare.co.ke to reactivate.', 'err');
+        document.getElementById('email').classList.add('err');
+      }
+      return;
+    }
+
+    // Email is available
+    setEmailHint('Email is available ✓', 'ok');
+    document.getElementById('email').classList.add('ok');
+
+  } catch(e) {
+    setEmailHint('Could not verify right now. We will re-check on submit.', '');
+  }
 }
 
-// Checks the REAL "users" table (the live account table) for an existing email.
-function checkEmailStatus(email, live) {
-  return dbClient
+// Returns true if email is free, throws with {msg, alertType} if taken/error
+async function checkEmailAvailability(email) {
+  var result = await dbClient
     .from('users')
-    .select('id,role,is_active')
+    .select('id, is_active')
     .eq('email', email)
-    .maybeSingle()
-    .then(function(result) {
-      var data = result.data;
-      if (data) {
-        var active = data.is_active !== false;
-        var msg = active
-          ? 'An account with this email already exists. Please sign in instead.'
-          : 'This account has been deactivated. Email support@soundscare.co.ke to reactivate.';
-        var alertType = active ? 'info' : 'warn';
-        emailConfirmedAvailable = false;
-        if (live) setEmailHint(msg, 'err');
-        return Promise.reject({ type: 'exists', msg: msg, alertType: alertType });
-      }
-      emailConfirmedAvailable = true;
-      if (live) setEmailHint('Email is available ✓', 'ok');
-      return true;
-    })
-    .catch(function(e) {
-      if (e && e.type) {
-        if (live) setEmailHint(e.msg, 'err');
-        return Promise.reject(e);
-      }
-      // Network/other error — don't hard-block, but don't mark confirmed either.
-      if (live) setEmailHint('Could not verify right now. We will re-check on submit.', '');
-      return true;
-    });
+    .maybeSingle();
+
+  if (result.error) {
+    // Non-fatal network error — allow through, Supabase signUp will catch dupes
+    return true;
+  }
+  if (result.data) {
+    var active = result.data.is_active !== false;
+    var msg = active
+      ? 'An account with this email already exists. Please sign in instead.'
+      : 'This account is deactivated. Contact support@soundscare.co.ke to reactivate.';
+    throw { msg: msg, alertType: active ? 'info' : 'warn' };
+  }
+  return true;
 }
 
 // ============================================================
@@ -720,6 +759,7 @@ function checkStrength() {
   lbl.style.color = cols[score] || '';
   checkConfirm();
 }
+
 function checkConfirm() {
   var pw = document.getElementById('password').value;
   var cpw = document.getElementById('confirmPw').value;
@@ -736,6 +776,7 @@ function checkConfirm() {
     inp.className = 'err';
   }
 }
+
 function togglePw(id) {
   var el = document.getElementById(id);
   var iconId = id === 'password' ? 'pwEyeIcon' : 'cpwEyeIcon';
@@ -759,13 +800,14 @@ function showAlert(id, textId, msg, type) {
   el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function hideAlert(id) {
-  document.getElementById(id).className = 'alert error';
+  var el = document.getElementById(id);
+  el.className = 'alert error';
 }
 
 // ============================================================
 // STEP 1 — REGISTER
 // ============================================================
-function handleRegister() {
+async function handleRegister() {
   hideAlert('alertMain');
 
   var firstName = document.getElementById('firstName').value.trim();
@@ -776,78 +818,120 @@ function handleRegister() {
   var pw        = document.getElementById('password').value;
   var cpw       = document.getElementById('confirmPw').value;
   var terms     = document.getElementById('terms').checked;
+  var updates   = document.getElementById('updates').checked;
 
-  if (!firstName || !lastName) { showAlert('alertMain','alertMainText','Please enter your first and last name.'); return; }
-  if (!phone)   { showAlert('alertMain','alertMainText','Phone number is required.'); return; }
-  if (!country) { showAlert('alertMain','alertMainText','Please select your country.'); return; }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showAlert('alertMain','alertMainText','Please enter a valid email address (e.g. you@gmail.com).'); return; }
-  if (!isValidEmailDomain(email)) {
-    var hint = currentRole === 'employer'
-      ? 'Please use a valid email (Gmail, Yahoo, Outlook, Hotmail, or your company email).'
-      : 'Please use a Gmail, Yahoo, Outlook, or Hotmail address to register.';
-    showAlert('alertMain','alertMainText', hint); return;
+  // — Validation —
+  if (!firstName || !lastName) {
+    showAlert('alertMain','alertMainText','Please enter your first and last name.'); return;
   }
-  if (pw.length < 8) { showAlert('alertMain','alertMainText','Password must be at least 8 characters.'); return; }
-  if (pw !== cpw)    { showAlert('alertMain','alertMainText','Passwords do not match.'); return; }
-  if (!terms)        { showAlert('alertMain','alertMainText','You must agree to the Terms and Conditions.'); return; }
+  if (!phone) {
+    showAlert('alertMain','alertMainText','Phone number is required.'); return;
+  }
+  if (!country) {
+    showAlert('alertMain','alertMainText','Please select your country.'); return;
+  }
+  if (!email || !isValidEmailFormat(email)) {
+    showAlert('alertMain','alertMainText','Please enter a valid email address (e.g. you@gmail.com).');
+    document.getElementById('email').classList.add('err'); return;
+  }
+  if (!isValidEmailDomain(email)) {
+    showAlert('alertMain','alertMainText','Please use a valid email (Gmail, Yahoo, Outlook, Hotmail, or your company email).');
+    document.getElementById('email').classList.add('err'); return;
+  }
+  if (pw.length < 8) {
+    showAlert('alertMain','alertMainText','Password must be at least 8 characters.'); return;
+  }
+  if (pw !== cpw) {
+    showAlert('alertMain','alertMainText','Passwords do not match.'); return;
+  }
+  if (!terms) {
+    showAlert('alertMain','alertMainText','You must agree to the Terms & Conditions and Privacy Policy to continue.'); return;
+  }
 
   setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Checking your details…');
   showChecking('Confirming your email is not already registered…');
 
-  // Confirm email is not already a registered account
-  checkEmailStatus(email, false)
-    .then(async function() {
-      hideChecking();
-      setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending code…');
+  // — DB email availability check —
+  try {
+    await checkEmailAvailability(email);
+  } catch(e) {
+    hideChecking();
+    setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+    var alertType = (e && e.alertType) ? e.alertType : 'error';
+    var msg = (e && e.msg) ? e.msg : 'An error occurred. Please try again.';
+    showAlert('alertMain','alertMainText', msg, alertType);
+    return;
+  }
 
-      pendingUser = { firstName, lastName, phone, country, email, role: currentRole,
-        receiveUpdates: document.getElementById('updates').checked };
+  // — Store pending user data (includes terms + updates prefs) —
+  pendingUser = {
+    firstName: firstName,
+    lastName:  lastName,
+    phone:     phone,
+    country:   country,
+    email:     email,
+    role:      currentRole,
+    termsAccepted:  true,
+    receiveUpdates: updates
+  };
 
-      const { error } = await dbClient.auth.signUp({
-        email,
-        password: pw,
-        options: {
-          data: { first_name: firstName, last_name: lastName, role: currentRole },
-          emailRedirectTo: null
-        }
-      });
+  setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Creating account…');
 
-      if (error) {
-        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-        var userMsg = friendlyAuthError(error.message);
-        showAlert('alertMain','alertMainText', userMsg);
-        return;
-      }
+  // — Supabase auth.signUp —
+  var signUpResult = await dbClient.auth.signUp({
+    email: email,
+    password: pw,
+    options: {
+      data: { first_name: firstName, last_name: lastName, role: currentRole },
+      emailRedirectTo: null
+    }
+  });
 
-      const { error: otpError } = await dbClient.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false }
-      });
+  if (signUpResult.error) {
+    hideChecking();
+    setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+    showAlert('alertMain','alertMainText', friendlyAuthError(signUpResult.error.message));
+    return;
+  }
 
-      if (otpError) {
-        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-        showAlert('alertMain','alertMainText', 'Failed to send verification code. Please try again.');
-        return;
-      }
+  // — Send OTP via signInWithOtp —
+  setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending verification code…');
+  var otpResult = await dbClient.auth.signInWithOtp({
+    email: email,
+    options: { shouldCreateUser: false }
+  });
 
-      setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      document.getElementById('otpEmailDisplay').textContent = email;
-      document.getElementById('step-form').style.display = 'none';
-      document.getElementById('step-otp').style.display = 'block';
-      setProgress(2);
-      startTimer(60);
-      document.getElementById('otp0').focus();
+  hideChecking();
+  setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
 
-    })
-    .catch(function(e) {
-      hideChecking();
-      setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      var alertType = (e && e.alertType) ? e.alertType : 'error';
-      var msg = (e && e.msg) ? e.msg : 'An error occurred. Please try again.';
-      showAlert('alertMain','alertMainText', msg, alertType);
-    });
+  if (otpResult.error) {
+    showAlert('alertMain','alertMainText','Failed to send verification code. Please try again.');
+    return;
+  }
+
+  // — Move to OTP step —
+  document.getElementById('otpEmailDisplay').textContent = email;
+  document.getElementById('step-form').style.display = 'none';
+  document.getElementById('step-otp').style.display = 'block';
+  setProgress(2);
+  startTimer(60);
+  document.getElementById('otp0').focus();
 }
 
+function friendlyAuthError(msg) {
+  if (!msg) return 'Something went wrong. Please try again.';
+  var m = msg.toLowerCase();
+  if (m.includes('already registered') || m.includes('already been registered'))
+    return 'This email is already registered. Please sign in instead.';
+  if (m.includes('invalid email')) return 'Please enter a valid email address.';
+  if (m.includes('rate limit')) return 'Too many attempts. Please wait a moment and try again.';
+  if (m.includes('password')) return 'Password must be at least 8 characters.';
+  return 'Registration failed. Please check your details and try again.';
+}
+
+// ============================================================
+// STEP HELPERS
+// ============================================================
 function showChecking(msg) {
   document.getElementById('step-form').style.display = 'none';
   document.getElementById('checkingLoading').style.display = 'block';
@@ -857,27 +941,17 @@ function hideChecking() {
   document.getElementById('checkingLoading').style.display = 'none';
   document.getElementById('step-form').style.display = 'block';
 }
-
 function setProgress(step) {
   document.getElementById('seg1').classList.toggle('done', step > 1);
   document.getElementById('seg1').classList.toggle('active', step === 1);
   document.getElementById('seg2').classList.toggle('active', step === 2);
 }
 
-function friendlyAuthError(msg) {
-  if (!msg) return 'Something went wrong. Please try again.';
-  if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already been registered')) {
-    return 'This email is already registered. Please sign in instead.';
-  }
-  if (msg.toLowerCase().includes('invalid email')) return 'Please enter a valid email address.';
-  if (msg.toLowerCase().includes('rate limit')) return 'Too many attempts. Please wait a moment and try again.';
-  if (msg.toLowerCase().includes('password')) return 'Password must be at least 8 characters.';
-  return 'Registration failed. Please check your details and try again.';
-}
+// ============================================================
+// OTP BOXES (8-digit, indexes 0-7)
+// ============================================================
+var OTP_LEN = 8;
 
-// ============================================================
-// OTP BOXES (6-digit — indexes 0-5)
-// ============================================================
 function otpIn(i) {
   var box = document.getElementById('otp' + i);
   var v = box.value.replace(/\D/g, '');
@@ -885,7 +959,7 @@ function otpIn(i) {
   box.value = v;
   box.classList.toggle('filled', !!v);
   box.classList.remove('err');
-  if (v && i < 5) document.getElementById('otp' + (i + 1)).focus();
+  if (v && i < OTP_LEN - 1) document.getElementById('otp' + (i + 1)).focus();
   checkAutoSubmit();
 }
 function otpKey(e, i) {
@@ -902,8 +976,8 @@ function otpKey(e, i) {
     }
     e.preventDefault(); return;
   }
-  if (e.key === 'ArrowLeft'  && i > 0) { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
-  if (e.key === 'ArrowRight' && i < 5) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
+  if (e.key === 'ArrowLeft'  && i > 0)           { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
+  if (e.key === 'ArrowRight' && i < OTP_LEN - 1) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
 }
 function otpPaste(e, i) {
   e.preventDefault();
@@ -912,24 +986,28 @@ function otpPaste(e, i) {
   distributePaste(text, i);
 }
 function distributePaste(digits, startIndex) {
-  for (var j = 0; j < digits.length && (startIndex + j) < 6; j++) {
+  for (var j = 0; j < digits.length && (startIndex + j) < OTP_LEN; j++) {
     var box = document.getElementById('otp' + (startIndex + j));
     box.value = digits[j];
     box.classList.add('filled');
     box.classList.remove('err');
   }
-  var nextFocus = Math.min(startIndex + digits.length, 5);
+  var nextFocus = Math.min(startIndex + digits.length, OTP_LEN - 1);
   document.getElementById('otp' + nextFocus).focus();
   checkAutoSubmit();
 }
 function checkAutoSubmit() {
-  if (getOtp().length === 6) { setTimeout(verifyOtp, 250); }
+  if (getOtp().length === OTP_LEN) { setTimeout(verifyOtp, 250); }
 }
 function getOtp() {
-  return [0,1,2,3,4,5].map(function(i){ return document.getElementById('otp'+i).value; }).join('');
+  var code = '';
+  for (var i = 0; i < OTP_LEN; i++) {
+    code += (document.getElementById('otp' + i).value || '');
+  }
+  return code;
 }
 function clearOtpBoxes(markErr) {
-  for (var i = 0; i < 6; i++) {
+  for (var i = 0; i < OTP_LEN; i++) {
     var b = document.getElementById('otp' + i);
     b.value = '';
     b.className = 'otp-box' + (markErr ? ' err' : '');
@@ -946,13 +1024,13 @@ async function resendOtp() {
   document.getElementById('resendSpinner').style.display = 'inline-block';
   document.getElementById('resendBtnText').textContent = 'Sending…';
 
-  const { error } = await dbClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+  var result = await dbClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
 
   document.getElementById('resendBtn').disabled = false;
   document.getElementById('resendSpinner').style.display = 'none';
   document.getElementById('resendBtnText').textContent = 'Resend verification code';
 
-  if (error) {
+  if (result.error) {
     showAlert('alertOtp','alertOtpText','Failed to resend. Please wait a moment and try again.','warn');
     return;
   }
@@ -965,26 +1043,26 @@ async function resendOtp() {
 // VERIFY OTP
 // ============================================================
 async function verifyOtp() {
-  var email  = pendingUser ? pendingUser.email : document.getElementById('email').value.trim();
+  var email   = pendingUser ? pendingUser.email : document.getElementById('email').value.trim();
   var entered = getOtp();
 
-  if (entered.length < 6) {
-    showAlert('alertOtp','alertOtpText','Please enter all 6 digits.');
+  if (entered.length < OTP_LEN) {
+    showAlert('alertOtp','alertOtpText','Please enter all ' + OTP_LEN + ' digits.');
     return;
   }
 
   setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Verifying…');
 
-  const { data, error } = await dbClient.auth.verifyOtp({
-    email,
+  var result = await dbClient.auth.verifyOtp({
+    email: email,
     token: entered,
     type: 'email'
   });
 
-  if (error) {
+  if (result.error) {
     clearOtpBoxes(true);
     setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
-    var errMsg = error.message && error.message.toLowerCase().includes('expired')
+    var errMsg = result.error.message && result.error.message.toLowerCase().includes('expired')
       ? 'Code expired. Please request a new one.'
       : 'Incorrect code. Please check and try again.';
     showAlert('alertOtp','alertOtpText', errMsg);
@@ -992,64 +1070,82 @@ async function verifyOtp() {
   }
 
   setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Creating account…');
-  await finalizeEmailAccount(data);
+  await finalizeAccount(result.data);
 }
 
 // ============================================================
-// FINALIZE ACCOUNT — writes to the real "users" table
+// FINALIZE ACCOUNT — writes to users table with all fields
+// including terms_accepted, receive_updates, country
 // ============================================================
-async function finalizeEmailAccount(authData) {
+async function finalizeAccount(authData) {
   var user = authData.user || (authData.session && authData.session.user);
   var p = pendingUser || {};
   var fullName = ((p.firstName || '') + ' ' + (p.lastName || '')).trim();
 
   try {
-    await dbClient.from('users').upsert({
-      id: user ? user.id : undefined,
-      email: p.email,
-      full_name: fullName,
-      phone: p.phone,
-      role: p.role || currentRole,
-      is_active: true
+    // Write to users table — includes terms & updates preferences
+    var upsertResult = await dbClient.from('users').upsert({
+      id:              user ? user.id : undefined,
+      email:           p.email,
+      full_name:       fullName,
+      phone:           p.phone,
+      role:            p.role || currentRole,
+      country:         p.country || null,
+      is_active:       true,
+      terms_accepted:  p.termsAccepted  || false,
+      receive_updates: p.receiveUpdates || false
     }, { onConflict: 'id' });
 
-    var welcomeMsg = p.role === 'employer'
-      ? `Welcome to SoundsCare, ${p.firstName}! 🎉 Your employer account is ready. Start hiring top domestic workers today.`
-      : `Welcome to SoundsCare, ${p.firstName}! 🎉 Your account is live. Complete your profile to get discovered by employers.`;
+    if (upsertResult.error) {
+      console.warn('[SoundsCare] users upsert error:', upsertResult.error.message);
+    }
 
+    // Write employer_profiles stub so dashboard can load
+    if ((p.role || currentRole) === 'employer' && user) {
+      await dbClient.from('employer_profiles').upsert({
+        user_id:   user.id,
+        full_name: fullName,
+        email:     p.email,
+        phone:     p.phone,
+        country:   p.country || null
+      }, { onConflict: 'user_id' });
+    }
+
+    // Welcome notification to user
     await dbClient.from('notifications').insert({
-      user_id: user ? user.id : null,
+      user_id:    user ? user.id : null,
       user_email: p.email,
-      type: 'welcome',
-      title: 'Welcome to SoundsCare! 👋',
-      message: welcomeMsg,
-      is_read: false
+      type:       'welcome',
+      title:      'Welcome to SoundsCare! 👋',
+      message:    'Welcome, ' + (p.firstName || '') + '! Your employer account is ready. Start hiring top domestic workers today.',
+      is_read:    false
     });
 
-    // Admin-facing notification about the new account
+    // Admin notification about new registration
     await dbClient.from('notifications').insert({
-      user_id: user ? user.id : null,
-      user_email: p.email,
-      type: 'new_account',
-      title: 'New Account Registered',
-      message: `New ${p.role || currentRole} account: ${fullName} (${p.email}) via email`,
-      is_read: false,
+      user_id:     user ? user.id : null,
+      user_email:  p.email,
+      type:        'new_account',
+      title:       'New Employer Registered',
+      message:     'New employer account: ' + fullName + ' (' + p.email + ') from ' + (p.country || 'Unknown') + '. Terms accepted: ' + (p.termsAccepted ? 'Yes' : 'No') + '. Updates: ' + (p.receiveUpdates ? 'Yes' : 'No') + '.',
+      is_read:     false,
       target_role: 'admin'
     });
 
-  } catch (e) {
-    console.warn('[SoundsCare] Post-verification DB note:', e);
-    // Non-fatal — show success anyway
+  } catch(e) {
+    // Non-fatal — show success anyway, data will be incomplete
+    console.warn('[SoundsCare] Post-verification DB error:', e);
   }
 
-  if (otpInterval !== null) clearInterval(otpInterval);
-  otpInterval = null;
+  // Stop OTP timer
+  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
+
+  // Show success step
   document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
-  document.getElementById('successName').textContent = p.firstName || '';
+  document.getElementById('successName').textContent  = p.firstName || '';
   document.getElementById('successEmail').textContent = p.email || '';
-  document.getElementById('successLink').href =
-    (p.role || currentRole) === 'employer' ? 'employer-dashboard.html' : 'post-profile.html';
+  document.getElementById('successLink').href = 'employer-dashboard.html';
 }
 
 // ============================================================
@@ -1064,10 +1160,10 @@ function goBack() {
 }
 
 // ============================================================
-// TIMER
+// OTP TIMER
 // ============================================================
 function startTimer(s) {
-  if (otpInterval !== null) clearInterval(otpInterval);
+  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
   var left = s;
   document.getElementById('timerWrap').style.display = 'block';
   document.getElementById('resendWrap').style.display = 'none';
@@ -1083,37 +1179,32 @@ function startTimer(s) {
     }
   }, 1000);
 }
+
+// ============================================================
+// FOOTER CLOCK (isolated — never cleared by otpInterval)
+// ============================================================
 function updateFooterDateTime() {
-    const now = new Date();
-
-    document.getElementById("currentYear").textContent = now.getFullYear();
-
-    document.getElementById("currentDateTime").textContent =
-        now.toLocaleString(undefined, {
-            weekday: "short",
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
-        });
+  var now = new Date();
+  document.getElementById('currentYear').textContent = now.getFullYear();
+  document.getElementById('currentDateTime').textContent = now.toLocaleString(undefined, {
+    weekday:'short', day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
 }
-
-// Initial update
 updateFooterDateTime();
-
-// Update every second — stored in its own variable so OTP clearInterval never kills it
 var _footerClockId = setInterval(updateFooterDateTime, 1000);
+
 // ============================================================
 // UTILS
 // ============================================================
 function setBtnLoading(btnId, spinnerId, textId, on, loadingText) {
-  document.getElementById(btnId).disabled = on;
-  document.getElementById(spinnerId).style.display = on ? 'inline-block' : 'none';
-  if (on && loadingText) document.getElementById(textId).textContent = loadingText;
+  var btn = document.getElementById(btnId);
+  var sp  = document.getElementById(spinnerId);
+  var tx  = document.getElementById(textId);
+  btn.disabled = on;
+  sp.style.display = on ? 'inline-block' : 'none';
+  if (on && loadingText && tx) tx.textContent = loadingText;
 }
-
 </script>
 </body>
 </html>
