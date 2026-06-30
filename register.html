@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create Account — SoundsCare</title>
+<title>Employee Registration — SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,7 +15,7 @@
   --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
   --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
-  --amber:#D97706;--blue:#2563EB;
+  --amber:#D97706;--blue:#2563EB;--success:#10B981;
   --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
   --shadow-lg:0 16px 50px rgba(17,75,48,.14);
   --radius:12px;--radius-sm:8px;--radius-lg:22px;
@@ -30,1351 +30,639 @@ body{
     radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
     var(--bg);
 }
-.page-wrap{width:100%;max-width:560px}
+.page-wrap{width:100%;max-width:520px}
 
-.brand-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  font-weight: 700;
-}
+@keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
 
-.brand-icon {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
+.fade-in{animation:fadeIn .4s ease-out}
+.slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
 
-/* PROGRESS */
-.progress-track{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1.5rem}
-.progress-seg{height:4px;width:64px;border-radius:4px;background:var(--border);transition:background .25s}
-.progress-seg.done,.progress-seg.active{background:var(--green)}
+/* BRAND */
+.brand{text-align:center;margin-bottom:1.6rem;animation:fadeIn .6s ease-out}
+.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
+.brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain}
+.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
-/* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
-.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5}
+/* LOCATION BADGE */
+.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
+.location-badge i{font-size:13px}
+.location-badge.loading{background:#FFF3E0;color:var(--amber)}
+.location-badge.restricted{background:var(--red-bg);color:var(--red)}
 
-/* WORKER BADGE */
-.worker-badge{display:flex;align-items:center;gap:10px;background:var(--green-light);border:1.5px solid var(--green-mid);border-radius:var(--radius);padding:12px 14px;margin-bottom:1.4rem}
-.worker-badge-icon{font-size:24px;color:var(--green-dark);flex-shrink:0}
-.worker-badge-text{font-size:13px;color:var(--green-dark);font-weight:500;line-height:1.4}
-.worker-badge-text strong{font-weight:700;display:block;margin-bottom:1px}
+/* STEP BADGE */
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
 
 /* SECTION LABELS */
 .sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
-.sec-lbl:first-of-type{border-top:none;padding-top:0}
+.sec-lbl.no-border{border-top:none;padding-top:0}
 
 /* FORM */
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:480px){.form-row{grid-template-columns:1fr}}
-.fg{margin-bottom:.95rem}
+.fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
+.fg:nth-child(1){animation-delay:.3s}
+.fg:nth-child(2){animation-delay:.35s}
+.fg:nth-child(3){animation-delay:.4s}
+.fg:nth-child(4){animation-delay:.45s}
+.fg:nth-child(5){animation-delay:.5s}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
-.fg label .req{color:var(--red);margin-left:2px}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px}
+.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
 .iw .sfx:hover{color:var(--text)}
-input[type=text],input[type=email],input[type=tel],input[type=password],select{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
-.iw.has-ico input,.iw.has-ico select{padding-left:38px}
+.iw .sfx.checking{animation:pulse 1s ease-in-out infinite;color:var(--amber)}
+.iw .sfx.available{color:var(--success);animation:checkmark .4s ease-out}
+.iw .sfx.unavailable{color:var(--red)}
+input[type=email],input[type=password],input[type=text],input[type=tel]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+.iw.has-ico input{padding-left:38px}
 .iw.has-sfx input{padding-right:40px}
-input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-input.err,select.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
-input.ok{border-color:var(--green)}
-.fhint{font-size:11.5px;color:var(--text-muted);margin-top:4px;display:flex;align-items:center;gap:5px}
-.fhint.err{color:var(--red)}
-.fhint.ok{color:var(--green)}
-.fhint .spinner-mini{width:11px;height:11px;border:1.6px solid rgba(107,114,128,.25);border-top-color:var(--text-muted);border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
-
-/* EMAIL AVAILABILITY INLINE ALERT */
-.email-avail{border-radius:6px;padding:7px 11px;font-size:12.5px;font-weight:500;margin-top:6px;display:none;align-items:center;gap:7px;line-height:1.4;animation:fadeSlide .2s ease both}
-.email-avail.show{display:flex}
-.email-avail.avail-ok{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.email-avail.avail-err{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
-.email-avail.avail-warn{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E}
-@keyframes fadeSlide{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-
-/* COUNTRY */
-.country-wrap{position:relative}
-.cs-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:200;display:none;overflow:hidden}
-.cs-drop.open{display:block}
-.cs-search-box{padding:8px 10px;border-bottom:1px solid var(--border)}
-.cs-search-box input{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;outline:none}
-.cs-search-box input:focus{border-color:var(--green)}
-.cs-list{max-height:200px;overflow-y:auto;padding:4px 0}
-.cs-item{padding:8px 12px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
-.cs-item:hover{background:var(--bg)}
-.cs-item.rec{background:var(--green-light);font-weight:600}
-.cs-item.rec:hover{background:var(--green-mid)}
-.cs-sep{height:1px;background:var(--border);margin:4px 0}
-.cs-grp{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 12px 2px}
-
-/* PASSWORD */
-.pw-bars{display:flex;gap:4px;margin-top:7px}
-.pw-bar{height:3px;flex:1;border-radius:2px;background:var(--border);transition:background .3s}
-.pw-bar.w{background:var(--red)}
-.pw-bar.m{background:var(--amber)}
-.pw-bar.s{background:var(--green)}
-.pw-lbl{font-size:11.5px;color:var(--text-muted);margin-top:3px}
-
-/* SOCIAL AUTH */
-.divider{display:flex;align-items:center;gap:10px;margin:1.3rem 0;color:var(--text-muted);font-size:12px;font-weight:600}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
-.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font)}
-.social-btn:hover{border-color:#9CA3AF;background:var(--bg);transform:translateY(-1px)}
-.social-btn:active{transform:translateY(0)}
-.social-btn img{width:19px;height:19px;object-fit:contain}
-
-/* CHECKBOX */
-.chk-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:.85rem}
-.chk-row input[type=checkbox]{width:16px;height:16px;margin-top:2px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
-.chk-row label{font-size:13px;color:var(--text-muted);line-height:1.5;cursor:pointer}
-.chk-row a{color:var(--green);text-decoration:none;font-weight:500;transition:opacity .15s}
-.chk-row a:hover{text-decoration:underline;opacity:.8}
+input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
+input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08)}
 
 /* ALERTS */
-.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
 .alert.show{display:flex}
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
 .alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
 .alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
+.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
 
-/* GEO BLOCK SCREEN */
-#geoBlockScreen{display:none;text-align:center;padding:1rem 0}
-.geo-icon{font-size:48px;color:var(--red);margin-bottom:1rem}
-.geo-title{font-size:20px;font-weight:800;font-family:var(--serif);margin-bottom:.5rem;color:var(--text)}
-.geo-body{font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:1.2rem}
-.geo-countries{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.4rem}
-.geo-chip{background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 12px;font-size:12.5px;font-weight:600}
-
-/* GEO SCANNING */
-#geoScanBanner{background:linear-gradient(90deg,var(--green-light),#F0FFF8);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:10px 14px;font-size:12.5px;color:var(--green-dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-#geoScanBanner .geo-spin{width:13px;height:13px;border:2px solid var(--green-mid);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-#geoScanBanner.hidden{display:none}
-#geoOkBanner{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--green-dark);margin-bottom:14px;display:none;align-items:center;gap:8px}
-#geoOkBanner.show{display:flex}
-
-/* BANNERS */
-.ip-banner{background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:#92400E;margin-bottom:14px;display:none;align-items:center;gap:7px}
-.ip-banner.show{display:flex}
-.vpn-banner{background:#FEF2F2;border:1px solid var(--red-border);border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px}
-.vpn-banner.show{display:flex}
-
-/* TOAST */
-.toast-wrap{position:fixed;top:22px;left:50%;transform:translateX(-50%) translateY(-12px);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{pointer-events:auto;background:#111827;color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(-8px);transition:all .25s ease;white-space:nowrap}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast i{color:var(--accent);font-size:16px}
-
-/* OTP */
-#step-otp{display:none}
-.otp-info{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;color:var(--green-dark);margin-bottom:1.4rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
-.otp-boxes{display:flex;gap:6px;justify-content:center;margin:1rem 0}
-.otp-box{width:43px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);padding:0}
-.otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.12);background:var(--surface)}
-.otp-box.filled{border-color:var(--green);background:var(--green-light)}
-.otp-box.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
-.otp-sep{display:flex;align-items:center;padding:0 2px;color:var(--text-muted);font-weight:700;font-size:18px}
-.otp-timer{text-align:center;font-size:13px;color:var(--text-muted);margin-top:.6rem}
-.otp-resend-btn{background:none;border:none;color:var(--green);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;padding:0}
-.otp-resend-btn:disabled{color:var(--text-muted);text-decoration:none;cursor:not-allowed}
-
-/* SUCCESS */
-#step-success{display:none;text-align:center;padding:.5rem 0}
-.success-icon{width:70px;height:70px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:33px;color:var(--green);animation:popIn .4s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-.success-title{font-size:23px;font-weight:800;margin-bottom:8px;font-family:var(--serif)}
-.success-body{font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:1.5rem}
-
-/* INLINE LOADER */
-.oauth-loading{display:none;text-align:center;padding:2.2rem 0}
-.oauth-loading i{font-size:36px;color:var(--green);animation:spin 1s linear infinite}
-.oauth-loading p{margin-top:12px;font-size:14px;color:var(--text-muted)}
-
-/* LEGAL LINK ANIMATION */
-a.legal-link{position:relative;color:var(--green);text-decoration:none;font-weight:500}
-a.legal-link::after{content:'';position:absolute;bottom:-1px;left:0;width:0;height:1.5px;background:var(--green);transition:width .25s ease}
-a.legal-link:hover::after{width:100%}
+/* CHECKBOX */
+.checkbox-group{display:flex;flex-direction:column;gap:10px;margin:1rem 0}
+.checkbox-wrap{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
+.checkbox-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin:2px 0 0;border-radius:4px}
+.checkbox-wrap label{margin:0;cursor:pointer;font-size:13px;color:var(--text-mid);font-weight:500;flex:1}
+.checkbox-wrap a{color:var(--green);text-decoration:none;font-weight:600}
+.checkbox-wrap a:hover{text-decoration:underline}
 
 /* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .6s both}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
-.btn-outline{background:var(--surface);color:var(--text-mid);border:1.5px solid var(--border)}
-.btn-outline:hover{border-color:#9CA3AF;background:var(--bg)}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* FOOTER */
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1.2rem;animation:slideInUp .5s ease-out .7s both}
 .auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
 .auth-foot a:hover{text-decoration:underline}
 
-/* PAGE TRANSITION */
-body{opacity:0;animation:fadeIn .35s ease .05s both}
-@keyframes fadeIn{to{opacity:1}}
-.page-out{animation:fadeOut .25s ease both!important}
-@keyframes fadeOut{to{opacity:0;transform:translateY(6px)}}
+/* IP & LOCATION INFO */
+.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
+.ip-status i{font-size:13px}
+
+/* REGION RESTRICTION OVERLAY */
+.region-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:1000;animation:fadeIn .3s ease-out}
+.region-overlay.show{display:flex}
+.region-restriction-card{background:var(--surface);border-radius:var(--radius-lg);padding:2rem;max-width:400px;text-align:center;box-shadow:var(--shadow-lg);animation:slideInUp .4s ease-out}
+.region-restriction-card i{font-size:48px;color:var(--red);margin-bottom:1rem}
+.region-restriction-card h2{font-size:20px;font-weight:800;margin-bottom:.5rem;font-family:var(--serif)}
+.region-restriction-card p{font-size:14px;color:var(--text-muted);line-height:1.6;margin-bottom:1.5rem}
+.region-restriction-card .btn{animation:none;margin-top:.5rem}
 </style>
 </head>
 <body>
 
-<div class="toast-wrap" id="toastWrap"></div>
+<div class="region-overlay" id="regionOverlay">
+  <div class="region-restriction-card">
+    <i class="bi bi-geo-alt-fill"></i>
+    <h2>Registration Restricted</h2>
+    <p>Employee registration is currently only available in East Africa region. We're expanding soon!</p>
+    <button class="btn btn-primary" onclick="window.location.href='index.html'">Return to Home</button>
+  </div>
+</div>
 
 <div class="page-wrap">
 
-<!-- BRAND -->
-<div class="brand">
-  <a class="brand-logo" href="index.html">
-    <img src="sound_logo.png" alt="SoundsCare Logo" class="brand-icon">
-    <span>SoundsCare</span>
-  </a>
-  <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
-</div>
-  <!-- PROGRESS -->
-  <div class="progress-track" id="progressTrack">
-    <div class="progress-seg active" id="seg1"></div>
-    <div class="progress-seg" id="seg2"></div>
+  <!-- BRAND -->
+  <div class="brand">
+    <a class="brand-logo" href="index.html">
+      <img src="sound_logo.png" alt="SoundsCare Logo">
+      SoundsCare
+    </a>
+    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
   </div>
 
   <div class="card">
 
-    <!-- INLINE LOADING -->
-    <div class="oauth-loading" id="checkingLoading">
-      <i class="bi bi-arrow-repeat"></i>
-      <p id="checkingLoadingText">Checking your details…</p>
+    <!-- LOCATION DETECTION -->
+    <div class="location-badge loading" id="locationBadge">
+      <i class="bi bi-geo-alt"></i>
+      <span id="locationText">Detecting location...</span>
     </div>
 
-    <!-- GEO BLOCK -->
-    <div id="geoBlockScreen">
-      <div class="geo-icon"><i class="bi bi-geo-alt-fill"></i></div>
-      <div class="geo-title">Registration Restricted</div>
-      <div class="geo-body">
-        SoundsCare employee registration is currently available <strong>only for applicants located in East Africa</strong>.<br>
-        Your detected location does not qualify.<br><br>
-        If you're an employer outside East Africa, please visit our<br>
-        <a href="employer-register.html" style="color:var(--green);font-weight:600">Employer Registration page</a>.
-      </div>
-      <div class="geo-countries">
-        <span class="geo-chip">🇰🇪 Kenya</span>
-        <span class="geo-chip">🇹🇿 Tanzania</span>
-        <span class="geo-chip">🇺🇬 Uganda</span>
-        <span class="geo-chip">🇷🇼 Rwanda</span>
-        <span class="geo-chip">🇧🇮 Burundi</span>
-        <span class="geo-chip">🇸🇸 South Sudan</span>
-        <span class="geo-chip">🇸🇴 Somalia</span>
-        <span class="geo-chip">🇪🇹 Ethiopia</span>
-      </div>
-      <a href="index.html" class="btn btn-outline" style="max-width:240px;margin:0 auto;text-decoration:none"><i class="bi bi-house"></i> Go to Homepage</a>
-    </div>
+    <!-- MAIN PANEL -->
+    <div id="register-panel">
 
-    <!-- ===== STEP 1: FORM ===== -->
-    <div id="step-form">
-
-      <!-- Geo Scan Banner -->
-      <div id="geoScanBanner">
-        <span class="geo-spin"></span>
-        <span id="geoScanText">Scanning your location for eligibility…</span>
-      </div>
-      <div id="geoOkBanner">
-        <i class="bi bi-geo-alt-fill" style="flex-shrink:0"></i>
-        <span id="geoOkText">Location verified ✓ — You're eligible to register as a domestic worker.</span>
-      </div>
-
-      <!-- VPN Banner -->
-      <div class="vpn-banner" id="vpnBanner">
-        <i class="bi bi-shield-exclamation" style="font-size:15px;flex-shrink:0;margin-top:1px"></i>
-        <span id="vpnBannerText">VPN or proxy detected. For security, please disable it before registering.</span>
-      </div>
-
-      <!-- IP Risk Banner -->
-      <div class="ip-banner" id="ipBanner">
-        <i class="bi bi-exclamation-triangle" style="font-size:14px;flex-shrink:0"></i>
-        <span id="ipBannerText"></span>
-      </div>
-
-      <div class="step-badge">
-        <i class="bi bi-person-badge"></i>
-        Step 1 of 2 — Domestic Worker Registration
-      </div>
-      <div class="step-title">Create your account</div>
-      <div class="step-sub">Join thousands of domestic service professionals on SoundsCare and get hired across East Africa.</div>
-
-      <!-- EMPLOYEE BADGE -->
-      <div class="worker-badge">
-        <i class="bi bi-person-badge-fill worker-badge-icon"></i>
-        <div class="worker-badge-text">
-          <strong>Registering as a Domestic Worker</strong>
-          After registration you'll complete your professional profile to be discovered by employers.
-        </div>
-      </div>
-
-      <!-- ALERT -->
-      <div class="alert error" id="alertMain">
+      <!-- ALERTS -->
+      <div class="alert error" id="alertError">
         <i class="bi bi-exclamation-circle-fill"></i>
-        <span id="alertMainText"></span>
+        <span id="alertErrorText"></span>
       </div>
 
-      <!-- SOCIAL / OAUTH -->
-      <div class="sec-lbl" style="border-top:none;padding-top:0;margin-top:0">Sign up faster</div>
-      <div class="social-grid">
-        <button class="social-btn" onclick="oauthSignUp('google')" type="button">
-          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
-          Google
-        </button>
-        <button class="social-btn" onclick="oauthSignUp('facebook')" type="button">
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
-          Facebook
-        </button>
+      <div class="alert success" id="alertSuccess">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="alertSuccessText"></span>
       </div>
 
-      <div class="divider">or register with email</div>
-
-      <!-- PERSONAL INFO -->
-      <div class="sec-lbl" style="border-top:none;padding-top:0">Personal Information</div>
-
-      <div class="form-row">
-        <div class="fg">
-          <label>First Name <span class="req">*</span></label>
-          <div class="iw has-ico">
-            <span class="ico"><i class="bi bi-person"></i></span>
-            <input type="text" id="firstName" placeholder="Jane" autocomplete="given-name">
-          </div>
-        </div>
-        <div class="fg">
-          <label>Last Name <span class="req">*</span></label>
-          <div class="iw has-ico">
-            <span class="ico"><i class="bi bi-person"></i></span>
-            <input type="text" id="lastName" placeholder="Mwangi" autocomplete="family-name">
-          </div>
-        </div>
+      <div class="alert info" id="alertInfo">
+        <i class="bi bi-info-circle-fill"></i>
+        <span id="alertInfoText"></span>
       </div>
 
-      <div class="fg">
-        <label>Phone Number <span class="req">*</span></label>
-        <div class="iw has-ico">
-          <span class="ico"><i class="bi bi-telephone"></i></span>
-          <input type="tel" id="phone" placeholder="+254 7XX XXX XXX" autocomplete="tel">
-        </div>
-      </div>
-
-      <!-- COUNTRY -->
-      <div class="fg">
-        <label>Country <span class="req">*</span></label>
-        <div class="iw has-ico has-sfx country-wrap" id="countryWrap">
-          <span class="ico" id="cFlag" style="font-size:16px;left:11px">&#x1F1F0;&#x1F1EA;</span>
-          <input type="text" id="countryDisplay" placeholder="Select country…" readonly
-            onclick="toggleCS()" value="Kenya" style="cursor:pointer;padding-left:38px;padding-right:36px">
-          <input type="hidden" id="countryCode" value="KE">
-          <input type="hidden" id="countryName" value="Kenya">
-          <button type="button" class="sfx" onclick="toggleCS()" tabindex="-1">
-            <i class="bi bi-chevron-down"></i>
-          </button>
-          <div class="cs-drop" id="csDrop">
-            <div class="cs-search-box">
-              <input type="text" id="csQ" placeholder="Search country…" oninput="filterCS(this.value)" autocomplete="off">
-            </div>
-            <div class="cs-list" id="csList"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CREDENTIALS -->
-      <div class="sec-lbl">Account Credentials</div>
-
-      <div class="fg">
-        <label>Email Address <span class="req">*</span></label>
-        <div class="iw has-ico has-sfx">
-          <span class="ico"><i class="bi bi-envelope"></i></span>
-          <input type="email" id="email" placeholder="you@gmail.com" autocomplete="email"
-            oninput="onEmailInput()" onblur="onEmailBlur()">
-          <button type="button" class="sfx" id="emailCheckBtn" onclick="liveCheckEmail()" title="Check availability" style="right:8px">
-            <i class="bi bi-search" id="emailCheckIcon"></i>
-          </button>
-        </div>
-        <div class="fhint" id="emailHint">We will send a 6-digit verification code to this address.</div>
-        <!-- INLINE AVAILABILITY ALERT (appears below hint) -->
-        <div class="email-avail" id="emailAvailAlert">
-          <i class="bi bi-info-circle-fill" id="emailAvailIcon"></i>
-          <span id="emailAvailText"></span>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label>Password <span class="req">*</span></label>
-        <div class="iw has-ico has-sfx">
-          <span class="ico"><i class="bi bi-lock"></i></span>
-          <input type="password" id="password" placeholder="Min 8 characters" oninput="checkStrength()">
-          <button type="button" class="sfx" onclick="togglePw('password')" tabindex="-1">
-            <i class="bi bi-eye" id="pwEyeIcon"></i>
-          </button>
-        </div>
-        <div class="pw-bars"><div class="pw-bar" id="b1"></div><div class="pw-bar" id="b2"></div><div class="pw-bar" id="b3"></div><div class="pw-bar" id="b4"></div></div>
-        <div class="pw-lbl" id="pwLbl"></div>
-      </div>
-
-      <div class="fg">
-        <label>Confirm Password <span class="req">*</span></label>
-        <div class="iw has-ico has-sfx">
-          <span class="ico"><i class="bi bi-shield-lock"></i></span>
-          <input type="password" id="confirmPw" placeholder="Repeat password" oninput="checkConfirm()">
-          <button type="button" class="sfx" onclick="togglePw('confirmPw')" tabindex="-1">
-            <i class="bi bi-eye" id="cpwEyeIcon"></i>
-          </button>
-        </div>
-        <div class="fhint" id="confirmHint"></div>
-      </div>
-
-      <!-- AGREEMENTS -->
-      <div class="sec-lbl">Agreements</div>
-      <div class="chk-row">
-        <input type="checkbox" id="terms">
-        <label for="terms">I agree to the
-          <a href="legal.html" class="legal-link" onclick="navToLegal(event,'terms')">Terms &amp; Conditions</a>
-          and
-          <a href="legal.html" class="legal-link" onclick="navToLegal(event,'privacy')">Privacy Policy</a>
-          of SoundsCare.
-        </label>
-      </div>
-      <div class="chk-row" style="margin-bottom:1.4rem">
-        <input type="checkbox" id="updates">
-        <label for="updates">Send me job updates and platform notifications (optional).</label>
-      </div>
-
-      <button class="btn btn-primary" id="regBtn" onclick="handleRegister()" type="button">
-        <span class="spinner" id="regSpinner"></span>
-        <span id="regBtnText">Continue to Verify Email</span>
-      </button>
-
-      <div class="auth-foot" style="margin-top:1rem">Already have an account? <a href="login.html">Sign in</a><br><br><span style="font-size:12px;color:var(--text-muted)">Are you an employer or family? <a href="employer-register.html" style="color:var(--green)">Register here instead</a></span></div>
-    </div><!-- end step-form -->
-
-    <!-- ===== STEP 2: OTP ===== -->
-    <div id="step-otp">
+      <!-- FORM HEADER -->
       <div class="step-badge">
-        <i class="bi bi-envelope-check"></i>
-        Step 2 of 2 — Email Verification
+        <i class="bi bi-person-fill-add"></i>
+        EMPLOYEE REGISTRATION
       </div>
-      <div class="step-title">Check your inbox</div>
-      <div class="step-sub">Enter the 6-digit code to activate your account.</div>
+      <h1 class="step-title">Create Your Account</h1>
+      <p class="step-sub">Join East Africa's trusted domestic services platform. Register as an employee and start finding work opportunities.</p>
 
-      <div class="otp-info">
-        <i class="bi bi-info-circle" style="font-size:16px;flex-shrink:0;margin-top:2px"></i>
-        <span>A 6-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes. Check spam/junk if you don't see it.</span>
-      </div>
+      <!-- REGISTRATION FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)">
 
-      <div class="alert error" id="alertOtp">
-        <i class="bi bi-exclamation-circle-fill"></i>
-        <span id="alertOtpText"></span>
-      </div>
+        <!-- FULL NAME -->
+        <div class="fg">
+          <label for="fullName">Full Name</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-person-fill"></i>
+            <input type="text" id="fullName" name="fullName" placeholder="e.g., Jane Kariuki" required>
+          </div>
+        </div>
 
-      <div class="otp-boxes">
-        <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)" onpaste="otpPaste(event,0)">
-        <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)" onpaste="otpPaste(event,1)">
-        <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)" onpaste="otpPaste(event,2)">
-        <span class="otp-sep">—</span>
-        <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)" onpaste="otpPaste(event,3)">
-        <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)" onpaste="otpPaste(event,4)">
-        <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)" onpaste="otpPaste(event,5)">
-      </div>
+        <!-- EMAIL -->
+        <div class="fg">
+          <label for="regEmail">Email Address</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-envelope-fill"></i>
+            <input type="email" id="regEmail" name="email" placeholder="you@example.com" required>
+            <button type="button" class="sfx" id="emailCheckBtn" style="display:none;">
+              <i class="bi bi-check-circle-fill"></i>
+            </button>
+          </div>
+          <div class="alert" id="emailStatusAlert" style="margin-top:6px;">
+            <i id="emailStatusIcon"></i>
+            <span id="emailStatusText"></span>
+          </div>
+        </div>
 
-      <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
-      <div id="resendWrap" class="otp-timer" style="display:none">
-        <button class="otp-resend-btn" id="resendBtn" onclick="resendOtp()" type="button">
-          <span class="spinner" id="resendSpinner" style="border-color:rgba(27,107,69,.3);border-top-color:var(--green)"></span>
-          <span id="resendBtnText">Resend verification code</span>
+        <!-- PHONE -->
+        <div class="fg">
+          <label for="phone">Phone Number</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-telephone-fill"></i>
+            <input type="tel" id="phone" name="phone" placeholder="+254712345678" required>
+          </div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="fg">
+          <label for="regPassword">Password</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-lock-fill"></i>
+            <input type="password" id="regPassword" name="password" placeholder="••••••••" required>
+            <button type="button" class="sfx" id="togglePwd" onclick="togglePasswordVisibility()">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div class="fg">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-lock-fill"></i>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required>
+            <button type="button" class="sfx" id="togglePwdConfirm" onclick="togglePasswordVisibility('confirmPassword')">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- TERMS & PRIVACY -->
+        <div class="sec-lbl no-border">Agreements</div>
+        <div class="checkbox-group">
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="termsCheck" name="termsCheck" required>
+            <label for="termsCheck">I agree to the <a href="legal.html" target="_blank">Terms of Service and Privacy Policy</a></label>
+          </div>
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="dataCheck" name="dataCheck" required>
+            <label for="dataCheck">I consent to location and device data collection for security and fraud prevention</label>
+          </div>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" class="btn btn-primary" id="registerBtn">
+          <span id="registerBtnText">Create Account</span>
+          <div class="spinner" id="registerSpinner"></div>
         </button>
+
+      </form>
+
+      <!-- SIGN IN LINK -->
+      <div class="auth-foot">
+        Already have an account? <a href="login.html">Sign In</a>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:1.4rem">
-        <button class="btn btn-outline" style="width:auto;padding-left:16px;padding-right:16px" onclick="goBack()" type="button">
-          <i class="bi bi-arrow-left"></i> Back
-        </button>
-        <button class="btn btn-primary" id="otpBtn" onclick="verifyOtp()" type="button">
-          <span class="spinner" id="otpSpinner"></span>
-          <span id="otpBtnText">Verify &amp; Create Account</span>
-        </button>
+      <!-- IP & LOCATION INFO -->
+      <div class="ip-status" id="ipStatus" style="display:none;">
+        <i class="bi bi-shield-check"></i>
+        <span id="ipStatusText"></span>
       </div>
-      <div class="auth-foot" style="margin-top:.8rem">Wrong email? <a href="#" onclick="goBack();return false">Change it</a></div>
-    </div><!-- end step-otp -->
 
-    <!-- ===== STEP 3: SUCCESS ===== -->
-    <div id="step-success">
-      <div class="success-icon"><i class="bi bi-patch-check-fill"></i></div>
-      <div class="success-title">Account Created!</div>
-      <div class="success-body">
-        Welcome to SoundsCare, <strong id="successName"></strong>! 🎉<br>
-        Your email <strong id="successEmail"></strong> is verified.<br>
-        Now let's set up your professional profile.
-      </div>
-      <a id="successLink" href="post-profile.html" class="btn btn-primary" style="text-decoration:none;margin-bottom:.8rem">
-        <i class="bi bi-person-lines-fill"></i> Post Your Profile
-      </a>
     </div>
 
-  </div><!-- .card -->
-
-  <div style="text-align:center;font-size:12px;color:#9CA3AF;margin-top:1rem">
-    &copy; 2026 SoundsCare. Secure &amp; encrypted. &nbsp;|&nbsp; IP-monitored &amp; geo-verified for safety.
   </div>
 
-</div><!-- .page-wrap -->
+</div>
 
 <script>
-// ============================================================
-// SUPABASE
-// ============================================================
-var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ============================================================
-// STATE
+// CONFIGURATION
 // ============================================================
-var currentRole = 'employee'; // Always employee on this page
-var otpInterval = null;
-var pendingUser = null;
-var emailConfirmedAvailable = false;
-var emailCheckTimer = null;
-var userIpData = null;  // Stores full IP/geo data for fraud prevention
-var geoVerified = false; // true when location is in East Africa
-var geoBlocked = false;  // true when location is outside East Africa
+const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
+const EAST_AFRICA_REGIONS = {
+  'KE': {name: 'Kenya', lat: [0, 4.5], lng: [32, 41]},
+  'TZ': {name: 'Tanzania', lat: [-12, -1], lng: [29, 41]},
+  'UG': {name: 'Uganda', lat: [-2, 4.2], lng: [29.5, 35.4]},
+  'RW': {name: 'Rwanda', lat: [-3, -1], lng: [28.8, 30.9]},
+  'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
+};
 
-// East Africa country codes allowed for employee registration
-var EAST_AFRICA_CODES = ['KE','TZ','UG','RW','BI','SS','SO','ET','ER','DJ','MZ','MW','ZM','ZW','MG','KM'];
-
-// ============================================================
-// INIT
-// ============================================================
-(function init() {
-  buildCS('');
-  scanLocationAndIp();
-})();
+let userLocation = null;
+let userIP = null;
+let emailValidationTimeout = null;
 
 // ============================================================
-// TOAST
+// GEOLOCATION - Detect user's real-time location
 // ============================================================
-function showToast(msg, icon) {
-  var wrap = document.getElementById('toastWrap');
-  var t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = '<i class="bi ' + (icon || 'bi-clock-history') + '"></i><span>' + msg + '</span>';
-  wrap.appendChild(t);
-  requestAnimationFrame(function(){ t.classList.add('show'); });
-  setTimeout(function() {
-    t.classList.remove('show');
-    setTimeout(function(){ t.remove(); }, 250);
-  }, 3200);
-}
-
-// ============================================================
-// LEGAL PAGE NAVIGATION (animated)
-// ============================================================
-function navToLegal(e, section) {
-  e.preventDefault();
-  var dest = 'legal.html' + (section ? '#' + section : '');
-  document.body.classList.add('page-out');
-  setTimeout(function(){ window.location.href = dest; }, 260);
-}
-
-
-  // ============================================================
-// REAL-TIME GEO + IP SCAN (No API Key Required)
-// Browser GPS + ipapi.co fallback
-// ============================================================
-
-let geoVerified = false;
-let geoBlocked = false;
-let userIpData = null;
-
-const EAST_AFRICA_CODES = ["KE", "UG", "TZ", "RW", "BI", "SS", "ET", "SO", "DJ"];
-
-async function scanLocationAndIp() {
-
-    const scanBanner = document.getElementById("geoScanBanner");
-    const scanText = document.getElementById("geoScanText");
-
-    scanBanner.classList.remove("hidden");
-    scanText.textContent = "Detecting your location...";
-
-    let ipData = null;
-
-    try {
-        const response = await fetch("https://ipapi.co/json/");
-        ipData = await response.json();
-    } catch (e) {
-        console.log("IP lookup failed.");
+async function detectUserLocation() {
+  try {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported');
     }
 
-    if (navigator.geolocation) {
-
-        navigator.geolocation.getCurrentPosition(
-
-            function(position) {
-
-                processGeoResult(ipData, "browser", position);
-
-            },
-
-            function() {
-
-                processGeoResult(ipData, "ip", null);
-
-            },
-
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            }
-
-        );
-
-    } else {
-
-        processGeoResult(ipData, "ip", null);
-
-    }
-
-}
-
-function processGeoResult(ipData, source, geoPos) {
-
-    document.getElementById("geoScanBanner").classList.add("hidden");
-
-    if (!ipData) {
-
-        geoVerified = true;
-        return;
-
-    }
-
-    userIpData = ipData;
-
-    const countryCode = (ipData.country_code || "").toUpperCase();
-    const countryName = ipData.country_name || "";
-    const city = ipData.city || "";
-    const region = ipData.region || "";
-    const ip = ipData.ip || "";
-
-    const latitude = geoPos
-        ? geoPos.coords.latitude
-        : ipData.latitude;
-
-    const longitude = geoPos
-        ? geoPos.coords.longitude
-        : ipData.longitude;
-
-    const isEastAfrica = EAST_AFRICA_CODES.includes(countryCode);
-
-    if (isEastAfrica) {
-
-        geoVerified = true;
-        geoBlocked = false;
-
-        const okBanner = document.getElementById("geoOkBanner");
-
-        document.getElementById("geoOkText").textContent =
-            `Location verified ✓ ${city}, ${countryName}`;
-
-        okBanner.classList.add("show");
-
-        if (typeof COUNTRIES !== "undefined") {
-
-            const match = COUNTRIES.find(c => c.code === countryCode);
-
-            if (match) {
-                pickCountry(match.code, match.name, match.flag);
-            }
-
-        }
-
-    } else {
-
-        geoVerified = false;
-        geoBlocked = true;
-
-        document.getElementById("step-form").style.display = "none";
-        document.getElementById("geoBlockScreen").style.display = "block";
-
-    }
-
-    logIpForFraudPrevention({
-        ip,
-        countryCode,
-        countryName,
-        city,
-        region,
-        latitude,
-        longitude,
-        source
-    });
-
-}
-
-function logIpForFraudPrevention(data) {
-
-    if (!dbClient) return;
-
-    dbClient.from("admin_audit_logs").insert({
-
-        action: "registration_geo_scan",
-
-        details: JSON.stringify({
-
-            ip: data.ip,
-            country_code: data.countryCode,
-            country_name: data.countryName,
-            city: data.city,
-            region: data.region,
-            latitude: data.latitude,
-            longitude: data.longitude,
-            source: data.source,
-            user_agent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-
-        })
-
-    }).catch(console.error);
-
-}}
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        userLocation = { latitude, longitude, accuracy };
+        
+        const country = await getCountryFromCoordinates(latitude, longitude);
+        validateRegion(country);
+        updateLocationBadge(country, 'success');
+      },
+      (error) => {
+        console.warn('Geolocation error:', error.message);
+        updateLocationBadge(null, 'warning');
+        getLocationFromIP();
+      }
+    );
+  } catch (err) {
+    console.warn('Geolocation detection failed:', err.message);
+    updateLocationBadge(null, 'warning');
+    getLocationFromIP();
   }
-// ============================================================
-// SOCIAL SIGN UP
-// ============================================================
-function oauthSignUp(provider) {
-  var label = provider === 'google' ? 'Google' : 'Facebook';
-  showToast('Sign up with ' + label + ' is coming soon. Please use email for now.', 'bi-rocket-takeoff');
 }
 
-// ============================================================
-// COUNTRY DATA
-// ============================================================
-var COUNTRIES = [
-  {code:'KE',name:'Kenya',flag:'\uD83C\uDDF0\uD83C\uDDEA',rec:true},
-  {code:'UG',name:'Uganda',flag:'\uD83C\uDDFA\uD83C\uDDEC',rec:true},
-  {code:'TZ',name:'Tanzania',flag:'\uD83C\uDDF9\uD83C\uDDFF',rec:true},
-  {code:'RW',name:'Rwanda',flag:'\uD83C\uDDF7\uD83C\uDDFC',rec:true},
-  {code:'BI',name:'Burundi',flag:'\uD83C\uDDE7\uD83C\uDDEE',rec:true},
-  {code:'SS',name:'South Sudan',flag:'\uD83C\uDDF8\uD83C\uDDF8',rec:true},
-  {code:'SO',name:'Somalia',flag:'\uD83C\uDDF8\uD83C\uDDF4',rec:true},
-  {code:'ET',name:'Ethiopia',flag:'\uD83C\uDDEA\uD83C\uDDF9',rec:true},
-  {code:'ER',name:'Eritrea',flag:'\uD83C\uDDEA\uD83C\uDDF7',rec:true},
-  {code:'DJ',name:'Djibouti',flag:'\uD83C\uDDE9\uD83C\uDDEF',rec:true},
-  {code:'AF',name:'Afghanistan',flag:'\uD83C\uDDE6\uD83C\uDDEB'},
-  {code:'AL',name:'Albania',flag:'\uD83C\uDDE6\uD83C\uDDF1'},
-  {code:'DZ',name:'Algeria',flag:'\uD83C\uDDE9\uD83C\uDDFF'},
-  {code:'AO',name:'Angola',flag:'\uD83C\uDDE6\uD83C\uDDF4'},
-  {code:'AR',name:'Argentina',flag:'\uD83C\uDDE6\uD83C\uDDF7'},
-  {code:'AU',name:'Australia',flag:'\uD83C\uDDE6\uD83C\uDDFA'},
-  {code:'AT',name:'Austria',flag:'\uD83C\uDDE6\uD83C\uDDF9'},
-  {code:'BD',name:'Bangladesh',flag:'\uD83C\uDDE7\uD83C\uDDE9'},
-  {code:'BE',name:'Belgium',flag:'\uD83C\uDDE7\uD83C\uDDEA'},
-  {code:'CM',name:'Cameroon',flag:'\uD83C\uDDE8\uD83C\uDDF2'},
-  {code:'CA',name:'Canada',flag:'\uD83C\uDDE8\uD83C\uDDE6'},
-  {code:'CN',name:'China',flag:'\uD83C\uDDE8\uD83C\uDDF3'},
-  {code:'CD',name:'Congo (DRC)',flag:'\uD83C\uDDE8\uD83C\uDDE9'},
-  {code:'EG',name:'Egypt',flag:'\uD83C\uDDEA\uD83C\uDDEC'},
-  {code:'FR',name:'France',flag:'\uD83C\uDDEB\uD83C\uDDF7'},
-  {code:'DE',name:'Germany',flag:'\uD83C\uDDE9\uD83C\uDDEA'},
-  {code:'GH',name:'Ghana',flag:'\uD83C\uDDEC\uD83C\uDDED'},
-  {code:'IN',name:'India',flag:'\uD83C\uDDEE\uD83C\uDDF3'},
-  {code:'ID',name:'Indonesia',flag:'\uD83C\uDDEE\uD83C\uDDE9'},
-  {code:'NG',name:'Nigeria',flag:'\uD83C\uDDF3\uD83C\uDDEC'},
-  {code:'PH',name:'Philippines',flag:'\uD83C\uDDF5\uD83C\uDDED'},
-  {code:'ZA',name:'South Africa',flag:'\uD83C\uDDFF\uD83C\uDDE6'},
-  {code:'GB',name:'United Kingdom',flag:'\uD83C\uDDEC\uD83C\uDDE7'},
-  {code:'US',name:'United States',flag:'\uD83C\uDDFA\uD83C\uDDF8'},
-  {code:'MW',name:'Malawi',flag:'\uD83C\uDDF2\uD83C\uDDFC'},
-  {code:'MZ',name:'Mozambique',flag:'\uD83C\uDDF2\uD83C\uDDFF'},
-  {code:'ZM',name:'Zambia',flag:'\uD83C\uDDFF\uD83C\uDDF2'},
-  {code:'ZW',name:'Zimbabwe',flag:'\uD83C\uDDFF\uD83C\uDDFC'}
-];
-
-function buildCS(q) {
-  var list = document.getElementById('csList');
-  var lower = (q || '').toLowerCase();
-  var filtered = lower ? COUNTRIES.filter(function(c){ return c.name.toLowerCase().indexOf(lower) > -1; }) : COUNTRIES;
-  var rec = filtered.filter(function(c){ return c.rec; });
-  var rest = filtered.filter(function(c){ return !c.rec; });
-  var html = '';
-  if (rec.length && !q) {
-    html += '<div class="cs-grp">East Africa (Recommended)</div>';
-    rec.forEach(function(c){
-      html += '<div class="cs-item rec" onclick="pickCountry(\'' + c.code + '\',\'' + c.name.replace(/'/g, "\\'") + '\',\'' + c.flag + '\')">' + c.flag + ' ' + c.name + '</div>';
-    });
-    html += '<div class="cs-sep"></div><div class="cs-grp">Other Countries</div>';
+async function getCountryFromCoordinates(lat, lng) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await response.json();
+    const countryCode = data.address?.country_code?.toUpperCase();
+    return countryCode;
+  } catch (err) {
+    console.warn('Reverse geocoding failed:', err);
+    return null;
   }
-  rest.forEach(function(c){
-    html += '<div class="cs-item" onclick="pickCountry(\'' + c.code + '\',\'' + c.name.replace(/'/g, "\\'") + '\',\'' + c.flag + '\')">' + c.flag + ' ' + c.name + '</div>';
-  });
-  if (!filtered.length) html = '<div style="padding:12px;text-align:center;font-size:13px;color:#9CA3AF">No results found</div>';
-  list.innerHTML = html;
 }
-function toggleCS() {
-  var drop = document.getElementById('csDrop');
-  if (drop.classList.contains('open')) { closeCS(); return; }
-  drop.classList.add('open');
-  buildCS('');
-  setTimeout(function(){ document.getElementById('csQ').focus(); }, 40);
+
+// ============================================================
+// IP-BASED LOCATION (Fallback) + IP Collection
+// ============================================================
+async function getLocationFromIP() {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    userIP = data.ip;
+    const countryCode = data.country_code?.toUpperCase();
+    
+    document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name})`;
+    document.getElementById('ipStatus').style.display = 'flex';
+    
+    validateRegion(countryCode);
+    updateLocationBadge(countryCode, 'success');
+  } catch (err) {
+    console.warn('IP lookup failed:', err);
+    updateLocationBadge(null, 'error');
+  }
 }
-function filterCS(v) { buildCS(v); }
-function pickCountry(code, name, flag) {
-  document.getElementById('countryDisplay').value = name;
-  document.getElementById('countryCode').value = code;
-  document.getElementById('countryName').value = name;
-  document.getElementById('cFlag').textContent = flag;
-  closeCS();
+
+// ============================================================
+// REGION VALIDATION
+// ============================================================
+function validateRegion(countryCode) {
+  if (!countryCode || !EAST_AFRICA_COUNTRIES.includes(countryCode)) {
+    showRegionRestriction();
+  }
 }
-function closeCS() {
-  document.getElementById('csDrop').classList.remove('open');
-  document.getElementById('csQ').value = '';
+
+function showRegionRestriction() {
+  document.getElementById('regionOverlay').classList.add('show');
+  document.getElementById('registerForm').style.opacity = '0.5';
+  document.getElementById('registerForm').style.pointerEvents = 'none';
 }
-document.addEventListener('click', function(e){
-  if (!document.getElementById('countryWrap').contains(e.target)) closeCS();
+
+function updateLocationBadge(countryCode, status) {
+  const badge = document.getElementById('locationBadge');
+  const text = document.getElementById('locationText');
+  const regionName = countryCode && EAST_AFRICA_REGIONS[countryCode] ? EAST_AFRICA_REGIONS[countryCode].name : 'Unknown Location';
+  
+  badge.classList.remove('loading', 'restricted');
+  
+  if (status === 'success') {
+    badge.classList.add('fade-in');
+    text.textContent = `📍 ${regionName} - Registration Available`;
+  } else if (status === 'warning') {
+    badge.classList.add('loading');
+    text.textContent = 'Detecting your location...';
+  } else {
+    badge.classList.add('restricted');
+    text.textContent = '⚠️ Location could not be verified';
+  }
+}
+
+// ============================================================
+// EMAIL VALIDATION (Real-time)
+// ============================================================
+document.getElementById('regEmail').addEventListener('input', function(e) {
+  const email = this.value.trim().toLowerCase();
+  const btn = document.getElementById('emailCheckBtn');
+  const alert = document.getElementById('emailStatusAlert');
+  
+  clearTimeout(emailValidationTimeout);
+  
+  if (!email) {
+    btn.style.display = 'none';
+    alert.classList.remove('show');
+    return;
+  }
+  
+  // Validate email format
+  if (!isValidEmailFormat(email)) {
+    showEmailStatus(false, 'Invalid email format', 'error');
+    return;
+  }
+  
+  // Check email availability (debounced)
+  btn.classList.remove('available', 'unavailable');
+  btn.classList.add('checking');
+  btn.style.display = 'flex';
+  
+  emailValidationTimeout = setTimeout(() => {
+    checkEmailAvailability(email);
+  }, 600);
 });
 
-// ============================================================
-// EMAIL VALIDATION
-// ============================================================
-var PERSONAL_PROVIDERS = ['gmail.com','yahoo.com','yahoo.co.uk','yahoo.co.ke','outlook.com','hotmail.com',
-  'hotmail.co.uk','live.com','icloud.com','me.com','protonmail.com','proton.me','aol.com','mail.com'];
-
-var EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
-
 function isValidEmailFormat(email) {
-  return EMAIL_REGEX.test(email);
-}
-function isValidEmailDomain(email) {
-  var domain = (email.split('@')[1] || '').toLowerCase();
-  if (!domain) return false;
-  // Employees: personal + any real domain accepted
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain);
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
 }
 
-function onEmailInput() {
-  emailConfirmedAvailable = false;
-  clearEmailAvailAlert();
-  resetEmailHint();
-  // Debounce: auto-check after user stops typing for 900ms
-  clearTimeout(emailCheckTimer);
-  var email = document.getElementById('email').value.trim();
-  if (email.length > 5 && isValidEmailFormat(email)) {
-    emailCheckTimer = setTimeout(function(){ liveCheckEmail(true); }, 900);
-  }
-}
-
-function onEmailBlur() {
-  var email = document.getElementById('email').value.trim();
-  if (!email) return;
-  if (!isValidEmailFormat(email)) {
-    setEmailAvailAlert('Please enter a valid email address (e.g. jane@gmail.com).', 'avail-err', 'bi-x-circle-fill');
-    document.getElementById('email').classList.add('err');
-    return;
-  }
-  clearTimeout(emailCheckTimer);
-  liveCheckEmail(true);
-}
-
-function liveCheckEmail(auto) {
-  var email = document.getElementById('email').value.trim();
-  if (!email) return;
-
-  // 1. Format check
-  if (!isValidEmailFormat(email)) {
-    setEmailAvailAlert('Invalid email format. Please check and try again.', 'avail-err', 'bi-x-circle-fill');
-    document.getElementById('email').classList.add('err');
-    emailConfirmedAvailable = false;
-    return;
-  }
-
-  clearEmailAvailAlert();
-  setEmailHint('Checking availability…', '', true);
-  document.getElementById('emailCheckIcon').className = 'bi bi-arrow-repeat';
-
-  checkEmailStatus(email, true);
-}
-
-function checkEmailStatus(email, live) {
-  return dbClient
-    .from('users')
-    .select('id,role,is_active')
-    .eq('email', email)
-    .maybeSingle()
-    .then(function(result) {
-      document.getElementById('emailCheckIcon').className = 'bi bi-search';
-      var data = result.data;
-      if (data) {
-        var active = data.is_active !== false;
-        emailConfirmedAvailable = false;
-        if (active) {
-          // Email already registered — show error alert
-          setEmailAvailAlert(
-            'This email is already registered. Please sign in instead.',
-            'avail-err', 'bi-exclamation-circle-fill'
-          );
-          document.getElementById('email').classList.add('err');
-          resetEmailHint();
-        } else {
-          setEmailAvailAlert(
-            'This account has been deactivated. Contact support@soundscare.co.ke to reactivate.',
-            'avail-warn', 'bi-exclamation-triangle-fill'
-          );
-          document.getElementById('email').classList.add('err');
-          resetEmailHint();
-        }
-        return Promise.reject({ type: 'exists', active: active });
-      }
-      // Available!
-      emailConfirmedAvailable = true;
-      setEmailAvailAlert('Email is available ✓ — You\'re good to go!', 'avail-ok', 'bi-check-circle-fill');
-      document.getElementById('email').classList.remove('err');
-      document.getElementById('email').classList.add('ok');
-      resetEmailHint();
-      return true;
-    })
-    .catch(function(e) {
-      document.getElementById('emailCheckIcon').className = 'bi bi-search';
-      if (e && e.type) return Promise.reject(e);
-      // Network error — don't hard-block
-      resetEmailHint();
-      clearEmailAvailAlert();
-      return true;
-    });
-}
-
-function setEmailAvailAlert(msg, type, icon) {
-  var el = document.getElementById('emailAvailAlert');
-  var txt = document.getElementById('emailAvailText');
-  var ico = document.getElementById('emailAvailIcon');
-  el.className = 'email-avail show ' + (type || 'avail-ok');
-  ico.className = 'bi ' + (icon || 'bi-info-circle-fill');
-  txt.textContent = msg;
-}
-function clearEmailAvailAlert() {
-  var el = document.getElementById('emailAvailAlert');
-  el.className = 'email-avail';
-  document.getElementById('email').classList.remove('err','ok');
-}
-
-function resetEmailHint() {
-  document.getElementById('emailHint').textContent = 'We will send a 6-digit verification code to this address.';
-  document.getElementById('emailHint').className = 'fhint';
-}
-function setEmailHint(msg, type, loading) {
-  var hint = document.getElementById('emailHint');
-  hint.innerHTML = (loading ? '<span class="spinner-mini"></span>' : '') + '<span>' + msg + '</span>';
-  hint.className = 'fhint' + (type ? ' ' + type : '');
-}
-
-// ============================================================
-// PASSWORD STRENGTH
-// ============================================================
-function checkStrength() {
-  var pw = document.getElementById('password').value;
-  var bars = ['b1','b2','b3','b4'].map(function(id){ return document.getElementById(id); });
-  var lbl = document.getElementById('pwLbl');
-  var score = 0;
-  if (pw.length >= 8) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  bars.forEach(function(b, i){
-    b.className = 'pw-bar';
-    if (i < score) b.classList.add(score <= 1 ? 'w' : score <= 2 ? 'm' : 's');
-  });
-  var lbls = ['','Weak — add uppercase, numbers and symbols','Fair — add more variety','Good password','Strong password ✓'];
-  var cols = ['','#DC2626','#D97706','#D97706','#1B6B45'];
-  lbl.textContent = pw.length ? lbls[score] : '';
-  lbl.style.color = cols[score] || '';
-  checkConfirm();
-}
-function checkConfirm() {
-  var pw = document.getElementById('password').value;
-  var cpw = document.getElementById('confirmPw').value;
-  var hint = document.getElementById('confirmHint');
-  var inp = document.getElementById('confirmPw');
-  if (!cpw) { hint.textContent = ''; hint.className = 'fhint'; inp.className = ''; return; }
-  if (pw === cpw) {
-    hint.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Passwords match ✓</span>';
-    hint.className = 'fhint ok'; inp.classList.add('ok'); inp.classList.remove('err');
-  } else {
-    hint.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>Passwords do not match</span>';
-    hint.className = 'fhint err'; inp.classList.add('err'); inp.classList.remove('ok');
-  }
-}
-function togglePw(id) {
-  var inp = document.getElementById(id);
-  var icon = document.getElementById(id === 'password' ? 'pwEyeIcon' : 'cpwEyeIcon');
-  if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
-  else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
-}
-
-// ============================================================
-// ALERTS
-// ============================================================
-function showAlert(id, textId, msg, type) {
-  var el = document.getElementById(id);
-  el.className = 'alert show ' + (type || 'error');
-  document.getElementById(textId).textContent = msg;
-}
-function hideAlert(id) {
-  document.getElementById(id).className = 'alert';
-}
-
-// ============================================================
-// STEP 1 — REGISTER
-// ============================================================
-function handleRegister() {
-  hideAlert('alertMain');
-
-  if (geoBlocked) {
-    showAlert('alertMain','alertMainText','Registration is not available from your location. Only East Africa is eligible for domestic worker registration.');
-    return;
-  }
-
-  var firstName = document.getElementById('firstName').value.trim();
-  var lastName  = document.getElementById('lastName').value.trim();
-  var phone     = document.getElementById('phone').value.trim();
-  var country   = document.getElementById('countryName').value;
-  var email     = document.getElementById('email').value.trim().toLowerCase();
-  var pw        = document.getElementById('password').value;
-  var cpw       = document.getElementById('confirmPw').value;
-  var terms     = document.getElementById('terms').checked;
-
-  if (!firstName || !lastName) { showAlert('alertMain','alertMainText','Please enter your first and last name.'); return; }
-  if (!phone)   { showAlert('alertMain','alertMainText','Phone number is required.'); return; }
-  if (!country) { showAlert('alertMain','alertMainText','Please select your country.'); return; }
-  if (!email || !isValidEmailFormat(email)) {
-    showAlert('alertMain','alertMainText','Please enter a valid email address (e.g. jane@gmail.com).');
-    document.getElementById('email').classList.add('err');
-    return;
-  }
-  if (pw.length < 8) { showAlert('alertMain','alertMainText','Password must be at least 8 characters.'); return; }
-  if (pw !== cpw)    { showAlert('alertMain','alertMainText','Passwords do not match.'); return; }
-  if (!terms)        { showAlert('alertMain','alertMainText','You must agree to the Terms & Conditions and Privacy Policy.'); return; }
-
-  setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Checking your details…');
-  showChecking('Confirming your email is not already registered…');
-
-  checkEmailStatus(email, false)
-    .then(async function() {
-      hideChecking();
-      setBtnLoading('regBtn','regSpinner','regBtnText', true, 'Sending code…');
-
-      pendingUser = {
-        firstName: firstName, lastName: lastName,
-        phone: phone, country: country, email: email,
-        role: 'employee',
-        receiveUpdates: document.getElementById('updates').checked,
-        ip: userIpData ? userIpData.ip : null,
-        country_code: userIpData ? userIpData.country_code : null,
-        city: userIpData ? userIpData.city : null
-      };
-
-      const { error } = await dbClient.auth.signUp({
-        email: email,
-        password: pw,
-        options: {
-          data: { first_name: firstName, last_name: lastName, role: 'employee' },
-          emailRedirectTo: null
-        }
-      });
-
-      if (error) {
-        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-        showAlert('alertMain','alertMainText', friendlyAuthError(error.message));
-        return;
-      }
-
-      const { error: otpError } = await dbClient.auth.signInWithOtp({
-        email: email,
-        options: { shouldCreateUser: false }
-      });
-
-      if (otpError) {
-        setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-        showAlert('alertMain','alertMainText', 'Failed to send verification code. Please try again.');
-        return;
-      }
-
-      setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      document.getElementById('otpEmailDisplay').textContent = email;
-      document.getElementById('step-form').style.display = 'none';
-      document.getElementById('step-otp').style.display = 'block';
-      setProgress(2);
-      startTimer(60);
-      document.getElementById('otp0').focus();
-    })
-    .catch(function(e) {
-      hideChecking();
-      setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
-      var alertType = (e && e.alertType) ? e.alertType : 'error';
-      var msg = (e && e.msg)
-        ? e.msg
-        : (e && e.type === 'exists')
-          ? 'This email is already registered. Please sign in instead.'
-          : 'An error occurred. Please try again.';
-      showAlert('alertMain','alertMainText', msg, alertType);
-    });
-}
-
-function showChecking(msg) {
-  document.getElementById('step-form').style.display = 'none';
-  document.getElementById('checkingLoading').style.display = 'block';
-  document.getElementById('checkingLoadingText').textContent = msg || 'Checking your details…';
-}
-function hideChecking() {
-  document.getElementById('checkingLoading').style.display = 'none';
-  document.getElementById('step-form').style.display = 'block';
-}
-
-function setProgress(step) {
-  document.getElementById('seg1').classList.toggle('done', step > 1);
-  document.getElementById('seg1').classList.toggle('active', step === 1);
-  document.getElementById('seg2').classList.toggle('active', step === 2);
-}
-
-function friendlyAuthError(msg) {
-  if (!msg) return 'Something went wrong. Please try again.';
-  if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already been registered'))
-    return 'This email is already registered. Please sign in instead.';
-  if (msg.toLowerCase().includes('invalid email')) return 'Please enter a valid email address.';
-  if (msg.toLowerCase().includes('rate limit')) return 'Too many attempts. Please wait a moment and try again.';
-  if (msg.toLowerCase().includes('password')) return 'Password must be at least 8 characters.';
-  return 'Registration failed. Please check your details and try again.';
-}
-
-// ============================================================
-// OTP BOXES
-// ============================================================
-function otpIn(i) {
-  var box = document.getElementById('otp' + i);
-  var v = box.value.replace(/\D/g, '');
-  if (v.length > 1) { distributePaste(v, i); return; }
-  box.value = v;
-  box.classList.toggle('filled', !!v);
-  box.classList.remove('err');
-  if (v && i < 5) document.getElementById('otp' + (i + 1)).focus();
-  checkAutoSubmit();
-}
-function otpKey(e, i) {
-  if (e.key === 'Backspace') {
-    var box = document.getElementById('otp' + i);
-    if (box.value) { box.value = ''; box.classList.remove('filled'); }
-    else if (i > 0) { var prev = document.getElementById('otp' + (i - 1)); prev.value = ''; prev.classList.remove('filled'); prev.focus(); }
-    e.preventDefault(); return;
-  }
-  if (e.key === 'ArrowLeft'  && i > 0) { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
-  if (e.key === 'ArrowRight' && i < 5) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
-}
-function otpPaste(e, i) {
-  e.preventDefault();
-  var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-  if (!text) return;
-  distributePaste(text, i);
-}
-function distributePaste(digits, startIndex) {
-  for (var j = 0; j < digits.length && (startIndex + j) < 6; j++) {
-    var box = document.getElementById('otp' + (startIndex + j));
-    box.value = digits[j];
-    box.classList.add('filled');
-    box.classList.remove('err');
-  }
-  var nextFocus = Math.min(startIndex + digits.length, 5);
-  document.getElementById('otp' + nextFocus).focus();
-  checkAutoSubmit();
-}
-function checkAutoSubmit() {
-  if (getOtp().length === 6) { setTimeout(verifyOtp, 250); }
-}
-function getOtp() {
-  return [0,1,2,3,4,5].map(function(i){ return document.getElementById('otp'+i).value; }).join('');
-}
-function clearOtpBoxes(markErr) {
-  for (var i = 0; i < 6; i++) {
-    var b = document.getElementById('otp' + i);
-    b.value = '';
-    b.className = 'otp-box' + (markErr ? ' err' : '');
-  }
-  if (!markErr) document.getElementById('otp0').focus();
-}
-
-// ============================================================
-// RESEND OTP
-// ============================================================
-async function resendOtp() {
-  var email = pendingUser ? pendingUser.email : document.getElementById('email').value.trim();
-  document.getElementById('resendBtn').disabled = true;
-  document.getElementById('resendSpinner').style.display = 'inline-block';
-  document.getElementById('resendBtnText').textContent = 'Sending…';
-
-  const { error } = await dbClient.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-
-  document.getElementById('resendBtn').disabled = false;
-  document.getElementById('resendSpinner').style.display = 'none';
-  document.getElementById('resendBtnText').textContent = 'Resend verification code';
-
-  if (error) {
-    showAlert('alertOtp','alertOtpText','Failed to resend. Please wait a moment and try again.','warn');
-    return;
-  }
-  clearOtpBoxes(false);
-  startTimer(60);
-  showAlert('alertOtp','alertOtpText','A new code has been sent to your email.','success');
-}
-
-// ============================================================
-// VERIFY OTP
-// ============================================================
-async function verifyOtp() {
-  var email  = pendingUser ? pendingUser.email : document.getElementById('email').value.trim();
-  var entered = getOtp();
-
-  if (entered.length < 6) {
-    showAlert('alertOtp','alertOtpText','Please enter all 6 digits.');
-    return;
-  }
-
-  setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Verifying…');
-
-  const { data, error } = await dbClient.auth.verifyOtp({
-    email: email,
-    token: entered,
-    type: 'email'
-  });
-
-  if (error) {
-    clearOtpBoxes(true);
-    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
-    var errMsg = error.message && error.message.toLowerCase().includes('expired')
-      ? 'Code expired. Please request a new one.'
-      : 'Incorrect code. Please check and try again.';
-    showAlert('alertOtp','alertOtpText', errMsg);
-    return;
-  }
-
-  setBtnLoading('otpBtn','otpSpinner','otpBtnText', true, 'Creating account…');
-  await finalizeEmailAccount(data);
-}
-
-// ============================================================
-// FINALIZE ACCOUNT
-// ============================================================
-async function finalizeEmailAccount(authData) {
-  var user = authData.user || (authData.session && authData.session.user);
-  var p = pendingUser || {};
-  var fullName = ((p.firstName || '') + ' ' + (p.lastName || '')).trim();
-
+async function checkEmailAvailability(email) {
   try {
-    await dbClient.from('users').upsert({
-      id: user ? user.id : undefined,
-      email: p.email,
-      full_name: fullName,
-      phone: p.phone,
-      role: 'employee',
-      is_active: true,
-      // IP/geo stored for fraud prevention
-      registered_ip: p.ip || null,
-      registered_country: p.country_code || null,
-      registered_city: p.city || null
-    }, { onConflict: 'id' });
-
-    await dbClient.from('notifications').insert({
-      user_id: user ? user.id : null,
-      user_email: p.email,
-      type: 'welcome',
-      title: 'Welcome to SoundsCare! 👋',
-      message: 'Welcome to SoundsCare, ' + p.firstName + '! 🎉 Your account is live. Complete your profile to get discovered by employers.',
-      is_read: false
-    });
-
-    await dbClient.from('notifications').insert({
-      user_id: user ? user.id : null,
-      user_email: p.email,
-      type: 'new_account',
-      title: 'New Employee Account Registered',
-      message: 'New employee account: ' + fullName + ' (' + p.email + ') | IP: ' + (p.ip || 'unknown') + ' | ' + (p.country_code || ''),
-      is_read: false,
-      target_role: 'admin'
-    });
-
-    // Log registration event for fraud audit trail
-    await dbClient.from('admin_audit_logs').insert({
-      action: 'employee_registered',
-      user_id: user ? user.id : null,
-      details: JSON.stringify({
-        email: p.email,
-        full_name: fullName,
-        phone: p.phone,
-        country: p.country,
-        ip: p.ip,
-        country_code: p.country_code,
-        city: p.city,
-        timestamp: new Date().toISOString()
-      })
-    });
-
-  } catch(e) {
-    console.warn('[SoundsCare] Post-verification DB note:', e);
-  }
-
-  clearInterval(otpInterval);
-  document.getElementById('step-otp').style.display = 'none';
-  document.getElementById('step-success').style.display = 'block';
-  document.getElementById('successName').textContent = p.firstName || '';
-  document.getElementById('successEmail').textContent = p.email || '';
-  // Success → post-profile.html
-  document.getElementById('successLink').href = 'post-profile.html';
-}
-
-// ============================================================
-// BACK
-// ============================================================
-function goBack() {
-  clearInterval(otpInterval);
-  document.getElementById('step-otp').style.display = 'none';
-  document.getElementById('step-form').style.display = 'block';
-  setProgress(1);
-  hideAlert('alertOtp');
-}
-
-// ============================================================
-// TIMER
-// ============================================================
-function startTimer(s) {
-  clearInterval(otpInterval);
-  var left = s;
-  document.getElementById('timerWrap').style.display = 'block';
-  document.getElementById('resendWrap').style.display = 'none';
-  document.getElementById('otpCd').textContent = left;
-  otpInterval = setInterval(function(){
-    left--;
-    document.getElementById('otpCd').textContent = left;
-    if (left <= 0) {
-      clearInterval(otpInterval);
-      document.getElementById('timerWrap').style.display = 'none';
-      document.getElementById('resendWrap').style.display = 'flex';
+    const btn = document.getElementById('emailCheckBtn');
+    const alert = document.getElementById('emailStatusAlert');
+    
+    // Simulated backend check (replace with actual API call)
+    const isAvailable = await simulateEmailCheck(email);
+    
+    btn.classList.remove('checking');
+    alert.classList.add('show');
+    
+    if (isAvailable) {
+      btn.classList.add('available');
+      document.getElementById('regEmail').classList.add('valid');
+      document.getElementById('regEmail').classList.remove('err');
+      showEmailStatus(true, 'Email available - ready to register', 'success');
+    } else {
+      btn.classList.add('unavailable');
+      document.getElementById('regEmail').classList.add('err');
+      document.getElementById('regEmail').classList.remove('valid');
+      showEmailStatus(false, 'Email already registered with us', 'error');
     }
-  }, 1000);
+  } catch (err) {
+    console.error('Email check failed:', err);
+    showEmailStatus(false, 'Could not verify email', 'error');
+  }
+}
+
+function showEmailStatus(isAvailable, message, type) {
+  const alert = document.getElementById('emailStatusAlert');
+  const icon = document.getElementById('emailStatusIcon');
+  const text = document.getElementById('emailStatusText');
+  
+  alert.classList.remove('show', 'error', 'success', 'warn');
+  
+  if (isAvailable) {
+    icon.className = 'bi bi-check-circle-fill';
+    alert.classList.add('success');
+  } else {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('error');
+  }
+  
+  text.textContent = message;
+  alert.classList.add('show');
+}
+
+async function simulateEmailCheck(email) {
+  // Replace this with actual API call to your backend
+  // Simulated check: emails containing 'taken' are unavailable
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const reserved = ['admin@soundscare.co.ke', 'support@soundscare.co.ke', 'test@example.com'];
+      resolve(!reserved.includes(email));
+    }, 400);
+  });
 }
 
 // ============================================================
-// UTILS
+// PASSWORD VISIBILITY TOGGLE
 // ============================================================
-function setBtnLoading(btnId, spinnerId, textId, on, loadingText) {
-  document.getElementById(btnId).disabled = on;
-  document.getElementById(spinnerId).style.display = on ? 'inline-block' : 'none';
-  if (on && loadingText) document.getElementById(textId).textContent = loadingText;
+function togglePasswordVisibility(fieldId = 'regPassword') {
+  const field = document.getElementById(fieldId);
+  const btnId = fieldId === 'regPassword' ? 'togglePwd' : 'togglePwdConfirm';
+  const btn = document.getElementById(btnId);
+  
+  if (field.type === 'password') {
+    field.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+  } else {
+    field.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+  }
 }
+
+// ============================================================
+// REGISTRATION HANDLER
+// ============================================================
+async function handleRegister(event) {
+  event.preventDefault();
+  
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const termsCheck = document.getElementById('termsCheck').checked;
+  const dataCheck = document.getElementById('dataCheck').checked;
+  
+  // Clear previous alerts
+  hideAllAlerts();
+  
+  // Validation
+  if (!fullName) {
+    showAlert('alertError', 'alertErrorText', 'Please enter your full name.');
+    document.getElementById('fullName').focus();
+    return;
+  }
+  
+  if (!email || !isValidEmailFormat(email)) {
+    showAlert('alertError', 'alertErrorText', 'Please enter a valid email address.');
+    document.getElementById('regEmail').focus();
+    return;
+  }
+  
+  if (!phone) {
+    showAlert('alertError', 'alertErrorText', 'Please enter your phone number.');
+    document.getElementById('phone').focus();
+    return;
+  }
+  
+  if (password.length < 8) {
+    showAlert('alertError', 'alertErrorText', 'Password must be at least 8 characters long.');
+    document.getElementById('regPassword').focus();
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    showAlert('alertError', 'alertErrorText', 'Passwords do not match.');
+    document.getElementById('confirmPassword').focus();
+    return;
+  }
+  
+  if (!termsCheck || !dataCheck) {
+    showAlert('alertError', 'alertErrorText', 'Please agree to the terms and data collection policy.');
+    return;
+  }
+  
+  // Set loading state
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Creating account…');
+  
+  try {
+    // Prepare registration data
+    const registrationData = {
+      fullName,
+      email,
+      phone,
+      password,
+      role: 'employee',
+      registrationType: 'direct',
+      ipAddress: userIP,
+      location: userLocation,
+      registrationTime: new Date().toISOString(),
+      consentedToTerms: termsCheck,
+      consentedToDataCollection: dataCheck
+    };
+    
+    // Log data collection for fraud prevention
+    console.log('Registration data collected:', registrationData);
+    
+    // Here you would typically call your backend API
+    // For now, simulate successful registration
+    await simulateRegistrationAPI(registrationData);
+    
+    // Success
+    showAlert('alertSuccess', 'alertSuccessText', 'Account created successfully! Redirecting to profile setup...');
+    
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    
+    // Redirect to profile setup after delay
+    setTimeout(() => {
+      window.location.href = 'employee-profile-setup.html';
+    }, 2000);
+    
+  } catch (error) {
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', error.message || 'Registration failed. Please try again.');
+  }
+}
+
+async function simulateRegistrationAPI(data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // Simulate occasional API failures for testing
+      if (Math.random() > 0.1) {
+        resolve({ success: true });
+      } else {
+        reject(new Error('Server temporarily unavailable. Please try again.'));
+      }
+    }, 1500);
+  });
+}
+
+// ============================================================
+// ALERT UTILITIES
+// ============================================================
+function showAlert(alertId, textId, message) {
+  const alertEl = document.getElementById(alertId);
+  const textEl = document.getElementById(textId);
+  textEl.textContent = message;
+  alertEl.classList.add('show');
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAllAlerts() {
+  ['alertError', 'alertSuccess', 'alertInfo'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+}
+
+function setBtnLoading(btnId, spinnerId, textId, loading, text) {
+  const btn = document.getElementById(btnId);
+  const spinner = document.getElementById(spinnerId);
+  const textEl = document.getElementById(textId);
+  
+  btn.disabled = loading;
+  spinner.style.display = loading ? 'inline-block' : 'none';
+  if (text) textEl.textContent = text;
+}
+
+// ============================================================
+// INITIALIZE ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  detectUserLocation();
+});
+
 </script>
+
 </body>
 </html>
