@@ -243,17 +243,212 @@ input.ok{border-color:var(--green)}
       </div>
 
       <!-- SOCIAL / OAUTH -->
-      <div class="sec-lbl" style="border-top:none;padding-top:0;margin-top:0">Sign up faster</div>
-      <div class="social-grid">
-        <button class="social-btn" onclick="oauthSignUp('google')" type="button">
-          <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
-          Google
-        </button>
-        <button class="social-btn" onclick="oauthSignUp('facebook')" type="button">
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
-          Facebook
-        </button>
-      </div>
+      <!--
+  ============================================================
+  SOUNDS CARE SERVICES — Supabase OAuth Sign-Up
+  Project: phoahudvrcelfrykoeuo.supabase.co
+  ============================================================
+
+  BEFORE THIS WORKS — one-time Supabase dashboard setup:
+  -------------------------------------------------------
+  1. Go to: https://supabase.com/dashboard/project/phoahudvrcelfrykoeuo/auth/providers
+
+  2. Enable GOOGLE:
+     - Toggle "Google" ON
+     - Paste your Google OAuth Client ID + Secret
+     - (Get these from console.cloud.google.com → Credentials → OAuth 2.0 Client IDs)
+     - Authorized redirect URI to add in Google Console:
+       https://phoahudvrcelfrykoeuo.supabase.co/auth/v1/callback
+
+  3. Enable FACEBOOK:
+     - Toggle "Facebook" ON
+     - Paste your Facebook App ID + Secret
+     - (Get these from developers.facebook.com → Your App → Settings → Basic)
+     - Valid OAuth Redirect URI to add in Facebook App:
+       https://phoahudvrcelfrykoeuo.supabase.co/auth/v1/callback
+
+  4. Add your site URL under Authentication → URL Configuration:
+     Site URL: https://www.sounds.co.ke
+     Redirect URLs: https://www.sounds.co.ke/auth/callback.html
+                    http://localhost:3000/auth/callback.html  (for dev)
+
+  5. Create a Postgres trigger (run once in SQL Editor):
+     This auto-creates a row in public.users when someone signs up via OAuth.
+
+     CREATE OR REPLACE FUNCTION public.handle_new_user()
+     RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+     BEGIN
+       INSERT INTO public.users (id, email, full_name, role)
+       VALUES (
+         NEW.id,
+         NEW.email,
+         COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
+         'employee'
+       )
+       ON CONFLICT (id) DO UPDATE SET
+         full_name = EXCLUDED.full_name,
+         email = EXCLUDED.email;
+       RETURN NEW;
+     END;
+     $$;
+
+     DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+     CREATE TRIGGER on_auth_user_created
+       AFTER INSERT ON auth.users
+       FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+  ============================================================
+-->
+
+<!-- Load Supabase (place in <head> if not already there) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- SOCIAL / OAUTH -->
+<div class="sec-lbl" style="border-top:none;padding-top:0;margin-top:0">Sign up faster</div>
+<div class="social-grid">
+
+  <button class="social-btn" id="btn-google" onclick="oauthSignUp('google')" type="button">
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
+    <span id="btn-google-text">Google</span>
+  </button>
+
+  <button class="social-btn" id="btn-facebook" onclick="oauthSignUp('facebook')" type="button">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
+    <span id="btn-facebook-text">Facebook</span>
+  </button>
+
+</div>
+
+<!-- Toast notification -->
+<div id="oauth-toast" style="
+  display:none;
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#1a1a2e;
+  color:#fff;
+  padding:12px 20px;
+  border-radius:8px;
+  font-size:14px;
+  z-index:9999;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  max-width:320px;
+  text-align:center;
+"></div>
+
+<script>
+  // ── Supabase client ──────────────────────────────────────────
+  const _supa = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+  );
+
+  // ── Toast helper ─────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('oauth-toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.style.display = 'block';
+    t.style.background = isError ? '#c0392b' : '#1a1a2e';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+  // ── Button loading state ─────────────────────────────────────
+  function setLoading(provider, loading) {
+    const btn  = document.getElementById('btn-' + provider);
+    const span = document.getElementById('btn-' + provider + '-text');
+    if (!btn || !span) return;
+    btn.disabled = loading;
+    btn.style.opacity = loading ? '0.7' : '1';
+    btn.style.cursor  = loading ? 'wait' : 'pointer';
+    span.textContent  = loading
+      ? 'Redirecting…'
+      : (provider === 'google' ? 'Google' : 'Facebook');
+  }
+
+  // ── Determine the redirect URL ───────────────────────────────
+  // After OAuth completes, Supabase sends the user back here.
+  // Adjust the path to match wherever you handle the auth session.
+  function getRedirectURL() {
+    const origin = window.location.origin;
+    // If you have a dedicated callback page use that, otherwise
+    // redirect back to the same page and handle the session there.
+    return origin + '/auth/callback.html';
+  }
+
+  // ── Main OAuth function ──────────────────────────────────────
+  async function oauthSignUp(provider) {
+    const allowed = ['google', 'facebook'];
+    if (!allowed.includes(provider)) return;
+
+    setLoading(provider, true);
+
+    try {
+      const { data, error } = await _supa.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: getRedirectURL(),
+          // Request profile scopes so we get name + avatar
+          scopes: provider === 'google'
+            ? 'openid email profile'
+            : 'email,public_profile',
+          queryParams: provider === 'google'
+            ? { access_type: 'offline', prompt: 'select_account' }
+            : {}
+        }
+      });
+
+      if (error) {
+        console.error('OAuth error:', error);
+        showToast('Could not start ' + provider + ' sign-in. Please try again.', true);
+        setLoading(provider, false);
+        return;
+      }
+
+      // Supabase redirects the browser automatically via data.url
+      // The loading state stays until the page navigates away.
+      // Nothing else needed here — the trigger in Supabase SQL handles
+      // inserting the user into public.users on first sign-in.
+
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      showToast('Something went wrong. Please try again.', true);
+      setLoading(provider, false);
+    }
+  }
+
+  // ── Handle the OAuth callback on page load ───────────────────
+  // If this sign-up page IS your callback page (i.e. Supabase
+  // redirects back to the same URL with #access_token in the hash),
+  // this block picks up the session automatically.
+  (async () => {
+    const { data: { session } } = await _supa.auth.getSession();
+    if (session) {
+      const user = session.user;
+      const meta = user.user_metadata || {};
+
+      // Upsert profile into public.users (belt-and-suspenders on top of the trigger)
+      const { error: upsertError } = await _supa
+        .from('users')
+        .upsert({
+          id:        user.id,
+          email:     user.email,
+          full_name: meta.full_name || meta.name || '',
+          role:      'employee'       // default role; user can change later
+        }, { onConflict: 'id' });
+
+      if (upsertError) {
+        console.warn('Profile upsert warning:', upsertError.message);
+      }
+
+      // Redirect to dashboard / onboarding
+      // Change this URL to wherever logged-in users should land
+      window.location.href = '/dashboard.html';
+    }
+  })();
+</script>
 
       <div class="divider">or register with email</div>
 
