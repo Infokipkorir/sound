@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Complete Your Profile — SoundsCare</title>
+<title>Employee Registration — SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -14,7 +15,8 @@
   --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
   --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
-  --success:#10B981;--shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
+  --amber:#D97706;--blue:#2563EB;--success:#10B981;
+  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
   --shadow-lg:0 16px 50px rgba(17,75,48,.14);
   --radius:12px;--radius-sm:8px;--radius-lg:22px;
   --font:'DM Sans',system-ui,sans-serif;
@@ -28,12 +30,13 @@ body{
     radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
     var(--bg);
 }
-.page-wrap{width:100%;max-width:600px}
+.page-wrap{width:100%;max-width:520px}
 
 @keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 @keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
 .fade-in{animation:fadeIn .4s ease-out}
 .slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
@@ -48,45 +51,42 @@ body{
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
-/* PROGRESS BAR */
-.progress-bar{display:flex;gap:8px;margin-bottom:2rem;animation:slideInUp .5s ease-out .1s both}
-.step-dot{width:36px;height:36px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--text-muted);transition:all .3s}
-.step-dot.active{background:var(--green);color:#fff;box-shadow:0 4px 12px rgba(27,107,69,.25)}
-.step-dot.completed{background:var(--success);color:#fff}
+/* LOCATION BADGE */
+.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
+.location-badge i{font-size:13px}
+.location-badge.loading{background:#FFF3E0;color:var(--amber)}
+.location-badge.restricted{background:var(--red-bg);color:var(--red)}
 
-/* TITLE */
-.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;font-family:var(--serif);animation:slideInUp .5s ease-out .2s both}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .3s both}
+/* STEP BADGE */
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
+
+/* SECTION LABELS */
+.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
+.sec-lbl.no-border{border-top:none;padding-top:0}
 
 /* FORM */
 .fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
-.fg:nth-child(1){animation-delay:.4s}
-.fg:nth-child(2){animation-delay:.45s}
-.fg:nth-child(3){animation-delay:.5s}
-.fg:nth-child(4){animation-delay:.55s}
+.fg:nth-child(1){animation-delay:.3s}
+.fg:nth-child(2){animation-delay:.35s}
+.fg:nth-child(3){animation-delay:.4s}
+.fg:nth-child(4){animation-delay:.45s}
+.fg:nth-child(5){animation-delay:.5s}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-input[type=text],input[type=email],textarea,select{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
+.iw .sfx:hover{color:var(--text)}
+.iw .sfx.checking{animation:pulse 1s ease-in-out infinite;color:var(--amber)}
+.iw .sfx.available{color:var(--success);animation:checkmark .4s ease-out}
+.iw .sfx.unavailable{color:var(--red);animation:shake .4s ease-out}
+input[type=email],input[type=password],input[type=text],input[type=tel]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .iw.has-ico input{padding-left:38px}
-input:focus,textarea:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-textarea{resize:vertical;min-height:100px;font-family:var(--font)}
-select{cursor:pointer}
-
-/* LOCATION BADGE */
-.location-info{display:flex;align-items:center;gap:8px;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--green-dark);margin-bottom:1rem;animation:slideInUp .5s ease-out .35s both}
-.location-info i{font-size:16px;flex-shrink:0}
-.location-info .spinner{width:14px;height:14px;border:2px solid var(--green);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* PHOTO UPLOAD */
-.photo-upload{display:flex;flex-direction:column;gap:1rem;animation:slideInUp .5s ease-out .5s both}
-.photo-preview{width:100%;aspect-ratio:1;background:var(--bg);border:2px dashed var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
-.photo-preview:hover{border-color:var(--green);background:var(--green-light)}
-.photo-preview img{width:100%;height:100%;object-fit:cover;display:none}
-.photo-preview-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-muted)}
-.photo-preview-placeholder i{font-size:32px}
-.photo-upload input[type=file]{display:none}
+.iw.has-sfx input{padding-right:40px}
+input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);animation:shake .3s ease-out}
+input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08)}
 
 /* ALERTS */
 .alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
@@ -94,29 +94,53 @@ select{cursor:pointer}
 .alert.show{display:flex}
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
 .alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
+.alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
+.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
+
+/* EMAIL STATUS ALERT */
+.email-status-alert{margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
+.email-status-alert.show{display:flex}
+.email-status-alert i{font-size:15px;flex-shrink:0;margin-top:1px}
+.email-status-alert.available{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
+.email-status-alert.taken-active{background:#FEE2E2;border:1px solid #FECACA;color:#991B1B}
+.email-status-alert.taken-deleted{background:#FEF3C7;border:1px solid #FDE68A;color:#92400E}
+
+/* ACTION LINK */
+.action-link{color:var(--green);text-decoration:none;font-weight:700;cursor:pointer}
+.action-link:hover{text-decoration:underline}
+
+/* CHECKBOX */
+.checkbox-group{display:flex;flex-direction:column;gap:10px;margin:1rem 0}
+.checkbox-wrap{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
+.checkbox-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin:2px 0 0;border-radius:4px}
+.checkbox-wrap label{margin:0;cursor:pointer;font-size:13px;color:var(--text-mid);font-weight:500;flex:1}
+.checkbox-wrap a{color:var(--green);text-decoration:none;font-weight:600}
+.checkbox-wrap a:hover{text-decoration:underline}
 
 /* BUTTONS */
-.btn-group{display:flex;gap:12px;animation:slideInUp .5s ease-out .6s both}
-.btn{flex:1;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .6s both}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:active:not(:disabled){transform:scale(.99)}
-.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);text-decoration:none}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);text-decoration:none;cursor:pointer}
 .btn-secondary:hover{border-color:var(--green);background:var(--green-light)}
 .btn-secondary:active{transform:scale(.99)}
-.btn:disabled{opacity:.55;cursor:not-allowed}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* SKILLS TAGS */
-.skills-section{animation:slideInUp .5s ease-out .55s both}
-.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:1rem 0}
-.skill-tag{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;background:var(--surface)}
-.skill-tag:hover{border-color:var(--green);background:var(--green-light)}
-.skill-tag input[type=checkbox]{accent-color:var(--green);cursor:pointer}
-.skill-tag.selected{border-color:var(--green);background:var(--green-light);color:var(--green-dark)}
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* FOOTER */
-.footer-text{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .7s both}
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .7s both}
+.auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
+.auth-foot a:hover{text-decoration:underline}
+
+/* IP & LOCATION INFO */
+.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
+.ip-status i{font-size:13px}
 </style>
 </head>
 <body>
@@ -129,146 +153,140 @@ select{cursor:pointer}
       <img src="sound_logo.png" alt="SoundsCare Logo">
       SoundsCare
     </a>
-    <div class="brand-sub">Complete Your Employee Profile</div>
+    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
   </div>
 
   <div class="card">
 
-    <!-- PROGRESS BAR -->
-    <div class="progress-bar">
-      <div class="step-dot completed"><i class="bi bi-check-lg"></i></div>
-      <div class="step-dot active">2</div>
-      <div class="step-dot">3</div>
-    </div>
+    <!-- MAIN PANEL -->
+    <div id="register-panel">
 
-    <!-- ALERTS -->
-    <div class="alert error" id="alertError">
-      <i class="bi bi-exclamation-circle-fill"></i>
-      <span id="alertErrorText"></span>
-    </div>
-
-    <div class="alert success" id="alertSuccess">
-      <i class="bi bi-check-circle-fill"></i>
-      <span id="alertSuccessText"></span>
-    </div>
-
-    <!-- LOCATION INFO -->
-    <div class="location-info" id="locationInfo">
-      <div class="spinner" id="locationSpinner" style="display:flex"></div>
-      <i class="bi bi-geo-alt" id="locationIcon"></i>
-      <span id="locationText">Verifying your location...</span>
-    </div>
-
-    <!-- FORM HEADER -->
-    <h1 class="step-title">Profile Setup</h1>
-    <p class="step-sub">Help us know more about you. This information helps employers find the right match for their needs.</p>
-
-    <!-- PROFILE FORM -->
-    <form id="profileForm" onsubmit="handleProfileSubmit(event)">
-
-      <!-- PROFESSIONAL TITLE -->
-      <div class="fg">
-        <label for="title">Professional Title / Role</label>
-        <div class="iw has-ico">
-          <i class="ico bi bi-briefcase-fill"></i>
-          <input type="text" id="title" name="title" placeholder="e.g., Domestic Worker, Nanny, Housekeeper" required>
-        </div>
+      <!-- LOCATION DETECTION -->
+      <div class="location-badge loading" id="locationBadge">
+        <i class="bi bi-geo-alt"></i>
+        <span id="locationText">Detecting location...</span>
       </div>
 
-      <!-- EXPERIENCE LEVEL -->
-      <div class="fg">
-        <label for="experience">Years of Experience</label>
-        <select id="experience" name="experience" required style="animation-delay:.45s">
-          <option value="">Select experience level</option>
-          <option value="0-1">Less than 1 year</option>
-          <option value="1-3">1-3 years</option>
-          <option value="3-5">3-5 years</option>
-          <option value="5-10">5-10 years</option>
-          <option value="10+">10+ years</option>
-        </select>
+      <!-- ALERTS -->
+      <div class="alert error" id="alertError">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span id="alertErrorText"></span>
       </div>
 
-      <!-- HOURLY RATE -->
-      <div class="fg">
-        <label for="hourlyRate">Expected Hourly Rate (KES)</label>
-        <div class="iw has-ico">
-          <i class="ico bi bi-currency-exchange"></i>
-          <input type="text" id="hourlyRate" name="hourlyRate" placeholder="e.g., 350" required>
-        </div>
+      <div class="alert success" id="alertSuccess">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="alertSuccessText"></span>
       </div>
 
-      <!-- ABOUT YOU -->
-      <div class="fg">
-        <label for="bio">About You</label>
-        <textarea id="bio" name="bio" placeholder="Tell employers about your skills, experience, and what makes you special..." required></textarea>
+      <div class="alert info" id="alertInfo">
+        <i class="bi bi-info-circle-fill"></i>
+        <span id="alertInfoText"></span>
       </div>
 
-      <!-- SKILLS -->
-      <div class="skills-section">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:10px">Select Your Skills</label>
-        <div class="skills-grid">
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="cleaning">
-            <span>Cleaning</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="childcare">
-            <span>Childcare</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="cooking">
-            <span>Cooking</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="laundry">
-            <span>Laundry</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="gardening">
-            <span>Gardening</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="elderly-care">
-            <span>Elderly Care</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="tutoring">
-            <span>Tutoring</span>
-          </label>
-          <label class="skill-tag">
-            <input type="checkbox" name="skills" value="security">
-            <span>Security</span>
-          </label>
-        </div>
+      <!-- FORM HEADER -->
+      <div class="step-badge">
+        <i class="bi bi-person-fill-add"></i>
+        EMPLOYEE REGISTRATION
       </div>
+      <h1 class="step-title">Create Your Account</h1>
+      <p class="step-sub">Join East Africa's trusted domestic services platform. Register as an employee and start finding work opportunities.</p>
 
-      <!-- PHOTO UPLOAD -->
-      <div class="photo-upload">
-        <label style="display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:8px">Profile Photo</label>
-        <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
-          <div class="photo-preview-placeholder">
-            <i class="bi bi-camera-fill"></i>
-            <span>Click to upload photo</span>
-            <span style="font-size:11px;color:var(--text-muted)">JPG, PNG - Max 5MB</span>
+      <!-- REGISTRATION FORM -->
+      <form id="registerForm" onsubmit="handleRegister(event)">
+
+        <!-- FULL NAME -->
+        <div class="fg">
+          <label for="fullName">Full Name</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-person-fill"></i>
+            <input type="text" id="fullName" name="fullName" placeholder="e.g., Jane Kariuki" required>
           </div>
-          <img id="previewImg" src="" alt="Preview">
         </div>
-        <input type="file" id="photoInput" name="photo" accept="image/jpeg,image/png" onchange="handlePhotoUpload(event)">
-      </div>
 
-      <!-- ACTION BUTTONS -->
-      <div class="btn-group">
-        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Back</button>
-        <button type="submit" class="btn btn-primary" id="submitBtn">
-          <span id="submitBtnText">Continue</span>
-          <div class="spinner" id="submitSpinner"></div>
+        <!-- EMAIL -->
+        <div class="fg">
+          <label for="regEmail">Email Address</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-envelope-fill"></i>
+            <input type="email" id="regEmail" name="email" placeholder="you@example.com" required>
+            <button type="button" class="sfx" id="emailCheckBtn" style="display:none;">
+              <i class="bi bi-check-circle-fill"></i>
+            </button>
+          </div>
+          <div class="email-status-alert" id="emailStatusAlert">
+            <i id="emailStatusIcon"></i>
+            <div>
+              <span id="emailStatusText"></span>
+              <a id="emailStatusAction" href="#" class="action-link" style="display:none;margin-left:4px"></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHONE -->
+        <div class="fg">
+          <label for="phone">Phone Number</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-telephone-fill"></i>
+            <input type="tel" id="phone" name="phone" placeholder="+254712345678" required>
+          </div>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="fg">
+          <label for="regPassword">Password</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-lock-fill"></i>
+            <input type="password" id="regPassword" name="password" placeholder="••••••••" required>
+            <button type="button" class="sfx" id="togglePwd" onclick="togglePasswordVisibility()">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div class="fg">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-lock-fill"></i>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required>
+            <button type="button" class="sfx" id="togglePwdConfirm" onclick="togglePasswordVisibility('confirmPassword')">
+              <i class="bi bi-eye-fill"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- TERMS & PRIVACY -->
+        <div class="sec-lbl no-border">Agreements</div>
+        <div class="checkbox-group">
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="termsCheck" name="termsCheck" required>
+            <label for="termsCheck">I agree to the <a href="legal.html" target="_blank">Terms of Service and Privacy Policy</a></label>
+          </div>
+          <div class="checkbox-wrap">
+            <input type="checkbox" id="dataCheck" name="dataCheck" required>
+            <label for="dataCheck">I consent to location and device data collection for security and fraud prevention</label>
+          </div>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
+          <span id="registerBtnText">Verify Email First</span>
+          <div class="spinner" id="registerSpinner"></div>
         </button>
+
+      </form>
+
+      <!-- SIGN IN LINK -->
+      <div class="auth-foot">
+        Already have an account? <a href="login-employee.html">Sign In</a>
       </div>
 
-    </form>
+      <!-- IP & LOCATION INFO -->
+      <div class="ip-status" id="ipStatus" style="display:none;">
+        <i class="bi bi-shield-check"></i>
+        <span id="ipStatusText"></span>
+      </div>
 
-    <div class="footer-text">
-      You can update your profile anytime from your dashboard.
     </div>
 
   </div>
@@ -278,191 +296,457 @@ select{cursor:pointer}
 <script>
 
 // ============================================================
-// GEOLOCATION VERIFICATION
+// CONFIGURATION
 // ============================================================
-async function verifyLocationOnLoad() {
+const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
+const EAST_AFRICA_REGIONS = {
+  'KE': {name: 'Kenya', lat: [0, 4.5], lng: [32, 41]},
+  'TZ': {name: 'Tanzania', lat: [-12, -1], lng: [29, 41]},
+  'UG': {name: 'Uganda', lat: [-2, 4.2], lng: [29.5, 35.4]},
+  'RW': {name: 'Rwanda', lat: [-3, -1], lng: [28.8, 30.9]},
+  'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
+};
+
+let userLocation = null;
+let userIP = null;
+let emailValidationTimeout = null;
+let emailCheckStatus = null; // Track email validation status
+
+// ============================================================
+// GEOLOCATION - Detect user's real-time location
+// ============================================================
+async function detectUserLocation() {
   try {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          await verifyRegionFromCoordinates(latitude, longitude);
-        },
-        (error) => {
-          console.warn('Geolocation error:', error);
-          getLocationFromIPForProfile();
-        }
-      );
-    } else {
-      getLocationFromIPForProfile();
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported');
     }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        userLocation = { latitude, longitude, accuracy };
+        
+        const country = await getCountryFromCoordinates(latitude, longitude);
+        validateRegion(country);
+        updateLocationBadge(country, 'success');
+      },
+      (error) => {
+        console.warn('Geolocation error:', error.message);
+        updateLocationBadge(null, 'warning');
+        getLocationFromIP();
+      }
+    );
   } catch (err) {
-    console.warn('Geolocation detection failed:', err);
-    getLocationFromIPForProfile();
+    console.warn('Geolocation detection failed:', err.message);
+    updateLocationBadge(null, 'warning');
+    getLocationFromIP();
   }
 }
 
-async function verifyRegionFromCoordinates(lat, lng) {
+async function getCountryFromCoordinates(lat, lng) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
     const data = await response.json();
     const countryCode = data.address?.country_code?.toUpperCase();
-    updateLocationStatus(countryCode, 'success');
+    return countryCode;
   } catch (err) {
     console.warn('Reverse geocoding failed:', err);
-    getLocationFromIPForProfile();
+    return null;
   }
 }
 
-async function getLocationFromIPForProfile() {
+// ============================================================
+// IP-BASED LOCATION (Fallback) + IP Collection
+// ============================================================
+async function getLocationFromIP() {
   try {
     const response = await fetch('https://ipapi.co/json/');
     const data = await response.json();
+    userIP = data.ip;
     const countryCode = data.country_code?.toUpperCase();
-    updateLocationStatus(countryCode, 'verified');
+    
+    document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name})`;
+    document.getElementById('ipStatus').style.display = 'flex';
+    
+    validateRegion(countryCode);
+    updateLocationBadge(countryCode, 'success');
   } catch (err) {
     console.warn('IP lookup failed:', err);
-    updateLocationStatus(null, 'error');
+    updateLocationBadge(null, 'error');
   }
 }
 
-function updateLocationStatus(countryCode, status) {
-  const spinner = document.getElementById('locationSpinner');
-  const icon = document.getElementById('locationIcon');
+// ============================================================
+// REGION VALIDATION
+// ============================================================
+function validateRegion(countryCode) {
+  if (!countryCode || !EAST_AFRICA_COUNTRIES.includes(countryCode)) {
+    showAlert('alertError', 'alertErrorText', '❌ Registration is only available in East Africa. We\'re expanding soon!');
+    document.getElementById('registerForm').style.opacity = '0.5';
+    document.getElementById('registerForm').style.pointerEvents = 'none';
+  }
+}
+
+function updateLocationBadge(countryCode, status) {
+  const badge = document.getElementById('locationBadge');
   const text = document.getElementById('locationText');
-  const info = document.getElementById('locationInfo');
+  const regionName = countryCode && EAST_AFRICA_REGIONS[countryCode] ? EAST_AFRICA_REGIONS[countryCode].name : 'Unknown Location';
   
-  spinner.style.display = 'none';
+  badge.classList.remove('loading', 'restricted');
   
   if (status === 'success') {
-    icon.className = 'bi bi-check-circle-fill';
-    text.textContent = '✓ Location verified. Ready to proceed.';
-    info.style.background = 'var(--green-light)';
-  } else if (status === 'verified') {
-    icon.className = 'bi bi-shield-check';
-    text.textContent = '✓ Location verified via IP address.';
-    info.style.background = 'var(--green-light)';
+    badge.classList.add('fade-in');
+    text.textContent = `📍 ${regionName} - Registration Available`;
+  } else if (status === 'warning') {
+    badge.classList.add('loading');
+    text.textContent = 'Detecting your location...';
   } else {
-    icon.className = 'bi bi-exclamation-circle';
-    text.textContent = '⚠ Could not verify location. Contact support if needed.';
-    info.style.background = '#FEF2F2';
+    badge.classList.add('restricted');
+    text.textContent = '⚠️ Location could not be verified';
   }
 }
 
 // ============================================================
-// PHOTO UPLOAD HANDLER
+// EMAIL VALIDATION - Smart Database Checking
 // ============================================================
-function handlePhotoUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+document.getElementById('regEmail').addEventListener('input', function(e) {
+  const email = this.value.trim().toLowerCase();
+  const btn = document.getElementById('emailCheckBtn');
+  const alert = document.getElementById('emailStatusAlert');
   
-  if (file.size > 5 * 1024 * 1024) {
-    showAlert('alertError', 'alertErrorText', 'Photo must be smaller than 5MB');
+  clearTimeout(emailValidationTimeout);
+  emailCheckStatus = null;
+  
+  if (!email) {
+    btn.style.display = 'none';
+    alert.classList.remove('show');
+    updateRegisterButtonState();
     return;
   }
   
-  if (!['image/jpeg', 'image/png'].includes(file.type)) {
-    showAlert('alertError', 'alertErrorText', 'Only JPG and PNG files are allowed');
+  // Step 1: Validate email format first
+  if (!isValidEmailFormat(email)) {
+    showEmailStatus('format_invalid', 'Invalid email format', 'error');
+    updateRegisterButtonState();
     return;
   }
   
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = document.getElementById('previewImg');
-    const placeholder = document.querySelector('.photo-preview-placeholder');
-    img.src = e.target.result;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-
-// ============================================================
-// SKILL SELECTION
-// ============================================================
-document.querySelectorAll('.skill-tag input[type=checkbox]').forEach(checkbox => {
-  checkbox.addEventListener('change', function() {
-    this.parentElement.classList.toggle('selected');
-  });
+  // Step 2: Check database (debounced)
+  btn.classList.remove('available', 'unavailable');
+  btn.classList.add('checking');
+  btn.style.display = 'flex';
+  
+  emailValidationTimeout = setTimeout(() => {
+    checkEmailInDatabase(email);
+  }, 600);
 });
 
+function isValidEmailFormat(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+async function checkEmailInDatabase(email) {
+  try {
+    const btn = document.getElementById('emailCheckBtn');
+    btn.classList.remove('checking');
+    
+    // Call your backend API to check email in database
+    const response = await fetch('/api/auth/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    // Handle different scenarios
+    if (data.exists) {
+      if (data.isActive) {
+        // Email exists and account is ACTIVE
+        emailCheckStatus = 'taken_active';
+        btn.classList.add('unavailable');
+        document.getElementById('regEmail').classList.add('err');
+        document.getElementById('regEmail').classList.remove('valid');
+        showEmailStatusWithAction(
+          'You have an active account with this email',
+          'Sign in instead',
+          'login-employee.html',
+          'taken-active'
+        );
+      } else {
+        // Email exists but account is DELETED
+        emailCheckStatus = 'taken_deleted';
+        btn.classList.add('unavailable');
+        document.getElementById('regEmail').classList.add('err');
+        document.getElementById('regEmail').classList.remove('valid');
+        showEmailStatusWithAction(
+          'You have a deleted account with this email',
+          'Contact support',
+          'mailto:support@soundscare.co.ke',
+          'taken-deleted'
+        );
+      }
+    } else {
+      // Email is AVAILABLE - New user
+      emailCheckStatus = 'available';
+      btn.classList.add('available');
+      document.getElementById('regEmail').classList.add('valid');
+      document.getElementById('regEmail').classList.remove('err');
+      showEmailStatus('available', 'Email available - Ready to register', 'success');
+    }
+    
+    updateRegisterButtonState();
+  } catch (err) {
+    console.error('Email check failed:', err);
+    // Fallback to simulated check
+    simulateEmailCheckFallback(email);
+  }
+}
+
+async function simulateEmailCheckFallback(email) {
+  const btn = document.getElementById('emailCheckBtn');
+  btn.classList.remove('checking');
+  
+  // Simulated database check for testing
+  // Replace this with real API when backend is ready
+  const reservedEmails = {
+    'admin@soundscare.co.ke': { exists: true, isActive: true },
+    'support@soundscare.co.ke': { exists: true, isActive: true },
+    'test@example.com': { exists: true, isActive: false },
+  };
+
+  const result = reservedEmails[email];
+
+  if (result) {
+    if (result.isActive) {
+      emailCheckStatus = 'taken_active';
+      btn.classList.add('unavailable');
+      document.getElementById('regEmail').classList.add('err');
+      document.getElementById('regEmail').classList.remove('valid');
+      showEmailStatusWithAction(
+        `You have an active account with ${email}`,
+        'Sign in instead',
+        'login-employee.html',
+        'taken-active'
+      );
+    } else {
+      emailCheckStatus = 'taken_deleted';
+      btn.classList.add('unavailable');
+      document.getElementById('regEmail').classList.add('err');
+      document.getElementById('regEmail').classList.remove('valid');
+      showEmailStatusWithAction(
+        `You have a deleted account with ${email}`,
+        'Contact support',
+        'mailto:support@soundscare.co.ke',
+        'taken-deleted'
+      );
+    }
+  } else {
+    emailCheckStatus = 'available';
+    btn.classList.add('available');
+    document.getElementById('regEmail').classList.add('valid');
+    document.getElementById('regEmail').classList.remove('err');
+    showEmailStatus('available', 'Email available - Ready to register', 'success');
+  }
+
+  updateRegisterButtonState();
+}
+
+function showEmailStatus(status, message, type) {
+  const alert = document.getElementById('emailStatusAlert');
+  const icon = document.getElementById('emailStatusIcon');
+  const text = document.getElementById('emailStatusText');
+  const action = document.getElementById('emailStatusAction');
+
+  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
+  action.style.display = 'none';
+
+  if (status === 'available') {
+    icon.className = 'bi bi-check-circle-fill';
+    alert.classList.add('available');
+  } else if (status === 'taken_active') {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('taken-active');
+  } else if (status === 'taken_deleted') {
+    icon.className = 'bi bi-exclamation-triangle-fill';
+    alert.classList.add('taken-deleted');
+  } else {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('available');
+  }
+
+  text.textContent = message;
+  alert.classList.add('show');
+}
+
+function showEmailStatusWithAction(message, actionText, actionLink, alertType) {
+  const alert = document.getElementById('emailStatusAlert');
+  const icon = document.getElementById('emailStatusIcon');
+  const text = document.getElementById('emailStatusText');
+  const action = document.getElementById('emailStatusAction');
+
+  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
+
+  if (alertType === 'taken-active') {
+    icon.className = 'bi bi-x-circle-fill';
+    alert.classList.add('taken-active');
+  } else if (alertType === 'taken-deleted') {
+    icon.className = 'bi bi-exclamation-triangle-fill';
+    alert.classList.add('taken-deleted');
+  }
+
+  text.textContent = message;
+  action.textContent = actionText;
+  action.href = actionLink;
+  action.style.display = 'inline';
+  alert.classList.add('show');
+}
+
+function updateRegisterButtonState() {
+  const btn = document.getElementById('registerBtn');
+  const btnText = document.getElementById('registerBtnText');
+
+  if (emailCheckStatus === 'available') {
+    btn.disabled = false;
+    btnText.textContent = 'Create Account';
+  } else {
+    btn.disabled = true;
+    btnText.textContent = emailCheckStatus ? 'Please Verify Email' : 'Verify Email First';
+  }
+}
+
 // ============================================================
-// PROFILE SUBMISSION
+// PASSWORD VISIBILITY TOGGLE
 // ============================================================
-async function handleProfileSubmit(event) {
+function togglePasswordVisibility(fieldId = 'regPassword') {
+  const field = document.getElementById(fieldId);
+  const btnId = fieldId === 'regPassword' ? 'togglePwd' : 'togglePwdConfirm';
+  const btn = document.getElementById(btnId);
+  
+  if (field.type === 'password') {
+    field.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+  } else {
+    field.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+  }
+}
+
+// ============================================================
+// REGISTRATION HANDLER
+// ============================================================
+async function handleRegister(event) {
   event.preventDefault();
   
-  const title = document.getElementById('title').value.trim();
-  const experience = document.getElementById('experience').value;
-  const hourlyRate = document.getElementById('hourlyRate').value.trim();
-  const bio = document.getElementById('bio').value.trim();
+  // Check if email was validated
+  if (emailCheckStatus !== 'available') {
+    showAlert('alertError', 'alertErrorText', 'Please verify your email is available before registering.');
+    document.getElementById('regEmail').focus();
+    return;
+  }
   
-  const selectedSkills = Array.from(document.querySelectorAll('.skill-tag input[type=checkbox]:checked'))
-    .map(cb => cb.value);
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const termsCheck = document.getElementById('termsCheck').checked;
+  const dataCheck = document.getElementById('dataCheck').checked;
+  
+  // Clear previous alerts
+  hideAllAlerts();
   
   // Validation
-  if (!title) {
-    showAlert('alertError', 'alertErrorText', 'Please enter your professional title.');
+  if (!fullName) {
+    showAlert('alertError', 'alertErrorText', 'Please enter your full name.');
+    document.getElementById('fullName').focus();
     return;
   }
   
-  if (!experience) {
-    showAlert('alertError', 'alertErrorText', 'Please select your experience level.');
+  if (!email || !isValidEmailFormat(email)) {
+    showAlert('alertError', 'alertErrorText', 'Please enter a valid email address.');
+    document.getElementById('regEmail').focus();
     return;
   }
   
-  if (!hourlyRate || isNaN(hourlyRate) || parseFloat(hourlyRate) <= 0) {
-    showAlert('alertError', 'alertErrorText', 'Please enter a valid hourly rate.');
+  if (!phone) {
+    showAlert('alertError', 'alertErrorText', 'Please enter your phone number.');
+    document.getElementById('phone').focus();
     return;
   }
   
-  if (bio.length < 20) {
-    showAlert('alertError', 'alertErrorText', 'Please write at least 20 characters about yourself.');
+  if (password.length < 8) {
+    showAlert('alertError', 'alertErrorText', 'Password must be at least 8 characters long.');
+    document.getElementById('regPassword').focus();
     return;
   }
   
-  if (selectedSkills.length === 0) {
-    showAlert('alertError', 'alertErrorText', 'Please select at least one skill.');
+  if (password !== confirmPassword) {
+    showAlert('alertError', 'alertErrorText', 'Passwords do not match.');
+    document.getElementById('confirmPassword').focus();
+    return;
+  }
+  
+  if (!termsCheck || !dataCheck) {
+    showAlert('alertError', 'alertErrorText', 'Please agree to the terms and data collection policy.');
     return;
   }
   
   // Set loading state
-  setBtnLoading('submitBtn', 'submitSpinner', 'submitBtnText', true, 'Creating profile…');
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Creating account…');
   
   try {
-    // Prepare profile data
-    const profileData = {
-      title,
-      experience,
-      hourlyRate: parseFloat(hourlyRate),
-      bio,
-      skills: selectedSkills,
-      hasPhoto: !!document.getElementById('previewImg').src,
-      completedAt: new Date().toISOString()
+    // Prepare registration data
+    const registrationData = {
+      fullName,
+      email,
+      phone,
+      password,
+      role: 'employee',
+      ipAddress: userIP,
+      location: userLocation,
+      registrationTime: new Date().toISOString(),
+      consentedToTerms: termsCheck,
+      consentedToDataCollection: dataCheck
     };
     
-    console.log('Profile data submitted:', profileData);
+    console.log('Registration data collected:', registrationData);
     
-    // Simulate API submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Here you would typically call your backend API
+    // For now, simulate registration
+    await simulateRegistrationAPI(registrationData);
     
-    showAlert('alertSuccess', 'alertSuccessText', 'Profile created successfully! Redirecting to dashboard...');
+    // Success
+    showAlert('alertSuccess', 'alertSuccessText', 'Account created successfully! Redirecting to profile setup...');
     
-    setBtnLoading('submitBtn', 'submitSpinner', 'submitBtnText', false, 'Continue');
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
     
-    // Redirect to dashboard
+    // Redirect to profile setup after delay
     setTimeout(() => {
-      window.location.href = 'employee-dashboard.html';
+      window.location.href = 'employee-profile-setup.html';
     }, 2000);
     
   } catch (error) {
-    setBtnLoading('submitBtn', 'submitSpinner', 'submitBtnText', false, 'Continue');
-    showAlert('alertError', 'alertErrorText', error.message || 'Failed to create profile. Please try again.');
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', error.message || 'Registration failed. Please try again.');
   }
 }
 
+async function simulateRegistrationAPI(data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() > 0.1) {
+        resolve({ success: true });
+      } else {
+        reject(new Error('Server temporarily unavailable. Please try again.'));
+      }
+    }, 1500);
+  });
+}
+
 // ============================================================
-// UTILITY FUNCTIONS
+// ALERT UTILITIES
 // ============================================================
 function showAlert(alertId, textId, message) {
   const alertEl = document.getElementById(alertId);
@@ -470,6 +754,12 @@ function showAlert(alertId, textId, message) {
   textEl.textContent = message;
   alertEl.classList.add('show');
   alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAllAlerts() {
+  ['alertError', 'alertSuccess', 'alertInfo'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
 }
 
 function setBtnLoading(btnId, spinnerId, textId, loading, text) {
@@ -483,10 +773,11 @@ function setBtnLoading(btnId, spinnerId, textId, loading, text) {
 }
 
 // ============================================================
-// INITIALIZE
+// INITIALIZE ON PAGE LOAD
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-  verifyLocationOnLoad();
+  detectUserLocation();
+  updateRegisterButtonState();
 });
 
 </script>
