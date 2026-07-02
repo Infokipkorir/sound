@@ -1067,6 +1067,22 @@ async function finalizeWorkerAccount(authData) {
     console.warn('[SoundsCare] Post-verification DB error:', e);
   }
 
+  // Fire the branded welcome email via the send-welcome-email Edge
+  // Function. Best-effort — a failed email should never block the
+  // signup flow, so this is fire-and-forget with its own catch.
+  fetch(SUPABASE_URL + '/functions/v1/send-welcome-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: p.fullName,
+      email: p.email,
+      userId: user ? user.id : null,
+      profileSetupUrl: window.location.origin + '/employee-profile-setup.html'
+    })
+  }).catch(function (e) {
+    console.warn('[SoundsCare] Welcome email dispatch failed:', e);
+  });
+
   if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
 
   document.getElementById('step-otp').style.display = 'none';
