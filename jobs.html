@@ -578,10 +578,28 @@ function acceptCookies(){ localStorage.setItem('sc_cookies','accepted'); hideCoo
 function declineCookies(){ localStorage.setItem('sc_cookies','declined'); hideCookie(); }
 function hideCookie(){ const b=document.getElementById('cookie-banner');b.style.transform='translateY(100%)';setTimeout(()=>b.remove(),400); }
 
+/* ── DEEP LINK: open a specific job from index.html (?job=ID) ── */
+async function openJobFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const jobId = params.get('job');
+  if(!jobId) return;
+
+  const {data, error} = await sb.from('job_postings')
+    .select('id,title,description,location,county,salary_min,salary_max,salary_range,job_type,category,job_role,work_type,requirements,benefits,is_urgent,is_featured,created_at,employer_id,employer_profiles(id,full_name,company_name,profile_photo_url,is_verified)')
+    .eq('id', jobId)
+    .maybeSingle();
+
+  if(error){ console.error('Deep-link job fetch error:', error); return; }
+  if(!data){ showToast('That job is no longer available.','info'); return; }
+
+  openJobModal(data);
+}
+
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', ()=>{
   initCookieBanner();
   fetchJobs(true);
+  openJobFromQuery();
 });
 </script>
 </body>

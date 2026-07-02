@@ -421,6 +421,14 @@ function openModal(id){ document.getElementById(id).classList.add('open'); docum
 function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>closeModal(m.id)); });
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); }));
+function showToast(msg,type='info'){
+  const icons={success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML='<i class="bi '+icons[type]+'"></i><span>'+msg+'</span>';
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{t.style.animation='toastOut .3s ease forwards';setTimeout(()=>t.remove(),300);},3500);
+}
 function debouncedSearch(){ clearTimeout(searchTimer); searchTimer=setTimeout(applyFilters,450); }
 function clearFilters(){
   document.getElementById('q').value='';
@@ -591,10 +599,28 @@ function acceptCookies(){ localStorage.setItem('sc_cookies','accepted'); hideCoo
 function declineCookies(){ localStorage.setItem('sc_cookies','declined'); hideCookie(); }
 function hideCookie(){ const b=document.getElementById('cookie-banner');b.style.transform='translateY(100%)';setTimeout(()=>b.remove(),400); }
 
+/* ── DEEP LINK: open a specific worker from index.html (?worker=ID) ── */
+async function openWorkerFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const workerId = params.get('worker');
+  if(!workerId) return;
+
+  const {data, error} = await sb.from('worker_profiles')
+    .select('id,full_name,job_title,preferred_role,current_town,county,country,country_flag_url,salary_min,salary_max,salary_range,availability,work_arrangement,experience,work_experience,key_skills,languages,edu_level,profile_photo_url,is_verified,avg_rating,rating_count,has_medical_cert,has_good_conduct,about_text,created_at,submitted_at')
+    .eq('id', workerId)
+    .maybeSingle();
+
+  if(error){ console.error('Deep-link worker fetch error:', error); return; }
+  if(!data){ showToast('That profile is no longer available.','info'); return; }
+
+  openWorkerModal(data);
+}
+
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', ()=>{
   initCookieBanner();
   fetchWorkers(true);
+  openWorkerFromQuery();
 });
 </script>
 </body>
