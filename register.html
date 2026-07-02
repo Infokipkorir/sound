@@ -363,11 +363,14 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
         <div class="success-body">
           Welcome to SoundsCare, <strong id="successName"></strong>! 🎉<br>
           Your email <strong id="successEmail"></strong> is verified.<br>
-          Let's get your profile set up.
+          Taking you to set up your profile...
         </div>
-        <a id="successLink" href="login.html" class="btn btn-primary" style="text-decoration:none;margin-bottom:.8rem">
-          <i class="bi bi-arrow-right-circle"></i> Continue
-        </a>
+        <div class="spinner" id="redirectSpinner" style="display:inline-block;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:.6rem"></div>
+        <div>
+          <a id="successLink" href="employee-profile-setup.html" class="action-link" style="font-size:12.5px">
+            Not redirecting? Click here
+          </a>
+        </div>
       </div><!-- end step-success -->
 
       <!-- IP & LOCATION INFO -->
@@ -1070,6 +1073,14 @@ async function finalizeWorkerAccount(authData) {
   document.getElementById('step-success').style.display = 'block';
   document.getElementById('successName').textContent  = p.fullName || '';
   document.getElementById('successEmail').textContent = p.email || '';
+
+  // Auto-redirect into profile setup. The Supabase client persists the
+  // session (localStorage) by default, so employee-profile-setup.html
+  // picks it up on load via dbClient.auth.getSession() — no token needs
+  // to be passed manually.
+  setTimeout(function () {
+    window.location.href = 'employee-profile-setup.html';
+  }, 2000);
 }
 
 // ============================================================

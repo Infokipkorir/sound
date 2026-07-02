@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Registration — SoundsCare</title>
+<title>Complete Your Profile — SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,69 +24,92 @@
 }
 body{
   font-family:var(--font);color:var(--text);min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;
+  display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem;
   background:
     radial-gradient(circle at 12% 8%, rgba(27,107,69,.07), transparent 38%),
     radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
     var(--bg);
 }
-.page-wrap{width:100%;max-width:520px}
+.page-wrap{width:100%;max-width:620px}
 
 @keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-@keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-
+@keyframes spin{to{transform:rotate(360deg)}}
 .fade-in{animation:fadeIn .4s ease-out}
-.slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
+.slide-in{animation:slideInUp .4s cubic-bezier(.34,.1,.64,.1)}
 
 /* BRAND */
-.brand{text-align:center;margin-bottom:1.6rem;animation:fadeIn .6s ease-out}
+.brand{text-align:center;margin-bottom:1.4rem;animation:fadeIn .6s ease-out}
 .brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
 .brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain}
-.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
+.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px}
+
+/* PROGRESS */
+.progress-wrap{width:100%;margin-bottom:1.2rem;animation:fadeIn .5s ease-out}
+.progress-track{height:6px;background:var(--green-mid);border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:10px;transition:width .35s cubic-bezier(.34,.1,.64,.1)}
+.progress-label{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;color:var(--text-muted);font-weight:600}
+.progress-label span.cur{color:var(--green-dark)}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem 1.9rem 1.8rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
-/* LOCATION BADGE */
-.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
-.location-badge i{font-size:13px}
-.location-badge.loading{background:#FFF3E0;color:var(--amber)}
-.location-badge.restricted{background:var(--red-bg);color:var(--red)}
-
-/* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
-.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
+/* STEP HEADER */
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
+.step-title{font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.4rem;line-height:1.5}
 
 /* SECTION LABELS */
-.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
-.sec-lbl.no-border{border-top:none;padding-top:0}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:6px}
+.sec-lbl.no-border{border-top:none;padding-top:0;margin-top:0}
 
 /* FORM */
-.fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
-.fg:nth-child(1){animation-delay:.3s}
-.fg:nth-child(2){animation-delay:.35s}
-.fg:nth-child(3){animation-delay:.4s}
-.fg:nth-child(4){animation-delay:.45s}
-.fg:nth-child(5){animation-delay:.5s}
+.fg{margin-bottom:.95rem}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
+.fg .hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media (max-width:480px){.row2{grid-template-columns:1fr}}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
-.iw .sfx:hover{color:var(--text)}
-.iw .sfx.checking{animation:pulse 1s ease-in-out infinite;color:var(--amber)}
-.iw .sfx.available{color:var(--success);animation:checkmark .4s ease-out}
-.iw .sfx.unavailable{color:var(--red);animation:shake .4s ease-out}
-input[type=email],input[type=password],input[type=text],input[type=tel]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
-.iw.has-ico input{padding-left:38px}
-.iw.has-sfx input{padding-right:40px}
-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);animation:shake .3s ease-out}
-input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08)}
+input[type=text],input[type=number],input[type=date],input[type=tel],select,textarea{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+select{appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+textarea{resize:vertical;min-height:88px;line-height:1.5}
+.iw.has-ico input,.iw.has-ico select{padding-left:38px}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+.char-count{font-size:11px;color:var(--text-muted);text-align:right;margin-top:3px}
+
+/* PREFILLED CONTEXT CHIP */
+.context-box{background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.3rem;display:flex;gap:10px;align-items:flex-start}
+.context-box i{color:var(--green);font-size:16px;margin-top:1px}
+.context-box .cb-title{font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:2px}
+.context-box .cb-body{font-size:12.5px;color:var(--text-mid);line-height:1.5}
+
+/* PILL SELECT (single-choice chips) */
+.pill-group{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1.5px solid var(--border);border-radius:20px;padding:8px 15px;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .15s;user-select:none;background:var(--surface)}
+.pill:hover{border-color:var(--green)}
+.pill.active{background:var(--green);border-color:var(--green);color:#fff}
+
+/* UPLOAD BOX */
+.upload-box{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.upload-box:hover{border-color:var(--green);background:var(--green-light)}
+.upload-box.filled{border-style:solid;border-color:var(--success);background:var(--green-light)}
+.upload-box i{font-size:20px;color:var(--text-muted);margin-bottom:6px;display:block}
+.upload-box.filled i{color:var(--success)}
+.upload-box .ub-text{font-size:12.5px;color:var(--text-mid);font-weight:600}
+.upload-box .ub-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media (max-width:480px){.upload-grid{grid-template-columns:1fr}}
+
+/* DYNAMIC ROWS (work experience / referees) */
+.dyn-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;position:relative}
+.dyn-card .dyn-remove{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px}
+.dyn-card .dyn-remove:hover{color:var(--red)}
+.dyn-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.add-row-btn{width:100%;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:11px;background:none;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-row-btn:hover{background:var(--green-light);border-color:var(--green)}
 
 /* ALERTS */
 .alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
@@ -95,52 +118,28 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
 .alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
 .alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
-.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
-
-/* EMAIL STATUS ALERT */
-.email-status-alert{margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
-.email-status-alert.show{display:flex}
-.email-status-alert i{font-size:15px;flex-shrink:0;margin-top:1px}
-.email-status-alert.available{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.email-status-alert.taken-active{background:#FEE2E2;border:1px solid #FECACA;color:#991B1B}
-.email-status-alert.taken-deleted{background:#FEF3C7;border:1px solid #FDE68A;color:#92400E}
-
-/* ACTION LINK */
-.action-link{color:var(--green);text-decoration:none;font-weight:700;cursor:pointer}
-.action-link:hover{text-decoration:underline}
-
-/* CHECKBOX */
-.checkbox-group{display:flex;flex-direction:column;gap:10px;margin:1rem 0}
-.checkbox-wrap{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
-.checkbox-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin:2px 0 0;border-radius:4px}
-.checkbox-wrap label{margin:0;cursor:pointer;font-size:13px;color:var(--text-mid);font-weight:500;flex:1}
-.checkbox-wrap a{color:var(--green);text-decoration:none;font-weight:600}
-.checkbox-wrap a:hover{text-decoration:underline}
 
 /* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .6s both}
+.btn{border:none;border-radius:var(--radius-sm);padding:12px 20px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
-.btn-primary:active:not(:disabled){transform:scale(.99)}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
-.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);text-decoration:none;cursor:pointer}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text)}
 .btn-secondary:hover{border-color:var(--green);background:var(--green-light)}
-.btn-secondary:active{transform:scale(.99)}
+.step-nav{display:flex;gap:10px;margin-top:1.6rem}
+.step-nav .btn{flex:1}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
 
-/* DIVIDER */
-.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* REVIEW STEP */
+.review-block{margin-bottom:14px}
+.review-block .rb-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.review-block .rb-val{font-size:13.5px;color:var(--text);line-height:1.5}
+.review-block .rb-val.muted{color:var(--text-muted);font-style:italic}
 
-/* FOOTER */
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .7s both}
-.auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
-.auth-foot a:hover{text-decoration:underline}
-
-/* IP & LOCATION INFO */
-.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
-.ip-status i{font-size:13px}
+/* CENTER LOADER (session check) */
+.center-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center}
+.center-loader .spinner{display:block;width:32px;height:32px;border-width:3px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:14px}
+.center-loader p{font-size:14px;color:var(--text-muted)}
 </style>
 </head>
 <body>
@@ -156,630 +155,881 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
     <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
   </div>
 
+  <!-- PROGRESS -->
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:14.28%"></div></div>
+    <div class="progress-label">
+      <span>Step <span class="cur" id="progressStepNum">1</span> of 7</span>
+      <span id="progressStepName">About You</span>
+    </div>
+  </div>
+
   <div class="card">
 
-    <!-- MAIN PANEL -->
-    <div id="register-panel">
+    <!-- SESSION CHECK LOADER -->
+    <div class="center-loader" id="sessionLoader">
+      <div class="spinner"></div>
+      <p>Checking your session…</p>
+    </div>
 
-      <!-- LOCATION DETECTION -->
-      <div class="location-badge loading" id="locationBadge">
-        <i class="bi bi-geo-alt"></i>
-        <span id="locationText">Detecting location...</span>
+    <!-- MAIN WIZARD (hidden until session confirmed) -->
+    <div id="wizard" style="display:none">
+
+      <div class="alert error" id="alertError"><i class="bi bi-exclamation-circle-fill"></i><span id="alertErrorText"></span></div>
+      <div class="alert success" id="alertSuccess"><i class="bi bi-check-circle-fill"></i><span id="alertSuccessText"></span></div>
+
+      <div class="context-box" id="contextBox" style="display:none">
+        <i class="bi bi-person-check-fill"></i>
+        <div>
+          <div class="cb-title">Signed in as <span id="ctxName"></span></div>
+          <div class="cb-body">Completing this profile lets employers find and contact you. Your account details (<span id="ctxEmail"></span>) are already saved — this just fills in the rest.</div>
+        </div>
       </div>
 
-      <!-- ALERTS -->
-      <div class="alert error" id="alertError">
-        <i class="bi bi-exclamation-circle-fill"></i>
-        <span id="alertErrorText"></span>
-      </div>
+      <!-- ============ STEP 1: ABOUT YOU ============ -->
+      <div class="wizard-step" data-step="1">
+        <div class="step-badge"><i class="bi bi-person-badge"></i> STEP 1 OF 7</div>
+        <h1 class="step-title">About You</h1>
+        <p class="step-sub">Tell employers what kind of work you're looking for.</p>
 
-      <div class="alert success" id="alertSuccess">
-        <i class="bi bi-check-circle-fill"></i>
-        <span id="alertSuccessText"></span>
-      </div>
-
-      <div class="alert info" id="alertInfo">
-        <i class="bi bi-info-circle-fill"></i>
-        <span id="alertInfoText"></span>
-      </div>
-
-      <!-- FORM HEADER -->
-      <div class="step-badge">
-        <i class="bi bi-person-fill-add"></i>
-        EMPLOYEE REGISTRATION
-      </div>
-      <h1 class="step-title">Create Your Account</h1>
-      <p class="step-sub">Join East Africa's trusted domestic services platform. Register as an employee and start finding work opportunities.</p>
-
-      <!-- REGISTRATION FORM -->
-      <form id="registerForm" onsubmit="handleRegister(event)">
-
-        <!-- FULL NAME -->
         <div class="fg">
-          <label for="fullName">Full Name</label>
-          <div class="iw has-ico">
-            <i class="ico bi bi-person-fill"></i>
-            <input type="text" id="fullName" name="fullName" placeholder="e.g., Jane Kariuki" required>
+          <label>Profile photo (optional, but profiles with photos get more views)</label>
+          <div class="upload-box" id="ubPhoto" onclick="document.getElementById('filePhoto').click()">
+            <input type="file" id="filePhoto" accept="image/*" onchange="handleFileSelect(this,'profile_photo_url','Media',true)">
+            <i class="bi bi-camera-fill"></i>
+            <div class="ub-text" id="ubPhotoText">Tap to upload a clear photo of yourself</div>
           </div>
         </div>
 
-        <!-- EMAIL -->
         <div class="fg">
-          <label for="regEmail">Email Address</label>
-          <div class="iw has-ico has-sfx">
-            <i class="ico bi bi-envelope-fill"></i>
-            <input type="email" id="regEmail" name="email" placeholder="you@example.com" required>
-            <button type="button" class="sfx" id="emailCheckBtn" style="display:none;">
-              <i class="bi bi-check-circle-fill"></i>
-            </button>
+          <label for="preferredRole">What role are you looking for? <span style="color:var(--red)">*</span></label>
+          <select id="preferredRole" required>
+            <option value="">Select a role</option>
+            <option>House Manager / Nanny</option>
+            <option>Nanny / Babysitter</option>
+            <option>Housekeeper</option>
+            <option>Cook / Chef</option>
+            <option>Cleaner</option>
+            <option>Gardener</option>
+            <option>Driver</option>
+            <option>Elderly Caregiver</option>
+            <option>Security Guard</option>
+            <option>General Domestic Worker</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="experienceLevel">Years of experience</label>
+            <select id="experienceLevel">
+              <option value="">Select</option>
+              <option value="0-1">Less than 1 year</option>
+              <option value="1-3">1 – 3 years</option>
+              <option value="3-5">3 – 5 years</option>
+              <option value="5-10">5 – 10 years</option>
+              <option value="10+">10+ years</option>
+            </select>
           </div>
-          <div class="email-status-alert" id="emailStatusAlert">
-            <i id="emailStatusIcon"></i>
-            <div>
-              <span id="emailStatusText"></span>
-              <a id="emailStatusAction" href="#" class="action-link" style="display:none;margin-left:4px"></a>
+          <div class="fg">
+            <label for="workArrangement">Work arrangement</label>
+            <select id="workArrangement">
+              <option value="">Select</option>
+              <option>Live-In</option>
+              <option>Live-Out</option>
+              <option>Part-Time</option>
+              <option>Contract</option>
+              <option>Flexible</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="salaryMin">Expected salary — min (KES)</label>
+            <input type="number" id="salaryMin" placeholder="e.g., 12000" min="0">
+          </div>
+          <div class="fg">
+            <label for="salaryMax">Expected salary — max (KES)</label>
+            <input type="number" id="salaryMax" placeholder="e.g., 20000" min="0">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label for="keySkills">Key skills (comma separated)</label>
+          <input type="text" id="keySkills" placeholder="e.g., cooking, childcare, laundry, ironing">
+        </div>
+
+        <div class="fg">
+          <label for="languages">Languages spoken (comma separated)</label>
+          <input type="text" id="languages" placeholder="e.g., Swahili, English, Kikuyu">
+        </div>
+
+        <div class="fg">
+          <label for="aboutText">Short bio <span style="color:var(--red)">*</span></label>
+          <textarea id="aboutText" maxlength="500" placeholder="Introduce yourself to potential employers — your experience, what you're good at, and what you're looking for." oninput="updateCharCount()"></textarea>
+          <div class="char-count"><span id="aboutCharCount">0</span>/500</div>
+        </div>
+      </div>
+
+      <!-- ============ STEP 2: LOCATION ============ -->
+      <div class="wizard-step" data-step="2" style="display:none">
+        <div class="step-badge"><i class="bi bi-geo-alt-fill"></i> STEP 2 OF 7</div>
+        <h1 class="step-title">Where You're Based</h1>
+        <p class="step-sub">Helps us match you with nearby jobs.</p>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="currentTown">Current town/area <span style="color:var(--red)">*</span></label>
+            <input type="text" id="currentTown" placeholder="e.g., Kilimani" required>
+          </div>
+          <div class="fg">
+            <label for="county">County <span style="color:var(--red)">*</span></label>
+            <input type="text" id="county" placeholder="e.g., Nairobi" required>
+          </div>
+        </div>
+
+        <div class="sec-lbl">Home area (optional)</div>
+        <div class="fg">
+          <label for="homeAddress">Home address</label>
+          <input type="text" id="homeAddress" placeholder="e.g., Kangemi, near the market">
+        </div>
+        <div class="row2">
+          <div class="fg">
+            <label for="homeVillage">Home village</label>
+            <input type="text" id="homeVillage" placeholder="e.g., Karura">
+          </div>
+          <div class="fg">
+            <label for="homeCounty">Home county</label>
+            <input type="text" id="homeCounty" placeholder="e.g., Kiambu">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Willing to relocate for the right job?</label>
+          <div class="pill-group" id="pillRelocate">
+            <div class="pill" data-val="true" onclick="selectPill('pillRelocate',this)">Yes</div>
+            <div class="pill" data-val="false" onclick="selectPill('pillRelocate',this)">No</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STEP 3: EDUCATION ============ -->
+      <div class="wizard-step" data-step="3" style="display:none">
+        <div class="step-badge"><i class="bi bi-mortarboard-fill"></i> STEP 3 OF 7</div>
+        <h1 class="step-title">Education</h1>
+        <p class="step-sub">Optional, but it helps build trust with employers.</p>
+
+        <div class="fg">
+          <label for="eduLevel">Highest education level</label>
+          <select id="eduLevel">
+            <option value="">Select</option>
+            <option>None</option>
+            <option>Primary</option>
+            <option>Secondary (KCSE)</option>
+            <option>Certificate</option>
+            <option>Diploma</option>
+            <option>Degree</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="eduInstitution">Institution name</label>
+            <input type="text" id="eduInstitution" placeholder="e.g., Nairobi Technical College">
+          </div>
+          <div class="fg">
+            <label for="eduYear">Year completed</label>
+            <input type="number" id="eduYear" placeholder="e.g., 2019" min="1970" max="2030">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label for="eduField">Field of study</label>
+          <input type="text" id="eduField" placeholder="e.g., Catering, Early Childhood Development">
+        </div>
+
+        <div class="fg">
+          <label>Certificate copy (optional)</label>
+          <div class="upload-box" id="ubCert" onclick="document.getElementById('fileCert').click()">
+            <input type="file" id="fileCert" accept="image/*,application/pdf" onchange="handleFileSelect(this,'edu_cert_url','Certificate',false)">
+            <i class="bi bi-file-earmark-text-fill"></i>
+            <div class="ub-text" id="ubCertText">Tap to upload certificate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STEP 4: WORK EXPERIENCE ============ -->
+      <div class="wizard-step" data-step="4" style="display:none">
+        <div class="step-badge"><i class="bi bi-briefcase-fill"></i> STEP 4 OF 7</div>
+        <h1 class="step-title">Work Experience</h1>
+        <p class="step-sub">Add past employers, most recent first. Optional but boosts your profile.</p>
+
+        <div id="expList"></div>
+        <button type="button" class="add-row-btn" onclick="addExperienceRow()">
+          <i class="bi bi-plus-circle"></i> Add work experience
+        </button>
+      </div>
+
+      <!-- ============ STEP 5: IDENTITY VERIFICATION ============ -->
+      <div class="wizard-step" data-step="5" style="display:none">
+        <div class="step-badge"><i class="bi bi-shield-check"></i> STEP 5 OF 7</div>
+        <h1 class="step-title">Identity Verification</h1>
+        <p class="step-sub">Verified profiles get shortlisted more often. Your documents are kept private and only reviewed by our admin team.</p>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="dob">Date of birth <span style="color:var(--red)">*</span></label>
+            <input type="date" id="dob" required>
+          </div>
+          <div class="fg">
+            <label for="gender">Gender <span style="color:var(--red)">*</span></label>
+            <select id="gender" required>
+              <option value="">Select</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Do you have any disability?</label>
+          <div class="pill-group" id="pillDisability">
+            <div class="pill" data-val="No" onclick="selectPill('pillDisability',this)">No</div>
+            <div class="pill" data-val="Yes" onclick="selectPill('pillDisability',this)">Yes</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="fg">
+            <label for="idType">ID type</label>
+            <select id="idType">
+              <option value="">Select</option>
+              <option>National ID</option>
+              <option>Passport</option>
+              <option>Alien ID</option>
+              <option>Huduma Namba</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label for="nationalId">ID number</label>
+            <input type="text" id="nationalId" placeholder="e.g., 3xxxxxxx">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>ID photos</label>
+          <div class="upload-grid">
+            <div class="upload-box" id="ubIdFront" onclick="document.getElementById('fileIdFront').click()">
+              <input type="file" id="fileIdFront" accept="image/*" onchange="handleFileSelect(this,'id_front_url','id_verification',false)">
+              <i class="bi bi-card-image"></i>
+              <div class="ub-text" id="ubIdFrontText">ID front</div>
+            </div>
+            <div class="upload-box" id="ubIdBack" onclick="document.getElementById('fileIdBack').click()">
+              <input type="file" id="fileIdBack" accept="image/*" onchange="handleFileSelect(this,'id_back_url','id_verification',false)">
+              <i class="bi bi-card-image"></i>
+              <div class="ub-text" id="ubIdBackText">ID back</div>
             </div>
           </div>
         </div>
 
-        <!-- PHONE -->
         <div class="fg">
-          <label for="phone">Phone Number</label>
-          <div class="iw has-ico">
-            <i class="ico bi bi-telephone-fill"></i>
-            <input type="tel" id="phone" name="phone" placeholder="+254712345678" required>
+          <label>Selfie holding your ID</label>
+          <div class="upload-box" id="ubSelfie" onclick="document.getElementById('fileSelfie').click()">
+            <input type="file" id="fileSelfie" accept="image/*" capture="user" onchange="handleFileSelect(this,'selfie_url','selfie-verification',false)">
+            <i class="bi bi-person-bounding-box"></i>
+            <div class="ub-text" id="ubSelfieText">Tap to upload selfie</div>
           </div>
         </div>
+      </div>
 
-        <!-- PASSWORD -->
-        <div class="fg">
-          <label for="regPassword">Password</label>
-          <div class="iw has-ico has-sfx">
-            <i class="ico bi bi-lock-fill"></i>
-            <input type="password" id="regPassword" name="password" placeholder="••••••••" required>
-            <button type="button" class="sfx" id="togglePwd" onclick="togglePasswordVisibility()">
-              <i class="bi bi-eye-fill"></i>
-            </button>
-          </div>
-        </div>
+      <!-- ============ STEP 6: REFEREES ============ -->
+      <div class="wizard-step" data-step="6" style="display:none">
+        <div class="step-badge"><i class="bi bi-people-fill"></i> STEP 6 OF 7</div>
+        <h1 class="step-title">Referees</h1>
+        <p class="step-sub">People who can vouch for your work. Optional but strongly recommended.</p>
 
-        <!-- CONFIRM PASSWORD -->
-        <div class="fg">
-          <label for="confirmPassword">Confirm Password</label>
-          <div class="iw has-ico has-sfx">
-            <i class="ico bi bi-lock-fill"></i>
-            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required>
-            <button type="button" class="sfx" id="togglePwdConfirm" onclick="togglePasswordVisibility('confirmPassword')">
-              <i class="bi bi-eye-fill"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- TERMS & PRIVACY -->
-        <div class="sec-lbl no-border">Agreements</div>
-        <div class="checkbox-group">
-          <div class="checkbox-wrap">
-            <input type="checkbox" id="termsCheck" name="termsCheck" required>
-            <label for="termsCheck">I agree to the <a href="legal.html" target="_blank">Terms of Service and Privacy Policy</a></label>
-          </div>
-          <div class="checkbox-wrap">
-            <input type="checkbox" id="dataCheck" name="dataCheck" required>
-            <label for="dataCheck">I consent to location and device data collection for security and fraud prevention</label>
-          </div>
-        </div>
-
-        <!-- SUBMIT BUTTON -->
-        <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
-          <span id="registerBtnText">Verify Email First</span>
-          <div class="spinner" id="registerSpinner"></div>
+        <div id="refList"></div>
+        <button type="button" class="add-row-btn" id="addRefBtn" onclick="addRefereeRow()">
+          <i class="bi bi-plus-circle"></i> Add a referee
         </button>
-
-      </form>
-
-      <!-- SIGN IN LINK -->
-      <div class="auth-foot">
-        Already have an account? <a href="login-employee.html">Sign In</a>
       </div>
 
-      <!-- IP & LOCATION INFO -->
-      <div class="ip-status" id="ipStatus" style="display:none;">
-        <i class="bi bi-shield-check"></i>
-        <span id="ipStatusText"></span>
+      <!-- ============ STEP 7: REVIEW & SUBMIT ============ -->
+      <div class="wizard-step" data-step="7" style="display:none">
+        <div class="step-badge"><i class="bi bi-clipboard-check"></i> STEP 7 OF 7</div>
+        <h1 class="step-title">Review &amp; Submit</h1>
+        <p class="step-sub">Quick check before we save your profile.</p>
+        <div id="reviewContent"></div>
       </div>
 
-    </div>
+      <!-- NAV -->
+      <div class="step-nav">
+        <button class="btn btn-secondary" id="backBtn" onclick="prevStep()" type="button" style="display:none">
+          <i class="bi bi-arrow-left"></i> Back
+        </button>
+        <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" type="button">
+          <span id="nextBtnText">Continue</span>
+          <i class="bi bi-arrow-right" id="nextBtnIcon"></i>
+          <div class="spinner" id="nextSpinner"></div>
+        </button>
+      </div>
+
+    </div><!-- end wizard -->
 
   </div>
 
 </div>
 
 <script>
+// ============================================================
+// SUPABASE (singleton guard so re-navigation doesn't duplicate)
+// ============================================================
+var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+var dbClient = window._sbClient || (window._sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY));
 
 // ============================================================
-// CONFIGURATION
+// STATE
 // ============================================================
-const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
-const EAST_AFRICA_REGIONS = {
-  'KE': {name: 'Kenya', lat: [0, 4.5], lng: [32, 41]},
-  'TZ': {name: 'Tanzania', lat: [-12, -1], lng: [29, 41]},
-  'UG': {name: 'Uganda', lat: [-2, 4.2], lng: [29.5, 35.4]},
-  'RW': {name: 'Rwanda', lat: [-3, -1], lng: [28.8, 30.9]},
-  'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
-};
-
-let userLocation = null;
-let userIP = null;
-let emailValidationTimeout = null;
-let emailCheckStatus = null; // Track email validation status
+const TOTAL_STEPS = 7;
+const STEP_NAMES = ['About You','Location','Education','Work Experience','Identity Verification','Referees','Review & Submit'];
+let currentStep = 1;
+let currentUser = null;
+let existingProfile = null;
+let workExperiences = [];
+let referees = [];
+const uploadedUrls = { profile_photo_url:null, edu_cert_url:null, id_front_url:null, id_back_url:null, selfie_url:null };
 
 // ============================================================
-// GEOLOCATION - Detect user's real-time location
+// SESSION CHECK — this is the hand-off point from register.html.
+// Supabase persists the session in localStorage by default, so as
+// long as this page is served from the same origin as register.html,
+// the session carries over automatically with no token-passing needed.
 // ============================================================
-async function detectUserLocation() {
+document.addEventListener('DOMContentLoaded', async function () {
   try {
-    if (!navigator.geolocation) {
-      throw new Error('Geolocation not supported');
+    const { data, error } = await dbClient.auth.getSession();
+
+    if (error || !data || !data.session) {
+      window.location.href = 'register.html?msg=session_required';
+      return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        userLocation = { latitude, longitude, accuracy };
-        
-        const country = await getCountryFromCoordinates(latitude, longitude);
-        validateRegion(country);
-        updateLocationBadge(country, 'success');
-      },
-      (error) => {
-        console.warn('Geolocation error:', error.message);
-        updateLocationBadge(null, 'warning');
-        getLocationFromIP();
-      }
-    );
-  } catch (err) {
-    console.warn('Geolocation detection failed:', err.message);
-    updateLocationBadge(null, 'warning');
-    getLocationFromIP();
-  }
-}
+    currentUser = data.session.user;
 
-async function getCountryFromCoordinates(lat, lng) {
-  try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-    const data = await response.json();
-    const countryCode = data.address?.country_code?.toUpperCase();
-    return countryCode;
-  } catch (err) {
-    console.warn('Reverse geocoding failed:', err);
-    return null;
-  }
-}
+    // Pull whatever register.html already saved (full_name, email, phone,
+    // country, county, current_town) plus any partially-completed profile
+    // if the person left and came back.
+    const { data: profileRow } = await dbClient
+      .from('worker_profiles')
+      .select('*')
+      .eq('session_id', currentUser.id)
+      .maybeSingle();
 
-// ============================================================
-// IP-BASED LOCATION (Fallback) + IP Collection
-// ============================================================
-async function getLocationFromIP() {
-  try {
-    const response = await fetch('https://ipapi.co/json/');
-    const data = await response.json();
-    userIP = data.ip;
-    const countryCode = data.country_code?.toUpperCase();
-    
-    document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name})`;
-    document.getElementById('ipStatus').style.display = 'flex';
-    
-    validateRegion(countryCode);
-    updateLocationBadge(countryCode, 'success');
-  } catch (err) {
-    console.warn('IP lookup failed:', err);
-    updateLocationBadge(null, 'error');
-  }
-}
+    existingProfile = profileRow || null;
+    prefillFromExisting();
 
-// ============================================================
-// REGION VALIDATION
-// ============================================================
-function validateRegion(countryCode) {
-  if (!countryCode || !EAST_AFRICA_COUNTRIES.includes(countryCode)) {
-    showAlert('alertError', 'alertErrorText', '❌ Registration is only available in East Africa. We\'re expanding soon!');
-    document.getElementById('registerForm').style.opacity = '0.5';
-    document.getElementById('registerForm').style.pointerEvents = 'none';
-  }
-}
+    document.getElementById('sessionLoader').style.display = 'none';
+    document.getElementById('wizard').style.display = 'block';
+    document.getElementById('progressWrap').style.display = 'block';
 
-function updateLocationBadge(countryCode, status) {
-  const badge = document.getElementById('locationBadge');
-  const text = document.getElementById('locationText');
-  const regionName = countryCode && EAST_AFRICA_REGIONS[countryCode] ? EAST_AFRICA_REGIONS[countryCode].name : 'Unknown Location';
-  
-  badge.classList.remove('loading', 'restricted');
-  
-  if (status === 'success') {
-    badge.classList.add('fade-in');
-    text.textContent = `📍 ${regionName} - Registration Available`;
-  } else if (status === 'warning') {
-    badge.classList.add('loading');
-    text.textContent = 'Detecting your location...';
-  } else {
-    badge.classList.add('restricted');
-    text.textContent = '⚠️ Location could not be verified';
-  }
-}
+    if (existingProfile) {
+      document.getElementById('contextBox').style.display = 'flex';
+      document.getElementById('ctxName').textContent = existingProfile.full_name || currentUser.email;
+      document.getElementById('ctxEmail').textContent = existingProfile.email || currentUser.email;
+    }
 
-// ============================================================
-// EMAIL VALIDATION - Smart Database Checking
-// ============================================================
-document.getElementById('regEmail').addEventListener('input', function(e) {
-  const email = this.value.trim().toLowerCase();
-  const btn = document.getElementById('emailCheckBtn');
-  const alert = document.getElementById('emailStatusAlert');
-  
-  clearTimeout(emailValidationTimeout);
-  emailCheckStatus = null;
-  
-  if (!email) {
-    btn.style.display = 'none';
-    alert.classList.remove('show');
-    updateRegisterButtonState();
-    return;
+    if (workExperiences.length === 0) addExperienceRow();
+    if (referees.length === 0) { addRefereeRow(); addRefereeRow(); }
+
+    renderStep();
+  } catch (e) {
+    console.error('[SoundsCare] Session check failed:', e);
+    window.location.href = 'register.html?msg=session_required';
   }
-  
-  // Step 1: Validate email format first
-  if (!isValidEmailFormat(email)) {
-    showEmailStatus('format_invalid', 'Invalid email format', 'error');
-    updateRegisterButtonState();
-    return;
-  }
-  
-  // Step 2: Check database (debounced)
-  btn.classList.remove('available', 'unavailable');
-  btn.classList.add('checking');
-  btn.style.display = 'flex';
-  
-  emailValidationTimeout = setTimeout(() => {
-    checkEmailInDatabase(email);
-  }, 600);
 });
 
-function isValidEmailFormat(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-}
+function prefillFromExisting() {
+  if (!existingProfile) return;
+  const p = existingProfile;
 
-async function checkEmailInDatabase(email) {
-  try {
-    const btn = document.getElementById('emailCheckBtn');
-    btn.classList.remove('checking');
-    
-    // Call your backend API to check email in database
-    const response = await fetch('/api/auth/check-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined) el.value = val; };
 
-    const data = await response.json();
+  set('preferredRole', p.preferred_role);
+  set('experienceLevel', p.experience_level);
+  set('workArrangement', p.work_arrangement);
+  set('salaryMin', p.salary_min);
+  set('salaryMax', p.salary_max);
+  set('keySkills', p.key_skills);
+  set('languages', p.languages);
+  set('aboutText', p.about_text);
+  set('currentTown', p.current_town);
+  set('county', p.county);
+  set('homeAddress', p.home_address);
+  set('homeVillage', p.home_village);
+  set('homeCounty', p.home_county);
+  set('eduLevel', p.edu_level);
+  set('eduInstitution', p.edu_institution);
+  set('eduYear', p.edu_year);
+  set('eduField', p.edu_field);
+  set('dob', p.date_of_birth);
+  set('gender', p.gender);
+  set('idType', p.id_type);
+  set('nationalId', p.national_id || p.id_number);
 
-    // Handle different scenarios
-    if (data.exists) {
-      if (data.isActive) {
-        // Email exists and account is ACTIVE
-        emailCheckStatus = 'taken_active';
-        btn.classList.add('unavailable');
-        document.getElementById('regEmail').classList.add('err');
-        document.getElementById('regEmail').classList.remove('valid');
-        showEmailStatusWithAction(
-          'You have an active account with this email',
-          'Sign in instead',
-          'login-employee.html',
-          'taken-active'
-        );
-      } else {
-        // Email exists but account is DELETED
-        emailCheckStatus = 'taken_deleted';
-        btn.classList.add('unavailable');
-        document.getElementById('regEmail').classList.add('err');
-        document.getElementById('regEmail').classList.remove('valid');
-        showEmailStatusWithAction(
-          'You have a deleted account with this email',
-          'Contact support',
-          'mailto:support@soundscare.co.ke',
-          'taken-deleted'
-        );
-      }
-    } else {
-      // Email is AVAILABLE - New user
-      emailCheckStatus = 'available';
-      btn.classList.add('available');
-      document.getElementById('regEmail').classList.add('valid');
-      document.getElementById('regEmail').classList.remove('err');
-      showEmailStatus('available', 'Email available - Ready to register', 'success');
+  updateCharCount();
+
+  if (p.willing_to_relocate !== null && p.willing_to_relocate !== undefined) {
+    const val = String(p.willing_to_relocate);
+    const pill = document.querySelector('#pillRelocate .pill[data-val="' + val + '"]');
+    if (pill) selectPill('pillRelocate', pill);
+  }
+  if (p.disability) {
+    const pill = document.querySelector('#pillDisability .pill[data-val="' + p.disability + '"]');
+    if (pill) selectPill('pillDisability', pill);
+  }
+
+  ['profile_photo_url','edu_cert_url','id_front_url','id_back_url','selfie_url'].forEach(function (col) {
+    if (p[col]) {
+      uploadedUrls[col] = p[col];
+      markUploadFilled(col);
     }
-    
-    updateRegisterButtonState();
-  } catch (err) {
-    console.error('Email check failed:', err);
-    // Fallback to simulated check
-    simulateEmailCheckFallback(email);
+  });
+
+  if (Array.isArray(p.work_experience) && p.work_experience.length) {
+    workExperiences = p.work_experience.slice();
+  }
+  if (Array.isArray(p.referees) && p.referees.length) {
+    referees = p.referees.slice();
   }
 }
 
-async function simulateEmailCheckFallback(email) {
-  const btn = document.getElementById('emailCheckBtn');
-  btn.classList.remove('checking');
-  
-  // Simulated database check for testing
-  // Replace this with real API when backend is ready
-  const reservedEmails = {
-    'admin@soundscare.co.ke': { exists: true, isActive: true },
-    'support@soundscare.co.ke': { exists: true, isActive: true },
-    'test@example.com': { exists: true, isActive: false },
+function markUploadFilled(col) {
+  const map = {
+    profile_photo_url: ['ubPhoto','ubPhotoText','Photo uploaded ✓'],
+    edu_cert_url: ['ubCert','ubCertText','Certificate uploaded ✓'],
+    id_front_url: ['ubIdFront','ubIdFrontText','ID front uploaded ✓'],
+    id_back_url: ['ubIdBack','ubIdBackText','ID back uploaded ✓'],
+    selfie_url: ['ubSelfie','ubSelfieText','Selfie uploaded ✓']
+  };
+  const m = map[col];
+  if (!m) return;
+  document.getElementById(m[0]).classList.add('filled');
+  document.getElementById(m[1]).textContent = m[2];
+}
+
+// ============================================================
+// STEP RENDERING / NAVIGATION
+// ============================================================
+function renderStep() {
+  document.querySelectorAll('.wizard-step').forEach(function (el) {
+    el.style.display = (parseInt(el.dataset.step, 10) === currentStep) ? 'block' : 'none';
+  });
+
+  document.getElementById('progressFill').style.width = ((currentStep / TOTAL_STEPS) * 100) + '%';
+  document.getElementById('progressStepNum').textContent = currentStep;
+  document.getElementById('progressStepName').textContent = STEP_NAMES[currentStep - 1];
+
+  document.getElementById('backBtn').style.display = currentStep === 1 ? 'none' : 'flex';
+
+  const nextText = document.getElementById('nextBtnText');
+  const nextIcon = document.getElementById('nextBtnIcon');
+  if (currentStep === TOTAL_STEPS) {
+    nextText.textContent = 'Submit Profile';
+    nextIcon.className = 'bi bi-check-circle';
+  } else if (currentStep === TOTAL_STEPS - 1) {
+    nextText.textContent = 'Review';
+    nextIcon.className = 'bi bi-arrow-right';
+  } else {
+    nextText.textContent = 'Continue';
+    nextIcon.className = 'bi bi-arrow-right';
+  }
+
+  if (currentStep === TOTAL_STEPS) buildReview();
+
+  hideAllAlerts();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prevStep() {
+  if (currentStep > 1) { currentStep--; renderStep(); }
+}
+
+async function nextStep() {
+  if (!validateStep(currentStep)) return;
+
+  if (currentStep < TOTAL_STEPS) {
+    currentStep++;
+    renderStep();
+    return;
+  }
+
+  // Final step -> submit
+  await submitProfile();
+}
+
+function validateStep(step) {
+  hideAllAlerts();
+
+  if (step === 1) {
+    const role = document.getElementById('preferredRole').value;
+    const about = document.getElementById('aboutText').value.trim();
+    if (!role) { showAlert('error', 'Please select the role you\'re looking for.'); return false; }
+    if (!about || about.length < 20) { showAlert('error', 'Please write a short bio (at least 20 characters) so employers know a bit about you.'); return false; }
+    const min = document.getElementById('salaryMin').value;
+    const max = document.getElementById('salaryMax').value;
+    if (min && max && parseInt(min, 10) > parseInt(max, 10)) { showAlert('error', 'Minimum salary can\'t be higher than maximum salary.'); return false; }
+  }
+
+  if (step === 2) {
+    const town = document.getElementById('currentTown').value.trim();
+    const county = document.getElementById('county').value.trim();
+    if (!town || !county) { showAlert('error', 'Please tell us your current town and county.'); return false; }
+  }
+
+  if (step === 5) {
+    const dob = document.getElementById('dob').value;
+    const gender = document.getElementById('gender').value;
+    if (!dob) { showAlert('error', 'Please enter your date of birth.'); return false; }
+    if (!gender) { showAlert('error', 'Please select your gender.'); return false; }
+    const age = calcAge(dob);
+    if (age < 18) { showAlert('error', 'You must be at least 18 years old to register as a worker.'); return false; }
+  }
+
+  return true;
+}
+
+function calcAge(dobStr) {
+  const dob = new Date(dobStr);
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+// ============================================================
+// PILL SELECT
+// ============================================================
+function selectPill(groupId, el) {
+  document.querySelectorAll('#' + groupId + ' .pill').forEach(function (p) { p.classList.remove('active'); });
+  el.classList.add('active');
+}
+function getPillValue(groupId) {
+  const active = document.querySelector('#' + groupId + ' .pill.active');
+  return active ? active.dataset.val : null;
+}
+
+// ============================================================
+// CHAR COUNTER
+// ============================================================
+function updateCharCount() {
+  const el = document.getElementById('aboutText');
+  document.getElementById('aboutCharCount').textContent = el.value.length;
+}
+
+// ============================================================
+// WORK EXPERIENCE — dynamic rows
+// ============================================================
+function addExperienceRow() {
+  const idx = workExperiences.length;
+  workExperiences.push({ employer_name:'', years_worked:'', job_description:'' });
+  renderExperienceRows();
+  setTimeout(function () {
+    const el = document.getElementById('exp-employer-' + idx);
+    if (el) el.focus();
+  }, 50);
+}
+
+function removeExperienceRow(idx) {
+  workExperiences.splice(idx, 1);
+  renderExperienceRows();
+}
+
+function renderExperienceRows() {
+  const wrap = document.getElementById('expList');
+  wrap.innerHTML = '';
+  workExperiences.forEach(function (exp, idx) {
+    const card = document.createElement('div');
+    card.className = 'dyn-card';
+    card.innerHTML =
+      '<button type="button" class="dyn-remove" onclick="removeExperienceRow(' + idx + ')"><i class="bi bi-x-lg"></i></button>' +
+      '<div class="dyn-title">Employer ' + (idx + 1) + '</div>' +
+      '<div class="fg"><label>Employer name</label><input type="text" id="exp-employer-' + idx + '" placeholder="e.g., Mrs. Wanjiru, Karen" value="' + escapeAttr(exp.employer_name) + '" onchange="updateExpField(' + idx + ',\'employer_name\',this.value)"></div>' +
+      '<div class="row2"><div class="fg"><label>Years worked</label><input type="number" min="0" id="exp-years-' + idx + '" placeholder="e.g., 2" value="' + escapeAttr(exp.years_worked) + '" onchange="updateExpField(' + idx + ',\'years_worked\',this.value)"></div></div>' +
+      '<div class="fg"><label>What did you do there?</label><textarea id="exp-desc-' + idx + '" placeholder="e.g., Cooking, cleaning, childcare for 2 kids" onchange="updateExpField(' + idx + ',\'job_description\',this.value)">' + escapeHtml(exp.job_description) + '</textarea></div>';
+    wrap.appendChild(card);
+  });
+}
+
+function updateExpField(idx, field, value) {
+  if (workExperiences[idx]) workExperiences[idx][field] = value;
+}
+
+// ============================================================
+// REFEREES — dynamic rows (max 3)
+// ============================================================
+function addRefereeRow() {
+  if (referees.length >= 3) return;
+  const idx = referees.length;
+  referees.push({ full_name:'', relationship:'', phone:'' });
+  renderRefereeRows();
+  document.getElementById('addRefBtn').style.display = referees.length >= 3 ? 'none' : 'flex';
+  setTimeout(function () {
+    const el = document.getElementById('ref-name-' + idx);
+    if (el) el.focus();
+  }, 50);
+}
+
+function removeRefereeRow(idx) {
+  referees.splice(idx, 1);
+  renderRefereeRows();
+  document.getElementById('addRefBtn').style.display = 'flex';
+}
+
+function renderRefereeRows() {
+  const wrap = document.getElementById('refList');
+  wrap.innerHTML = '';
+  referees.forEach(function (ref, idx) {
+    const card = document.createElement('div');
+    card.className = 'dyn-card';
+    card.innerHTML =
+      '<button type="button" class="dyn-remove" onclick="removeRefereeRow(' + idx + ')"><i class="bi bi-x-lg"></i></button>' +
+      '<div class="dyn-title">Referee ' + (idx + 1) + '</div>' +
+      '<div class="fg"><label>Full name</label><input type="text" id="ref-name-' + idx + '" placeholder="e.g., Mary Achieng" value="' + escapeAttr(ref.full_name) + '" onchange="updateRefField(' + idx + ',\'full_name\',this.value)"></div>' +
+      '<div class="row2">' +
+      '<div class="fg"><label>Relationship</label><input type="text" id="ref-rel-' + idx + '" placeholder="e.g., Former employer" value="' + escapeAttr(ref.relationship) + '" onchange="updateRefField(' + idx + ',\'relationship\',this.value)"></div>' +
+      '<div class="fg"><label>Phone number</label><input type="tel" id="ref-phone-' + idx + '" placeholder="+254712345678" value="' + escapeAttr(ref.phone) + '" onchange="updateRefField(' + idx + ',\'phone\',this.value)"></div>' +
+      '</div>';
+    wrap.appendChild(card);
+  });
+}
+
+function updateRefField(idx, field, value) {
+  if (referees[idx]) referees[idx][field] = value;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>]/g, function (c) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; });
+}
+function escapeAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/"/g, '&quot;');
+}
+
+// ============================================================
+// FILE UPLOAD
+// ============================================================
+async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
+  const file = inputEl.files[0];
+  if (!file) return;
+
+  const boxId = {
+    profile_photo_url: 'ubPhoto',
+    edu_cert_url: 'ubCert',
+    id_front_url: 'ubIdFront',
+    id_back_url: 'ubIdBack',
+    selfie_url: 'ubSelfie'
+  }[column];
+  const textId = boxId + 'Text';
+  const box = document.getElementById(boxId);
+  const textEl = document.getElementById(textId);
+  const originalText = textEl.textContent;
+
+  textEl.textContent = 'Uploading…';
+
+  try {
+    const ext = file.name.split('.').pop();
+    const path = currentUser.id + '/' + column + '-' + Date.now() + '.' + ext;
+
+    const { error: upErr } = await dbClient.storage.from(bucket).upload(path, file, { upsert: true });
+    if (upErr) throw upErr;
+
+    let storedValue = path;
+    if (isPublicBucket) {
+      const { data: pub } = dbClient.storage.from(bucket).getPublicUrl(path);
+      storedValue = pub.publicUrl;
+    }
+
+    uploadedUrls[column] = storedValue;
+    box.classList.add('filled');
+    textEl.textContent = originalText.replace('Tap to upload', '').trim() ? '✓ Uploaded' : '✓ Uploaded';
+    textEl.textContent = '✓ ' + file.name.slice(0, 24) + (file.name.length > 24 ? '…' : '');
+  } catch (e) {
+    console.error('[SoundsCare] Upload failed:', column, e);
+    textEl.textContent = originalText;
+    showAlert('error', 'Upload failed for ' + column.replace(/_/g, ' ') + '. Please try again.');
+  }
+}
+
+// ============================================================
+// REVIEW STEP
+// ============================================================
+function buildReview() {
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const block = (label, value) => {
+    const shown = value ? escapeHtml(value) : '<span class="rb-val muted">Not provided</span>';
+    return '<div class="review-block"><div class="rb-label">' + label + '</div><div class="rb-val">' + (value ? escapeHtml(value) : '<span class="muted">Not provided</span>') + '</div></div>';
   };
 
-  const result = reservedEmails[email];
+  let html = '';
+  html += block('Looking for', val('preferredRole'));
+  html += block('Experience', val('experienceLevel'));
+  html += block('Work arrangement', val('workArrangement'));
+  const min = val('salaryMin'), max = val('salaryMax');
+  html += block('Expected salary', (min || max) ? ('KES ' + (min || '?') + ' – ' + (max || '?')) : '');
+  html += block('Skills', val('keySkills'));
+  html += block('Languages', val('languages'));
+  html += block('Bio', val('aboutText'));
+  html += block('Location', [val('currentTown'), val('county')].filter(Boolean).join(', '));
+  html += block('Education', [val('eduLevel'), val('eduInstitution')].filter(Boolean).join(' — '));
+  html += block('Work experience entries', workExperiences.filter(function(e){return e.employer_name;}).length + ' added');
+  html += block('Date of birth', val('dob'));
+  html += block('Gender', val('gender'));
+  html += block('ID number', val('nationalId'));
+  html += block('Referees', referees.filter(function(r){return r.full_name;}).length + ' added');
+  html += block('Documents uploaded', Object.keys(uploadedUrls).filter(function(k){return uploadedUrls[k];}).length + ' of 5');
 
-  if (result) {
-    if (result.isActive) {
-      emailCheckStatus = 'taken_active';
-      btn.classList.add('unavailable');
-      document.getElementById('regEmail').classList.add('err');
-      document.getElementById('regEmail').classList.remove('valid');
-      showEmailStatusWithAction(
-        `You have an active account with ${email}`,
-        'Sign in instead',
-        'login-employee.html',
-        'taken-active'
-      );
-    } else {
-      emailCheckStatus = 'taken_deleted';
-      btn.classList.add('unavailable');
-      document.getElementById('regEmail').classList.add('err');
-      document.getElementById('regEmail').classList.remove('valid');
-      showEmailStatusWithAction(
-        `You have a deleted account with ${email}`,
-        'Contact support',
-        'mailto:support@soundscare.co.ke',
-        'taken-deleted'
-      );
-    }
-  } else {
-    emailCheckStatus = 'available';
-    btn.classList.add('available');
-    document.getElementById('regEmail').classList.add('valid');
-    document.getElementById('regEmail').classList.remove('err');
-    showEmailStatus('available', 'Email available - Ready to register', 'success');
-  }
-
-  updateRegisterButtonState();
-}
-
-function showEmailStatus(status, message, type) {
-  const alert = document.getElementById('emailStatusAlert');
-  const icon = document.getElementById('emailStatusIcon');
-  const text = document.getElementById('emailStatusText');
-  const action = document.getElementById('emailStatusAction');
-
-  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
-  action.style.display = 'none';
-
-  if (status === 'available') {
-    icon.className = 'bi bi-check-circle-fill';
-    alert.classList.add('available');
-  } else if (status === 'taken_active') {
-    icon.className = 'bi bi-x-circle-fill';
-    alert.classList.add('taken-active');
-  } else if (status === 'taken_deleted') {
-    icon.className = 'bi bi-exclamation-triangle-fill';
-    alert.classList.add('taken-deleted');
-  } else {
-    icon.className = 'bi bi-x-circle-fill';
-    alert.classList.add('available');
-  }
-
-  text.textContent = message;
-  alert.classList.add('show');
-}
-
-function showEmailStatusWithAction(message, actionText, actionLink, alertType) {
-  const alert = document.getElementById('emailStatusAlert');
-  const icon = document.getElementById('emailStatusIcon');
-  const text = document.getElementById('emailStatusText');
-  const action = document.getElementById('emailStatusAction');
-
-  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
-
-  if (alertType === 'taken-active') {
-    icon.className = 'bi bi-x-circle-fill';
-    alert.classList.add('taken-active');
-  } else if (alertType === 'taken-deleted') {
-    icon.className = 'bi bi-exclamation-triangle-fill';
-    alert.classList.add('taken-deleted');
-  }
-
-  text.textContent = message;
-  action.textContent = actionText;
-  action.href = actionLink;
-  action.style.display = 'inline';
-  alert.classList.add('show');
-}
-
-function updateRegisterButtonState() {
-  const btn = document.getElementById('registerBtn');
-  const btnText = document.getElementById('registerBtnText');
-
-  if (emailCheckStatus === 'available') {
-    btn.disabled = false;
-    btnText.textContent = 'Create Account';
-  } else {
-    btn.disabled = true;
-    btnText.textContent = emailCheckStatus ? 'Please Verify Email' : 'Verify Email First';
-  }
+  document.getElementById('reviewContent').innerHTML = html;
 }
 
 // ============================================================
-// PASSWORD VISIBILITY TOGGLE
+// SUBMIT — upsert into worker_profiles keyed by session_id
 // ============================================================
-function togglePasswordVisibility(fieldId = 'regPassword') {
-  const field = document.getElementById(fieldId);
-  const btnId = fieldId === 'regPassword' ? 'togglePwd' : 'togglePwdConfirm';
-  const btn = document.getElementById(btnId);
-  
-  if (field.type === 'password') {
-    field.type = 'text';
-    btn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
-  } else {
-    field.type = 'password';
-    btn.innerHTML = '<i class="bi bi-eye-fill"></i>';
-  }
-}
-
-// ============================================================
-// REGISTRATION HANDLER
-// ============================================================
-async function handleRegister(event) {
-  event.preventDefault();
-  
-  // Check if email was validated
-  if (emailCheckStatus !== 'available') {
-    showAlert('alertError', 'alertErrorText', 'Please verify your email is available before registering.');
-    document.getElementById('regEmail').focus();
-    return;
-  }
-  
-  const fullName = document.getElementById('fullName').value.trim();
-  const email = document.getElementById('regEmail').value.trim().toLowerCase();
-  const phone = document.getElementById('phone').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
-  const termsCheck = document.getElementById('termsCheck').checked;
-  const dataCheck = document.getElementById('dataCheck').checked;
-  
-  // Clear previous alerts
+async function submitProfile() {
+  setNextLoading(true);
   hideAllAlerts();
-  
-  // Validation
-  if (!fullName) {
-    showAlert('alertError', 'alertErrorText', 'Please enter your full name.');
-    document.getElementById('fullName').focus();
-    return;
-  }
-  
-  if (!email || !isValidEmailFormat(email)) {
-    showAlert('alertError', 'alertErrorText', 'Please enter a valid email address.');
-    document.getElementById('regEmail').focus();
-    return;
-  }
-  
-  if (!phone) {
-    showAlert('alertError', 'alertErrorText', 'Please enter your phone number.');
-    document.getElementById('phone').focus();
-    return;
-  }
-  
-  if (password.length < 8) {
-    showAlert('alertError', 'alertErrorText', 'Password must be at least 8 characters long.');
-    document.getElementById('regPassword').focus();
-    return;
-  }
-  
-  if (password !== confirmPassword) {
-    showAlert('alertError', 'alertErrorText', 'Passwords do not match.');
-    document.getElementById('confirmPassword').focus();
-    return;
-  }
-  
-  if (!termsCheck || !dataCheck) {
-    showAlert('alertError', 'alertErrorText', 'Please agree to the terms and data collection policy.');
-    return;
-  }
-  
-  // Set loading state
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Creating account…');
-  
+
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
+
+  const relocate = getPillValue('pillRelocate');
+  const disability = getPillValue('pillDisability') || 'No';
+
+  const salaryMin = numOrNull(val('salaryMin'));
+  const salaryMax = numOrNull(val('salaryMax'));
+  const salaryRange = (salaryMin || salaryMax) ? ((salaryMin || '') + '-' + (salaryMax || '')) : null;
+
+  const cleanExperiences = workExperiences
+    .filter(function (e) { return e.employer_name && e.employer_name.trim(); })
+    .map(function (e) { return { employer_name: e.employer_name, years_worked: e.years_worked ? Number(e.years_worked) : null, job_description: e.job_description || '' }; });
+
+  const cleanReferees = referees
+    .filter(function (r) { return r.full_name && r.full_name.trim(); })
+    .map(function (r) { return { full_name: r.full_name, relationship: r.relationship || '', phone: r.phone || '' }; });
+
+  const hasAllVerificationDocs = !!(uploadedUrls.id_front_url && uploadedUrls.id_back_url && uploadedUrls.selfie_url);
+
+  const payload = {
+    session_id: currentUser.id,
+    email: currentUser.email,
+
+    preferred_role: val('preferredRole') || null,
+    job_title: val('preferredRole') || null,
+    experience_level: val('experienceLevel') || null,
+    work_arrangement: val('workArrangement') || null,
+    preferred_job_type: val('workArrangement') || null,
+    salary_min: salaryMin,
+    salary_max: salaryMax,
+    salary_range: salaryRange,
+    key_skills: val('keySkills') || null,
+    skills_summary: val('keySkills') || null,
+    languages: val('languages') || null,
+    about_text: val('aboutText') || null,
+    bio: val('aboutText') || null,
+
+    current_town: val('currentTown') || null,
+    county: val('county') || null,
+    location: val('currentTown') || val('county') || null,
+    home_address: val('homeAddress') || null,
+    home_village: val('homeVillage') || null,
+    home_county: val('homeCounty') || null,
+    willing_to_relocate: relocate,
+    willing_relocate: relocate,
+
+    edu_level: val('eduLevel') || null,
+    edu_institution: val('eduInstitution') || null,
+    edu_year: val('eduYear') ? Number(val('eduYear')) : null,
+    edu_field: val('eduField') || null,
+    education: val('eduLevel') || null,
+
+    work_experience: cleanExperiences,
+    experiences: cleanExperiences,
+
+    date_of_birth: val('dob') || null,
+    dob: val('dob') || null,
+    gender: val('gender') || null,
+    disability: disability,
+    id_type: val('idType') || null,
+    national_id: val('nationalId') || null,
+    id_number: val('nationalId') || null,
+
+    referees: cleanReferees,
+
+    profile_photo_url: uploadedUrls.profile_photo_url,
+    edu_cert_url: uploadedUrls.edu_cert_url,
+    id_front_url: uploadedUrls.id_front_url,
+    id_back_url: uploadedUrls.id_back_url,
+    selfie_url: uploadedUrls.selfie_url,
+
+    verification_stage: hasAllVerificationDocs ? 'submitted' : 'unverified',
+    verification_requested_at: hasAllVerificationDocs ? new Date().toISOString() : null,
+    profile_visible: true,
+    job_seeking: true,
+    looking_for_job: true,
+    last_updated_at: new Date().toISOString()
+  };
+
   try {
-    // Prepare registration data
-    const registrationData = {
-      fullName,
-      email,
-      phone,
-      password,
-      role: 'employee',
-      ipAddress: userIP,
-      location: userLocation,
-      registrationTime: new Date().toISOString(),
-      consentedToTerms: termsCheck,
-      consentedToDataCollection: dataCheck
-    };
-    
-    console.log('Registration data collected:', registrationData);
-    
-    // Here you would typically call your backend API
-    // For now, simulate registration
-    await simulateRegistrationAPI(registrationData);
-    
-    // Success
-    showAlert('alertSuccess', 'alertSuccessText', 'Account created successfully! Redirecting to profile setup...');
-    
-    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    
-    // Redirect to profile setup after delay
-    setTimeout(() => {
-      window.location.href = 'employee-profile-setup.html';
-    }, 2000);
-    
-  } catch (error) {
-    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    showAlert('alertError', 'alertErrorText', error.message || 'Registration failed. Please try again.');
+    const { error } = await dbClient.from('worker_profiles').upsert(payload, { onConflict: 'session_id' });
+    if (error) throw error;
+
+    // Welcome-to-profile notification (best effort, non-blocking)
+    dbClient.from('notifications').insert({
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      type: 'profile_completed',
+      title: 'Profile submitted! 🎉',
+      message: hasAllVerificationDocs
+        ? 'Your profile is complete and pending verification review.'
+        : 'Your profile is saved. Add your ID documents anytime to get verified faster.',
+      is_read: false
+    }).then(function(){}, function(){});
+
+    showAlert('success', 'Profile saved! Redirecting to your dashboard…');
+    setTimeout(function () {
+      window.location.href = 'employee-dashboard.html';
+    }, 1500);
+  } catch (e) {
+    console.error('[SoundsCare] Profile submit failed:', e);
+    showAlert('error', e.message || 'Something went wrong saving your profile. Please try again.');
+    setNextLoading(false);
   }
 }
 
-async function simulateRegistrationAPI(data) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() > 0.1) {
-        resolve({ success: true });
-      } else {
-        reject(new Error('Server temporarily unavailable. Please try again.'));
-      }
-    }, 1500);
-  });
+function setNextLoading(loading) {
+  document.getElementById('nextBtn').disabled = loading;
+  document.getElementById('backBtn').disabled = loading;
+  document.getElementById('nextSpinner').style.display = loading ? 'inline-block' : 'none';
+  document.getElementById('nextBtnText').style.display = loading ? 'none' : 'inline';
+  document.getElementById('nextBtnIcon').style.display = loading ? 'none' : 'inline';
 }
 
 // ============================================================
 // ALERT UTILITIES
 // ============================================================
-function showAlert(alertId, textId, message) {
-  const alertEl = document.getElementById(alertId);
-  const textEl = document.getElementById(textId);
-  textEl.textContent = message;
-  alertEl.classList.add('show');
-  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+function showAlert(type, message) {
+  const id = type === 'error' ? 'alertError' : 'alertSuccess';
+  const textId = type === 'error' ? 'alertErrorText' : 'alertSuccessText';
+  document.getElementById(textId).textContent = message;
+  document.getElementById(id).classList.add('show');
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
 function hideAllAlerts() {
-  ['alertError', 'alertSuccess', 'alertInfo'].forEach(id => {
-    document.getElementById(id).classList.remove('show');
-  });
+  ['alertError', 'alertSuccess'].forEach(function (id) { document.getElementById(id).classList.remove('show'); });
 }
-
-function setBtnLoading(btnId, spinnerId, textId, loading, text) {
-  const btn = document.getElementById(btnId);
-  const spinner = document.getElementById(spinnerId);
-  const textEl = document.getElementById(textId);
-  
-  btn.disabled = loading;
-  spinner.style.display = loading ? 'inline-block' : 'none';
-  if (text) textEl.textContent = text;
-}
-
-// ============================================================
-// INITIALIZE ON PAGE LOAD
-// ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-  detectUserLocation();
-  updateRegisterButtonState();
-});
-
 </script>
 
 </body>
