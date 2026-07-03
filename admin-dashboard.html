@@ -97,6 +97,7 @@ body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg);
 .sb-badge { margin-left: auto; background: var(--rose); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
 .sb-badge.sky { background: var(--sky); }
 .sb-badge.green { background: var(--green); }
+.sb-badge.amber { background: var(--amber); }
 .sb-footer { padding: 1rem 1.2rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 .sb-maintenance { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; }
 .toggle-switch { width: 36px; height: 20px; border-radius: 10px; background: var(--border); cursor: pointer; position: relative; transition: .2s; border: none; }
@@ -428,8 +429,11 @@ tr:hover td { background: rgba(27,107,69,.02); }
     <button class="sb-link" onclick="switchTab(event,'jobreqs')"><i class="bi bi-file-earmark-plus-fill"></i><span>Job Post Reqs</span><span class="sb-badge" id="badge-jobreqs">0</span></button>
     <button class="sb-link" onclick="switchTab(event,'profilereqs')"><i class="bi bi-person-plus-fill"></i><span>Profile Post Reqs</span><span class="sb-badge" id="badge-preqs">0</span></button>
     <button class="sb-link" onclick="switchTab(event,'trash')"><i class="bi bi-trash3-fill"></i><span>Trash</span></button>
+    <button class="sb-link" onclick="switchTab(event,'payments')"><i class="bi bi-cash-coin"></i><span>Payments</span><span class="sb-badge amber" id="badge-pay">0</span></button>
     <div class="sb-section">Communications</div>
     <button class="sb-link" onclick="switchTab(event,'comms')"><i class="bi bi-envelope-fill"></i><span>Email / SMS</span></button>
+    <button class="sb-link" onclick="switchTab(event,'newsletter')"><i class="bi bi-newspaper"></i><span>Newsletter</span><span class="sb-badge sky" id="badge-newsletter">0</span></button>
+    <button class="sb-link" onclick="switchTab(event,'tickets')"><i class="bi bi-life-preserver"></i><span>Support Tickets</span><span class="sb-badge" id="badge-tickets">0</span></button>
     <div class="sb-section">System</div>
     <button class="sb-link" onclick="switchTab(event,'settings')"><i class="bi bi-gear-fill"></i><span>Settings</span></button>
   </nav>
@@ -654,6 +658,73 @@ tr:hover td { background: rgba(27,107,69,.02); }
       </div>
       <div class="section">
         <div class="table-wrap"><table><thead><tr><th>Type</th><th>Entity</th><th>Deleted By</th><th>Deleted At</th><th>Actions</th></tr></thead><tbody id="trash-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== PAYMENTS ==================== -->
+    <div id="tab-payments" class="tab-content">
+      <div class="page-head">
+        <div><h1>Payments</h1><p>Interview fees, salary fees &amp; wallet transactions</p></div>
+        <button class="btn btn-primary btn-sm" onclick="openAddPaymentModal()"><i class="bi bi-plus-lg"></i> Add Payment</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-hourglass-split"></i> Pending</div><div class="stat-value amber" id="pay-stat-pending">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-check-circle"></i> Completed</div><div class="stat-value green" id="pay-stat-completed">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-x-circle"></i> Failed</div><div class="stat-value rose" id="pay-stat-failed">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-stack"></i> Total (Ksh)</div><div class="stat-value accent" id="pay-stat-total">0</div></div>
+      </div>
+      <div class="section">
+        <div class="search-bar">
+          <input class="search-input" id="pay-search" placeholder="🔍 Search by user, phone, reference…" oninput="filterPayments()">
+          <select class="filter-select" id="pay-status-filter" onchange="filterPayments()">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="payments-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== NEWSLETTER ==================== -->
+    <div id="tab-newsletter" class="tab-content">
+      <div class="page-head">
+        <div><h1>Newsletter</h1><p>Job-update subscribers and admin broadcasts</p></div>
+        <button class="btn btn-primary btn-sm" onclick="openComposeNewsletterModal()"><i class="bi bi-pencil-square"></i> Compose Newsletter</button>
+      </div>
+      <div class="sub-tabs">
+        <button class="tab-btn active" onclick="switchNewsletterTab(event,'subs')"><i class="bi bi-people"></i> Subscribers</button>
+        <button class="tab-btn" onclick="switchNewsletterTab(event,'sent')"><i class="bi bi-send-check"></i> Sent Newsletters</button>
+      </div>
+      <div id="newsletter-tab-subs" class="tab-content active">
+        <div class="section">
+          <div class="table-wrap"><table><thead><tr><th>Email</th><th>Job Updates</th><th>News</th><th>Source Page</th><th>Status</th><th>Subscribed</th></tr></thead><tbody id="newsletter-subs-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+      <div id="newsletter-tab-sent" class="tab-content">
+        <div class="section">
+          <div class="table-wrap"><table><thead><tr><th>Subject</th><th>Target</th><th>Recipients</th><th>Status</th><th>Sent At</th></tr></thead><tbody id="newsletter-sent-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SUPPORT TICKETS ==================== -->
+    <div id="tab-tickets" class="tab-content">
+      <div class="page-head">
+        <div><h1>Support Tickets</h1><p>Direct support conversations between admin and users</p></div>
+      </div>
+      <div class="section">
+        <div class="search-bar">
+          <select class="filter-select" id="ticket-status-filter" onchange="filterTickets()">
+            <option value="">All Status</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Subject</th><th>User</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="tickets-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -1073,6 +1144,82 @@ tr:hover td { background: rgba(27,107,69,.02); }
   </div>
 </div>
 
+<!-- COMPOSE NEWSLETTER -->
+<div id="compose-newsletter-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-pencil-square"></i> Compose Newsletter</h2><button class="modal-close" onclick="closeModal('compose-newsletter-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Send To</label>
+        <select id="nl-target" onchange="toggleNewsletterTarget()">
+          <option value="all">All Subscribers</option>
+          <option value="job_update_subscribers">Job-Update Subscribers Only</option>
+          <option value="individual">Individual Email</option>
+        </select>
+      </div>
+      <div class="form-group" id="nl-individual-group" style="display:none"><label>Recipient Email</label><input id="nl-recipient-email" placeholder="user@example.com"></div>
+      <div class="form-group"><label>Subject</label><input id="nl-subject" placeholder="Newsletter subject"></div>
+      <div class="form-group"><label>Body</label><textarea id="nl-body" placeholder="Write your newsletter…" style="min-height:160px"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('compose-newsletter-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="sendNewsletter()"><i class="bi bi-send"></i> Send Newsletter</button>
+    </div>
+  </div>
+</div>
+
+<!-- TICKET DETAIL -->
+<div id="ticket-detail-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-life-preserver"></i> <span id="ticket-detail-subject">Ticket</span></h2><button class="modal-close" onclick="closeModal('ticket-detail-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px" id="ticket-detail-meta"></div>
+      <div id="ticket-thread" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:10px"></div>
+      <div class="form-group"><label>Reply</label><textarea id="ticket-reply-msg" placeholder="Type a reply to the user…"></textarea></div>
+      <div class="form-group"><label>Status</label>
+        <select id="ticket-status-select">
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('ticket-detail-modal')">Close</button>
+      <button class="btn btn-primary" onclick="sendTicketReply()"><i class="bi bi-reply"></i> Reply &amp; Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PAYMENT -->
+<div id="add-payment-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-cash-coin"></i> Add Payment</h2><button class="modal-close" onclick="closeModal('add-payment-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>User Email</label><input id="pay-user-email" placeholder="user@example.com"></div>
+      <div class="form-group"><label>Type</label>
+        <select id="pay-type">
+          <option value="interview_fee">Interview Fee</option>
+          <option value="salary_fee">First Salary Fee</option>
+          <option value="wallet_topup">Wallet Top-up</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Amount (Ksh)</label><input id="pay-amount" type="number" placeholder="2000"></div>
+      <div class="form-group"><label>Method</label>
+        <select id="pay-method"><option value="mpesa">M-Pesa</option><option value="airtel">Airtel Money</option><option value="manual">Manual / Cash</option></select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="pay-status-input"><option value="completed">Completed</option><option value="pending">Pending</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-payment-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()"><i class="bi bi-check-lg"></i> Add Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast-stack"></div>
 
@@ -1086,6 +1233,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let allWorkers = [], allEmployers = [], allUsers = [], allConversations = [], allNotifications = [], allJobs = [], allApplications = [], allTrash = [], allEmailLogs = [], allSmsLogs = [], allJobReqs = [], allProfileReqs = [];
+let allVerificationReqs = [], allPayments = [], allNewsletterSubs = [], allNewslettersSent = [], allTickets = [];
 let activeConvId = null;
 let maintenanceMode = false;
 let currentConvTab = 'all';
@@ -1215,7 +1363,7 @@ function setupRealtimeSubscriptions(){
 // ============================================================
 async function loadAll(){
   try{
-    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr]=await Promise.all([
+    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk]=await Promise.all([
       sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
@@ -1228,6 +1376,11 @@ async function loadAll(){
       sb.from('sms_logs').select('*').order('created_at',{ascending:false}).limit(100),
       sb.from('job_post_requests').select('*').order('created_at',{ascending:false}),
       sb.from('profile_post_requests').select('*').order('created_at',{ascending:false}),
+      sb.from('profile_verification_requests').select('*').order('created_at',{ascending:false}),
+      sb.from('payments').select('*').order('created_at',{ascending:false}).limit(300),
+      sb.from('newsletter_subscribers').select('*').order('created_at',{ascending:false}),
+      sb.from('admin_newsletters').select('*').order('created_at',{ascending:false}),
+      sb.from('support_tickets').select('*').order('created_at',{ascending:false}),
     ]);
     allWorkers=w.data||[];
     allEmployers=ep.data||[];
@@ -1241,11 +1394,17 @@ async function loadAll(){
     allSmsLogs=sl.data||[];
     allJobReqs=jr.data||[];
     allProfileReqs=pr.data||[];
+    allVerificationReqs=vr.data||[];
+    allPayments=pay.data||[];
+    allNewsletterSubs=nls.data||[];
+    allNewslettersSent=nlsent.data||[];
+    allTickets=tk.data||[];
 
     renderDashboard();renderUsers();renderEmployees();renderEmployers();
     renderConversations();renderNotifications();renderJobs();
     renderJobReqs();renderProfileReqs();renderTrash();
     renderEmailLogs();renderSmsLogs();
+    renderPayments();renderNewsletterSubs();renderNewslettersSent();renderTickets();
     updateBadges();
   }catch(err){showToast('err','Error loading data: '+err.message);}
 }
@@ -1704,7 +1863,7 @@ function renderTrash(){
   document.getElementById('trash-tbody').innerHTML=allTrash.map(t=>`
     <tr>
       <td><span class="badge badge-muted">${t.entity_type}</span></td>
-      <td>${t.entity_id?.slice(0,12)||'—'}</td>
+      <td>${t.entity_id?.slice(0,12)||'—'}<br><small style="color:var(--muted)">${esc(t.deletion_reason||'No reason given')}</small></td>
       <td>${t.deleted_by?.slice(0,8)||'admin'}</td>
       <td>${fmtDate(t.deleted_at)}</td>
       <td><div class="actions-cell">
@@ -1845,18 +2004,43 @@ async function viewEmployeeProfile(id){
     ${docs.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docs.map(d=>`<div class="doc-thumb"><img src="${d.url}" onerror="this.style.display='none'"><a href="${d.url}" target="_blank">${d.label} ↗</a></div>`).join('')}</div></div>`:''}
     ${w.about_text?`<div class="profile-section"><h3>About</h3><p style="font-size:13px;line-height:1.6">${esc(w.about_text)}</p></div>`:''}
     ${w.admin_notes?`<div class="profile-section"><h3>Admin Notes</h3><p style="font-size:13px;color:var(--amber)">${esc(w.admin_notes)}</p></div>`:''}
+    <div class="profile-section"><h3><i class="bi bi-clipboard-check"></i> Approval Checklist</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Inspect the ID documents above, then tick each item before approving.</p>
+    <div style="display:flex;flex-direction:column;gap:8px" id="checklist-box">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="chk-name" onchange="saveChecklistItem('${w.id}','name_matches_id',this.checked)"> Name on profile matches Name on ID</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="chk-dob" onchange="saveChecklistItem('${w.id}','dob_matches_id',this.checked)"> Date of birth matches ID</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="chk-consent" onchange="saveChecklistItem('${w.id}','consent_confirmed',this.checked)"> Consent / everything on profile matches and is confirmed</label>
+    </div></div>
     <div class="profile-section"><h3>Admin Actions</h3>
     <div class="actions-cell" style="flex-wrap:wrap">
-      <button class="btn btn-sm btn-primary" onclick="approveEmployee('${w.id}',${!w.approved_at})">${w.approved_at?'Unapprove':'Approve'}</button>
+      <button class="btn btn-sm btn-primary" id="approve-emp-inline-btn" onclick="approveEmployee('${w.id}',${!w.approved_at})">${w.approved_at?'Unapprove':'Approve'}</button>
       <button class="btn btn-sm btn-amber" onclick="toggleBanWorker('${w.id}',${!!w.ban_reason})">${w.ban_reason?'Unban':'Ban'}</button>
       <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${w.email}','${esc(w.full_name)}')"><i class="bi bi-chat"></i> Message</button>
       <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${w.id}')"><i class="bi bi-camera-video"></i> Interviews</button>
       <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${w.session_id||w.id}')"><i class="bi bi-cash"></i> Payments</button>
     </div></div>`;
 
+  // Pre-fill checklist from existing verification request, if any
+  const vreq=allVerificationReqs.find(v=>v.worker_id===w.id||v.profile_id===w.id||v.entity_id===w.id);
+  if(vreq){
+    document.getElementById('chk-name').checked=!!vreq.name_matches_id;
+    document.getElementById('chk-dob').checked=!!vreq.dob_matches_id;
+    document.getElementById('chk-consent').checked=!!vreq.consent_confirmed;
+  }
+
   document.getElementById('approve-emp-btn').textContent=w.approved_at?'Unapprove':'Approve Profile';
   document.getElementById('approve-emp-btn').onclick=()=>approveEmployee(w.id,!w.approved_at);
   openModal('emp-profile-modal');
+}
+async function saveChecklistItem(workerId,field,value){
+  let vreq=allVerificationReqs.find(v=>v.worker_id===workerId);
+  if(vreq){
+    await sb.from('profile_verification_requests').update({[field]:value}).eq('id',vreq.id);
+    vreq[field]=value;
+  }else{
+    const {data,error}=await sb.from('profile_verification_requests').insert({worker_id:workerId,[field]:value,reviewed_by:currentUser.id,status:'pending'}).select().single();
+    if(!error&&data)allVerificationReqs.push(data);
+  }
 }
 
 async function viewEmployerProfile(id){
@@ -1899,10 +2083,26 @@ async function viewEmployerProfile(id){
 // EMPLOYEE / EMPLOYER ACTIONS
 // ============================================================
 async function approveEmployee(id,approve){
+  if(approve){
+    const vreq=allVerificationReqs.find(v=>v.worker_id===id);
+    if(!vreq||!vreq.name_matches_id||!vreq.dob_matches_id||!vreq.consent_confirmed){
+      showToast('err','Complete the approval checklist (name, DOB, consent) before approving');
+      return;
+    }
+  }
   const update=approve?{approved_at:new Date().toISOString(),status:'approved'}:{approved_at:null,status:'pending'};
   await sb.from('worker_profiles').update(update).eq('id',id);
   const w=allWorkers.find(w=>w.id===id);if(w){Object.assign(w,update);}
-  renderEmployees();showToast('ok',approve?'Employee approved':'Approval removed');
+  if(approve){
+    const vreq=allVerificationReqs.find(v=>v.worker_id===id);
+    if(vreq)await sb.from('profile_verification_requests').update({status:'approved',reviewed_by:currentUser.id,reviewed_at:new Date().toISOString()}).eq('id',vreq.id);
+    if(w?.email){
+      const msg=`Hi ${w.full_name||''}, great news — your SoundsCare profile has been approved! You can now be discovered by employers.`;
+      await sb.from('notifications').insert({title:'Account Approved',message:msg,type:'success',user_email:w.email,source_type:'admin'});
+      await sb.from('email_logs').insert({recipient_email:w.email,subject:'Your SoundsCare account has been approved',body_preview:msg.slice(0,200),status:'pending',created_at:new Date().toISOString()});
+    }
+  }
+  renderEmployees();showToast('ok',approve?'Employee approved — user notified':'Approval removed');
 }
 async function toggleBanWorker(id,unban){
   if(!unban){
@@ -1919,19 +2119,31 @@ async function toggleVerifyEmployer(id,verify){
   const e=allEmployers.find(e=>e.id===id);if(e){e.is_verified=verify;}
   renderEmployers();showToast('ok',verify?'Employer verified':'Verification removed');
 }
+async function notifyAndEmailDeletion(email,name,reason){
+  if(!email)return;
+  const msg=`Hi ${name||''}, your SoundsCare account has been deleted. Reason: ${reason}. If you believe this is a mistake, please contact support.`;
+  try{
+    await sb.from('notifications').insert({title:'Account Deleted',message:msg,type:'alert',user_email:email,source_type:'admin'});
+    await sb.from('email_logs').insert({recipient_email:email,subject:'Your SoundsCare account has been deleted',body_preview:msg.slice(0,200),status:'pending',created_at:new Date().toISOString()});
+  }catch(err){console.error('notifyAndEmailDeletion',err);}
+}
 async function deleteWorker(id){
-  if(!confirm('Move this worker to trash?'))return;
+  const reason=prompt('Reason for deleting this worker profile?');
+  if(!reason)return;
   const w=allWorkers.find(w=>w.id===id);
-  await sb.from('trash_bin').insert({entity_type:'worker_profile',entity_id:id,entity_data:w,deleted_by:currentUser.id});
+  await sb.from('trash_bin').insert({entity_type:'worker_profile',entity_id:id,entity_data:w,deleted_by:currentUser.id,deletion_reason:reason});
   await sb.from('worker_profiles').update({is_deleted:true}).eq('id',id);
-  allWorkers=allWorkers.filter(w=>w.id!==id);renderEmployees();updateBadges();showToast('ok','Moved to trash');
+  await notifyAndEmailDeletion(w?.email,w?.full_name,reason);
+  allWorkers=allWorkers.filter(w=>w.id!==id);renderEmployees();updateBadges();showToast('ok','Deleted, moved to trash — user notified');
 }
 async function deleteEmployer(id){
-  if(!confirm('Delete this employer?'))return;
+  const reason=prompt('Reason for deleting this employer?');
+  if(!reason)return;
   const e=allEmployers.find(e=>e.id===id);
-  await sb.from('trash_bin').insert({entity_type:'employer_profile',entity_id:id,entity_data:e,deleted_by:currentUser.id});
+  await sb.from('trash_bin').insert({entity_type:'employer_profile',entity_id:id,entity_data:e,deleted_by:currentUser.id,deletion_reason:reason});
   await sb.from('employer_profiles').update({is_deleted:true}).eq('id',id);
-  allEmployers=allEmployers.filter(e=>e.id!==id);renderEmployers();showToast('ok','Moved to trash');
+  await notifyAndEmailDeletion(e?.email,e?.full_name,reason);
+  allEmployers=allEmployers.filter(e=>e.id!==id);renderEmployers();showToast('ok','Deleted, moved to trash — user notified');
 }
 async function toggleUserActive(id,isActive){
   await sb.from('users').update({is_active:!isActive}).eq('id',id);
@@ -1939,10 +2151,13 @@ async function toggleUserActive(id,isActive){
   renderUsers();showToast('ok',!isActive?'User activated':'User paused');
 }
 async function deleteUser(id){
-  if(!confirm('Delete this user?'))return;
+  const reason=prompt('Reason for deleting this user? (visible in trash log, sent to user by email)');
+  if(!reason)return;
   const u=allUsers.find(u=>u.id===id);
-  await sb.from('trash_bin').insert({entity_type:'user',entity_id:id,entity_data:u,deleted_by:currentUser.id});
-  allUsers=allUsers.filter(u=>u.id!==id);renderUsers();showToast('ok','Moved to trash');
+  await sb.from('trash_bin').insert({entity_type:'user',entity_id:id,entity_data:u,deleted_by:currentUser.id,deletion_reason:reason});
+  await sb.from('users').update({is_active:false}).eq('id',id);
+  await notifyAndEmailDeletion(u?.email,u?.full_name,reason);
+  allUsers=allUsers.filter(u=>u.id!==id);renderUsers();showToast('ok','Deleted, moved to trash — user notified');
 }
 
 // ============================================================
@@ -2232,6 +2447,204 @@ async function sendComms(){
 }
 
 // ============================================================
+// NEWSLETTER
+// ============================================================
+function renderNewsletterSubs(){
+  document.getElementById('newsletter-subs-tbody').innerHTML=allNewsletterSubs.map(s=>`
+    <tr>
+      <td>${esc(s.email)}</td>
+      <td>${s.subscribe_job_updates?'<span class="badge badge-green">Yes</span>':'<span class="badge badge-muted">No</span>'}</td>
+      <td>${s.subscribe_news?'<span class="badge badge-green">Yes</span>':'<span class="badge badge-muted">No</span>'}</td>
+      <td>${esc(s.source_page||'—')}</td>
+      <td>${s.status==='subscribed'?'<span class="badge badge-green">Subscribed</span>':'<span class="badge badge-rose">Unsubscribed</span>'}</td>
+      <td>${fmtDate(s.created_at)}</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No subscribers yet</td></tr>';
+}
+function renderNewslettersSent(){
+  document.getElementById('newsletter-sent-tbody').innerHTML=allNewslettersSent.map(n=>`
+    <tr>
+      <td>${esc(n.subject)}</td>
+      <td><span class="badge badge-sky">${n.target_type}</span></td>
+      <td>${n.recipient_count||0}</td>
+      <td>${n.status==='sent'?'<span class="badge badge-green">Sent</span>':n.status==='failed'?'<span class="badge badge-rose">Failed</span>':'<span class="badge badge-amber">Draft</span>'}</td>
+      <td>${fmtDate(n.sent_at||n.created_at)}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">No newsletters sent yet</td></tr>';
+}
+function switchNewsletterTab(e,tab){
+  document.querySelectorAll('#tab-newsletter .tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('newsletter-tab-'+tab)?.classList.add('active');
+  document.querySelectorAll('#tab-newsletter .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(e)e.target.classList.add('active');
+}
+function openComposeNewsletterModal(){
+  document.getElementById('nl-target').value='all';
+  document.getElementById('nl-recipient-email').value='';
+  document.getElementById('nl-subject').value='';
+  document.getElementById('nl-body').value='';
+  toggleNewsletterTarget();
+  openModal('compose-newsletter-modal');
+}
+function toggleNewsletterTarget(){
+  const t=document.getElementById('nl-target').value;
+  document.getElementById('nl-individual-group').style.display=t==='individual'?'block':'none';
+}
+async function sendNewsletter(){
+  const target=document.getElementById('nl-target').value;
+  const subject=document.getElementById('nl-subject').value;
+  const body=document.getElementById('nl-body').value;
+  const recipientEmail=document.getElementById('nl-recipient-email').value;
+  if(!subject||!body){showToast('err','Subject and body required');return;}
+  if(target==='individual'&&!recipientEmail){showToast('err','Recipient email required');return;}
+  try{
+    let recipients=[];
+    if(target==='individual'){
+      recipients=[recipientEmail];
+    }else if(target==='job_update_subscribers'){
+      recipients=allNewsletterSubs.filter(s=>s.status==='subscribed'&&s.subscribe_job_updates).map(s=>s.email);
+    }else{
+      recipients=allNewsletterSubs.filter(s=>s.status==='subscribed').map(s=>s.email);
+    }
+    const {data:nl,error}=await sb.from('admin_newsletters').insert({
+      admin_id:currentUser.id,subject,body,target_type:target,
+      recipient_user_id:null,recipient_count:recipients.length,status:'sent',sent_at:new Date().toISOString()
+    }).select().single();
+    if(error){showToast('err',error.message);return;}
+    if(recipients.length){
+      const rows=recipients.map(email=>({recipient_email:email,subject,body_preview:body.slice(0,200),status:'pending',created_at:new Date().toISOString()}));
+      await sb.from('email_logs').insert(rows);
+    }
+    allNewslettersSent.unshift(nl);
+    closeModal('compose-newsletter-modal');renderNewslettersSent();
+    showToast('ok',`Newsletter queued for ${recipients.length} recipient(s)`);
+  }catch(err){showToast('err',err.message);}
+}
+
+// ============================================================
+// SUPPORT TICKETS
+// ============================================================
+function renderTickets(){
+  let list=allTickets;
+  const status=document.getElementById('ticket-status-filter')?.value;
+  if(status)list=list.filter(t=>t.status===status);
+  document.getElementById('tickets-tbody').innerHTML=list.map(t=>{
+    const u=allUsers.find(u=>u.id===t.user_id);
+    return `<tr>
+      <td>${esc(t.subject)}</td>
+      <td>${esc(u?.full_name||u?.email||t.user_id?.slice(0,8)||'—')}</td>
+      <td>${esc(t.category||'general')}</td>
+      <td><span class="badge badge-${t.priority==='urgent'?'rose':t.priority==='high'?'amber':'muted'}">${t.priority}</span></td>
+      <td><span class="badge badge-${t.status==='open'?'sky':t.status==='resolved'?'green':t.status==='closed'?'muted':'amber'}">${t.status.replace('_',' ')}</span></td>
+      <td>${fmtDate(t.created_at)}</td>
+      <td><button class="btn btn-sm btn-primary" onclick="openTicketDetail('${t.id}')"><i class="bi bi-chat-square-text"></i> Open</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No support tickets</td></tr>';
+}
+function filterTickets(){renderTickets();}
+let currentTicketId=null;
+async function openTicketDetail(id){
+  currentTicketId=id;
+  const t=allTickets.find(t=>t.id===id);if(!t)return;
+  const u=allUsers.find(u=>u.id===t.user_id);
+  document.getElementById('ticket-detail-subject').textContent=t.subject;
+  document.getElementById('ticket-detail-meta').innerHTML=`
+    <span class="badge badge-muted">${esc(u?.full_name||u?.email||'Unknown user')}</span>
+    <span class="badge badge-sky">${esc(t.category||'general')}</span>
+    <span class="badge badge-amber">${t.priority}</span>`;
+  document.getElementById('ticket-status-select').value=t.status;
+  document.getElementById('ticket-reply-msg').value='';
+  const {data:msgs}=await sb.from('support_ticket_messages').select('*').eq('ticket_id',id).order('created_at',{ascending:true});
+  document.getElementById('ticket-thread').innerHTML=(msgs||[]).map(m=>`
+    <div style="align-self:${m.sender_type==='admin'?'flex-end':'flex-start'};max-width:75%;background:${m.sender_type==='admin'?'var(--brand-soft)':'#fff'};border:1px solid var(--border);border-radius:10px;padding:8px 12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${m.sender_type==='admin'?'Admin':'User'} • ${fmtDate(m.created_at)}</div>
+      <div style="font-size:13px">${esc(m.message)}</div>
+    </div>`).join('')||'<p style="color:var(--muted);font-size:13px">No messages yet</p>';
+  openModal('ticket-detail-modal');
+}
+async function sendTicketReply(){
+  if(!currentTicketId)return;
+  const message=document.getElementById('ticket-reply-msg').value;
+  const status=document.getElementById('ticket-status-select').value;
+  if(!message){showToast('err','Write a reply first');return;}
+  try{
+    await sb.from('support_ticket_messages').insert({ticket_id:currentTicketId,sender_id:currentUser.id,sender_type:'admin',message});
+    const t=allTickets.find(t=>t.id===currentTicketId);
+    const update={status,updated_at:new Date().toISOString()};
+    if(status==='closed')update.closed_at=new Date().toISOString();
+    await sb.from('support_tickets').update(update).eq('id',currentTicketId);
+    if(t)Object.assign(t,update);
+    if(t?.user_id){
+      const u=allUsers.find(u=>u.id===t.user_id);
+      if(u?.email)await sb.from('notifications').insert({title:'Support ticket reply',message:message.slice(0,200),type:'info',user_email:u.email,source_type:'admin'});
+    }
+    closeModal('ticket-detail-modal');renderTickets();updateBadges();showToast('ok','Reply sent');
+  }catch(err){showToast('err',err.message);}
+}
+
+// ============================================================
+// PAYMENTS ADMIN
+// ============================================================
+function findUserLabel(userId){
+  const u=allUsers.find(u=>u.id===userId);
+  return u?(u.full_name||u.email||userId.slice(0,8)):(userId?userId.slice(0,8):'—');
+}
+function renderPayments(){
+  let list=allPayments;
+  const search=(document.getElementById('pay-search')?.value||'').toLowerCase();
+  const status=document.getElementById('pay-status-filter')?.value;
+  if(status)list=list.filter(p=>p.status===status);
+  if(search)list=list.filter(p=>findUserLabel(p.user_id).toLowerCase().includes(search)||(p.phone_used||'').toLowerCase().includes(search)||(p.transaction_id||'').toLowerCase().includes(search));
+  document.getElementById('payments-tbody').innerHTML=list.map(p=>`
+    <tr>
+      <td>${esc(findUserLabel(p.user_id))}</td>
+      <td>${esc(p.fee_type||'—')}</td>
+      <td>Ksh ${(+p.amount||0).toLocaleString()}</td>
+      <td>${esc(p.payment_method||'—')}</td>
+      <td><span class="badge badge-${p.status==='completed'?'green':p.status==='failed'?'rose':'amber'}">${p.status}</span></td>
+      <td>${fmtDate(p.created_at)}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-primary" onclick="setPaymentStatus('${p.id}','completed')">Mark Paid</button>
+        <button class="btn btn-sm btn-danger" onclick="setPaymentStatus('${p.id}','failed')">Mark Failed</button>
+      </div></td>
+    </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No payments yet</td></tr>';
+  const pending=allPayments.filter(p=>p.status==='pending').length;
+  const completed=allPayments.filter(p=>p.status==='completed').length;
+  const failed=allPayments.filter(p=>p.status==='failed').length;
+  const total=allPayments.filter(p=>p.status==='completed').reduce((s,p)=>s+(+p.amount||0),0);
+  setEl('pay-stat-pending',pending);setEl('pay-stat-completed',completed);setEl('pay-stat-failed',failed);setEl('pay-stat-total','Ksh '+total.toLocaleString());
+}
+function filterPayments(){renderPayments();}
+async function setPaymentStatus(id,status){
+  const update={status};
+  if(status==='completed')update.completed_at=new Date().toISOString();
+  await sb.from('payments').update(update).eq('id',id);
+  const p=allPayments.find(p=>p.id===id);if(p)Object.assign(p,update);
+  renderPayments();showToast('ok','Payment marked '+status);
+}
+function openAddPaymentModal(){
+  document.getElementById('pay-user-email').value='';
+  document.getElementById('pay-amount').value='';
+  openModal('add-payment-modal');
+}
+async function savePayment(){
+  const email=document.getElementById('pay-user-email').value;
+  const fee_type=document.getElementById('pay-type').value;
+  const amount=document.getElementById('pay-amount').value;
+  const payment_method=document.getElementById('pay-method').value;
+  const status=document.getElementById('pay-status-input').value;
+  if(!email||!amount){showToast('err','User email and amount required');return;}
+  const u=allUsers.find(u=>u.email===email);
+  if(!u){showToast('err','No user found with that email');return;}
+  try{
+    const insertData={user_id:u.id,amount:+amount,fee_type,payment_method,status,created_at:new Date().toISOString()};
+    if(status==='completed')insertData.completed_at=new Date().toISOString();
+    const {data,error}=await sb.from('payments').insert(insertData).select().single();
+    if(error){showToast('err',error.message);return;}
+    allPayments.unshift(data);
+    closeModal('add-payment-modal');renderPayments();showToast('ok','Payment added');
+  }catch(err){showToast('err',err.message);}
+}
+
+// ============================================================
 // SETTINGS
 // ============================================================
 async function createAdminUser(){
@@ -2271,6 +2684,9 @@ function updateBadges(){
   setEl('badge-jobs',allJobs.filter(j=>j.status==='active').length);
   setEl('badge-jobreqs',allJobReqs.filter(r=>r.status==='pending').length);
   setEl('badge-preqs',allProfileReqs.filter(r=>r.status==='pending').length);
+  setEl('badge-pay',allPayments.filter(p=>p.status==='pending').length);
+  setEl('badge-newsletter',allNewsletterSubs.filter(s=>s.status==='subscribed').length);
+  setEl('badge-tickets',allTickets.filter(t=>t.status==='open').length);
   const hasNotif=allNotifications.some(n=>!n.is_read);
   document.getElementById('notif-indicator').style.display=hasNotif?'block':'none';
 }
@@ -2284,7 +2700,7 @@ function switchTab(e,name){
   document.getElementById('tab-'+name)?.classList.add('active');
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
   if(e)e.target.closest('.sb-link')?.classList.add('active');
-  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings'};
+  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings',payments:'Payments',newsletter:'Newsletter',tickets:'Support Tickets'};
   document.getElementById('nav-title').textContent=titles[name]||name;
   if(name==='db')loadDBStats();
 }
