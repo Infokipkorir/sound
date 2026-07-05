@@ -321,6 +321,19 @@
     }
     .form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
+    /* PAYMENT METHOD LOGO CARDS */
+    .pay-method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .pay-method-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 4px; border: 2px solid var(--border); border-radius: 12px;
+      background: var(--card); cursor: pointer; transition: 0.18s; text-align: center;
+    }
+    .pay-method-card:hover { border-color: var(--brand); }
+    .pay-method-card.active { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 3px rgba(27,107,69,.12); }
+    .pay-method-card img { width: 30px; height: 30px; object-fit: contain; }
+    .pay-method-card .pay-method-emoji-fallback { font-size: 26px; display: none; }
+    .pay-method-card .pay-method-label { font-size: 10px; font-weight: 700; color: var(--ink); }
+
     /* BUTTONS */
     .btn {
       padding: 10px 16px; border: none; border-radius: 10px;
@@ -1287,12 +1300,36 @@
 
         <div class="form-group">
           <label>Payment Method</label>
-          <select id="pay-method" onchange="updatePaymentUI()">
+          <div class="pay-method-grid" id="pay-method-grid">
+            <div class="pay-method-card" data-method="wallet" onclick="selectPayMethod('wallet')">
+              <img src="walleticon.png" alt="Wallet" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="pay-method-emoji-fallback">💰</span>
+              <span class="pay-method-label">Wallet</span>
+            </div>
+            <div class="pay-method-card" data-method="mpesa" onclick="selectPayMethod('mpesa')">
+              <img src="mpesalogo.png" alt="M-Pesa" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="pay-method-emoji-fallback">📱</span>
+              <span class="pay-method-label">M-Pesa</span>
+            </div>
+            <div class="pay-method-card" data-method="airtel" onclick="selectPayMethod('airtel')">
+              <img src="airtellogo.png" alt="Airtel Money" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="pay-method-emoji-fallback">📞</span>
+              <span class="pay-method-label">Airtel</span>
+            </div>
+            <div class="pay-method-card" data-method="manual" onclick="selectPayMethod('manual')">
+              <img src="card.png" alt="Card / Paybill" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="pay-method-emoji-fallback">🏦</span>
+              <span class="pay-method-label">Paybill</span>
+            </div>
+          </div>
+          <!-- Hidden select kept in sync by selectPayMethod() so existing JS (updatePaymentUI, etc.)
+               that reads #pay-method.value continues to work unchanged. -->
+          <select id="pay-method" onchange="updatePaymentUI()" style="display:none;">
             <option value="">Choose…</option>
-            <option value="wallet">💰 Pay from Wallet Balance</option>
-            <option value="mpesa">📱 M-Pesa</option>
-            <option value="airtel">📞 Airtel Money</option>
-            <option value="manual">🏦 Paybill Deposit</option>
+            <option value="wallet">Wallet</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="airtel">Airtel Money</option>
+            <option value="manual">Paybill Deposit</option>
           </select>
         </div>
 
@@ -2136,7 +2173,7 @@ async function loadDashboard() {
     // 4. wallets (RLS: user_id = auth.uid())
     console.log('🔍 4️⃣ Loading wallet for user_id =', currentUser.id);
     const { data: walletData, error: wErr } = await sb.from('wallets')
-      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance')
+      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance')
       .eq('user_id', currentUser.id)
       .limit(1);
     const wallet = walletData?.[0] || null;
@@ -2157,6 +2194,10 @@ async function loadDashboard() {
       document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
       document.getElementById('paybill-account').textContent = wallet.account_number || '—';
       updateFeeStatus(wallet);
+      if (!wallet.account_number) {
+        // Every user needs an account number to pay via Paybill — generate one now.
+        ensureAccountNumber();
+      }
     } else {
       // Try worker_profiles for fee status fallback
       if (workerProfile) updateFeeStatus(workerProfile);
@@ -3475,12 +3516,30 @@ function updateFeeStatus(data) {
   // data can be wallet or worker_profiles — both have interview_fee_paid, first_salary_fee_paid
   const i = data.interview_fee_paid;
   const s = data.first_salary_fee_paid;
+
+  const fmtUntil = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return ' <span style="color:var(--muted);font-weight:500;">(until ' + d.toLocaleDateString('en-KE') + ')</span>';
+  };
+
   document.getElementById('fee-interview').innerHTML = i
-    ? '<span style="color:var(--green)">✓ Paid</span>'
+    ? '<span style="color:var(--green)">✓ Paid</span>' + fmtUntil(data.interview_fee_expires_at)
     : '<span style="color:var(--rose)">⚠️ Pending</span>';
   document.getElementById('fee-salary').innerHTML = s
-    ? '<span style="color:var(--green)">✓ Paid</span>'
+    ? '<span style="color:var(--green)">✓ Paid</span>' + fmtUntil(data.first_salary_fee_expires_at)
     : '<span style="color:var(--rose)">⚠️ Pending</span>';
+}
+
+function selectPayMethod(method) {
+  const select = document.getElementById('pay-method');
+  select.value = method;
+  document.querySelectorAll('.pay-method-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.method === method);
+  });
+  updatePaymentUI();
+  if (method === 'manual') ensureAccountNumber();
 }
 
 function updatePaymentUI() {
@@ -3510,10 +3569,10 @@ async function payFromWallet() {
     return;
   }
 
-  // Fetch live wallet balance first
+  // Fetch live wallet balance + outstanding_balance first
   console.log("📍 4️⃣ Fetching wallet for payFromWallet…");
   const { data: wallet, error: wErr } = await sb.from('wallets')
-    .select('balance, account_number')
+    .select('balance, outstanding_balance, account_number')
     .eq('user_id', currentUser.id)
     .limit(1);
   const walletRow = wallet?.[0] || null;
@@ -3524,43 +3583,56 @@ async function payFromWallet() {
   }
 
   const balance = parseFloat(walletRow.balance || 0);
+  const outstandingBefore = parseFloat(walletRow.outstanding_balance || 0);
   if (balance < amount) {
     showToast('err', 'bi-exclamation-circle', 'Insufficient Balance',
       `Your wallet has KES ${balance.toLocaleString('en-KE')} but KES ${amount.toLocaleString('en-KE')} is required.`);
     return;
   }
 
+  // Every user must have an account number before a payment can be recorded/reconciled
+  const acctNumber = walletRow.account_number || await ensureAccountNumber();
+  const txnRef = generateTransactionRef();
+
   const btn = document.querySelector('#wallet-form .btn-primary');
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
 
   try {
-    // 1. Deduct from wallet
+    // 1. Deduct from wallet AND bring down outstanding_balance by the amount paid.
+    //    (BUG FIX: previously only `balance` was updated here — `outstanding_balance`
+    //    was never touched anywhere in the front end, so it stayed stuck at whatever
+    //    value admin/DB last set it to, no matter how much a user paid.)
     const newBalance = balance - amount;
+    const newOutstanding = Math.max(0, outstandingBefore - amount);
     const { error: updateErr } = await sb.from('wallets')
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .update({ balance: newBalance, outstanding_balance: newOutstanding, updated_at: new Date().toISOString() })
       .eq('user_id', currentUser.id);
 
     if (updateErr) throw new Error(updateErr.message);
 
     // 2. Create payment record (status = completed, method = wallet)
+    //    BUG FIX: this used to reference `wallet.account_number` where `wallet` was
+    //    the raw Supabase array response (always undefined) instead of `walletRow`.
     const { error: payErr } = await sb.from('payments').insert({
       user_id: currentUser.id,
       amount,
       fee_type: feeType,
       payment_method: 'wallet',
       status: 'completed',
-      account_number: wallet.account_number || workerProfile?.account_number || null,
+      account_number: acctNumber || null,
       paybill_number: '400200',
+      transaction_id: txnRef,
     });
 
     if (payErr) {
       // Rollback wallet deduction on payment insert failure
-      await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
+      await sb.from('wallets').update({ balance, outstanding_balance: outstandingBefore }).eq('user_id', currentUser.id);
       throw new Error(payErr.message);
     }
 
-    // 3. Update fee flags on wallets table
+    // 3. Update fee flags on wallets table — this marks the fee "paid" until the
+    //    next cycle (interview fee valid 30 days, first salary fee valid 180 days).
     const feeUpdate = {};
     if (feeType === 'interview_fee') {
       feeUpdate.interview_fee_paid = true;
@@ -3584,9 +3656,16 @@ async function payFromWallet() {
 
     // 4. Update local UI
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('wallet-outstanding').textContent = 'KES ' + newOutstanding.toLocaleString('en-KE');
     document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('stat-outstanding').textContent = 'KES ' + newOutstanding.toLocaleString('en-KE');
     document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    updateFeeStatus({ interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid, first_salary_fee_paid: feeType === 'first_salary_fee' || workerProfile?.first_salary_fee_paid });
+    updateFeeStatus({
+      interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid,
+      first_salary_fee_paid: feeType === 'first_salary_fee' || workerProfile?.first_salary_fee_paid,
+      interview_fee_expires_at: feeUpdate.interview_fee_expires_at,
+      first_salary_fee_expires_at: feeUpdate.first_salary_fee_expires_at,
+    });
 
     // 5. Refresh payment history
     const { data: payments } = await sb.from('payments')
@@ -3603,7 +3682,7 @@ async function payFromWallet() {
     }
 
     showToast('ok', 'bi-check-circle', 'Payment Successful',
-      `KES ${amount.toLocaleString('en-KE')} deducted from your wallet.`);
+      `KES ${amount.toLocaleString('en-KE')} deducted from your wallet. Ref: ${txnRef}`);
     closeModal('modal-wallet');
 
   } catch (e) {
@@ -3622,8 +3701,8 @@ async function sendMpesaSTK() {
 
   showToast('info', 'bi-hourglass-split spin', 'Processing', 'Sending STK Push to ' + phone);
   setTimeout(async () => {
-    await createPayment(parseFloat(amount), 'mpesa', feeType, { mpesa_phone: phone, phone_used: phone });
-    showToast('ok', 'bi-check-circle', 'STK Sent', 'Check your phone for the M-Pesa prompt.');
+    const ref = await createPayment(parseFloat(amount), 'mpesa', feeType, { mpesa_phone: phone, phone_used: phone });
+    showToast('ok', 'bi-check-circle', 'STK Sent', `Check your phone for the M-Pesa prompt. Ref: ${ref || '—'}`);
   }, 1200);
 }
 
@@ -3635,8 +3714,8 @@ async function sendAirtelRequest() {
 
   showToast('info', 'bi-hourglass-split spin', 'Processing', 'Requesting Airtel payment…');
   setTimeout(async () => {
-    await createPayment(parseFloat(amount), 'airtel', feeType, { airtel_phone: phone, phone_used: phone });
-    showToast('ok', 'bi-check-circle', 'Sent', 'Check your Airtel Money app.');
+    const ref = await createPayment(parseFloat(amount), 'airtel', feeType, { airtel_phone: phone, phone_used: phone });
+    showToast('ok', 'bi-check-circle', 'Sent', `Check your Airtel Money app. Ref: ${ref || '—'}`);
   }, 1200);
 }
 
@@ -3646,18 +3725,69 @@ async function confirmReceipt() {
   const feeType = document.getElementById('fee-type').value;
   if (!receipt || !amount) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter receipt code and amount'); return; }
 
-  await createPayment(parseFloat(amount), 'manual', feeType, { bank_account: receipt });
-  showToast('ok', 'bi-check-circle', 'Submitted', 'Admin will verify within 24 hours.');
+  const ref = await createPayment(parseFloat(amount), 'manual', feeType, { bank_account: receipt });
+  showToast('ok', 'bi-check-circle', 'Submitted', `Admin will verify within 24 hours. Ref: ${ref || '—'}`);
   closeModal('modal-wallet');
+}
+
+// Generates a unique, human-readable reference number for every transaction so
+// each payment (wallet / M-Pesa / Airtel / Paybill) can be tracked and reconciled.
+function generateTransactionRef() {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+  return `SC-${ts}-${rand}`;
+}
+
+// Every user needs a Paybill account number before they can be asked to pay.
+// If the wallet doesn't have one yet, generate one deterministically from their
+// user id, save it to both `wallets` and `worker_profiles`, and reflect it in the UI.
+function generateAccountNumber(userId) {
+  const clean = (userId || '').replace(/-/g, '').toUpperCase();
+  return 'SC' + (clean.substring(0, 8) || Date.now().toString(36).toUpperCase());
+}
+
+async function ensureAccountNumber() {
+  try {
+    const { data: walletRow } = await sb.from('wallets')
+      .select('account_number')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (walletRow?.account_number) return walletRow.account_number;
+
+    const newAcct = generateAccountNumber(currentUser.id);
+    // upsert in case the user doesn't have a wallet row yet
+    const { error: upsertErr } = await sb.from('wallets')
+      .upsert({ user_id: currentUser.id, account_number: newAcct }, { onConflict: 'user_id' });
+    if (upsertErr) { console.warn('ensureAccountNumber upsert failed:', upsertErr.message); }
+
+    if (workerProfile?.id) {
+      await sb.from('worker_profiles').update({ account_number: newAcct }).eq('id', workerProfile.id);
+    }
+
+    const acctEl = document.getElementById('wallet-acct');
+    const paybillEl = document.getElementById('paybill-account');
+    if (acctEl) acctEl.textContent = 'Acct: ' + newAcct;
+    if (paybillEl) paybillEl.textContent = newAcct;
+
+    return newAcct;
+  } catch (e) {
+    console.warn('ensureAccountNumber failed:', e.message);
+    return null;
+  }
 }
 
 async function createPayment(amount, method, feeType, extra = {}) {
   try {
-    // Fetch account_number from wallet first
+    // Fetch account_number from wallet first — auto-generate one if missing so
+    // every user always has an account number to quote when paying via Paybill.
     const { data: wallet } = await sb.from('wallets')
       .select('account_number')
       .eq('user_id', currentUser.id)
       .maybeSingle();
+
+    const acctNumber = wallet?.account_number || workerProfile?.account_number || await ensureAccountNumber();
+    const txnRef = generateTransactionRef();
 
     const payload = {
       user_id: currentUser.id,
@@ -3665,8 +3795,9 @@ async function createPayment(amount, method, feeType, extra = {}) {
       fee_type: feeType,
       payment_method: method,
       status: method === 'manual' ? 'processing' : 'pending',
-      account_number: wallet?.account_number || workerProfile?.account_number || null,
+      account_number: acctNumber || null,
       paybill_number: '400200',
+      transaction_id: txnRef,
       ...extra,
     };
 
@@ -3686,8 +3817,10 @@ async function createPayment(amount, method, feeType, extra = {}) {
       console.error('❌ renderPaymentHistory failed:', payErr.message);
       document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
     }
+    return txnRef;
   } catch (e) {
     console.warn(e);
+    return null;
   }
 }
 
@@ -3704,7 +3837,7 @@ function renderPaymentHistory(payments) {
       <div>
         <div style="font-weight:700; font-size:13px; margin-bottom:2px;">KES ${parseFloat(p.amount || 0).toLocaleString('en-KE')}</div>
         <div style="font-size:11px; color:var(--muted);">${feeLabels[p.fee_type] || p.fee_type} · ${(p.payment_method || '').toUpperCase()}</div>
-        <div style="font-size:10px; color:var(--muted);">${p.transaction_id || ''}</div>
+        <div style="font-size:10px; color:var(--muted);">${p.transaction_id ? 'Ref: ' + p.transaction_id : ''}</div>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:${statusColors[p.status] || 'var(--muted)'}; text-transform:capitalize;">${p.status || '—'}</div>
@@ -3885,6 +4018,7 @@ function openModal(id) {
   // Briefly mark as just-opened so the overlay click listener won't immediately close it
   el.dataset.justOpened = '1';
   setTimeout(() => { delete el.dataset.justOpened; }, 300);
+  if (id === 'modal-wallet') ensureAccountNumber();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
