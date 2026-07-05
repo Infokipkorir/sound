@@ -246,10 +246,12 @@ input.ok{border-color:var(--green)}
       <div class="sec-lbl" style="border-top:none;padding-top:0;margin-top:0">Sign up faster</div>
       <div class="social-grid">
 
-        <!-- Google — Live OAuth -->
-        <button class="social-btn" id="btn-google" onclick="oauthSignUp('google')" type="button">
+        <!-- Google — Coming Soon (disabled until OAuth credentials are configured in Supabase) -->
+        <button class="social-btn" id="btn-google" type="button" onclick="oauthSignUp('google')"
+          style="opacity:.52;cursor:default;position:relative" tabindex="-1">
           <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
           <span id="btn-google-text">Continue with Google</span>
+          <span style="position:absolute;top:-9px;right:-6px;background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.06em;white-space:nowrap">SOON</span>
         </button>
 
         <!-- Facebook — Coming Soon -->
@@ -259,6 +261,7 @@ input.ok{border-color:var(--green)}
           <span>Facebook</span>
           <span style="position:absolute;top:-9px;right:-6px;background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.06em;white-space:nowrap">SOON</span>
         </button>
+
 
       </div>
 
@@ -497,28 +500,31 @@ function showToast(msg, icon) {
 
 // ============================================================
 // SOCIAL SIGN UP
-// Google  → live Supabase OAuth
-// Facebook → coming soon toast
+// Both Google and Facebook show "coming soon" for now.
+// Google OAuth is disabled here until real Client ID/Secret are
+// configured in Supabase Dashboard → Authentication → Providers → Google.
+// Once that's done, swap this back to the live signInWithOAuth flow
+// (kept below, commented out, ready to re-enable).
 // ============================================================
 async function oauthSignUp(provider) {
-
-  // Facebook is not ready yet
   if (provider === 'facebook') {
-    showToast('Facebook sign-up is coming soon. Use Google or email for now.', 'bi-clock-history');
+    showToast('Facebook sign-up is coming soon. Use email for now.', 'bi-clock-history');
     return;
   }
+  if (provider === 'google') {
+    showToast('Google sign-up is coming soon. Use email for now.', 'bi-clock-history');
+    return;
+  }
+}
 
-  if (provider !== 'google') return;
-
-  // Set loading state on the button
+/* ---- Live Google OAuth flow (re-enable once Supabase provider is configured) ----
+async function oauthSignUpGoogleLive() {
   var btn = document.getElementById('btn-google');
   var txt = document.getElementById('btn-google-text');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.7'; btn.style.cursor = 'wait'; }
   if (txt) txt.textContent = 'Redirecting to Google…';
 
   try {
-    // Redirect back to the callback page with role=employer so the
-    // callback knows to set this user as an employer in public.users
     var redirectTo = window.location.origin + '/auth/callback.html?role=employer';
 
     var result = await dbClient.auth.signInWithOAuth({
@@ -536,9 +542,6 @@ async function oauthSignUp(provider) {
       if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
       if (txt) txt.textContent = 'Continue with Google';
     }
-    // If no error, Supabase handles the browser redirect automatically.
-    // The loading state holds until the page navigates away.
-
   } catch(e) {
     console.error('[SoundsCare] Unexpected OAuth error:', e);
     showToast('Something went wrong. Please try again.', 'bi-exclamation-circle');
@@ -546,6 +549,7 @@ async function oauthSignUp(provider) {
     if (txt) txt.textContent = 'Continue with Google';
   }
 }
+---------------------------------------------------------------------------------- */
 
 // ============================================================
 // IP / VPN CHECK
