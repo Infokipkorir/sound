@@ -322,17 +322,43 @@
     .form-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
     /* PAYMENT METHOD LOGO CARDS */
-    .pay-method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .pay-method-card {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      padding: 12px 4px; border: 2px solid var(--border); border-radius: 12px;
-      background: var(--card); cursor: pointer; transition: 0.18s; text-align: center;
+    .pay-method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
     }
-    .pay-method-card:hover { border-color: var(--brand); }
-    .pay-method-card.active { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 3px rgba(27,107,69,.12); }
-    .pay-method-card img { width: 30px; height: 30px; object-fit: contain; }
-    .pay-method-card .pay-method-emoji-fallback { font-size: 26px; display: none; }
-    .pay-method-card .pay-method-label { font-size: 10px; font-weight: 700; color: var(--ink); }
+    .pay-method-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+      transition: .25s;
+    }
+    .pay-method-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--brand);
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+    }
+    .pay-method-card.active {
+      border-color: var(--brand);
+      background: #f0fdf4;
+    }
+    .pay-logo {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+    .pay-method-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+    }
 
     /* BUTTONS */
     .btn {
@@ -1300,28 +1326,35 @@
 
         <div class="form-group">
           <label>Payment Method</label>
+
           <div class="pay-method-grid" id="pay-method-grid">
+
+            <!-- Wallet -->
             <div class="pay-method-card" data-method="wallet" onclick="selectPayMethod('wallet')">
-              <img src="walleticon.png" alt="Wallet" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="pay-method-emoji-fallback">💰</span>
+              <img src="images/wallet.png" alt="Wallet" class="pay-logo">
               <span class="pay-method-label">Wallet</span>
             </div>
+
+            <!-- M-Pesa -->
             <div class="pay-method-card" data-method="mpesa" onclick="selectPayMethod('mpesa')">
-              <img src="mpesalogo.png" alt="M-Pesa" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="pay-method-emoji-fallback">📱</span>
+              <img src="images/mpesa.png" alt="M-Pesa" class="pay-logo">
               <span class="pay-method-label">M-Pesa</span>
             </div>
+
+            <!-- Airtel Money -->
             <div class="pay-method-card" data-method="airtel" onclick="selectPayMethod('airtel')">
-              <img src="airtellogo.png" alt="Airtel Money" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="pay-method-emoji-fallback">📞</span>
-              <span class="pay-method-label">Airtel</span>
+              <img src="images/airtel.png" alt="Airtel Money" class="pay-logo">
+              <span class="pay-method-label">Airtel Money</span>
             </div>
+
+            <!-- Card / Paybill -->
             <div class="pay-method-card" data-method="manual" onclick="selectPayMethod('manual')">
-              <img src="card.png" alt="Card / Paybill" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="pay-method-emoji-fallback">🏦</span>
-              <span class="pay-method-label">Paybill</span>
+              <img src="images/card.png" alt="Card / Paybill" class="pay-logo">
+              <span class="pay-method-label">Card / Paybill</span>
             </div>
+
           </div>
+
           <!-- Hidden select kept in sync by selectPayMethod() so existing JS (updatePaymentUI, etc.)
                that reads #pay-method.value continues to work unchanged. -->
           <select id="pay-method" onchange="updatePaymentUI()" style="display:none;">
@@ -1329,7 +1362,7 @@
             <option value="wallet">Wallet</option>
             <option value="mpesa">M-Pesa</option>
             <option value="airtel">Airtel Money</option>
-            <option value="manual">Paybill Deposit</option>
+            <option value="manual">Card / Paybill</option>
           </select>
         </div>
 
@@ -1343,7 +1376,7 @@
         <div id="wallet-form" style="display:none;">
           <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
             <strong style="color:var(--brand); display:flex; align-items:center; gap:6px;">
-              <img src="walleticon.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <img src="images/wallet.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
               <span style="display:none;">💰</span> Pay from Wallet Balance
             </strong><br>
             Your available balance: <strong id="wallet-pay-balance">KES 0</strong><br>
@@ -1358,7 +1391,7 @@
         <div id="mpesa-form" style="display:none;">
           <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
             <strong style="color:var(--brand); display:flex; align-items:center; gap:6px;">
-              <img src="mpesalogo.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <img src="images/mpesa.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
               <span style="display:none;">📱</span> M-Pesa STK Push
             </strong><br>
             Enter your phone number to receive an M-Pesa PIN prompt.
@@ -1374,7 +1407,7 @@
         <div id="airtel-form" style="display:none;">
           <div style="background:rgba(14,165,233,.08); border:1px solid rgba(14,165,233,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
             <strong style="color:var(--sky); display:flex; align-items:center; gap:6px;">
-              <img src="airtellogo.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <img src="images/airtel.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
               <span style="display:none;">📞</span> Airtel Money
             </strong><br>
             Enter your Airtel number to receive a payment prompt.
@@ -1390,7 +1423,7 @@
         <div id="manual-form" style="display:none;">
           <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:1rem; font-size:12px; line-height:1.8;">
             <strong style="display:flex; align-items:center; gap:6px;">
-              <img src="card.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <img src="images/card.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
               <span style="display:none;">🏦</span> Paybill Details
             </strong><br>
             Paybill: <strong style="font-family:monospace;">400200</strong><br>
