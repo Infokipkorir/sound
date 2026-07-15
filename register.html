@@ -795,7 +795,7 @@ async function handleRegister(event) {
         terms_accepted:    true,
         receive_updates:   updatesCheck
       },
-      emailRedirectTo: null
+      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
     }
   });
 
@@ -809,7 +809,10 @@ async function handleRegister(event) {
   setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Sending verification code…');
   const otpResult = await dbClient.auth.signInWithOtp({
     email: email,
-    options: { shouldCreateUser: false }
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
+    }
   });
 
   setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
@@ -943,7 +946,13 @@ async function resendOtp() {
   document.getElementById('resendSpinner').style.display = 'inline-block';
   document.getElementById('resendBtnText').textContent = 'Sending…';
 
-  const result = await dbClient.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
+  const result = await dbClient.auth.signInWithOtp({
+    email: email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
+    }
+  });
 
   document.getElementById('resendBtn').disabled = false;
   document.getElementById('resendSpinner').style.display = 'none';
