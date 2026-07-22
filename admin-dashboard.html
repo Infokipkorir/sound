@@ -15,11 +15,17 @@
   --brand-soft: rgba(27,107,69,0.10);
   --accent: #E8A040;
   --accent-soft: rgba(232,160,64,0.12);
+  --accent-ink: #a15a1f;
   --sky: #0ea5e9;
+  --sky-ink: #0369a1;
   --rose: #f43f5e;
+  --rose-ink: #be123c;
   --violet: #8b5cf6;
+  --violet-ink: #6d28d9;
   --green: #22c55e;
+  --green-ink: #15803d;
   --amber: #f59e0b;
+  --amber-ink: #b45309;
   --gray: #9ca3af;
   --surface: #ffffff;
   --card: #ffffff;
@@ -94,7 +100,7 @@ body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg);
 .sb-link:hover { color: var(--brand); background: var(--brand-soft); }
 .sb-link.active { color: var(--brand); background: var(--brand-soft); font-weight: 600; }
 .sb-link i { font-size: 16px; flex-shrink: 0; }
-.sb-badge { margin-left: auto; background: var(--rose); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
+.sb-badge { margin-left: auto; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
 .sb-badge.sky { background: var(--sky); }
 .sb-badge.green { background: var(--green); }
 .sb-badge.amber { background: var(--amber); }
@@ -175,12 +181,12 @@ tr:hover td { background: rgba(27,107,69,.02); }
 .user-info .user-email { font-size: 11px; color: var(--muted); }
 
 /* BADGES */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-.badge-green { background: rgba(34,197,94,.15); color: var(--green); }
-.badge-amber { background: rgba(245,158,11,.15); color: var(--amber); }
-.badge-rose { background: rgba(244,63,94,.15); color: var(--rose); }
-.badge-sky { background: rgba(14,165,233,.15); color: var(--sky); }
-.badge-violet { background: rgba(139,92,246,.15); color: var(--violet); }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.badge-green { background: rgba(34,197,94,.15); color: var(--green-ink); }
+.badge-amber { background: rgba(245,158,11,.15); color: var(--amber-ink); }
+.badge-rose { background: rgba(244,63,94,.15); color: var(--rose-ink); }
+.badge-sky { background: rgba(14,165,233,.15); color: var(--sky-ink); }
+.badge-violet { background: rgba(139,92,246,.15); color: var(--violet-ink); }
 .badge-muted { background: var(--bg); color: var(--muted); }
 
 /* BUTTONS */
@@ -322,6 +328,8 @@ tr:hover td { background: rgba(27,107,69,.02); }
 #cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,25,35,.95); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; z-index: 8000; flex-wrap: wrap; }
 #cookie-banner p { font-size: 13px; flex: 1; min-width: 200px; }
 #cookie-banner .btn-amber { font-size: 13px; }
+#cookie-banner .btn-ghost { font-size: 13px; color: #fff; border-color: rgba(255,255,255,.4); }
+#cookie-banner .btn-ghost:hover { background: rgba(255,255,255,.12); color: #fff; }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
@@ -404,9 +412,9 @@ tr:hover td { background: rgba(27,107,69,.02); }
   <div class="sb-header">
     <a href="#" class="sb-logo">
       <div class="sb-logo-icon">🎙️</div>
-      <span>Sounds<strong style="color:var(--accent)">Care</strong></span>
+      <span>Sounds<strong style="color:var(--accent-ink)">Care</strong></span>
     </a>
-    <button class="sb-close-btn" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+    <button class="sb-close-btn" onclick="toggleSidebar()" aria-label="Close sidebar"><i class="bi bi-x-lg"></i></button>
   </div>
   <div class="sb-user">
     <div class="sb-avatar" id="sb-avatar">AD</div>
@@ -440,7 +448,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
   <div class="sb-footer">
     <div class="sb-maintenance">
       <span><i class="bi bi-tools"></i> Maintenance</span>
-      <button class="toggle-switch" id="maintenance-toggle" onclick="toggleMaintenance(this)"></button>
+      <button class="toggle-switch" id="maintenance-toggle" onclick="toggleMaintenance(this)" role="switch" aria-checked="false" aria-label="Toggle maintenance mode"></button>
     </div>
     <button class="sb-logout-btn" onclick="handleLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>
   </div>
@@ -449,7 +457,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
 <!-- MAIN -->
 <div class="main" id="main">
   <div class="nav">
-    <button class="nav-burger" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+    <button class="nav-burger" onclick="toggleSidebar()" aria-label="Open sidebar menu"><i class="bi bi-list"></i></button>
     <div class="nav-title" id="nav-title">Dashboard</div>
     <div class="nav-actions">
       <button class="icon-btn" onclick="openModal('notif-panel-modal')" title="Notifications">
@@ -1574,8 +1582,8 @@ function renderConversations(filter='all'){
     const statusBadge=c.status==='active'?'badge-green':c.status==='closed'?'badge-rose':'badge-amber';
     const msgCount=allApplications.filter(a=>a.job_id===c.id).length;
     return `<tr>
-      <td><div class="user-cell"><div class="avatar" style="background:linear-gradient(135deg,var(--green),#16a34a)">${getInitials(workerName)}</div><div class="user-info"><div class="user-name">${esc(workerName)}</div><span class="badge badge-green" style="font-size:9px">Employee</span></div></div></td>
-      <td><div class="user-cell"><div class="avatar" style="background:linear-gradient(135deg,var(--amber),#d97706)">${getInitials(employerName)}</div><div class="user-info"><div class="user-name">${esc(employerName)}</div><span class="badge badge-amber" style="font-size:9px">Employer</span></div></div></td>
+      <td><div class="user-cell"><div class="avatar" style="background:linear-gradient(135deg,var(--green),#16a34a)">${getInitials(workerName)}</div><div class="user-info"><div class="user-name">${esc(workerName)}</div><span class="badge badge-green" style="font-size:12px">Employee</span></div></div></td>
+      <td><div class="user-cell"><div class="avatar" style="background:linear-gradient(135deg,var(--amber),#d97706)">${getInitials(employerName)}</div><div class="user-info"><div class="user-name">${esc(employerName)}</div><span class="badge badge-amber" style="font-size:12px">Employer</span></div></div></td>
       <td><span class="badge ${statusBadge}">${c.status||'active'}</span>${c.is_admin_thread?'<span class="badge badge-violet" style="margin-left:4px">Admin</span>':''}</td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.last_message_text||'—')}</td>
       <td>${c.employer_unread+c.employee_unread||0} unread</td>
@@ -2668,6 +2676,7 @@ async function saveSiteConfig(){showToast('ok','Site config saved');}
 function toggleMaintenance(btn){
   maintenanceMode=!maintenanceMode;
   btn.classList.toggle('on',maintenanceMode);
+  btn.setAttribute('aria-checked',maintenanceMode?'true':'false');
   document.getElementById('maintenance-banner').style.display=maintenanceMode?'block':'none';
   showToast(maintenanceMode?'info':'ok',maintenanceMode?'Maintenance mode ON — site offline for users':'Maintenance mode OFF — site is live');
 }
