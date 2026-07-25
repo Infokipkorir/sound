@@ -1122,6 +1122,14 @@ tr:hover td { background: rgba(27,107,69,.02); }
   </div>
 </div>
 
+<!-- USER CHATS MODAL -->
+<div id="user-chats-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2 id="user-chats-title"><i class="bi bi-chat-square-text"></i> Chats</h2><button class="modal-close" onclick="closeModal('user-chats-modal')">×</button></div>
+    <div class="modal-body" id="user-chats-body"><div class="empty-state"><i class="bi bi-chat"></i><p>No chats for this user</p></div></div>
+  </div>
+</div>
+
 <!-- INTERVIEW HISTORY MODAL -->
 <div id="interview-history-modal" class="modal-overlay">
   <div class="modal wide">
@@ -1476,6 +1484,8 @@ function renderUsers(){
           <button class="btn btn-sm btn-amber" onclick="toggleUserActive('${u.id}',${u.is_active!==false})">${u.is_active!==false?'Pause':'Activate'}</button>
           <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${u.id}')"><i class="bi bi-cash"></i></button>
           <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${u.id}')"><i class="bi bi-camera-video"></i></button>
+          <button class="btn btn-sm btn-primary" onclick="openAdminChat('${u.id}','${esc(u.email)}','${esc(u.full_name)}','${u.role||'employee'}')" title="Chat directly with this user"><i class="bi bi-chat-dots"></i></button>
+          <button class="btn btn-sm btn-ghost" onclick="viewUserChats('${u.id}','${esc(u.full_name||u.email)}')" title="View / unblock this user's chats"><i class="bi bi-chat-square-text"></i></button>
           <button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')"><i class="bi bi-trash3"></i></button>
         </div>
       </td>
@@ -1517,7 +1527,9 @@ function renderEmployees(){
         <button class="btn btn-sm btn-amber" onclick="toggleBanWorker('${w.id}',${!!w.ban_reason})">${w.ban_reason?'Unban':'Ban'}</button>
         <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${w.session_id||w.id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${w.id}')"><i class="bi bi-camera-video"></i></button>
-        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${w.email}','${esc(w.full_name)}')"><i class="bi bi-chat"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${w.email}','${esc(w.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="openAdminChat('${w.session_id||w.id}','${esc(w.email)}','${esc(w.full_name)}','employee')" title="Chat directly with this user"><i class="bi bi-chat-dots"></i></button>
+        <button class="btn btn-sm btn-ghost" onclick="viewUserChats('${w.session_id||w.id}','${esc(w.full_name)}')" title="View / unblock this user's chats"><i class="bi bi-chat-square-text"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteWorker('${w.id}')"><i class="bi bi-trash3"></i></button>
       </div></td>
     </tr>`;
@@ -1555,7 +1567,9 @@ function renderEmployers(){
         <button class="btn btn-sm btn-primary" onclick="toggleVerifyEmployer('${e.id}',${!e.is_verified})">${e.is_verified?'Unverify':'Verify'}</button>
         <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${e.user_id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${e.id}')"><i class="bi bi-camera-video"></i></button>
-        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${user.email}','${esc(e.full_name)}')"><i class="bi bi-chat"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${user.email}','${esc(e.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="openAdminChat('${e.user_id}','${esc(user.email)}','${esc(e.full_name)}','employer')" title="Chat directly with this user"><i class="bi bi-chat-dots"></i></button>
+        <button class="btn btn-sm btn-ghost" onclick="viewUserChats('${e.user_id}','${esc(e.full_name)}')" title="View / unblock this user's chats"><i class="bi bi-chat-square-text"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteEmployer('${e.id}')"><i class="bi bi-trash3"></i></button>
       </div></td>
     </tr>`;
@@ -2194,9 +2208,8 @@ function editUser(id){
 }
 async function saveUser(){
   const id=document.getElementById('edit-user-id').value;
-  const data={full_name:document.getElementById('user-full-name').value,phone:document.getElementById('user-phone').value,role:document.getElementById('user-role').value};
+  const data={full_name:document.getElementById('user-full-name').value,phone:document.getElementById('user-phone').value,role:document.getElementById('user-role').value,email:document.getElementById('user-email').value};
   if(!id){
-    data.email=document.getElementById('user-email').value;
     data.id=crypto.randomUUID();
     const {error}=await sb.from('users').insert(data);
     if(error){showToast('err',error.message);return;}
@@ -2207,6 +2220,69 @@ async function saveUser(){
     const u=allUsers.find(u=>u.id===id);if(u)Object.assign(u,data);
   }
   renderUsers();closeModal('add-user-modal');showToast('ok',id?'User updated':'User added');
+}
+
+// ============================================================
+// DIRECT ADMIN CHAT (live chat with any user, from any tab)
+// ============================================================
+async function openAdminChat(userId,email,name,role){
+  if(!userId){showToast('err','No user id for this record');return;}
+  try{
+    let conv=allConversations.find(c=>c.is_admin_thread&&(c.employee_id===userId||c.employer_id===userId));
+    if(!conv){
+      const payload={id:crypto.randomUUID(),is_admin_thread:true,status:'active',last_message_text:'',last_message_at:new Date().toISOString()};
+      if(role==='employer')payload.employer_id=userId;else payload.employee_id=userId;
+      const {error}=await sb.from('conversations').insert(payload);
+      if(error){showToast('err',error.message);return;}
+      conv=payload;
+      allConversations.unshift(conv);
+      renderConversations(currentConvTab);updateBadges();
+    }
+    const label=name||email||'User';
+    if(role==='employer')openChat(conv.id,'Admin Support',label,conv.status);
+    else openChat(conv.id,label,'Admin Support',conv.status);
+  }catch(err){showToast('err',err.message);}
+}
+
+// ============================================================
+// VIEW / UNBLOCK A USER'S CHATS ("unstopped" + paused chats)
+// ============================================================
+function viewUserChats(userId,name){
+  if(!userId){showToast('err','No user id for this record');return;}
+  const convs=allConversations.filter(c=>c.employee_id===userId||c.employer_id===userId);
+  document.getElementById('user-chats-title').innerHTML=`<i class="bi bi-chat-square-text"></i> Chats — ${esc(name||'User')}`;
+  document.getElementById('user-chats-body').innerHTML=convs.map(c=>{
+    const isEmployeeSide=c.employee_id===userId;
+    const other=c.is_admin_thread?'Admin Support':(isEmployeeSide
+      ?(allEmployers.find(e=>e.user_id===c.employer_id)?.full_name||allUsers.find(u=>u.id===c.employer_id)?.full_name||'Employer')
+      :(allWorkers.find(w=>w.session_id===c.employee_id||w.id===c.employee_id)?.full_name||'Employee'));
+    const isPaused=c.status==='archived';
+    const wName=isEmployeeSide?(name||'User'):other;
+    const eeName=isEmployeeSide?other:(name||'User');
+    return `<div class="pay-item">
+      <div>
+        <div style="font-weight:600;font-size:13px">${c.is_admin_thread?'<span class="badge badge-violet" style="margin-right:6px">Admin</span>':''}${esc(other)}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(c.last_message_text||'No messages yet')}</div>
+        <div style="font-size:11px;color:var(--muted)">${fmtDate(c.last_message_at)}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge badge-${c.status==='active'?'green':c.status==='closed'?'rose':'amber'}">${c.status==='archived'?'Stopped':(c.status||'active')}</span>
+        <button class="btn btn-sm btn-primary" onclick="closeModal('user-chats-modal');openChat('${c.id}','${esc(wName)}','${esc(eeName)}','${c.status}')"><i class="bi bi-chat-dots"></i></button>
+        ${isPaused?`<button class="btn btn-sm btn-amber" onclick="unblockChat('${c.id}','${userId}','${esc(name||'')}')">Unblock</button>`:''}
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty-state"><i class="bi bi-chat"></i><p>No chats for this user</p></div>';
+  openModal('user-chats-modal');
+}
+async function unblockChat(convId,userId,name){
+  try{
+    const {error}=await sb.from('conversations').update({status:'active'}).eq('id',convId);
+    if(error){showToast('err',error.message);return;}
+    const c=allConversations.find(c=>c.id===convId);if(c)c.status='active';
+    renderConversations(currentConvTab);
+    showToast('ok','Chat unblocked — user can send messages again');
+    viewUserChats(userId,name);
+  }catch(err){showToast('err',err.message);}
 }
 function openAddWorkerModal(){
   // Quick: open add user with employee role preset
