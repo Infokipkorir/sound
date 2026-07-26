@@ -2389,6 +2389,7 @@ async function loadDashboard() {
       renderJobs(allJobs);
       populateCountyFilter(allJobs);
       console.log('✅ Jobs rendered');
+      handleJobDeepLink();
     } catch (jobRenderErr) {
       console.error('❌ renderJobs failed:', jobRenderErr.message);
       document.getElementById('jobs-list').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load jobs</p></div>';
@@ -3887,7 +3888,7 @@ function jobCardHtml(j) {
   const isLoved = lovedJobIds.has(j.id);
   const applied = myApplications.some(a => a.job_id === j.id);
   return `
-    <div class="job-card">
+    <div class="job-card" data-job-id="${j.id}">
       <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
         <div>
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
@@ -4009,12 +4010,43 @@ async function submitJobReport() {
 }
 
 // ════════════════════════════════════════════════════════
+//  DEEP LINK — open a shared job (?job=ID) once the dashboard loads
+// ════════════════════════════════════════════════════════
+function handleJobDeepLink() {
+  const jobId = new URLSearchParams(location.search).get('job');
+  if (!jobId) return;
+
+  const job = allJobs.find(j => String(j.id) === String(jobId));
+
+  // Clean the param out of the URL so refreshing/sharing again doesn't re-trigger this
+  const cleanUrl = location.origin + location.pathname;
+  history.replaceState(null, '', cleanUrl);
+
+  if (!job) {
+    showToast('err', 'bi-exclamation-circle', 'Job Not Found', 'This job may have expired or is no longer available.');
+    return;
+  }
+
+  openModal('modal-jobs');
+
+  // Wait for the modal to open and the card to be in the DOM, then scroll to + highlight it
+  setTimeout(() => {
+    const card = document.querySelector(`#jobs-list .job-card[data-job-id="${CSS.escape(String(jobId))}"]`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.transition = 'box-shadow .3s ease';
+    card.style.boxShadow = '0 0 0 3px var(--brand)';
+    setTimeout(() => { card.style.boxShadow = ''; }, 2200);
+  }, 250);
+}
+
+// ════════════════════════════════════════════════════════
 //  SHARE JOB (public, ungated link)
 // ════════════════════════════════════════════════════════
 function buildJobShareUrl(jobId) {
-  // jobs.html is the public, non-gated jobs page — anyone with the link can view this posting.
-  const base = location.origin + location.pathname.replace(/employee-dashboard\.html$/, '');
-  return `${base}jobs.html?job=${jobId}`;
+  // Links into the logged-in employee dashboard (per vercel.json rewrite: /employee-dashboard -> employee-dashboard.html).
+  // Whoever opens this link will see the job inside their own account (login required).
+  return `${location.origin}/employee-dashboard?job=${jobId}`;
 }
 
 async function shareJob(jobId, jobTitle) {
