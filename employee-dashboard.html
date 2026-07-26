@@ -550,6 +550,28 @@
     .job-chip.type-remote { background: rgba(34,197,94,.1); color: var(--green); }
     .job-chip.type-hybrid { background: rgba(124,58,237,.1); color: #7c3aed; }
     .job-chip.duration { background: rgba(245,158,11,.1); color: #b45309; }
+    .job-card.clickable { cursor: pointer; }
+    .job-card.clickable:hover { box-shadow: 0 4px 14px rgba(27,107,69,0.10); }
+
+    /* APPLICATION DETAIL TABLE */
+    .app-detail-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 1.2rem;
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+    .app-detail-table tr { border-bottom: 1px solid var(--border); }
+    .app-detail-table tr:last-child { border-bottom: none; }
+    .app-detail-table td {
+      padding: 11px 14px; font-size: 13px; vertical-align: middle;
+    }
+    .app-detail-table td.label {
+      color: var(--muted); font-weight: 600; width: 40%;
+      background: var(--surface);
+    }
+    .app-detail-table td.value { font-weight: 600; word-break: break-all; }
+    .app-detail-actions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .app-detail-actions .btn { flex: 1 1 auto; min-width: 140px; }
 
     .employer-verified-badge {
       display: inline-flex; align-items: center; gap: 3px;
@@ -1227,6 +1249,13 @@
       <button class="modal-close" onclick="closeModal('modal-notifications')">×</button>
     </div>
     <div class="modal-body">
+      <div id="push-notif-banner" class="visibility-toggle" style="display:none; margin-bottom:1rem;">
+        <div style="flex:1;">
+          <div style="font-weight:600; font-size:13px;"><i class="bi bi-bell-fill"></i> Enable Push Notifications</div>
+          <div style="font-size:11px; color:var(--muted);">Get notified about messages and application updates instantly.</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--brand); color:#fff;" onclick="enablePushNotifications()">Enable</button>
+      </div>
       <div id="notif-list">
         <div class="empty-state"><i class="bi bi-bell"></i><p>Loading…</p></div>
       </div>
@@ -1373,6 +1402,53 @@
     <div class="modal-body">
       <div id="applications-list">
         <div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ APPLICATION DETAIL MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-application-detail">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-file-earmark-text"></i> Application Details</h2>
+      <button class="modal-close" onclick="closeModal('modal-application-detail')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:1rem;">
+        <div style="font-weight:700; font-size:15px;" id="ad-job-title">—</div>
+        <div style="font-size:12px; color:var(--muted);" id="ad-job-sub">—</div>
+      </div>
+
+      <table class="app-detail-table">
+        <tr>
+          <td class="label">Job ID</td>
+          <td class="value" id="ad-job-id">—</td>
+        </tr>
+        <tr>
+          <td class="label">Employer ID</td>
+          <td class="value" id="ad-employer-id">—</td>
+        </tr>
+        <tr>
+          <td class="label">Date Applied</td>
+          <td class="value" id="ad-date-applied">—</td>
+        </tr>
+        <tr>
+          <td class="label">Status</td>
+          <td class="value"><span class="job-chip" id="ad-status" style="text-transform:capitalize;">—</span></td>
+        </tr>
+      </table>
+
+      <div class="app-detail-actions">
+        <button class="btn btn-full" id="ad-reapply-btn" style="display:none; background:var(--brand); color:#fff;" onclick="reapplyToApplication()">
+          <i class="bi bi-arrow-repeat"></i> Reapply
+        </button>
+        <button class="btn btn-secondary" onclick="openApplicationMessages()">
+          <i class="bi bi-camera-video"></i> Show Interview / Message
+        </button>
+        <button class="btn btn-secondary" onclick="sendApplicationToSupport()">
+          <i class="bi bi-headset"></i> Send to Support
+        </button>
       </div>
     </div>
   </div>
@@ -3562,6 +3638,48 @@ async function requestNotifPermission() {
 }
 
 // ────────────────────────────────────────────────────────
+//  PUSH NOTIFICATIONS (foreground browser notifications)
+// ────────────────────────────────────────────────────────
+async function enablePushNotifications() {
+  if (!('Notification' in window)) {
+    showToast('err', 'bi-exclamation-circle', 'Not Supported', 'Push notifications are not supported in this browser.');
+    return;
+  }
+  const perm = await Notification.requestPermission().catch(() => 'denied');
+  updatePushBanner();
+  if (perm === 'granted') {
+    showToast('ok', 'bi-bell-fill', 'Notifications Enabled', 'You\'ll now get push notifications for messages and updates.');
+    pushNotify('🔔 Notifications On', 'You will now receive push notifications from SoundsCare.', { tag: 'push-enabled' });
+  } else if (perm === 'denied') {
+    showToast('err', 'bi-exclamation-circle', 'Blocked', 'Notifications are blocked in your browser settings.');
+  }
+}
+
+function updatePushBanner() {
+  const banner = document.getElementById('push-notif-banner');
+  if (!banner) return;
+  banner.style.display = ('Notification' in window && Notification.permission !== 'granted') ? 'flex' : 'none';
+}
+
+function pushNotify(title, body, opts = {}) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  // Avoid duplicate popups when the user is already looking at the tab and the modal in question
+  if (document.hasFocus() && opts.skipIfFocused) return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: 'https://sounds.co.ke/favicon.ico',
+      tag: opts.tag || undefined,
+    });
+    n.onclick = () => {
+      window.focus();
+      if (opts.onClick) opts.onClick();
+      n.close();
+    };
+  } catch (e) { console.warn('pushNotify error:', e); }
+}
+
+// ────────────────────────────────────────────────────────
 //  14. SUBSCRIBE TO INCOMING CALLS VIA REALTIME
 // ────────────────────────────────────────────────────────
 function subscribeIncomingCalls() {
@@ -4092,7 +4210,7 @@ async function loadApplications() {
   el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>';
 
   const { data, error } = await sb.from('job_applications')
-    .select('id, job_id, status, applied_at, updated_at, job_postings(id, title, company_name, county, salary_range)')
+    .select('id, job_id, status, applied_at, updated_at, job_postings(id, title, company_name, county, salary_range, employer_id)')
     .eq('worker_id', workerProfile.id)
     .order('applied_at', { ascending: false });
 
@@ -4115,7 +4233,7 @@ async function loadApplications() {
     const job = a.job_postings || {};
     const color = statusColor[a.status] || 'var(--muted)';
     return `
-    <div class="job-card">
+    <div class="job-card clickable" onclick="openApplicationDetail('${a.id}')">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
         <div>
           <div style="font-weight:700; font-size:14px; margin-bottom:2px;">${esc(job.title || 'Job')}</div>
@@ -4123,9 +4241,99 @@ async function loadApplications() {
         </div>
         <span class="job-chip" style="background:${color}1a; color:${color}; text-transform:capitalize;">${esc(a.status)}</span>
       </div>
-      <div style="font-size:11px; color:var(--muted); margin-top:8px;">Applied ${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''}</div>
+      <div style="font-size:11px; color:var(--muted); margin-top:8px;">Applied ${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''} · <i class="bi bi-eye"></i> View details</div>
     </div>`;
   }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  APPLICATION DETAIL MODAL
+// ════════════════════════════════════════════════════════
+let activeApplication = null;
+
+function openApplicationDetail(appId) {
+  const app = myApplications.find(a => a.id === appId);
+  if (!app) { showToast('err', 'bi-exclamation-circle', 'Not Found', 'Could not find that application.'); return; }
+  activeApplication = app;
+
+  const job = app.job_postings || {};
+  document.getElementById('ad-job-title').textContent = job.title || 'Job';
+  document.getElementById('ad-job-sub').textContent = [job.company_name, job.county].filter(Boolean).join(' · ') || '—';
+  document.getElementById('ad-job-id').textContent = app.job_id || '—';
+  document.getElementById('ad-employer-id').textContent = job.employer_id || '—';
+  document.getElementById('ad-date-applied').textContent = app.applied_at
+    ? new Date(app.applied_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })
+    : '—';
+
+  const statusColor = { pending: 'var(--sky)', reviewed: 'var(--accent)', shortlisted: '#7c3aed', hired: 'var(--green)', rejected: 'var(--rose)' };
+  const color = statusColor[app.status] || 'var(--muted)';
+  const statusEl = document.getElementById('ad-status');
+  statusEl.textContent = app.status || 'pending';
+  statusEl.style.background = `${color}1a`;
+  statusEl.style.color = color;
+
+  document.getElementById('ad-reapply-btn').style.display = app.status === 'rejected' ? 'flex' : 'none';
+
+  openModal('modal-application-detail');
+}
+
+async function reapplyToApplication() {
+  if (!activeApplication) return;
+  const btn = document.getElementById('ad-reapply-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Reapplying…';
+
+  const { error } = await sb.from('job_applications')
+    .update({ status: 'pending', applied_at: new Date().toISOString() })
+    .eq('id', activeApplication.id)
+    .eq('worker_id', workerProfile.id);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reapply';
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Reapply Failed', error.message);
+    return;
+  }
+
+  activeApplication.status = 'pending';
+  activeApplication.applied_at = new Date().toISOString();
+  showToast('ok', 'bi-check-circle', 'Reapplied', 'Your application was resubmitted.');
+  closeModal('modal-application-detail');
+  loadApplications();
+}
+
+function openApplicationMessages() {
+  if (!activeApplication) return;
+  const employerId = activeApplication.job_postings?.employer_id;
+  if (!employerId) {
+    showToast('err', 'bi-exclamation-circle', 'Unavailable', 'No employer is linked to this application yet.');
+    return;
+  }
+  const conv = allConversations.find(c => c.employer_id === employerId && !c.is_admin_thread);
+  if (!conv) {
+    showToast('info', 'bi-chat-dots', 'No Conversation Yet', 'This employer hasn\'t messaged you yet. They\'ll reach out here once they review your application.');
+    return;
+  }
+  closeModal('modal-application-detail');
+  openConversation(conv.id);
+  openModal('modal-messages');
+}
+
+function sendApplicationToSupport() {
+  if (!activeApplication) return;
+  const job = activeApplication.job_postings || {};
+  const summary = `Application support — Job: ${job.title || activeApplication.job_id} | Job ID: ${activeApplication.job_id} | Application ID: ${activeApplication.id} | Status: ${activeApplication.status}`;
+
+  try {
+    if (typeof Tawk_API !== 'undefined') {
+      Tawk_API.addEvent?.('application_support_request', { summary }, () => {});
+      Tawk_API.maximize?.();
+    }
+  } catch (e) { console.warn('Tawk support handoff error:', e); }
+
+  navigator.clipboard?.writeText(summary).catch(() => {});
+  showToast('info', 'bi-headset', 'Support Chat Opened', 'Application details were sent to our support agent — feel free to add more.');
 }
 
 // ════════════════════════════════════════════════════════
@@ -4572,6 +4780,11 @@ function subscribeToRealtime() {
         document.getElementById('msg-badge').textContent = total;
         document.getElementById('msg-badge').classList.add('show');
         showToast('info', 'bi-chat-dots', 'New Message', (msg.body || msg.content || '').substring(0, 60));
+        const senderName = (conv.is_admin_thread ? 'Support' : (employerCache[conv.employer_id]?.name || 'Employer'));
+        pushNotify(`💬 ${senderName}`, (msg.body || msg.content || 'Sent you a message').substring(0, 100), {
+          tag: 'msg-' + conv.id, skipIfFocused: true,
+          onClick: () => { openConversation(conv.id); openModal('modal-messages'); },
+        });
       }
 
       // If conversation is open, append message live
@@ -4626,6 +4839,32 @@ function subscribeToRealtime() {
       const cur = parseInt(document.getElementById('notif-badge').textContent || '0');
       document.getElementById('notif-badge').textContent = cur + 1;
       document.getElementById('notif-badge').classList.add('show');
+      pushNotify(n.title || '🔔 Notification', n.message || '', {
+        tag: 'notif-' + n.id, skipIfFocused: true,
+        onClick: () => openModal('modal-notifications'),
+      });
+    })
+    .subscribe();
+
+  // Application status changes (e.g. shortlisted, rejected, hired)
+  // No server-side filter here (workerProfile.id isn't guaranteed set yet when this
+  // subscription is created) — filter client-side against myApplications instead.
+  sb.channel('emp-application-status')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'job_applications' }, (payload) => {
+      const app = payload.new;
+      const idx = myApplications.findIndex(a => a.id === app.id);
+      if (idx === -1) return; // not one of this worker's applications (or not loaded yet)
+      {
+        myApplications[idx] = { ...myApplications[idx], ...app };
+        if (document.getElementById('modal-applications')?.classList.contains('open')) loadApplications();
+        if (activeApplication?.id === app.id) activeApplication = myApplications[idx];
+      }
+      const jobTitle = myApplications[idx]?.job_postings?.title || 'your application';
+      showToast('info', 'bi-briefcase', 'Application Updated', `${jobTitle}: ${app.status}`);
+      pushNotify('📋 Application Update', `${jobTitle} — status changed to ${app.status}`, {
+        tag: 'app-' + app.id, skipIfFocused: true,
+        onClick: () => { openModal('modal-applications'); openApplicationDetail(app.id); },
+      });
     })
     .subscribe();
 
@@ -4680,6 +4919,7 @@ function openModal(id) {
   if (id === 'modal-wallet') ensureAccountNumber();
   if (id === 'modal-applications') loadApplications();
   if (id === 'modal-saved-jobs') loadSavedJobs();
+  if (id === 'modal-notifications') updatePushBanner();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
