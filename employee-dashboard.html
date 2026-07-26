@@ -4013,7 +4013,12 @@ async function submitJobReport() {
 //  DEEP LINK — open a shared job (?job=ID) once the dashboard loads
 // ════════════════════════════════════════════════════════
 function handleJobDeepLink() {
-  const jobId = new URLSearchParams(location.search).get('job');
+  // Supports both ?job=ID (query) and #employee-dashboard?job=ID (hash) formats
+  let jobId = new URLSearchParams(location.search).get('job');
+  if (!jobId && location.hash) {
+    const hashQuery = location.hash.split('?')[1] || '';
+    jobId = new URLSearchParams(hashQuery).get('job');
+  }
   if (!jobId) return;
 
   const job = allJobs.find(j => String(j.id) === String(jobId));
@@ -4044,9 +4049,16 @@ function handleJobDeepLink() {
 //  SHARE JOB (public, ungated link)
 // ════════════════════════════════════════════════════════
 function buildJobShareUrl(jobId) {
-  // Links into the logged-in employee dashboard (per vercel.json rewrite: /employee-dashboard -> employee-dashboard.html).
-  // Whoever opens this link will see the job inside their own account (login required).
-  return `${location.origin}/employee-dashboard?job=${jobId}`;
+  // NOTE: hash-based URL. Vercel's rewrites in vercel.json only match real paths
+  // (e.g. /employee-dashboard), not URL fragments — a fragment never reaches the server,
+  // so this link will land on whatever page sits at the site root (e.g. index.html) and
+  // will NOT automatically open employee-dashboard.html unless that root page reads
+  // location.hash itself and redirects. See chat notes.
+  // "username" is the sharer's full_name, included for referral tracking.
+  const params = new URLSearchParams({ job: jobId });
+  const sharerName = workerProfile?.full_name;
+  if (sharerName) params.set('username', sharerName);
+  return `${location.origin}/#employee-dashboard?${params.toString()}`;
 }
 
 async function shareJob(jobId, jobTitle) {
