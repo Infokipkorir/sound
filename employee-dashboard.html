@@ -142,7 +142,7 @@
     .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
 
     /* STATS */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -546,6 +546,39 @@
       font-size: 10px; font-weight: 600; text-transform: uppercase;
     }
     .job-chip.urgent { background: rgba(244,63,94,.1); color: var(--rose); }
+    .job-chip.type-onsite { background: rgba(14,165,233,.1); color: var(--sky); }
+    .job-chip.type-remote { background: rgba(34,197,94,.1); color: var(--green); }
+    .job-chip.type-hybrid { background: rgba(124,58,237,.1); color: #7c3aed; }
+    .job-chip.duration { background: rgba(245,158,11,.1); color: #b45309; }
+
+    .employer-verified-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      color: var(--sky); font-size: 11px; font-weight: 700;
+    }
+    .job-rating-stars { display: inline-flex; align-items: center; gap: 1px; color: #f59e0b; font-size: 11px; }
+    .job-rating-stars i { font-size: 11px; }
+    .job-rating-stars i.empty { color: var(--border); }
+    .job-rating-count { font-size: 11px; color: var(--muted); margin-left: 3px; }
+
+    .job-action-row { display: flex; align-items: center; gap: 6px; }
+    .job-action-icon-btn {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 14px; color: var(--muted); transition: 0.15s; flex-shrink: 0;
+    }
+    .job-action-icon-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .job-action-icon-btn.love.active { color: var(--rose); border-color: var(--rose); background: rgba(244,63,94,.08); }
+    .job-action-icon-btn.save.active { color: var(--brand); border-color: var(--brand); background: var(--brand-soft); }
+    .job-action-icon-btn.report:hover { color: var(--rose); border-color: var(--rose); }
+    .job-love-count { font-size: 11px; color: var(--muted); margin-left: -2px; margin-right: 2px; }
+
+    .rate-pending-card {
+      background: rgba(245,158,11,.06); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    }
+    #rate-star-picker i { cursor: pointer; transition: 0.1s; }
+    #rate-star-picker i.selected { color: #f59e0b; }
 
     /* LOADER */
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -1060,6 +1093,21 @@
       <div class="stat-value" id="stat-jobs">—</div>
       <div class="stat-label">Jobs Available</div>
     </div>
+    <div class="stat-card" onclick="openModal('modal-applications')">
+      <div class="stat-icon" style="background: rgba(124,58,237,0.1); color: #7c3aed;"><i class="bi bi-send-check"></i></div>
+      <div class="stat-value" id="stat-applications">—</div>
+      <div class="stat-label">Applications</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-interviews'); loadRecentInterviews()">
+      <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-calendar-check"></i></div>
+      <div class="stat-value" id="stat-interviewed">—</div>
+      <div class="stat-label">Interviewed</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-saved-jobs')">
+      <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-bookmark-check"></i></div>
+      <div class="stat-value" id="stat-saved-jobs">—</div>
+      <div class="stat-label">Saved Jobs</div>
+    </div>
     <div class="stat-card" onclick="openModal('modal-wallet')">
       <div class="stat-icon pay"><i class="bi bi-wallet2"></i></div>
       <div class="stat-value" id="stat-wallet">—</div>
@@ -1133,8 +1181,39 @@
       <button class="modal-close" onclick="closeModal('modal-interviews')">×</button>
     </div>
     <div class="modal-body">
+      <div id="pending-employer-ratings"></div>
       <div id="interviews-list">
         <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ RATE EMPLOYER MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-rate-employer">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-star-fill"></i> Rate Employer</h2>
+      <button class="modal-close" onclick="closeModal('modal-rate-employer')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:1rem; line-height:1.6;">
+        How was your interview with <strong id="rate-employer-name">this employer</strong>? Your rating helps other workers.
+      </p>
+      <div id="rate-star-picker" style="display:flex; gap:6px; justify-content:center; font-size:28px; color:var(--border); margin-bottom:16px;">
+        <i class="bi bi-star-fill" data-star="1" onclick="setRatingStars(1)"></i>
+        <i class="bi bi-star-fill" data-star="2" onclick="setRatingStars(2)"></i>
+        <i class="bi bi-star-fill" data-star="3" onclick="setRatingStars(3)"></i>
+        <i class="bi bi-star-fill" data-star="4" onclick="setRatingStars(4)"></i>
+        <i class="bi bi-star-fill" data-star="5" onclick="setRatingStars(5)"></i>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Review (optional)</label>
+        <textarea id="rate-review-text" rows="3" placeholder="Share your experience…" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-rate-employer')">Skip</button>
+        <button class="btn btn-primary" id="submit-rating-btn" style="flex:1;" onclick="submitEmployerRating()"><i class="bi bi-star-fill"></i> Submit Rating</button>
       </div>
     </div>
   </div>
@@ -1258,9 +1337,77 @@
         <select id="job-county" onchange="filterJobs()" style="padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; min-width:130px;">
           <option value="">All Counties</option>
         </select>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-jobs'); openModal('modal-saved-jobs');" title="Saved Jobs">
+          <i class="bi bi-bookmark-check"></i>
+        </button>
       </div>
       <div id="jobs-list">
         <div class="empty-state"><i class="bi bi-briefcase"></i><p>Loading jobs…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SAVED JOBS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-saved-jobs">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-bookmark-check"></i> Saved Jobs</h2>
+      <button class="modal-close" onclick="closeModal('modal-saved-jobs')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="saved-jobs-list">
+        <div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ APPLICATIONS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-applications">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-send-check"></i> My Applications</h2>
+      <button class="modal-close" onclick="closeModal('modal-applications')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="applications-list">
+        <div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ REPORT JOB MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-report-job">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-flag-fill"></i> Report Job</h2>
+      <button class="modal-close" onclick="closeModal('modal-report-job')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:1rem; line-height:1.6;">
+        Reporting <strong id="report-job-title">this job</strong>. Our team will review it shortly.
+      </p>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Reason</label>
+        <select id="report-reason" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px;">
+          <option value="fraud">Fraud</option>
+          <option value="scam">Scam / Requesting money upfront</option>
+          <option value="fake_listing">Fake listing</option>
+          <option value="discriminatory">Discriminatory requirements</option>
+          <option value="inappropriate">Inappropriate content</option>
+          <option value="already_filled">Position already filled</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Details (optional)</label>
+        <textarea id="report-details" rows="3" placeholder="Tell us more…" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-report-job')">Cancel</button>
+        <button class="btn btn-full" id="submit-report-btn" style="flex:1; background:var(--rose); color:#fff;" onclick="submitJobReport()"><i class="bi bi-flag-fill"></i> Submit Report</button>
       </div>
     </div>
   </div>
@@ -1997,9 +2144,15 @@ let sb, currentUser;
 // wallets: user_id, balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance
 // payments: id, user_id, amount, fee_type, payment_method, status, mpesa_phone, airtel_phone,
 //   bank_account, phone_used, paybill_number, created_at, transaction_id, account_number
-// job_postings: id, title, description, location, county, salary_range, job_type, status, is_urgent, created_at, job_role
+// job_postings: id, title, description, location, county, salary_range, job_type, work_type (Onsite/Remote/Hybrid),
+//   duration_type, duration_value, status, is_urgent, created_at, job_role, company_name, company_verified,
+//   employer_avg_rating, employer_rating_count, loves_count, employer_id
 // job_applications: id, job_id, worker_id, cover_letter, status, applied_at
-// employer_profiles: id, user_id, full_name, company_name, location
+// employer_profiles: id, user_id, full_name, company_name, location, is_verified, avg_rating, rating_count
+// saved_jobs: id, job_id, worker_id, created_at (whitelist / bookmark)
+// job_loves: id, job_id, worker_id, created_at (heart / like)
+// job_reports: id, job_id, worker_id, reason, details, status, created_at
+// employer_ratings: id, employer_id, worker_id, interview_id, job_id, rating, review_text, created_at
 // notifications: id, user_id, type, title, message, is_read, created_at
 
 let workerProfile = null;
@@ -2009,6 +2162,10 @@ let activeConvMeta = null;
 let mediaRecorder = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
 let typingChannel = null, typingTimeout = null, presenceChannel = null;
 let allJobs = [];
+let savedJobIds = new Set();
+let lovedJobIds = new Set();
+let myApplications = [];
+let reportingJobId = null;
 let callAudioCtx = null; // for voice message recording audio ctx (separate from ringtone)
 
 // ════════════════════════════════════════════════════════
@@ -2194,7 +2351,7 @@ async function loadDashboard() {
     // 3. job_postings (public read policy on status='active')
     console.log('🔍 Loading active job_postings');
     const { data: jobs, error: jobErr } = await sb.from('job_postings')
-      .select('id, title, description, location, county, salary_range, job_type, is_urgent, created_at, job_role')
+      .select('id, title, description, location, county, salary_range, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, employer_id')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
@@ -2206,6 +2363,28 @@ async function loadDashboard() {
     console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
     document.getElementById('stat-jobs').textContent = allJobs.length;
+
+    // 3b. saved_jobs + job_loves + applications + interviews for this worker
+    //     (fetched BEFORE renderJobs so love/save/applied states are correct on first paint)
+    if (workerProfile?.id) {
+      try {
+        const [{ data: saved }, { data: loved }, { data: apps }, { count: interviewCount }] = await Promise.all([
+          sb.from('saved_jobs').select('job_id').eq('worker_id', workerProfile.id),
+          sb.from('job_loves').select('job_id').eq('worker_id', workerProfile.id),
+          sb.from('job_applications').select('id, job_id, status, applied_at').eq('worker_id', workerProfile.id),
+          sb.from('interviews').select('id', { count: 'exact', head: true }).eq('worker_id', workerProfile.id),
+        ]);
+        savedJobIds = new Set((saved || []).map(r => r.job_id));
+        lovedJobIds = new Set((loved || []).map(r => r.job_id));
+        myApplications = apps || [];
+        document.getElementById('stat-saved-jobs').textContent = savedJobIds.size;
+        document.getElementById('stat-applications').textContent = myApplications.length;
+        document.getElementById('stat-interviewed').textContent = interviewCount ?? 0;
+      } catch (statErr) {
+        console.error('❌ Could not load saved/loved/applications/interview stats:', statErr.message);
+      }
+    }
+
     try {
       renderJobs(allJobs);
       populateCountyFilter(allJobs);
@@ -2431,6 +2610,106 @@ async function loadRecentInterviews() {
 
   if (recentEl) recentEl.innerHTML = interviews.slice(0, 2).map(c => renderInterviewCard(c, true)).join('');
   if (listEl) listEl.innerHTML = interviews.map(c => renderInterviewCard(c, false)).join('');
+  loadPendingEmployerRatings();
+}
+
+// ════════════════════════════════════════════════════════
+//  RATE EMPLOYER (worker rates employer after a completed interview)
+// ════════════════════════════════════════════════════════
+let ratingContext = { interviewId: null, employerProfileId: null, jobId: null, stars: 0 };
+
+async function loadPendingEmployerRatings() {
+  const el = document.getElementById('pending-employer-ratings');
+  if (!el || !workerProfile?.id) { if (el) el.innerHTML = ''; return; }
+
+  const { data: completedInterviews, error: intErr } = await sb.from('interviews')
+    .select('id, employer_id, job_id, scheduled_at')
+    .eq('worker_id', workerProfile.id)
+    .eq('status', 'completed');
+
+  if (intErr || !completedInterviews?.length) { el.innerHTML = ''; return; }
+
+  const { data: alreadyRated } = await sb.from('employer_ratings')
+    .select('interview_id')
+    .eq('worker_id', workerProfile.id);
+  const ratedIds = new Set((alreadyRated || []).map(r => r.interview_id));
+
+  const pending = completedInterviews.filter(i => !ratedIds.has(i.id));
+  if (!pending.length) { el.innerHTML = ''; return; }
+
+  // interviews.employer_id is the employer's auth user id — resolve to employer_profiles.id + display name
+  const employerUserIds = [...new Set(pending.map(i => i.employer_id).filter(Boolean))];
+  const { data: employerProfiles } = await sb.from('employer_profiles')
+    .select('id, user_id, full_name, company_name')
+    .in('user_id', employerUserIds);
+  const employerByUserId = {};
+  (employerProfiles || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
+
+  el.innerHTML = pending.map(i => {
+    const ep = employerByUserId[i.employer_id];
+    const name = ep?.company_name || ep?.full_name || 'this employer';
+    return `
+    <div class="rate-pending-card">
+      <div style="font-size:12px;">
+        <i class="bi bi-star" style="color:#f59e0b;"></i>
+        Rate your interview with <strong>${esc(name)}</strong>
+      </div>
+      <button class="btn btn-sm" style="background:#f59e0b; color:#fff;" onclick="openRateEmployerModal('${i.id}', '${ep?.id || ''}', '${i.job_id || ''}', ${JSON.stringify(name).replace(/"/g, '&quot;')})">
+        <i class="bi bi-star-fill"></i> Rate Now
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function openRateEmployerModal(interviewId, employerProfileId, jobId, employerName) {
+  if (!employerProfileId) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'This employer profile could not be found.');
+    return;
+  }
+  ratingContext = { interviewId, employerProfileId, jobId: jobId || null, stars: 0 };
+  document.getElementById('rate-employer-name').textContent = employerName || 'this employer';
+  document.getElementById('rate-review-text').value = '';
+  setRatingStars(0);
+  openModal('modal-rate-employer');
+}
+
+function setRatingStars(n) {
+  ratingContext.stars = n;
+  document.querySelectorAll('#rate-star-picker i').forEach(star => {
+    star.classList.toggle('selected', parseInt(star.dataset.star) <= n);
+  });
+}
+
+async function submitEmployerRating() {
+  if (!ratingContext.stars) {
+    showToast('err', 'bi-exclamation-circle', 'Select a Rating', 'Please choose 1–5 stars first.');
+    return;
+  }
+  if (!workerProfile?.id || !ratingContext.employerProfileId) return;
+
+  const btn = document.getElementById('submit-rating-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Submitting…';
+
+  const { error } = await sb.from('employer_ratings').insert({
+    employer_id: ratingContext.employerProfileId,
+    worker_id: workerProfile.id,
+    interview_id: ratingContext.interviewId,
+    job_id: ratingContext.jobId,
+    rating: ratingContext.stars,
+    review_text: document.getElementById('rate-review-text').value.trim() || null,
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-star-fill"></i> Submit Rating';
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+  } else {
+    showToast('ok', 'bi-check-circle', 'Thank You!', 'Your rating has been submitted.');
+    closeModal('modal-rate-employer');
+    loadPendingEmployerRatings();
+  }
 }
 
 function renderTick(m) {
@@ -3441,33 +3720,60 @@ function filterJobs() {
   renderJobs(filtered);
 }
 
+// ── small render helpers ──────────────────────────────────
+function workTypeChip(workType) {
+  if (!workType) return '';
+  const key = workType.toLowerCase();
+  const iconMap = { onsite: 'bi-building', remote: 'bi-house-door', hybrid: 'bi-arrow-left-right' };
+  const cls = key === 'onsite' ? 'type-onsite' : key === 'remote' ? 'type-remote' : key === 'hybrid' ? 'type-hybrid' : '';
+  const icon = iconMap[key] || 'bi-briefcase';
+  return `<span class="job-chip ${cls}"><i class="bi ${icon}"></i> ${esc(workType)}</span>`;
+}
+
+function durationChip(j) {
+  if (!j.duration_value && !j.duration_type) return '';
+  const label = j.duration_value || ({ ongoing: 'Ongoing', fixed_term: 'Fixed Term', one_time: 'One-time', recurring: 'Recurring' })[j.duration_type] || '';
+  if (!label) return '';
+  return `<span class="job-chip duration"><i class="bi bi-clock-history"></i> ${esc(label)}</span>`;
+}
+
+function renderStars(avg, count) {
+  const rating = Math.round(avg || 0);
+  let stars = '';
+  for (let i = 1; i <= 5; i++) {
+    stars += `<i class="bi ${i <= rating ? 'bi-star-fill' : 'bi-star empty'}"></i>`;
+  }
+  return `<span class="job-rating-stars">${stars}<span class="job-rating-count">${count ? `(${count})` : 'No ratings yet'}</span></span>`;
+}
+
+function populateCountyFilter(jobs) {
+  const counties = [...new Set(jobs.map(j => j.county).filter(Boolean))].sort();
+  const sel = document.getElementById('job-county');
+  counties.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+function filterJobs() {
+  const q = document.getElementById('job-search').value.toLowerCase();
+  const county = document.getElementById('job-county').value;
+  const filtered = allJobs.filter(j => {
+    const matchQ = !q || (j.title + j.description + j.job_role).toLowerCase().includes(q);
+    const matchC = !county || j.county === county;
+    return matchQ && matchC;
+  });
+  renderJobs(filtered);
+}
+
 function renderJobs(jobs) {
   const el = document.getElementById('jobs-list');
   if (!jobs.length) {
     el.innerHTML = '<div class="empty-state"><i class="bi bi-briefcase"></i><p>No jobs match your search</p></div>';
     return;
   }
-  el.innerHTML = jobs.map(j => `
-    <div class="job-card">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
-        <div>
-          <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${esc(j.title || 'Untitled Job')}</div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            ${j.is_urgent ? '<span class="job-chip urgent"><i class="bi bi-lightning-fill"></i> Urgent</span>' : ''}
-            ${j.job_type ? `<span class="job-chip">${esc(j.job_type)}</span>` : ''}
-            ${j.county ? `<span class="job-chip"><i class="bi bi-geo-alt"></i> ${esc(j.county)}</span>` : ''}
-          </div>
-        </div>
-        ${j.salary_range ? `<div style="font-size:12px; color:var(--brand); font-weight:700; white-space:nowrap;">${esc(j.salary_range)}</div>` : ''}
-      </div>
-      <div style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:10px;">${esc((j.description || '').substring(0, 160))}${j.description?.length > 160 ? '…' : ''}</div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-size:11px; color:var(--muted);">${j.created_at ? timeAgo(new Date(j.created_at)) + ' ago' : ''}</div>
-        <button class="btn btn-primary btn-sm" onclick="applyJob('${j.id}', this)">
-          <i class="bi bi-send"></i> Apply Now
-        </button>
-      </div>
-    </div>`).join('');
+  el.innerHTML = jobs.map(j => jobCardHtml(j)).join('');
 }
 
 async function applyJob(jobId, btn) {
@@ -3511,7 +3817,271 @@ async function applyJob(jobId, btn) {
   } else {
     showToast('ok', 'bi-check-circle', 'Applied!', 'Your application has been submitted.');
     btn.innerHTML = '<i class="bi bi-check"></i> Applied';
+    btn.disabled = true;
+    myApplications.push({ job_id: jobId, status: 'pending', applied_at: new Date().toISOString() });
+    const statEl = document.getElementById('stat-applications');
+    if (statEl) statEl.textContent = (parseInt(statEl.textContent) || 0) + 1;
   }
+}
+
+// ════════════════════════════════════════════════════════
+//  SAVE / WHITELIST JOBS (bookmark)
+// ════════════════════════════════════════════════════════
+async function toggleSaveJob(jobId, btn) {
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first.');
+    return;
+  }
+  const wasSaved = savedJobIds.has(jobId);
+  btn.disabled = true;
+  try {
+    if (wasSaved) {
+      const { error } = await sb.from('saved_jobs').delete().eq('job_id', jobId).eq('worker_id', workerProfile.id);
+      if (error) throw error;
+      savedJobIds.delete(jobId);
+      showToast('info', 'bi-bookmark', 'Removed', 'Job removed from saved jobs.');
+    } else {
+      const { error } = await sb.from('saved_jobs').insert({ job_id: jobId, worker_id: workerProfile.id });
+      if (error) throw error;
+      savedJobIds.add(jobId);
+      showToast('ok', 'bi-bookmark-check-fill', 'Saved', 'Job added to your saved jobs.');
+    }
+    btn.classList.toggle('active', !wasSaved);
+    btn.querySelector('i').className = `bi ${!wasSaved ? 'bi-bookmark-check-fill' : 'bi-bookmark'}`;
+    const statEl = document.getElementById('stat-saved-jobs');
+    if (statEl) statEl.textContent = savedJobIds.size;
+  } catch (err) {
+    showToast('err', 'bi-exclamation-circle', 'Error', err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadSavedJobs() {
+  const el = document.getElementById('saved-jobs-list');
+  if (!workerProfile?.id) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Complete your profile to save jobs.</p></div>';
+    return;
+  }
+  el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>';
+  const { data, error } = await sb.from('saved_jobs')
+    .select('job_id, created_at, job_postings(id, title, description, location, county, salary_range, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count)')
+    .eq('worker_id', workerProfile.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ loadSavedJobs error:', error.message);
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
+    return;
+  }
+  const jobs = (data || []).map(r => r.job_postings).filter(Boolean);
+  if (!jobs.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>You haven\'t saved any jobs yet.</p></div>';
+    return;
+  }
+  el.innerHTML = jobs.map(j => jobCardHtml(j)).join('');
+}
+
+function jobCardHtml(j) {
+  const isSaved = savedJobIds.has(j.id);
+  const isLoved = lovedJobIds.has(j.id);
+  const applied = myApplications.some(a => a.job_id === j.id);
+  return `
+    <div class="job-card">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
+            <div style="font-weight:700; font-size:14px;">${esc(j.title || 'Untitled Job')}</div>
+            ${j.company_verified ? '<span class="employer-verified-badge"><i class="bi bi-patch-check-fill"></i> Verified</span>' : ''}
+          </div>
+          ${j.company_name ? `<div style="font-size:12px; color:var(--muted); margin-bottom:4px;">${esc(j.company_name)}</div>` : ''}
+          <div style="margin-bottom:4px;">${renderStars(j.employer_avg_rating, j.employer_rating_count)}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${j.is_urgent ? '<span class="job-chip urgent"><i class="bi bi-lightning-fill"></i> Urgent</span>' : ''}
+            ${j.job_type ? `<span class="job-chip">${esc(j.job_type)}</span>` : ''}
+            ${workTypeChip(j.work_type)}
+            ${durationChip(j)}
+            ${j.county ? `<span class="job-chip"><i class="bi bi-geo-alt"></i> ${esc(j.county)}</span>` : ''}
+          </div>
+        </div>
+        ${j.salary_range ? `<div style="font-size:12px; color:var(--brand); font-weight:700; white-space:nowrap;">${esc(j.salary_range)}</div>` : ''}
+      </div>
+      <div style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:10px;">${esc((j.description || '').substring(0, 160))}${j.description?.length > 160 ? '…' : ''}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="font-size:11px; color:var(--muted);">${j.created_at ? timeAgo(new Date(j.created_at)) + ' ago' : ''}</div>
+        <div class="job-action-row">
+          <span class="job-love-count">${j.loves_count || 0}</span>
+          <button class="job-action-icon-btn love ${isLoved ? 'active' : ''}" title="Love this job" onclick="toggleLoveJob('${j.id}', this)">
+            <i class="bi ${isLoved ? 'bi-heart-fill' : 'bi-heart'}"></i>
+          </button>
+          <button class="job-action-icon-btn save ${isSaved ? 'active' : ''}" title="Save / Whitelist job" onclick="toggleSaveJob('${j.id}', this)">
+            <i class="bi ${isSaved ? 'bi-bookmark-check-fill' : 'bi-bookmark'}"></i>
+          </button>
+          <button class="job-action-icon-btn share" title="Share job" onclick="shareJob('${j.id}', ${JSON.stringify(j.title || 'Job').replace(/"/g, '&quot;')})">
+            <i class="bi bi-share"></i>
+          </button>
+          <button class="job-action-icon-btn report" title="Report job" onclick="openReportModal('${j.id}', ${JSON.stringify(j.title || 'this job').replace(/"/g, '&quot;')})">
+            <i class="bi bi-flag"></i>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="applyJob('${j.id}', this)" ${applied ? 'disabled' : ''}>
+            <i class="bi ${applied ? 'bi-check' : 'bi-send'}"></i> ${applied ? 'Applied' : 'Apply Now'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  LOVE JOBS (heart / like)
+// ════════════════════════════════════════════════════════
+async function toggleLoveJob(jobId, btn) {
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first.');
+    return;
+  }
+  const wasLoved = lovedJobIds.has(jobId);
+  btn.disabled = true;
+  try {
+    if (wasLoved) {
+      const { error } = await sb.from('job_loves').delete().eq('job_id', jobId).eq('worker_id', workerProfile.id);
+      if (error) throw error;
+      lovedJobIds.delete(jobId);
+    } else {
+      const { error } = await sb.from('job_loves').insert({ job_id: jobId, worker_id: workerProfile.id });
+      if (error) throw error;
+      lovedJobIds.add(jobId);
+    }
+    btn.classList.toggle('active', !wasLoved);
+    btn.querySelector('i').className = `bi ${!wasLoved ? 'bi-heart-fill' : 'bi-heart'}`;
+    const countEl = btn.parentElement.querySelector('.job-love-count');
+    const job = allJobs.find(j => j.id === jobId);
+    if (job) {
+      job.loves_count = Math.max((job.loves_count || 0) + (wasLoved ? -1 : 1), 0);
+      if (countEl) countEl.textContent = job.loves_count;
+    }
+  } catch (err) {
+    showToast('err', 'bi-exclamation-circle', 'Error', err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  REPORT JOB
+// ════════════════════════════════════════════════════════
+function openReportModal(jobId, jobTitle) {
+  reportingJobId = jobId;
+  document.getElementById('report-job-title').textContent = jobTitle || 'this job';
+  document.getElementById('report-reason').value = 'fraud';
+  document.getElementById('report-details').value = '';
+  openModal('modal-report-job');
+}
+
+async function submitJobReport() {
+  if (!reportingJobId) return;
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first to submit a report.');
+    return;
+  }
+  const btn = document.getElementById('submit-report-btn');
+  const reason = document.getElementById('report-reason').value;
+  const details = document.getElementById('report-details').value.trim();
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Submitting…';
+
+  const { error } = await sb.from('job_reports').insert({
+    job_id: reportingJobId,
+    worker_id: workerProfile.id,
+    reason,
+    details: details || null,
+  });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-flag-fill"></i> Submit Report';
+
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+  } else {
+    showToast('ok', 'bi-check-circle', 'Report Submitted', 'Thank you — our team will review this job.');
+    closeModal('modal-report-job');
+    reportingJobId = null;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  SHARE JOB (public, ungated link)
+// ════════════════════════════════════════════════════════
+function buildJobShareUrl(jobId) {
+  // jobs.html is the public, non-gated jobs page — anyone with the link can view this posting.
+  const base = location.origin + location.pathname.replace(/employee-dashboard\.html$/, '');
+  return `${base}jobs.html?job=${jobId}`;
+}
+
+async function shareJob(jobId, jobTitle) {
+  const url = buildJobShareUrl(jobId);
+  const shareData = { title: jobTitle || 'Job on SoundsCare', text: `Check out this job: ${jobTitle || ''}`, url };
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+  } catch (shareErr) {
+    // user cancelled share sheet or it failed — fall through to clipboard copy
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('ok', 'bi-link-45deg', 'Link Copied', 'Job link copied to clipboard — share it anywhere.');
+  } catch (copyErr) {
+    showToast('info', 'bi-link-45deg', 'Job Link', url);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  MY APPLICATIONS
+// ════════════════════════════════════════════════════════
+async function loadApplications() {
+  const el = document.getElementById('applications-list');
+  if (!workerProfile?.id) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>Complete your profile to see applications.</p></div>';
+    return;
+  }
+  el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>';
+
+  const { data, error } = await sb.from('job_applications')
+    .select('id, job_id, status, applied_at, updated_at, job_postings(id, title, company_name, county, salary_range)')
+    .eq('worker_id', workerProfile.id)
+    .order('applied_at', { ascending: false });
+
+  if (error) {
+    console.error('❌ loadApplications error:', error.message);
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load applications</p></div>';
+    return;
+  }
+
+  myApplications = data || [];
+  document.getElementById('stat-applications').textContent = myApplications.length;
+
+  if (!myApplications.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>You haven\'t applied to any jobs yet.</p></div>';
+    return;
+  }
+
+  const statusColor = { pending: 'var(--sky)', reviewed: 'var(--accent)', shortlisted: '#7c3aed', hired: 'var(--green)', rejected: 'var(--rose)' };
+  el.innerHTML = myApplications.map(a => {
+    const job = a.job_postings || {};
+    const color = statusColor[a.status] || 'var(--muted)';
+    return `
+    <div class="job-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+        <div>
+          <div style="font-weight:700; font-size:14px; margin-bottom:2px;">${esc(job.title || 'Job')}</div>
+          <div style="font-size:12px; color:var(--muted);">${esc(job.company_name || '')} ${job.county ? '· ' + esc(job.county) : ''}</div>
+        </div>
+        <span class="job-chip" style="background:${color}1a; color:${color}; text-transform:capitalize;">${esc(a.status)}</span>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:8px;">Applied ${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''}</div>
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════
@@ -4064,6 +4634,8 @@ function openModal(id) {
   el.dataset.justOpened = '1';
   setTimeout(() => { delete el.dataset.justOpened; }, 300);
   if (id === 'modal-wallet') ensureAccountNumber();
+  if (id === 'modal-applications') loadApplications();
+  if (id === 'modal-saved-jobs') loadSavedJobs();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 

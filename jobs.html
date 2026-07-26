@@ -1,5 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--
+=============================================================================
+  SUMMARY OF CHANGES — Employee Dashboard Job Applications Section
+=============================================================================
+
+### DATABASE (Supabase project `phoahudvrcelfrykoeuo`)
+
+NEW COLUMNS on `job_postings`:
+  • duration_type: 'ongoing' | 'fixed_term' | 'one_time' | 'recurring'
+  • duration_value: free text (e.g., "1 Year", "3 days a week", "4 hours a day")
+  • loves_count: denormalized, auto-synced count of hearts
+  • employer_avg_rating: denormalized cache from employer ratings (auto-synced)
+  • employer_rating_count: denormalized cache count (auto-synced)
+  • work_type: reused for Onsite/Remote/Hybrid
+  • company_verified / company_name: reused for verified badge
+
+NEW COLUMNS on `employer_profiles`:
+  • avg_rating: calculated average of employer ratings (1–5 stars)
+  • rating_count: count of ratings received
+
+NEW TABLES:
+  • saved_jobs
+    - worker bookmarks/whitelists a job
+    - RLS scoped to worker via session_id = auth.uid()
+  
+  • job_loves
+    - worker "hearts" a job
+    - insert/delete triggers sync to job_postings.loves_count
+  
+  • job_reports
+    - reason enum: fraud | scam | fake_listing | discriminatory | 
+                   inappropriate | already_filled | other
+    - status workflow: pending → reviewed | dismissed | action_taken
+  
+  • employer_ratings
+    - worker rates employer after completed interview
+    - 1–5 stars + optional review text
+    - triggers recalculate employer_profiles avg_rating/rating_count
+    - cascades into job_postings.employer_avg_rating
+
+All new tables have RLS policies following existing pattern (worker-scoped via
+worker_profiles.session_id, plus is_admin() catch-all for admin management).
+
+### FRONTEND (employee-dashboard.html)
+
+STATS ROW:
+  • Added 3 new stat cards: Applications, Interviewed, Saved Jobs
+  • Grid made responsive to fit 6 cards
+
+JOB CARDS NOW DISPLAY:
+  • Verified employer badge (bi-patch-check-fill icon)
+  • Employer star rating + rating count
+  • Urgent / job type / work-type (Onsite-Remote-Hybrid) / duration / county chips
+  • Love count + heart toggle button
+  • Save/whitelist bookmark toggle button
+  • Share button (builds jobs.html?job=<id> link, Web Share API with fallback)
+  • Report button
+  • Apply button (shows "Applied" state on first load if already applied)
+
+NEW MODALS:
+  • Saved Jobs — lists bookmarked positions
+  • My Applications — status-colored list (pending/reviewed/shortlisted/hired/rejected)
+  • Report Job — reason dropdown + details textarea
+  • Rate Employer — 5-star picker + optional review textarea
+
+INTERVIEWS MODAL ENHANCEMENT:
+  • New "pending ratings" section at top
+  • Prompts worker to rate any employer from completed interviews (not yet rated)
+
+NEW JAVASCRIPT FUNCTIONS:
+  • toggleSaveJob() — bookmark/unbookmark a job
+  • toggleLoveJob() — heart/unheart a job (updates loves_count)
+  • openReportModal(jobId) / submitJobReport() — job reporting flow
+  • shareJob(jobId) — builds shareable link & uses Web Share API
+  • buildJobShareUrl(jobId) — constructs jobs.html?job=<id> URL
+  • loadApplications() — fetches worker's job applications
+  • loadSavedJobs() — fetches worker's bookmarked jobs
+  • jobCardHtml(job) — shared card HTML renderer
+  • workTypeChip(type) — renders work-type badge (Onsite/Remote/Hybrid)
+  • durationChip(type, value) — renders duration badge
+  • renderStars(rating, count) — renders star display with count
+  • loadPendingEmployerRatings() — fetches completed interviews pending rating
+  • openRateEmployerModal(employerId) / setRatingStars(n) — rating flow
+  • submitEmployerRating(employerId, stars, review) — posts rating to db
+
+ICONS:
+  • Uses Bootstrap Icons throughout (bi-heart-fill, bi-bookmark-fill, 
+    bi-share, bi-flag, bi-star-fill, etc.)
+  • No new icon library added
+
+OUTSTANDING DEPENDENCIES:
+  ⚠️  jobs.html needs to read ?job= query param to display single posting
+  ⚠️  Employer/admin side must set interviews.status = 'completed' 
+      for rating prompts to appear
+  ⚠️  Frontend integration with employee-dashboard.html modals & functions
+
+=============================================================================
+-->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
