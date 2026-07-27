@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 :root {
   --ink: #0f1923;
@@ -324,12 +326,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
 .db-table-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .db-table-row:last-child { border-bottom: none; }
 
-/* COOKIE BANNER */
-#cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,25,35,.95); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; z-index: 8000; flex-wrap: wrap; }
-#cookie-banner p { font-size: 13px; flex: 1; min-width: 200px; }
-#cookie-banner .btn-amber { font-size: 13px; }
-#cookie-banner .btn-ghost { font-size: 13px; color: #fff; border-color: rgba(255,255,255,.4); }
-#cookie-banner .btn-ghost:hover { background: rgba(255,255,255,.12); color: #fff; }
+
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
@@ -365,12 +362,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
   ⚠️ MAINTENANCE MODE — Website is currently offline for users
 </div>
 
-<!-- COOKIE BANNER -->
-<div id="cookie-banner" style="display:none">
-  <p>🍪 This admin panel uses essential cookies for authentication and session management. By continuing, you accept our cookie policy.</p>
-  <button class="btn btn-amber btn-sm" onclick="acceptCookies()">Accept Cookies</button>
-  <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cookie-banner').style.display='none'">Dismiss</button>
-</div>
+
 
 <!-- LOGIN -->
 <div id="auth-overlay">
@@ -811,6 +803,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <button class="tab-btn active" onclick="switchSettingsTab(event,'admins')">Admin Accounts</button>
         <button class="tab-btn" onclick="switchSettingsTab(event,'db')">DB Monitor</button>
         <button class="tab-btn" onclick="switchSettingsTab(event,'siteconfig')">Site Config</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'cookies')">Cookies</button>
       </div>
       <div id="settings-tab-admins" class="tab-content active">
         <div class="section">
@@ -848,6 +841,25 @@ tr:hover td { background: rgba(27,107,69,.02); }
             <div class="form-group"><label>First Salary Fee (Ksh)</label><input id="fee-salary" type="number" value="1000"></div>
             <div class="form-group"><label>Employer Posting Fee (Ksh)</label><input id="fee-employer" type="number" value="2000"></div>
             <button class="btn btn-primary" onclick="saveSiteConfig()">Save Configuration</button>
+          </div>
+        </div>
+      </div>
+      <div id="settings-tab-cookies" class="tab-content">
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><i class="bi bi-cookie"></i> Cookies &amp; Local Data</div>
+            <button class="btn btn-sm btn-secondary" onclick="renderCookieStatus()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+          <div class="section-body">
+            <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">This admin panel does not show a cookie consent banner. Essential cookies and local data are used only for keeping you signed in and for session/UI preferences. Manage or clear them below.</p>
+            <div id="cookie-status-list"></div>
+            <div class="actions-cell" style="margin-top:1.25rem;flex-wrap:wrap;gap:8px">
+              <button class="btn btn-sm btn-secondary" onclick="clearAllCookies()"><i class="bi bi-cookie"></i> Clear Cookies</button>
+              <button class="btn btn-sm btn-secondary" onclick="clearLocalStorage()"><i class="bi bi-hdd"></i> Clear Local Storage</button>
+              <button class="btn btn-sm btn-secondary" onclick="clearSessionStorage()"><i class="bi bi-hdd-stack"></i> Clear Session Storage</button>
+              <button class="btn btn-sm btn-secondary" onclick="clearBrowserCache()"><i class="bi bi-trash"></i> Clear Cache</button>
+              <button class="btn btn-sm btn-danger" onclick="manageRememberedSessions()"><i class="bi bi-box-arrow-right"></i> Forget Remembered Sessions</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1255,12 +1267,44 @@ let maintenanceMode = false;
 let currentConvTab = 'all';
 
 // ============================================================
-// COOKIES
+// COOKIE MANAGEMENT (Settings > Cookies panel — no banner, admin-only tooling)
 // ============================================================
 function setCookie(n,v,d){document.cookie=`${n}=${v};max-age=${d*86400};path=/`;}
 function getCookie(n){const r=document.cookie.match(new RegExp('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'));return r?r[2]:null;}
-function acceptCookies(){setCookie('sc_admin_cookies','accepted',365);document.getElementById('cookie-banner').style.display='none';}
-function checkCookieBanner(){if(!getCookie('sc_admin_cookies'))document.getElementById('cookie-banner').style.display='flex';}
+function listAllCookies(){
+  return document.cookie.split(';').map(c=>c.trim()).filter(Boolean).map(c=>{const i=c.indexOf('=');return{name:i>-1?c.slice(0,i):c,value:i>-1?c.slice(i+1):''};});
+}
+function renderCookieStatus(){
+  const el=document.getElementById('cookie-status-list');if(!el)return;
+  const cookies=listAllCookies();
+  let lsCount=0,ssCount=0;
+  try{lsCount=localStorage.length;}catch(e){}
+  try{ssCount=sessionStorage.length;}catch(e){}
+  el.innerHTML=`
+    <div class="form-row" style="margin-bottom:1rem">
+      <div class="form-group"><label>Browser Cookies</label><div>${cookies.length} cookie(s) set</div></div>
+      <div class="form-group"><label>Local Storage</label><div>${lsCount} key(s) stored</div></div>
+      <div class="form-group"><label>Session Storage</label><div>${ssCount} key(s) stored</div></div>
+    </div>
+    ${cookies.length?`<div class="table-wrap"><table><thead><tr><th>Cookie</th><th>Value</th></tr></thead><tbody>${
+      cookies.map(c=>`<tr><td>${esc(c.name)}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.value)}</td></tr>`).join('')
+    }</tbody></table></div>`:'<p style="color:var(--muted);font-size:13px">No cookies currently set for this admin panel.</p>'}
+  `;
+}
+function clearAllCookies(){
+  listAllCookies().forEach(c=>{document.cookie=`${c.name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;document.cookie=`${c.name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${location.hostname}`;});
+  showToast('ok','All cookies cleared');renderCookieStatus();
+}
+function clearLocalStorage(){try{localStorage.clear();}catch(e){}showToast('ok','Local storage cleared');renderCookieStatus();}
+function clearSessionStorage(){try{sessionStorage.clear();}catch(e){}showToast('ok','Session storage cleared');renderCookieStatus();}
+async function clearBrowserCache(){
+  if(window.caches){try{const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));showToast('ok','Cache storage cleared');}catch(e){showToast('err','Cache API unavailable in this context');}}
+  else{showToast('err','Cache API not supported by this browser');}
+}
+async function manageRememberedSessions(){
+  clearAllCookies();clearLocalStorage();clearSessionStorage();
+  showToast('ok','All remembered sessions cleared — you will need to log in again next visit');
+}
 
 // ============================================================
 // AUTH
@@ -1310,7 +1354,6 @@ async function handleLogin(e){
     document.getElementById('sb-admin-name').textContent = data.username;
     document.getElementById('sb-avatar').textContent = getInitials(data.username);
     loadAll();
-    checkCookieBanner();
     setupRealtimeSubscriptions();
   } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
 }
@@ -1321,6 +1364,7 @@ function toggleAdminPw(){
   else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
 }
 async function handleLogout(){
+  teardownRealtimeSubscriptions();
   adminRecord = null;
   currentUser = null;
   localStorage.removeItem('sc_admin_session');
@@ -1343,7 +1387,6 @@ async function handleLogout(){
         document.getElementById('sb-avatar').textContent = getInitials(data.username);
         document.getElementById('auth-overlay').classList.add('hidden');
         loadAll();
-        checkCookieBanner();
         setupRealtimeSubscriptions();
         return;
       }
@@ -1355,8 +1398,12 @@ async function handleLogout(){
 // ============================================================
 // REALTIME
 // ============================================================
+let realtimeChannel=null;
 function setupRealtimeSubscriptions(){
-  sb.channel('admin-dashboard')
+  // Prevent stacking duplicate subscriptions if this is called more than once
+  // per page load (e.g. logout -> login again without a full reload).
+  if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null;}
+  realtimeChannel=sb.channel('admin-dashboard')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications'},(p)=>{
       allNotifications.unshift(p.new);
       renderNotifications();
@@ -1372,6 +1419,9 @@ function setupRealtimeSubscriptions(){
       document.getElementById('msg-indicator').style.display='block';
     })
     .subscribe();
+}
+function teardownRealtimeSubscriptions(){
+  if(realtimeChannel){sb.removeChannel(realtimeChannel);realtimeChannel=null;}
 }
 
 // ============================================================
@@ -1527,7 +1577,7 @@ function renderEmployees(){
         <button class="btn btn-sm btn-amber" onclick="toggleBanWorker('${w.id}',${!!w.ban_reason})">${w.ban_reason?'Unban':'Ban'}</button>
         <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${w.session_id||w.id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${w.id}')"><i class="bi bi-camera-video"></i></button>
-        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${w.email}','${esc(w.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${escAttr(w.email)}','${escAttr(w.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
         <button class="btn btn-sm btn-primary" onclick="openAdminChat('${w.session_id||w.id}','${esc(w.email)}','${esc(w.full_name)}','employee')" title="Chat directly with this user"><i class="bi bi-chat-dots"></i></button>
         <button class="btn btn-sm btn-ghost" onclick="viewUserChats('${w.session_id||w.id}','${esc(w.full_name)}')" title="View / unblock this user's chats"><i class="bi bi-chat-square-text"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteWorker('${w.id}')"><i class="bi bi-trash3"></i></button>
@@ -1567,7 +1617,7 @@ function renderEmployers(){
         <button class="btn btn-sm btn-primary" onclick="toggleVerifyEmployer('${e.id}',${!e.is_verified})">${e.is_verified?'Unverify':'Verify'}</button>
         <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${e.user_id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${e.id}')"><i class="bi bi-camera-video"></i></button>
-        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${user.email}','${esc(e.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
+        <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${escAttr(user.email)}','${escAttr(e.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
         <button class="btn btn-sm btn-primary" onclick="openAdminChat('${e.user_id}','${esc(user.email)}','${esc(e.full_name)}','employer')" title="Chat directly with this user"><i class="bi bi-chat-dots"></i></button>
         <button class="btn btn-sm btn-ghost" onclick="viewUserChats('${e.user_id}','${esc(e.full_name)}')" title="View / unblock this user's chats"><i class="bi bi-chat-square-text"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteEmployer('${e.id}')"><i class="bi bi-trash3"></i></button>
@@ -1602,7 +1652,7 @@ function renderConversations(filter='all'){
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.last_message_text||'—')}</td>
       <td>${c.employer_unread+c.employee_unread||0} unread</td>
       <td><div class="actions-cell">
-        <button class="btn btn-sm btn-primary" onclick="openChat('${c.id}','${esc(workerName)}','${esc(employerName)}','${c.status}')"><i class="bi bi-chat-dots"></i> View</button>
+        <button class="btn btn-sm btn-primary" onclick="openChat('${c.id}','${escAttr(workerName)}','${escAttr(employerName)}','${c.status}')"><i class="bi bi-chat-dots"></i> View</button>
         <button class="btn btn-sm btn-amber" onclick="pauseConversation('${c.id}',${c.status==='archived'})">${c.status==='archived'?'Unpause':'Pause'}</button>
         <button class="btn btn-sm btn-danger" onclick="closeConversationAdmin('${c.id}')">End</button>
       </div></td>
@@ -1894,21 +1944,59 @@ function renderTrash(){
       </div></td>
     </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">Trash is empty</td></tr>';
 }
+const RESTORE_TABLE_MAP={
+  worker_profile:{table:'worker_profiles',patch:{is_deleted:false,account_deactivated:false,deactivated_at:null,deleted_at:null}},
+  employer_profile:{table:'employer_profiles',patch:{is_deleted:false}},
+  user:{table:'users',patch:{is_active:true}},
+  job_posting:{table:'job_postings',patch:{status:'active',is_closed:false}},
+};
 async function restoreTrash(id,type,entityId){
-  await sb.from('trash_bin').delete().eq('id',id);
-  allTrash=allTrash.filter(t=>t.id!==id);
-  renderTrash();showToast('ok','Item restored');
+  const map=RESTORE_TABLE_MAP[type];
+  if(!map){showToast('err','Unknown entity type — cannot restore automatically');return;}
+  try{
+    const {error}=await sb.from(map.table).update(map.patch).eq('id',entityId);
+    if(error)throw error;
+    await sb.from('trash_bin').delete().eq('id',id);
+    allTrash=allTrash.filter(t=>t.id!==id);
+    renderTrash();showToast('ok','Item restored');
+    loadAll();
+  }catch(err){showToast('err','Restore failed: '+err.message);}
 }
 async function permDeleteTrash(id){
-  if(!confirm('Permanently delete? This cannot be undone.'))return;
-  await sb.from('trash_bin').delete().eq('id',id);
-  allTrash=allTrash.filter(t=>t.id!==id);
-  renderTrash();showToast('ok','Permanently deleted');
+  const item=allTrash.find(t=>t.id===id);
+  if(!item){showToast('err','Trash item not found');return;}
+  if(!confirm(`Permanently delete this ${item.entity_type.replace('_',' ')} and ALL related data (messages, applications, payments, files, etc.)? This cannot be undone.`))return;
+  showToast('ok','Deleting permanently…');
+  try{
+    if(CASCADE_MAP[item.entity_type]){
+      await permanentlyDeleteEntity(item.entity_type,item.entity_id,item.entity_data);
+      if(item.entity_type==='user'&&item.entity_data?.id)await deleteAuthUser(item.entity_data.id);
+    }else{
+      // No cascade map (e.g. job_posting deleted straight to trash) — just remove the root row
+      const table=RESTORE_TABLE_MAP[item.entity_type]?.table;
+      if(table)await sb.from(table).delete().eq('id',item.entity_id);
+    }
+    await sb.from('trash_bin').delete().eq('id',id);
+    allTrash=allTrash.filter(t=>t.id!==id);
+    renderTrash();showToast('ok','Permanently deleted — all related records and files removed');
+  }catch(err){showToast('err','Permanent delete failed: '+err.message);}
 }
 async function emptyTrash(){
-  if(!confirm('Empty entire trash? This cannot be undone.'))return;
+  if(!confirm(`Empty entire trash (${allTrash.length} item(s))? This permanently deletes ALL related data for every item and cannot be undone.`))return;
+  showToast('ok','Emptying trash…');
+  for(const item of [...allTrash]){
+    try{
+      if(CASCADE_MAP[item.entity_type]){
+        await permanentlyDeleteEntity(item.entity_type,item.entity_id,item.entity_data);
+        if(item.entity_type==='user'&&item.entity_data?.id)await deleteAuthUser(item.entity_data.id);
+      }else{
+        const table=RESTORE_TABLE_MAP[item.entity_type]?.table;
+        if(table)await sb.from(table).delete().eq('id',item.entity_id);
+      }
+    }catch(err){console.error('emptyTrash item failed',item,err);}
+  }
   await sb.from('trash_bin').delete().neq('id','00000000-0000-0000-0000-000000000000');
-  allTrash=[];renderTrash();showToast('ok','Trash emptied');
+  allTrash=[];renderTrash();showToast('ok','Trash emptied — all related records and files removed');
 }
 
 // ============================================================
@@ -2003,27 +2091,27 @@ async function viewEmployeeProfile(id){
     </div>
     <div class="profile-section"><h3>Personal Details</h3>
     <div class="profile-grid">
-      <div class="profile-field"><label>Email</label><span>${w.email||'—'}</span></div>
-      <div class="profile-field"><label>Phone</label><span>${w.phone||'—'}</span></div>
-      <div class="profile-field"><label>Date of Birth</label><span>${w.dob||w.date_of_birth||'—'}</span></div>
-      <div class="profile-field"><label>Gender</label><span>${w.gender||'—'}</span></div>
-      <div class="profile-field"><label>National ID</label><span>${w.id_number||w.national_id||'—'}</span></div>
-      <div class="profile-field"><label>Languages</label><span>${w.languages||'—'}</span></div>
-      <div class="profile-field"><label>Current Town</label><span>${w.current_town||'—'}</span></div>
-      <div class="profile-field"><label>County</label><span>${w.county||'—'}</span></div>
-      <div class="profile-field"><label>Work Arrangement</label><span>${w.work_arrangement||'—'}</span></div>
-      <div class="profile-field"><label>Availability</label><span>${w.availability||'—'}</span></div>
+      <div class="profile-field"><label>Email</label><span>${esc(w.email||'—')}</span></div>
+      <div class="profile-field"><label>Phone</label><span>${esc(w.phone||'—')}</span></div>
+      <div class="profile-field"><label>Date of Birth</label><span>${esc(w.dob||w.date_of_birth||'—')}</span></div>
+      <div class="profile-field"><label>Gender</label><span>${esc(w.gender||'—')}</span></div>
+      <div class="profile-field"><label>National ID</label><span>${esc(w.id_number||w.national_id||'—')}</span></div>
+      <div class="profile-field"><label>Languages</label><span>${esc(w.languages||'—')}</span></div>
+      <div class="profile-field"><label>Current Town</label><span>${esc(w.current_town||'—')}</span></div>
+      <div class="profile-field"><label>County</label><span>${esc(w.county||'—')}</span></div>
+      <div class="profile-field"><label>Work Arrangement</label><span>${esc(w.work_arrangement||'—')}</span></div>
+      <div class="profile-field"><label>Availability</label><span>${esc(w.availability||'—')}</span></div>
     </div></div>
     <div class="profile-section"><h3>Professional</h3>
     <div class="profile-grid">
-      <div class="profile-field"><label>Preferred Role</label><span>${w.preferred_role||'—'}</span></div>
-      <div class="profile-field"><label>Education</label><span>${w.edu_level||w.education||'—'}</span></div>
-      <div class="profile-field"><label>Institution</label><span>${w.edu_institution||'—'}</span></div>
-      <div class="profile-field"><label>Salary Range</label><span>${w.salary_min&&w.salary_max?`Ksh ${(+w.salary_min).toLocaleString()}–${(+w.salary_max).toLocaleString()}`:w.salary_range||'—'}</span></div>
+      <div class="profile-field"><label>Preferred Role</label><span>${esc(w.preferred_role||'—')}</span></div>
+      <div class="profile-field"><label>Education</label><span>${esc(w.edu_level||w.education||'—')}</span></div>
+      <div class="profile-field"><label>Institution</label><span>${esc(w.edu_institution||'—')}</span></div>
+      <div class="profile-field"><label>Salary Range</label><span>${w.salary_min&&w.salary_max?`Ksh ${(+w.salary_min).toLocaleString()}–${(+w.salary_max).toLocaleString()}`:esc(w.salary_range||'—')}</span></div>
       <div class="profile-field"><label>Medical Cert</label><span>${w.has_medical_cert?'Yes':'No'}</span></div>
       <div class="profile-field"><label>Good Conduct</label><span>${w.has_good_conduct?'Yes':'No'}</span></div>
     </div></div>
-    ${docs.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docs.map(d=>`<div class="doc-thumb"><img src="${d.url}" onerror="this.style.display='none'"><a href="${d.url}" target="_blank">${d.label} ↗</a></div>`).join('')}</div></div>`:''}
+    ${docs.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docs.map(d=>`<div class="doc-thumb"><img src="${esc(d.url)}" onerror="this.style.display='none'"><a href="${esc(d.url)}" target="_blank">${esc(d.label)} ↗</a></div>`).join('')}</div></div>`:''}
     ${w.about_text?`<div class="profile-section"><h3>About</h3><p style="font-size:13px;line-height:1.6">${esc(w.about_text)}</p></div>`:''}
     ${w.admin_notes?`<div class="profile-section"><h3>Admin Notes</h3><p style="font-size:13px;color:var(--amber)">${esc(w.admin_notes)}</p></div>`:''}
     <div class="profile-section"><h3><i class="bi bi-clipboard-check"></i> Approval Checklist</h3>
@@ -2037,9 +2125,11 @@ async function viewEmployeeProfile(id){
     <div class="actions-cell" style="flex-wrap:wrap">
       <button class="btn btn-sm btn-primary" id="approve-emp-inline-btn" onclick="approveEmployee('${w.id}',${!w.approved_at})">${w.approved_at?'Unapprove':'Approve'}</button>
       <button class="btn btn-sm btn-amber" onclick="toggleBanWorker('${w.id}',${!!w.ban_reason})">${w.ban_reason?'Unban':'Ban'}</button>
-      <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${w.email}','${esc(w.full_name)}')"><i class="bi bi-chat"></i> Message</button>
+      <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${escAttr(w.email)}','${escAttr(w.full_name)}')"><i class="bi bi-chat"></i> Message</button>
       <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${w.id}')"><i class="bi bi-camera-video"></i> Interviews</button>
       <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${w.session_id||w.id}')"><i class="bi bi-cash"></i> Payments</button>
+      <button class="btn btn-sm btn-secondary" onclick="downloadWorkerBiodataPDF('${w.id}')"><i class="bi bi-file-earmark-pdf"></i> Download PDF</button>
+      <button class="btn btn-sm btn-secondary" onclick="shareWorkerBiodataPDF('${w.id}')"><i class="bi bi-share"></i> Share PDF</button>
     </div></div>`;
 
   // Pre-fill checklist from existing verification request, if any
@@ -2065,6 +2155,257 @@ async function saveChecklistItem(workerId,field,value){
   }
 }
 
+// ============================================================
+// WORKER BIODATA PDF (Download / Share)
+// ============================================================
+// Fetches a remote image (public Supabase Storage URL or otherwise) and
+// converts it to a base64 data URL so jsPDF can embed it.
+async function urlToDataURL(url){
+  if(!url)return null;
+  try{
+    const res=await fetch(url,{mode:'cors'});
+    if(!res.ok)return null;
+    const blob=await res.blob();
+    return await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onloadend=()=>resolve(reader.result);
+      reader.onerror=reject;
+      reader.readAsDataURL(blob);
+    });
+  }catch(err){console.warn('urlToDataURL failed for',url,err);return null;}
+}
+function pdfImgFormat(dataUrl){
+  if(!dataUrl)return 'JPEG';
+  if(dataUrl.startsWith('data:image/png'))return 'PNG';
+  if(dataUrl.startsWith('data:image/webp'))return 'WEBP';
+  return 'JPEG';
+}
+function fmtExperience(w){
+  try{
+    const exp=w.work_experience||w.experience||w.experiences;
+    if(!exp)return null;
+    const arr=Array.isArray(exp)?exp:(typeof exp==='string'?JSON.parse(exp):[]);
+    if(!Array.isArray(arr)||!arr.length)return null;
+    return arr.map(e=>`${e.employer_name||e.employer||'Employer'} — ${e.role||e.job_description||''} ${e.years_worked?`(${e.years_worked} yr${e.years_worked>1?'s':''})`:''}`.trim());
+  }catch(e){return null;}
+}
+function fmtReferees(w){
+  try{
+    const refs=w.referees;
+    if(!refs)return null;
+    const arr=Array.isArray(refs)?refs:(typeof refs==='string'?JSON.parse(refs):[]);
+    if(!Array.isArray(arr)||!arr.length)return null;
+    return arr.map(r=>`${r.full_name||r.name||'—'} (${r.relationship||'Referee'}) — ${r.phone||'—'}`);
+  }catch(e){return null;}
+}
+
+/**
+ * Builds an A4 SoundsCare-branded biodata PDF for a worker profile and
+ * returns the jsPDF document instance (caller decides save/share/print).
+ */
+async function buildWorkerBiodataPDF(id){
+  const w=allWorkers.find(w=>w.id===id);
+  if(!w)throw new Error('Worker not found');
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const pageW=210,margin=14;
+  let y=0;
+
+  // Header band
+  doc.setFillColor(27,107,69);
+  doc.rect(0,0,pageW,26,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');doc.setFontSize(16);
+  doc.text('SoundsCare',margin,12);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Verified Worker Biodata',margin,18);
+  doc.setFontSize(7);
+  doc.text('sounds.co.ke  •  Generated by SoundsCare Admin',margin,23);
+
+  // QR code linking to profile (top-right of header)
+  try{
+    const qrDataUrl=await QRCode.toDataURL(`https://sounds.co.ke/profile/${w.id}`,{margin:0,width:200});
+    doc.addImage(qrDataUrl,'PNG',pageW-margin-20,3,20,20);
+  }catch(e){console.warn('QR generation failed',e);}
+
+  y=34;
+
+  // Passport photo
+  const photoData=await urlToDataURL(w.profile_photo_url||w.selfie_url);
+  if(photoData){
+    try{doc.addImage(photoData,pdfImgFormat(photoData),margin,y,30,36);}catch(e){console.warn('photo embed failed',e);}
+  }else{
+    doc.setDrawColor(200);doc.rect(margin,y,30,36);
+    doc.setFontSize(7);doc.setTextColor(150);doc.text('No Photo',margin+15,y+18,{align:'center'});
+  }
+
+  const infoX=margin+36;
+  doc.setTextColor(15,25,35);
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text(w.full_name||'—',infoX,y+6);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.setTextColor(80);
+  doc.text(`${w.preferred_role||w.job_title||'—'}  •  ${w.county||w.current_town||'—'}`,infoX,y+13);
+
+  let badgeY=y+19;
+  doc.setFontSize(8);
+  const badges=[];
+  if(w.is_verified||w.approved_at)badges.push('VERIFIED');
+  if(w.badge)badges.push(w.badge.toUpperCase());
+  doc.setTextColor(27,107,69);
+  doc.text(badges.join('   '),infoX,badgeY);
+
+  y+=44;
+  doc.setDrawColor(220);doc.line(margin,y,pageW-margin,y);
+  y+=6;
+
+  function sectionTitle(t){
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(27,107,69);
+    doc.text(t,margin,y);y+=2;
+    doc.setDrawColor(27,107,69);doc.setLineWidth(0.5);doc.line(margin,y,margin+30,y);doc.setLineWidth(0.2);
+    y+=6;
+  }
+  function field(label,value,colX,colW){
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(120);
+    doc.text(label.toUpperCase(),colX,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(20);
+    const lines=doc.splitTextToSize(String(value ?? '—'),colW);
+    doc.text(lines,colX,y+4);
+    return 4+lines.length*4.2;
+  }
+  function twoCol(rows){
+    const colW=(pageW-margin*2-8)/2;
+    let maxH=0;
+    rows.forEach((pair,i)=>{
+      const rowY=y;
+      let h1=0,h2=0;
+      if(pair[0]){const savedY=y;h1=field(pair[0][0],pair[0][1],margin,colW);}
+      if(pair[1]){const savedY=y;h2=field(pair[1][0],pair[1][1],margin+colW+8,colW);}
+      y+=Math.max(h1,h2)+3;
+    });
+  }
+  function ensureSpace(needed){
+    if(y+needed>285){doc.addPage();y=16;}
+  }
+
+  sectionTitle('Personal Details');
+  twoCol([
+    [['Gender',w.gender],['Date of Birth',w.dob||w.date_of_birth]],
+    [['National ID',w.id_number||w.national_id],['Nationality',w.country||'Kenyan']],
+    [['County',w.county||w.home_county],['Constituency',w.sub_location||'—']],
+    [['Village',w.home_village||w.village],['Postal Address',w.home_address||w.address]],
+    [['Phone',w.phone||w.phone_number],['WhatsApp',w.phone_number||w.phone]],
+    [['Email',w.email],['Marital Status',w.marital_status]],
+    [['Religion',w.religion],['Languages',w.languages]],
+  ]);
+  y+=2;
+  ensureSpace(30);
+  sectionTitle('Education');
+  twoCol([
+    [['Education Level',w.edu_level||w.education_level||w.education],['Year Completed',w.edu_year||w.education_year]],
+    [['Institution',w.edu_institution||w.institution_name],['Field of Study',w.edu_field]],
+  ]);
+
+  ensureSpace(30);
+  sectionTitle('Professional');
+  twoCol([
+    [['Preferred Job Category',w.preferred_role||w.job_title],['Availability',w.availability]],
+    [['Expected Salary',w.salary_min&&w.salary_max?`Ksh ${(+w.salary_min).toLocaleString()}–${(+w.salary_max).toLocaleString()}`:(w.salary_range||'—')],['Willing to Relocate',w.willing_relocate||w.willing_to_relocate]],
+    [['Key Skills',w.key_skills||w.skills_summary],['Experience Level',w.experience_level||(w.experience_years?`${w.experience_years} yrs`:'—')]],
+  ]);
+
+  const expList=fmtExperience(w);
+  if(expList){
+    ensureSpace(10+expList.length*5);
+    sectionTitle('Work Experience');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(20);
+    expList.forEach(line=>{const lines=doc.splitTextToSize('• '+line,pageW-margin*2);doc.text(lines,margin,y);y+=lines.length*4.5;});
+    y+=2;
+  }
+
+  const refList=fmtReferees(w);
+  if(refList){
+    ensureSpace(10+refList.length*5);
+    sectionTitle('Referees');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(20);
+    refList.forEach(line=>{const lines=doc.splitTextToSize('• '+line,pageW-margin*2);doc.text(lines,margin,y);y+=lines.length*4.5;});
+    y+=2;
+  }
+
+  if(w.about_text||w.bio){
+    ensureSpace(20);
+    sectionTitle('About / Bio');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(20);
+    const lines=doc.splitTextToSize(w.about_text||w.bio,pageW-margin*2);
+    doc.text(lines,margin,y);y+=lines.length*4.5+2;
+  }
+
+  ensureSpace(20);
+  sectionTitle('Verification & Registration');
+  twoCol([
+    [['Verification Status',w.verification_stage||(w.is_verified?'Verified':'Unverified')],['Registration Date',fmtDate(w.created_at||w.submitted_at)]],
+  ]);
+
+  // Attached documents (each on its own page for legibility)
+  const attachments=[
+    {url:w.id_front_url,label:'National ID — Front'},
+    {url:w.id_back_url,label:'National ID — Back'},
+    {url:w.edu_cert_url,label:'Education Certificate'},
+  ].filter(a=>a.url);
+  for(const att of attachments){
+    const data=await urlToDataURL(att.url);
+    if(!data)continue;
+    doc.addPage();
+    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(27,107,69);
+    doc.text(att.label,margin,16);
+    try{
+      const img=new Image();img.src=data;
+      await new Promise(res=>{img.onload=res;img.onerror=res;});
+      const maxW=pageW-margin*2,maxH=250;
+      let iw=img.width||400,ih=img.height||300;
+      const scale=Math.min(maxW/iw,maxH/ih);
+      doc.addImage(data,pdfImgFormat(data),margin,22,iw*scale,ih*scale);
+    }catch(e){console.warn('attachment embed failed',att.label,e);}
+  }
+
+  // Footer on every page
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pageCount;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140);
+    doc.text(`Generated ${new Date().toLocaleString()} — SoundsCare Admin — Confidential`,margin,293);
+    doc.text(`Page ${p} of ${pageCount}`,pageW-margin,293,{align:'right'});
+  }
+
+  return doc;
+}
+async function downloadWorkerBiodataPDF(id){
+  showToast('ok','Generating PDF…');
+  try{
+    const doc=await buildWorkerBiodataPDF(id);
+    const w=allWorkers.find(w=>w.id===id);
+    doc.save(`SoundsCare-Biodata-${(w?.full_name||id).replace(/\s+/g,'_')}.pdf`);
+  }catch(err){showToast('err','PDF generation failed: '+err.message);}
+}
+async function shareWorkerBiodataPDF(id){
+  showToast('ok','Generating PDF…');
+  try{
+    const doc=await buildWorkerBiodataPDF(id);
+    const w=allWorkers.find(w=>w.id===id);
+    const fileName=`SoundsCare-Biodata-${(w?.full_name||id).replace(/\s+/g,'_')}.pdf`;
+    const blob=doc.output('blob');
+    const file=new File([blob],fileName,{type:'application/pdf'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:fileName,text:`SoundsCare biodata for ${w?.full_name||''}`});
+    }else{
+      // Fallback: open PDF in a new tab so the admin can share via WhatsApp Web / Email manually
+      const url=URL.createObjectURL(blob);
+      window.open(url,'_blank');
+      showToast('ok','Native share unavailable — PDF opened in a new tab for manual sharing');
+    }
+  }catch(err){showToast('err','PDF share failed: '+err.message);}
+}
+
 async function viewEmployerProfile(id){
   const e=allEmployers.find(e=>e.id===id);
   if(!e)return;
@@ -2085,11 +2426,11 @@ async function viewEmployerProfile(id){
     </div>
     <div class="profile-section"><h3>Contact Details</h3>
     <div class="profile-grid">
-      <div class="profile-field"><label>Email</label><span>${user.email||'—'}</span></div>
-      <div class="profile-field"><label>Phone</label><span>${e.phone_number||e.phone||'—'}</span></div>
-      <div class="profile-field"><label>Location</label><span>${e.location||'—'}</span></div>
-      <div class="profile-field"><label>County</label><span>${e.county||'—'}</span></div>
-      <div class="profile-field"><label>Company</label><span>${e.company_name||'—'}</span></div>
+      <div class="profile-field"><label>Email</label><span>${esc(user.email||'—')}</span></div>
+      <div class="profile-field"><label>Phone</label><span>${esc(e.phone_number||e.phone||'—')}</span></div>
+      <div class="profile-field"><label>Location</label><span>${esc(e.location||'—')}</span></div>
+      <div class="profile-field"><label>County</label><span>${esc(e.county||'—')}</span></div>
+      <div class="profile-field"><label>Company</label><span>${esc(e.company_name||'—')}</span></div>
     </div></div>
     <div class="profile-section"><h3>Jobs Posted (${jobs.length})</h3>
     ${jobs.slice(0,5).map(j=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${esc(j.title)}</span><span class="badge badge-${j.status==='active'?'green':'rose'}">${j.status}</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">No jobs posted</p>'}
@@ -2141,6 +2482,194 @@ async function toggleVerifyEmployer(id,verify){
   const e=allEmployers.find(e=>e.id===id);if(e){e.is_verified=verify;}
   renderEmployers();showToast('ok',verify?'Employer verified':'Verification removed');
 }
+// ============================================================
+// PERMANENT CASCADE DELETE ENGINE
+// Removes every related record + uploaded files for a user/worker/employer.
+// Used by permDeleteTrash() and the "Delete Permanently" actions.
+// ============================================================
+const CASCADE_MAP = {
+  worker_profile: {
+    table: 'worker_profiles',
+    storageCols: ['selfie_url','id_front_url','id_back_url','edu_cert_url','profile_photo_url'],
+    children: [
+      {table:'saved_jobs', col:'worker_id'},
+      {table:'job_applications', col:'worker_id'},
+      {table:'interviews', col:'worker_id'},
+      {table:'profile_post_requests', col:'worker_id'},
+      {table:'worker_ratings', col:'worker_id'},
+      {table:'employer_ratings', col:'worker_id'},
+      {table:'job_reports', col:'worker_id'},
+      {table:'job_loves', col:'worker_id'},
+      {table:'profile_verification_requests', col:'worker_id'},
+      // conversations belonging to this worker (+ everything inside them)
+      {table:'conversations', col:'worker_id', cascadeConversations:true},
+    ]
+  },
+  employer_profile: {
+    table: 'employer_profiles',
+    storageCols: ['profile_photo_url'],
+    children: [
+      {table:'profile_post_requests', col:'employer_id'},
+      {table:'job_post_requests', col:'employer_id'},
+      {table:'employer_ratings', col:'employer_id'},
+      // jobs this employer created — cascade their dependents too
+      {table:'job_postings', col:'employer_id', cascadeJobs:true},
+    ]
+  },
+  user: {
+    table: 'users',
+    storageCols: [],
+    children: [
+      {table:'typing_presence', col:'user_id'},
+      {table:'conversation_participants', col:'user_id'},
+      {table:'conversation_mutes', col:'user_id'},
+      {table:'conversation_archives', col:'user_id'},
+      {table:'message_drafts', col:'user_id'},
+      {table:'message_reactions', col:'user_id'},
+      {table:'blocked_users', col:'blocker_id'},
+      {table:'blocked_users', col:'blocked_user_id'},
+      {table:'message_reports', col:'reported_by'},
+      {table:'message_reports', col:'reported_user'},
+      {table:'message_attachments', col:'uploaded_by'},
+      {table:'user_presence', col:'user_id'},
+      {table:'wallets', col:'user_id'},
+      {table:'payments', col:'user_id'},
+      {table:'transaction_logs', col:'user_id'},
+      {table:'notifications', col:'user_id'},
+      {table:'email_logs', col:'user_id'},
+      {table:'sms_logs', col:'user_id'},
+      {table:'event_logs', col:'user_id'},
+      {table:'newsletter_subscribers', col:'user_id'},
+      {table:'admin', col:'user_id'},
+      {table:'call_participants', col:'user_id'},
+      {table:'call_ice_candidates', col:'user_id'},
+      {table:'calls', col:'caller_id'},
+      {table:'calls', col:'receiver_id'},
+      {table:'messages', col:'sender_id'},
+      {table:'support_tickets', col:'user_id', cascadeSupportTickets:true},
+      // conversations where this user is the employer side
+      {table:'conversations', col:'employer_id', cascadeConversations:true},
+    ]
+  }
+};
+
+async function deleteStorageFile(url){
+  if(!url)return;
+  try{
+    // Expect URLs like .../storage/v1/object/public/Media/<path>
+    const marker='/Media/';
+    const idx=url.indexOf(marker);
+    if(idx===-1)return;
+    const path=decodeURIComponent(url.slice(idx+marker.length).split('?')[0]);
+    await sb.storage.from('Media').remove([path]);
+  }catch(err){console.error('deleteStorageFile',err);}
+}
+
+async function cascadeDeleteConversations(col,id){
+  const {data:convos}=await sb.from('conversations').select('id').eq(col,id);
+  const convoIds=(convos||[]).map(c=>c.id);
+  for(const cid of convoIds){
+    const msgIds=(await sb.from('messages').select('id').eq('conversation_id',cid)).data?.map(m=>m.id)||[];
+    if(msgIds.length){
+      await sb.from('message_attachments').delete().in('message_id',msgIds);
+      await sb.from('message_reactions').delete().in('message_id',msgIds);
+      await sb.from('message_reports').delete().in('message_id',msgIds);
+    }
+    await sb.from('message_search_index').delete().eq('conversation_id',cid);
+    await sb.from('message_encryption').delete().eq('conversation_id',cid);
+    await sb.from('typing_presence').delete().eq('conversation_id',cid);
+    await sb.from('conversation_mutes').delete().eq('conversation_id',cid);
+    await sb.from('conversation_archives').delete().eq('conversation_id',cid);
+    await sb.from('conversation_participants').delete().eq('conversation_id',cid);
+    await sb.from('message_drafts').delete().eq('conversation_id',cid);
+    await sb.from('admin_conversations').delete().eq('conversation_id',cid);
+    await sb.from('calls').delete().eq('conversation_id',cid);
+    await sb.from('messages').delete().eq('conversation_id',cid);
+  }
+  if(convoIds.length)await sb.from('conversations').delete().eq(col,id);
+}
+
+async function cascadeDeleteJobs(col,id){
+  const {data:jobs}=await sb.from('job_postings').select('id').eq(col,id);
+  const jobIds=(jobs||[]).map(j=>j.id);
+  for(const jid of jobIds){
+    await sb.from('job_applications').delete().eq('job_id',jid);
+    await sb.from('interviews').delete().eq('job_id',jid);
+    await sb.from('saved_jobs').delete().eq('job_id',jid);
+    await sb.from('job_loves').delete().eq('job_id',jid);
+    await sb.from('job_reports').delete().eq('job_id',jid);
+    await sb.from('employer_ratings').delete().eq('job_id',jid);
+    await sb.from('profile_post_requests').delete().eq('job_posting_id',jid);
+    await sb.from('admin_posts').update({linked_job_id:null}).eq('linked_job_id',jid);
+  }
+  if(jobIds.length)await sb.from('job_postings').delete().eq(col,id);
+}
+
+async function cascadeDeleteSupportTickets(col,id){
+  const {data:tickets}=await sb.from('support_tickets').select('id').eq(col,id);
+  const ticketIds=(tickets||[]).map(t=>t.id);
+  for(const tid of ticketIds){
+    await sb.from('support_ticket_messages').delete().eq('ticket_id',tid);
+  }
+  if(ticketIds.length)await sb.from('support_tickets').delete().eq(col,id);
+}
+
+/**
+ * Permanently and irreversibly deletes an entity and every related record
+ * across the schema, plus any uploaded files in Storage.
+ * entityType: 'worker_profile' | 'employer_profile' | 'user'
+ */
+async function permanentlyDeleteEntity(entityType,entityId,entityData){
+  const cfg=CASCADE_MAP[entityType];
+  if(!cfg)throw new Error('Unknown entity type: '+entityType);
+
+  // 1. Delete uploaded files from Storage
+  for(const col of (cfg.storageCols||[])){
+    if(entityData?.[col])await deleteStorageFile(entityData[col]);
+  }
+
+  // 2. Delete child records (deepest first, in listed order)
+  for(const child of cfg.children){
+    if(child.cascadeConversations){await cascadeDeleteConversations(child.col,entityId);continue;}
+    if(child.cascadeJobs){await cascadeDeleteJobs(child.col,entityId);continue;}
+    if(child.cascadeSupportTickets){await cascadeDeleteSupportTickets(child.col,entityId);continue;}
+    try{await sb.from(child.table).delete().eq(child.col,entityId);}
+    catch(err){console.error(`cascade delete failed: ${child.table}.${child.col}`,err);}
+  }
+
+  // 3. Delete the root record itself
+  const {error}=await sb.from(cfg.table).delete().eq('id',entityId);
+  if(error)throw error;
+
+  // 4. Log the permanent deletion for audit purposes
+  try{
+    await sb.from('admin_audit_logs').insert({
+      admin_id:currentUser?.id||null,
+      action_type:'permanent_delete',
+      action_description:`Permanently deleted ${entityType} ${entityId} and all related records/files`,
+      target_table:cfg.table, target_id:entityId,
+      old_values:entityData||null
+    });
+  }catch(err){console.error('audit log failed',err);}
+
+  // NOTE: this does NOT remove the corresponding auth.users row (Supabase Auth).
+  // That requires a Supabase Edge Function using the service_role key, since the
+  // browser/anon client cannot call the Admin Auth API. See deleteAuthUser().
+}
+
+/**
+ * Calls a Supabase Edge Function (must be deployed separately, see project notes)
+ * that uses the service_role key server-side to remove the matching auth.users row.
+ * Safe to call even if the function isn't deployed yet — fails silently with a warning.
+ */
+async function deleteAuthUser(authUserId){
+  if(!authUserId)return;
+  try{
+    const {error}=await sb.functions.invoke('admin-delete-auth-user',{body:{user_id:authUserId}});
+    if(error)console.warn('Auth user deletion via Edge Function failed (has it been deployed?):',error);
+  }catch(err){console.warn('Auth user deletion skipped — admin-delete-auth-user Edge Function not available:',err);}
+}
+
 async function notifyAndEmailDeletion(email,name,reason){
   if(!email)return;
   const msg=`Hi ${name||''}, your SoundsCare account has been deleted. Reason: ${reason}. If you believe this is a mistake, please contact support.`;
@@ -2267,7 +2796,7 @@ function viewUserChats(userId,name){
       </div>
       <div style="display:flex;gap:6px;align-items:center">
         <span class="badge badge-${c.status==='active'?'green':c.status==='closed'?'rose':'amber'}">${c.status==='archived'?'Stopped':(c.status||'active')}</span>
-        <button class="btn btn-sm btn-primary" onclick="closeModal('user-chats-modal');openChat('${c.id}','${esc(wName)}','${esc(eeName)}','${c.status}')"><i class="bi bi-chat-dots"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="closeModal('user-chats-modal');openChat('${c.id}','${escAttr(wName)}','${escAttr(eeName)}','${c.status}')"><i class="bi bi-chat-dots"></i></button>
         ${isPaused?`<button class="btn btn-sm btn-amber" onclick="unblockChat('${c.id}','${userId}','${esc(name||'')}')">Unblock</button>`:''}
       </div>
     </div>`;
@@ -2407,7 +2936,7 @@ async function viewJobApplications(jobId){
         <button class="btn btn-sm btn-primary" onclick="updateAppStatus('${a.id}','shortlisted')">Shortlist</button>
         <button class="btn btn-sm btn-sky" onclick="updateAppStatus('${a.id}','hired')">Hire</button>
         <button class="btn btn-sm btn-danger" onclick="updateAppStatus('${a.id}','rejected')">Reject</button>
-        ${w?`<button class="btn btn-sm btn-violet" onclick="openChat('${a.job_id}','${esc(w.full_name)}','Employer','active')"><i class="bi bi-chat"></i></button>`:''}
+        ${w?`<button class="btn btn-sm btn-violet" onclick="openChat('${a.job_id}','${escAttr(w.full_name)}','Employer','active')"><i class="bi bi-chat"></i></button>`:''}
       </div></td>
     </tr>`;
   }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">No applications</td></tr>';
@@ -2795,17 +3324,13 @@ function switchSettingsTab(e,tab){
   document.querySelectorAll('#tab-settings .tab-btn').forEach(b=>b.classList.remove('active'));
   if(e)e.target.classList.add('active');
   if(tab==='db')loadDBStats();
+  if(tab==='cookies')renderCookieStatus();
 }
 function switchCommsTab(e,tab){
   document.querySelectorAll('#tab-comms .tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('comms-tab-'+tab)?.classList.add('active');
   document.querySelectorAll('#tab-comms .tab-btn').forEach(b=>b.classList.remove('active'));
   if(e)e.target.classList.add('active');
-}
-function switchNotifTab(e,tab){
-  document.querySelectorAll('#tab-notifications .tab-btn').forEach(b=>b.classList.remove('active'));
-  if(e)e.target.classList.add('active');
-  renderNotifications(tab);
 }
 function toggleSidebar(){
   const s=document.getElementById('sidebar');
@@ -2826,6 +3351,10 @@ document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click
 // ============================================================
 function setEl(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
 function esc(t){if(!t)return '';const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+// esc() alone is NOT safe inside a single-quoted onclick="...('${x}')" attribute — it doesn't
+// escape apostrophes, so a name/email containing one can break out of the attribute and inject
+// arbitrary onclick handlers. escAttr() additionally escapes quotes/backslashes for that context.
+function escAttr(t){if(t===null||t===undefined)return '';return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 function fmtDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('en-KE',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function getInitials(name){return (name||'AD').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)||'AD';}
 
