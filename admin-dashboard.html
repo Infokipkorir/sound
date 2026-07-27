@@ -244,8 +244,28 @@ tr:hover td { background: rgba(27,107,69,.02); }
 .profile-field span { font-size: 13px; font-weight: 500; }
 .doc-grid { display: flex; gap: 10px; flex-wrap: wrap; }
 .doc-thumb { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.doc-thumb img { width: 120px; height: 80px; object-fit: cover; display: block; }
-.doc-thumb a { display: block; padding: 6px 10px; font-size: 11px; color: var(--brand); text-align: center; text-decoration: none; font-weight: 600; }
+.doc-thumb img { width: 120px; height: 80px; object-fit: cover; display: block; cursor: pointer; transition: opacity .15s; }
+.doc-thumb img:hover { opacity: .85; }
+.doc-thumb button.doc-label-btn { display: block; width: 100%; padding: 6px 10px; font-size: 11px; color: var(--brand); text-align: center; text-decoration: none; font-weight: 600; background: none; border: none; border-top: 1px solid var(--border); cursor: pointer; font-family: inherit; }
+.doc-thumb button.doc-label-btn:hover { background: var(--brand-soft); }
+
+/* IMAGE LIGHTBOX (in-dashboard document/photo viewer) */
+#lightbox-overlay { position: fixed; inset: 0; background: rgba(10,15,20,.92); z-index: 9000; display: flex; align-items: center; justify-content: center; }
+#lightbox-overlay.hidden { display: none; }
+.lightbox-stage { position: relative; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column; align-items: center; }
+.lightbox-stage img { max-width: 92vw; max-height: 76vh; object-fit: contain; border-radius: 8px; background: #111; }
+.lightbox-caption { color: #fff; font-size: 13px; margin-top: 10px; text-align: center; opacity: .85; }
+.lightbox-close { position: absolute; top: -44px; right: -6px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.lightbox-close:hover { background: rgba(255,255,255,.22); }
+.lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.12); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.lightbox-nav:hover { background: rgba(255,255,255,.22); }
+.lightbox-prev { left: -54px; }
+.lightbox-next { right: -54px; }
+.lightbox-actions { display: flex; gap: 8px; margin-top: 12px; }
+@media (max-width: 700px) {
+  .lightbox-prev { left: 6px; } .lightbox-next { right: 6px; }
+  .lightbox-close { top: 6px; right: 6px; }
+}
 
 /* MESSAGING PANEL */
 .msg-layout { display: flex; height: 100%; min-height: 500px; }
@@ -870,6 +890,22 @@ tr:hover td { background: rgba(27,107,69,.02); }
 
 <!-- ================== MODALS ================== -->
 
+<!-- IMAGE LIGHTBOX (view uploaded documents/photos without leaving the dashboard) -->
+<div id="lightbox-overlay" class="hidden" onclick="if(event.target===this)closeLightbox()">
+  <div class="lightbox-stage">
+    <button class="lightbox-close" onclick="closeLightbox()" title="Close (Esc)"><i class="bi bi-x-lg"></i></button>
+    <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)" title="Previous"><i class="bi bi-chevron-left"></i></button>
+    <img id="lightbox-img" src="" alt="Document preview">
+    <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)" title="Next"><i class="bi bi-chevron-right"></i></button>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+    <div class="lightbox-actions">
+      <a id="lightbox-download" class="btn btn-sm btn-secondary" download><i class="bi bi-download"></i> Download</a>
+      <a id="lightbox-newtab" class="btn btn-sm btn-secondary" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Open Original</a>
+    </div>
+  </div>
+</div>
+
+
 <!-- SEND MESSAGE -->
 <div id="send-msg-modal" class="modal-overlay">
   <div class="modal">
@@ -1399,6 +1435,8 @@ async function handleLogout(){
 // REALTIME
 // ============================================================
 let realtimeChannel=null;
+let currentEmpDocs=[];
+let currentEmprDocs=[];
 function setupRealtimeSubscriptions(){
   // Prevent stacking duplicate subscriptions if this is called more than once
   // per page load (e.g. logout -> login again without a full reload).
@@ -1561,12 +1599,12 @@ function renderEmployees(){
     const payment=w.payment_status==='paid'?'<span class="badge badge-green">Paid</span>':w.payment_status==='partial'?'<span class="badge badge-amber">Partial</span>':'<span class="badge badge-muted">Unpaid</span>';
     return `<tr>
       <td><div class="user-cell">
-        <div class="avatar">${w.profile_photo_url?`<img src="${w.profile_photo_url}" onerror="this.style.display='none'">`:''}<span>${getInitials(w.full_name)}</span></div>
+        <div class="avatar"${w.profile_photo_url?` style="cursor:pointer" onclick="openLightbox([{url:'${escAttr(w.profile_photo_url)}',label:'${escAttr(w.full_name||'Profile Photo')}'}],0)"`:''}>${w.profile_photo_url?`<img src="${esc(w.profile_photo_url)}" onerror="this.style.display='none'">`:''}<span>${getInitials(w.full_name)}</span></div>
         <div class="user-info"><div class="user-name">${esc(w.full_name||'—')}</div><div class="user-email">${esc(w.email||'')}</div></div>
       </div></td>
-      <td>${w.email||'—'}</td>
-      <td>${w.phone||'—'}</td>
-      <td>${w.preferred_role||'—'}</td>
+      <td>${esc(w.email||'—')}</td>
+      <td>${esc(w.phone||'—')}</td>
+      <td>${esc(w.preferred_role||'—')}</td>
       <td>${status}</td>
       <td>${w.is_verified?'<span class="badge badge-green">✓ Yes</span>':'<span class="badge badge-muted">No</span>'}</td>
       <td>${payment}</td>
@@ -1691,7 +1729,12 @@ async function loadConversationMessages(convId){
       const role=m.sender_type||'user';
       const cls=isAdmin?'admin':role==='employer'?'employer':'employee';
       const roleLabel=role==='admin'||role==='support'?'<span class="chat-msg-role role-support">Support</span>':role==='employer'?'<span class="chat-msg-role role-employer">Employer</span>':'<span class="chat-msg-role role-employee">Employee</span>';
-      const body=isDeleted?`<div class="chat-msg-bubble chat-deleted">[Message deleted]</div>`:`<div class="chat-msg-bubble">${esc(m.body||m.message||m.content||'')}${m.file_url?`<div class="chat-file"><i class="bi bi-paperclip"></i><a href="${m.file_url}" target="_blank" style="color:inherit">${m.file_name||'Attachment'}</a></div>`:''}` + '</div>';
+      const isImg=m.file_url&&/\.(png|jpe?g|gif|webp|bmp)(\?|$)/i.test(m.file_url);
+      const fileBlock=m.file_url?(isImg
+        ?`<div class="chat-file" style="padding:4px"><img src="${esc(m.file_url)}" style="max-width:180px;max-height:140px;border-radius:8px;cursor:pointer;display:block" onclick="openLightbox([{url:'${escAttr(m.file_url)}',label:'${escAttr(m.file_name||'Attachment')}'}],0)" onerror="this.style.display='none'"></div>`
+        :`<div class="chat-file"><i class="bi bi-paperclip"></i><a href="${esc(m.file_url)}" target="_blank" style="color:inherit">${esc(m.file_name||'Attachment')}</a></div>`
+      ):'';
+      const body=isDeleted?`<div class="chat-msg-bubble chat-deleted">[Message deleted]</div>`:`<div class="chat-msg-bubble">${esc(m.body||m.message||m.content||'')}${fileBlock}</div>`;
       return `<div class="chat-msg ${cls}">
         ${body}
         <div class="chat-msg-meta">${roleLabel} ${fmtDate(m.created_at)}
@@ -2068,18 +2111,21 @@ async function viewEmployeeProfile(id){
   const w=allWorkers.find(w=>w.id===id);
   if(!w){showToast('err','Worker not found');return;}
   const docs=[];
+  if(w.profile_photo_url)docs.push({url:w.profile_photo_url,label:'Profile Photo'});
   if(w.id_front_url)docs.push({url:w.id_front_url,label:'ID Front'});
   if(w.id_back_url)docs.push({url:w.id_back_url,label:'ID Back'});
   if(w.selfie_url)docs.push({url:w.selfie_url,label:'Selfie'});
   if(w.edu_cert_url)docs.push({url:w.edu_cert_url,label:'Certificate'});
+  currentEmpDocs=docs;
+  const docsNoPhoto=docs.filter(d=>d.label!=='Profile Photo');
 
   const body=document.getElementById('emp-profile-body');
   body.innerHTML=`
     <div class="profile-hero">
-      <div class="profile-avatar-lg">${w.profile_photo_url?`<img src="${w.profile_photo_url}">`:''}<span>${getInitials(w.full_name)}</span></div>
+      <div class="profile-avatar-lg"${w.profile_photo_url?` style="cursor:pointer" onclick="openLightbox(currentEmpDocs,0)"`:''}>${w.profile_photo_url?`<img src="${esc(w.profile_photo_url)}">`:''}<span>${getInitials(w.full_name)}</span></div>
       <div class="profile-info">
         <h2>${esc(w.full_name||'—')}</h2>
-        <p>${esc(w.preferred_role||'')} ${w.county?'• '+w.county:''}</p>
+        <p>${esc(w.preferred_role||'')} ${w.county?'• '+esc(w.county):''}</p>
         <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
           ${w.approved_at?'<span class="badge badge-green">Approved</span>':'<span class="badge badge-amber">Pending</span>'}
           ${w.is_verified?'<span class="badge badge-sky" style="display:flex;align-items:center;gap:6px;"><img src="verification_badge.jpeg" style="width:14px;height:14px;object-fit:contain;"/> Verified</span>':''}
@@ -2111,7 +2157,7 @@ async function viewEmployeeProfile(id){
       <div class="profile-field"><label>Medical Cert</label><span>${w.has_medical_cert?'Yes':'No'}</span></div>
       <div class="profile-field"><label>Good Conduct</label><span>${w.has_good_conduct?'Yes':'No'}</span></div>
     </div></div>
-    ${docs.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docs.map(d=>`<div class="doc-thumb"><img src="${esc(d.url)}" onerror="this.style.display='none'"><a href="${esc(d.url)}" target="_blank">${esc(d.label)} ↗</a></div>`).join('')}</div></div>`:''}
+    ${docsNoPhoto.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docsNoPhoto.map(d=>`<div class="doc-thumb"><img src="${esc(d.url)}" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})" onerror="this.style.display='none'"><button type="button" class="doc-label-btn" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})">${esc(d.label)} <i class="bi bi-arrows-fullscreen" style="font-size:9px"></i></button></div>`).join('')}</div></div>`:''}
     ${w.about_text?`<div class="profile-section"><h3>About</h3><p style="font-size:13px;line-height:1.6">${esc(w.about_text)}</p></div>`:''}
     ${w.admin_notes?`<div class="profile-section"><h3>Admin Notes</h3><p style="font-size:13px;color:var(--amber)">${esc(w.admin_notes)}</p></div>`:''}
     <div class="profile-section"><h3><i class="bi bi-clipboard-check"></i> Approval Checklist</h3>
@@ -2411,13 +2457,14 @@ async function viewEmployerProfile(id){
   if(!e)return;
   const user=allUsers.find(u=>u.id===e.user_id)||{};
   const jobs=allJobs.filter(j=>j.employer_id===id);
+  currentEmprDocs=e.profile_photo_url?[{url:e.profile_photo_url,label:'Profile Photo'}]:[];
   const body=document.getElementById('empr-profile-body');
   body.innerHTML=`
     <div class="profile-hero">
-      <div class="profile-avatar-lg"><span>${getInitials(e.full_name)}</span></div>
+      <div class="profile-avatar-lg"${e.profile_photo_url?` style="cursor:pointer" onclick="openLightbox(currentEmprDocs,0)"`:''}>${e.profile_photo_url?`<img src="${esc(e.profile_photo_url)}">`:''}<span>${getInitials(e.full_name)}</span></div>
       <div class="profile-info">
         <h2>${esc(e.full_name||'—')}</h2>
-        <p>${esc(e.company_name||'Individual')} ${e.location?'• '+e.location:''}</p>
+        <p>${esc(e.company_name||'Individual')} ${e.location?'• '+esc(e.location):''}</p>
         <div style="margin-top:6px;display:flex;gap:6px">
           ${e.is_verified?'<span class="badge badge-green" style="display:flex;align-items:center;gap:6px;"><img src="verification_badge.jpeg" style="width:14px;height:14px;object-fit:contain;"/> Verified</span>':'<span class="badge badge-amber">Unverified</span>'}
           <span class="badge badge-muted">${e.hiring_history||0} Hires</span>
@@ -2432,6 +2479,7 @@ async function viewEmployerProfile(id){
       <div class="profile-field"><label>County</label><span>${esc(e.county||'—')}</span></div>
       <div class="profile-field"><label>Company</label><span>${esc(e.company_name||'—')}</span></div>
     </div></div>
+    ${e.profile_photo_url?`<div class="profile-section"><h3>Photo</h3><div class="doc-grid"><div class="doc-thumb"><img src="${esc(e.profile_photo_url)}" onclick="openLightbox(currentEmprDocs,0)" onerror="this.style.display='none'"><button type="button" class="doc-label-btn" onclick="openLightbox(currentEmprDocs,0)">Profile Photo <i class="bi bi-arrows-fullscreen" style="font-size:9px"></i></button></div></div></div>`:''}
     <div class="profile-section"><h3>Jobs Posted (${jobs.length})</h3>
     ${jobs.slice(0,5).map(j=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${esc(j.title)}</span><span class="badge badge-${j.status==='active'?'green':'rose'}">${j.status}</span></div>`).join('')||'<p style="color:var(--muted);font-size:13px">No jobs posted</p>'}
     </div>
@@ -3355,6 +3403,48 @@ function esc(t){if(!t)return '';const d=document.createElement('div');d.textCont
 // escape apostrophes, so a name/email containing one can break out of the attribute and inject
 // arbitrary onclick handlers. escAttr() additionally escapes quotes/backslashes for that context.
 function escAttr(t){if(t===null||t===undefined)return '';return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+// ============================================================
+// IMAGE LIGHTBOX — view uploaded documents/photos from inside the dashboard
+// instead of navigating to a new tab. Call openLightbox([{url,label}], startIndex).
+// ============================================================
+let lightboxImages=[];
+let lightboxIndex=0;
+function openLightbox(images,startIndex=0){
+  lightboxImages=(images||[]).filter(i=>i&&i.url);
+  if(!lightboxImages.length)return;
+  lightboxIndex=Math.max(0,Math.min(startIndex,lightboxImages.length-1));
+  renderLightbox();
+  document.getElementById('lightbox-overlay').classList.remove('hidden');
+  document.addEventListener('keydown',lightboxKeyHandler);
+}
+function renderLightbox(){
+  const item=lightboxImages[lightboxIndex];
+  if(!item)return;
+  const img=document.getElementById('lightbox-img');
+  img.src=item.url;
+  document.getElementById('lightbox-caption').textContent=
+    `${item.label||'Document'}${lightboxImages.length>1?`  (${lightboxIndex+1} of ${lightboxImages.length})`:''}`;
+  const dl=document.getElementById('lightbox-download');
+  dl.href=item.url;dl.setAttribute('download',(item.label||'document').replace(/\s+/g,'_'));
+  document.getElementById('lightbox-newtab').href=item.url;
+  document.querySelectorAll('.lightbox-nav').forEach(b=>b.style.display=lightboxImages.length>1?'flex':'none');
+}
+function lightboxNav(delta){
+  if(!lightboxImages.length)return;
+  lightboxIndex=(lightboxIndex+delta+lightboxImages.length)%lightboxImages.length;
+  renderLightbox();
+}
+function closeLightbox(){
+  document.getElementById('lightbox-overlay').classList.add('hidden');
+  document.getElementById('lightbox-img').src='';
+  document.removeEventListener('keydown',lightboxKeyHandler);
+}
+function lightboxKeyHandler(e){
+  if(e.key==='Escape')closeLightbox();
+  else if(e.key==='ArrowLeft')lightboxNav(-1);
+  else if(e.key==='ArrowRight')lightboxNav(1);
+}
 function fmtDate(d){if(!d)return '—';return new Date(d).toLocaleDateString('en-KE',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function getInitials(name){return (name||'AD').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)||'AD';}
 
