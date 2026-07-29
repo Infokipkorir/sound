@@ -4,9 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Employee Registration — SoundsCare</title>
+
+<!-- FAVICON -->
+<link rel="icon" type="image/png" href="sound_logo.png">
+<link rel="shortcut icon" type="image/png" href="sound_logo.png">
+<link rel="apple-touch-icon" href="sound_logo.png">
+
+<!-- OPEN GRAPH / LINK SHARE PREVIEW -->
+<meta property="og:title" content="Employee Registration — SoundsCare">
+<meta property="og:description" content="Join East Africa's trusted domestic services platform. Register as an employee and start finding work opportunities.">
+<meta property="og:image" content="https://sounds.co.ke/sound_logo.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Employee Registration — SoundsCare">
+<meta name="twitter:description" content="Join East Africa's trusted domestic services platform.">
+<meta name="twitter:image" content="https://sounds.co.ke/sound_logo.png">
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -142,19 +159,6 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
 .ip-status i{font-size:13px}
 
-/* OTP */
-#step-otp{display:none}
-.otp-info{background:var(--green-light);border:1px solid #86EFAC;border-radius:var(--radius-sm);padding:12px 14px;font-size:13.5px;color:var(--green-dark);margin-bottom:1.4rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
-.otp-boxes{display:flex;gap:6px;justify-content:center;margin:1rem 0}
-.otp-box{width:43px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:20px;font-weight:700;text-align:center;outline:none;color:var(--text);background:var(--bg);transition:border-color .15s,box-shadow .15s;caret-color:var(--green);padding:0}
-.otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.12);background:var(--surface)}
-.otp-box.filled{border-color:var(--green);background:var(--green-light)}
-.otp-box.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
-.otp-sep{display:flex;align-items:center;padding:0 2px;color:var(--text-muted);font-weight:700;font-size:18px}
-.otp-timer{text-align:center;font-size:13px;color:var(--text-muted);margin-top:.6rem}
-.otp-resend-btn{background:none;border:none;color:var(--green);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;padding:0}
-.otp-resend-btn:disabled{color:var(--text-muted);text-decoration:none;cursor:not-allowed}
-
 /* SUCCESS */
 #step-success{display:none;text-align:center;padding:.5rem 0}
 .success-icon{width:70px;height:70px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:33px;color:var(--green)}
@@ -220,6 +224,22 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
           <div class="iw has-ico">
             <i class="ico bi bi-person-fill"></i>
             <input type="text" id="fullName" name="fullName" placeholder="e.g., Jane Kariuki" required>
+          </div>
+        </div>
+
+        <!-- USERNAME (auto-generated, read-only) -->
+        <div class="fg">
+          <label for="username">Username <span style="font-weight:400;color:var(--text-muted)">(auto-generated)</span></label>
+          <div class="iw has-ico has-sfx">
+            <i class="ico bi bi-at"></i>
+            <input type="text" id="username" name="username" placeholder="Generated from your full name" readonly>
+            <button type="button" class="sfx" id="usernameCheckBtn" style="display:none;">
+              <i class="bi bi-check-circle-fill"></i>
+            </button>
+          </div>
+          <div class="email-status-alert" id="usernameStatusAlert">
+            <i id="usernameStatusIcon"></i>
+            <span id="usernameStatusText"></span>
           </div>
         </div>
 
@@ -292,9 +312,15 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
           </div>
         </div>
 
+        <!-- RECAPTCHA -->
+        <div class="fg">
+          <!-- Replace YOUR_RECAPTCHA_SITE_KEY_HERE with your real Google reCAPTCHA v2 site key -->
+          <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY_HERE"></div>
+        </div>
+
         <!-- SUBMIT BUTTON -->
         <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
-          <span id="registerBtnText">Verify Email First</span>
+          <span id="registerBtnText">Checking availability…</span>
           <div class="spinner" id="registerSpinner"></div>
         </button>
 
@@ -306,68 +332,18 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
       </div>
       </div><!-- end step-form -->
 
-      <!-- ===== OTP VERIFICATION STEP ===== -->
-      <div id="step-otp">
-        <div class="step-badge">
-          <i class="bi bi-envelope-check"></i>
-          Verify Your Email
-        </div>
-        <h1 class="step-title">Check your inbox</h1>
-        <p class="step-sub">Enter the 8-digit code to activate your account.</p>
-
-        <div class="otp-info">
-          <i class="bi bi-info-circle" style="font-size:16px;flex-shrink:0;margin-top:2px"></i>
-          <span>An 8-digit code was sent to <strong id="otpEmailDisplay"></strong>. It expires in 10 minutes. Check spam/junk if you don't see it.</span>
-        </div>
-
-        <div class="alert error" id="alertOtp">
-          <i class="bi bi-exclamation-circle-fill"></i>
-          <span id="alertOtpText"></span>
-        </div>
-
-        <div class="otp-boxes">
-          <input class="otp-box" id="otp0" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(0)" onkeydown="otpKey(event,0)" onpaste="otpPaste(event,0)">
-          <input class="otp-box" id="otp1" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(1)" onkeydown="otpKey(event,1)" onpaste="otpPaste(event,1)">
-          <input class="otp-box" id="otp2" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(2)" onkeydown="otpKey(event,2)" onpaste="otpPaste(event,2)">
-          <input class="otp-box" id="otp3" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(3)" onkeydown="otpKey(event,3)" onpaste="otpPaste(event,3)">
-          <span class="otp-sep">—</span>
-          <input class="otp-box" id="otp4" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(4)" onkeydown="otpKey(event,4)" onpaste="otpPaste(event,4)">
-          <input class="otp-box" id="otp5" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(5)" onkeydown="otpKey(event,5)" onpaste="otpPaste(event,5)">
-          <input class="otp-box" id="otp6" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(6)" onkeydown="otpKey(event,6)" onpaste="otpPaste(event,6)">
-          <input class="otp-box" id="otp7" type="text" maxlength="1" inputmode="numeric" oninput="otpIn(7)" onkeydown="otpKey(event,7)" onpaste="otpPaste(event,7)">
-        </div>
-
-        <div id="timerWrap" class="otp-timer">Resend code in <strong id="otpCd">60</strong>s</div>
-        <div id="resendWrap" class="otp-timer" style="display:none">
-          <button class="otp-resend-btn" id="resendBtn" onclick="resendOtp()" type="button">
-            <span class="spinner" id="resendSpinner" style="border-color:rgba(27,107,69,.3);border-top-color:var(--green)"></span>
-            <span id="resendBtnText">Resend verification code</span>
-          </button>
-        </div>
-
-        <div style="display:flex;gap:10px;margin-top:1.4rem">
-          <button class="btn btn-secondary" style="width:auto;padding-left:16px;padding-right:16px" onclick="goBackToForm()" type="button">
-            <i class="bi bi-arrow-left"></i> Back
-          </button>
-          <button class="btn btn-primary" id="otpBtn" onclick="verifyOtp()" type="button">
-            <span class="spinner" id="otpSpinner"></span>
-            <span id="otpBtnText">Verify &amp; Create Account</span>
-          </button>
-        </div>
-      </div><!-- end step-otp -->
-
       <!-- ===== SUCCESS STEP ===== -->
       <div id="step-success">
         <div class="success-icon"><i class="bi bi-patch-check-fill"></i></div>
         <div class="success-title">Account Created!</div>
         <div class="success-body">
           Welcome to SoundsCare, <strong id="successName"></strong>! 🎉<br>
-          Your email <strong id="successEmail"></strong> is verified.<br>
-          Taking you to set up your profile...
+          Your account (<strong id="successUsername"></strong>) is ready.<br>
+          Taking you to your dashboard...
         </div>
         <div class="spinner" id="redirectSpinner" style="display:inline-block;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:.6rem"></div>
         <div>
-          <a id="successLink" href="employee-profile-setup.html" class="action-link" style="font-size:12.5px">
+          <a id="successLink" href="employee-dashboard.html" class="action-link" style="font-size:12.5px">
             Not redirecting? Click here
           </a>
         </div>
@@ -410,6 +386,9 @@ let userLocation = null;
 let userIP = null;
 let emailValidationTimeout = null;
 let emailCheckStatus = null; // Track email validation status
+let usernameValidationTimeout = null;
+let usernameCheckStatus = null; // Track username generation/uniqueness status
+let generatedUsername = null;
 
 // ============================================================
 // GEOLOCATION - Detect user's real-time location
@@ -669,13 +648,117 @@ function updateRegisterButtonState() {
   const btn = document.getElementById('registerBtn');
   const btnText = document.getElementById('registerBtnText');
 
-  if (emailCheckStatus === 'available') {
+  if (emailCheckStatus === 'available' && usernameCheckStatus === 'available') {
     btn.disabled = false;
     btnText.textContent = 'Create Account';
+  } else if (emailCheckStatus !== 'available') {
+    btn.disabled = true;
+    btnText.textContent = emailCheckStatus ? 'Please Fix Email' : 'Enter Your Details';
   } else {
     btn.disabled = true;
-    btnText.textContent = emailCheckStatus ? 'Please Verify Email' : 'Verify Email First';
+    btnText.textContent = 'Generating Username…';
   }
+}
+
+// ============================================================
+// USERNAME GENERATION - Auto-generated from Full Name, unique
+// ============================================================
+document.getElementById('fullName').addEventListener('input', function(e) {
+  const name = this.value.trim();
+  clearTimeout(usernameValidationTimeout);
+
+  if (!name) {
+    document.getElementById('username').value = '';
+    generatedUsername = null;
+    usernameCheckStatus = null;
+    document.getElementById('usernameStatusAlert').classList.remove('show');
+    updateRegisterButtonState();
+    return;
+  }
+
+  const btn = document.getElementById('usernameCheckBtn');
+  btn.classList.remove('available', 'unavailable');
+  btn.classList.add('checking');
+  btn.style.display = 'flex';
+  usernameCheckStatus = null;
+
+  usernameValidationTimeout = setTimeout(() => {
+    generateUniqueUsername(name);
+  }, 500);
+});
+
+function slugifyName(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .join('.');
+}
+
+async function generateUniqueUsername(name) {
+  const base = slugifyName(name);
+  const btn = document.getElementById('usernameCheckBtn');
+  const usernameInput = document.getElementById('username');
+
+  if (!base) {
+    btn.classList.remove('checking');
+    btn.style.display = 'none';
+    return;
+  }
+
+  try {
+    let candidate = base;
+    let suffix = 0;
+
+    // Keep trying candidate.1, candidate.2, ... until an unused one is found
+    while (true) {
+      const result = await dbClient
+        .from('users')
+        .select('id')
+        .eq('username', candidate)
+        .maybeSingle();
+
+      if (result.error) throw result.error;
+
+      if (!result.data) break; // candidate is free
+      suffix += 1;
+      candidate = base + suffix;
+    }
+
+    generatedUsername = candidate;
+    usernameInput.value = candidate;
+    usernameCheckStatus = 'available';
+    btn.classList.remove('checking');
+    btn.classList.add('available');
+    usernameInput.classList.add('valid');
+    showUsernameStatus('Username available', 'success');
+  } catch (err) {
+    console.warn('[SoundsCare] Username generation failed:', err);
+    // Fall back to a timestamp-suffixed username so registration can still proceed
+    const fallback = base + Date.now().toString().slice(-4);
+    generatedUsername = fallback;
+    usernameInput.value = fallback;
+    usernameCheckStatus = 'available';
+    btn.classList.remove('checking');
+    btn.classList.add('available');
+    showUsernameStatus('Username generated', 'success');
+  }
+
+  updateRegisterButtonState();
+}
+
+function showUsernameStatus(message, type) {
+  const alert = document.getElementById('usernameStatusAlert');
+  const icon = document.getElementById('usernameStatusIcon');
+  const text = document.getElementById('usernameStatusText');
+
+  alert.classList.remove('show', 'available', 'taken-active', 'taken-deleted');
+  icon.className = type === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill';
+  alert.classList.add(type === 'success' ? 'available' : 'taken-active');
+  text.textContent = message;
+  alert.classList.add('show');
 }
 
 // ============================================================
@@ -696,22 +779,35 @@ function togglePasswordVisibility(fieldId = 'regPassword') {
 }
 
 // ============================================================
-// REGISTRATION HANDLER — STEP 1: create auth user, send OTP
+// REGISTRATION HANDLER — create auth user and finalize account directly
 // ============================================================
 let pendingUser = null;
-let otpInterval = null;
 
 async function handleRegister(event) {
   event.preventDefault();
   
   // Check if email was validated
   if (emailCheckStatus !== 'available') {
-    showAlert('alertError', 'alertErrorText', 'Please verify your email is available before registering.');
+    showAlert('alertError', 'alertErrorText', 'Please use an available email address before registering.');
     document.getElementById('regEmail').focus();
+    return;
+  }
+
+  // Check the username was generated successfully
+  if (usernameCheckStatus !== 'available' || !generatedUsername) {
+    showAlert('alertError', 'alertErrorText', 'Still generating your username — please wait a moment and try again.');
+    return;
+  }
+
+  // reCAPTCHA check ("I'm not a robot")
+  const recaptchaResponse = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
+  if (!recaptchaResponse) {
+    showAlert('alertError', 'alertErrorText', 'Please confirm you are not a robot.');
     return;
   }
   
   const fullName = document.getElementById('fullName').value.trim();
+  const username = generatedUsername;
   const email = document.getElementById('regEmail').value.trim().toLowerCase();
   const phone = document.getElementById('phone').value.trim();
   const password = document.getElementById('regPassword').value;
@@ -759,7 +855,7 @@ async function handleRegister(event) {
     return;
   }
   
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Confirming email is available…');
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Confirming details…');
 
   // Re-verify email availability against the live DB right before submitting
   const dupCheck = await dbClient.from('users').select('id').eq('email', email).maybeSingle();
@@ -769,9 +865,17 @@ async function handleRegister(event) {
     return;
   }
 
-  // Store pending registration data — used after OTP verification
+  // Re-verify username uniqueness right before submitting (race-condition guard)
+  const usernameDupCheck = await dbClient.from('users').select('id').eq('username', username).maybeSingle();
+  if (usernameDupCheck.data) {
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', 'Your username was just taken — refresh your full name field to regenerate one.');
+    return;
+  }
+
+  // Store pending registration data — used right after account creation
   pendingUser = {
-    fullName, email, phone,
+    fullName, username, email, phone,
     country:      userLocation && userLocation.countryName || null,
     county:       userLocation && userLocation.county || null,
     town:         userLocation && userLocation.town || null,
@@ -787,6 +891,7 @@ async function handleRegister(event) {
     options: {
       data: {
         full_name:        fullName,
+        username:          username,
         first_name:       fullName.split(' ')[0],
         last_name:        fullName.split(' ').slice(1).join(' '),
         phone:             phone,
@@ -794,40 +899,19 @@ async function handleRegister(event) {
         country:           pendingUser.country,
         terms_accepted:    true,
         receive_updates:   updatesCheck
-      },
-      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
+      }
     }
   });
 
   if (signUpResult.error) {
     setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
     showAlert('alertError', 'alertErrorText', friendlyAuthError(signUpResult.error.message));
     return;
   }
 
-  // Send OTP via signInWithOtp
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Sending verification code…');
-  const otpResult = await dbClient.auth.signInWithOtp({
-    email: email,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
-    }
-  });
-
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-
-  if (otpResult.error) {
-    showAlert('alertError', 'alertErrorText', 'Failed to send verification code. Please try again.');
-    return;
-  }
-
-  // Move to OTP step
-  document.getElementById('otpEmailDisplay').textContent = email;
-  document.getElementById('step-form').style.display = 'none';
-  document.getElementById('step-otp').style.display = 'block';
-  startOtpTimer(60);
-  document.getElementById('otp0').focus();
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Setting up your account…');
+  await finalizeWorkerAccount(signUpResult.data);
 }
 
 function friendlyAuthError(msg) {
@@ -841,164 +925,7 @@ function friendlyAuthError(msg) {
   return 'Registration failed. Please check your details and try again.';
 }
 
-function goBackToForm() {
-  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
-  document.getElementById('step-otp').style.display = 'none';
-  document.getElementById('step-form').style.display = 'block';
-  hideAllAlerts();
-}
 
-// ============================================================
-// OTP TIMER
-// ============================================================
-function startOtpTimer(s) {
-  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
-  let left = s;
-  document.getElementById('timerWrap').style.display = 'block';
-  document.getElementById('resendWrap').style.display = 'none';
-  document.getElementById('otpCd').textContent = left;
-  otpInterval = setInterval(function(){
-    left--;
-    document.getElementById('otpCd').textContent = left;
-    if (left <= 0) {
-      clearInterval(otpInterval);
-      otpInterval = null;
-      document.getElementById('timerWrap').style.display = 'none';
-      document.getElementById('resendWrap').style.display = 'flex';
-    }
-  }, 1000);
-}
-
-// ============================================================
-// OTP BOXES (8-digit, indexes 0-7)
-// ============================================================
-const OTP_LEN = 8;
-
-function otpIn(i) {
-  const box = document.getElementById('otp' + i);
-  const v = box.value.replace(/\D/g, '');
-  if (v.length > 1) { distributePaste(v, i); return; }
-  box.value = v;
-  box.classList.toggle('filled', !!v);
-  box.classList.remove('err');
-  if (v && i < OTP_LEN - 1) document.getElementById('otp' + (i + 1)).focus();
-  checkAutoSubmit();
-}
-function otpKey(e, i) {
-  if (e.key === 'Backspace') {
-    const box = document.getElementById('otp' + i);
-    if (box.value) {
-      box.value = '';
-      box.classList.remove('filled');
-    } else if (i > 0) {
-      const prev = document.getElementById('otp' + (i - 1));
-      prev.value = '';
-      prev.classList.remove('filled');
-      prev.focus();
-    }
-    e.preventDefault(); return;
-  }
-  if (e.key === 'ArrowLeft'  && i > 0)           { document.getElementById('otp' + (i - 1)).focus(); e.preventDefault(); }
-  if (e.key === 'ArrowRight' && i < OTP_LEN - 1) { document.getElementById('otp' + (i + 1)).focus(); e.preventDefault(); }
-}
-function otpPaste(e, i) {
-  e.preventDefault();
-  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-  if (!text) return;
-  distributePaste(text, i);
-}
-function distributePaste(digits, startIndex) {
-  for (let j = 0; j < digits.length && (startIndex + j) < OTP_LEN; j++) {
-    const box = document.getElementById('otp' + (startIndex + j));
-    box.value = digits[j];
-    box.classList.add('filled');
-    box.classList.remove('err');
-  }
-  const nextFocus = Math.min(startIndex + digits.length, OTP_LEN - 1);
-  document.getElementById('otp' + nextFocus).focus();
-  checkAutoSubmit();
-}
-function checkAutoSubmit() {
-  if (getOtp().length === OTP_LEN) { setTimeout(verifyOtp, 250); }
-}
-function getOtp() {
-  let code = '';
-  for (let i = 0; i < OTP_LEN; i++) {
-    code += (document.getElementById('otp' + i).value || '');
-  }
-  return code;
-}
-function clearOtpBoxes(markErr) {
-  for (let i = 0; i < OTP_LEN; i++) {
-    const b = document.getElementById('otp' + i);
-    b.value = '';
-    b.className = 'otp-box' + (markErr ? ' err' : '');
-  }
-  if (!markErr) document.getElementById('otp0').focus();
-}
-
-// ============================================================
-// RESEND OTP
-// ============================================================
-async function resendOtp() {
-  const email = pendingUser ? pendingUser.email : document.getElementById('regEmail').value.trim();
-  document.getElementById('resendBtn').disabled = true;
-  document.getElementById('resendSpinner').style.display = 'inline-block';
-  document.getElementById('resendBtnText').textContent = 'Sending…';
-
-  const result = await dbClient.auth.signInWithOtp({
-    email: email,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: window.location.origin + '/employee-profile-setup.html'
-    }
-  });
-
-  document.getElementById('resendBtn').disabled = false;
-  document.getElementById('resendSpinner').style.display = 'none';
-  document.getElementById('resendBtnText').textContent = 'Resend verification code';
-
-  if (result.error) {
-    showAlert('alertOtp', 'alertOtpText', 'Failed to resend. Please wait a moment and try again.');
-    return;
-  }
-  clearOtpBoxes(false);
-  startOtpTimer(60);
-}
-
-// ============================================================
-// VERIFY OTP — STEP 2: confirm email, then write to the database
-// ============================================================
-async function verifyOtp() {
-  const email = pendingUser ? pendingUser.email : document.getElementById('regEmail').value.trim();
-  const entered = getOtp();
-
-  if (entered.length < OTP_LEN) {
-    showAlert('alertOtp', 'alertOtpText', 'Please enter all ' + OTP_LEN + ' digits.');
-    return;
-  }
-
-  setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', true, 'Verifying…');
-
-  const result = await dbClient.auth.verifyOtp({
-    email: email,
-    token: entered,
-    type: 'email'
-  });
-
-  if (result.error) {
-    clearOtpBoxes(true);
-    setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', false, 'Verify & Create Account');
-    const errMsg = result.error.message && result.error.message.toLowerCase().includes('expired')
-      ? 'Code expired. Please request a new one.'
-      : 'Incorrect code. Please check and try again.';
-    showAlert('alertOtp', 'alertOtpText', errMsg);
-    return;
-  }
-
-  setBtnLoading('otpBtn', 'otpSpinner', 'otpBtnText', true, 'Setting up your profile…');
-  await finalizeWorkerAccount(result.data);
-}
 
 // ============================================================
 // FINALIZE ACCOUNT — writes to users + worker_profiles tables,
@@ -1013,6 +940,7 @@ async function finalizeWorkerAccount(authData) {
     const usersResult = await dbClient.from('users').upsert({
       id:              user ? user.id : undefined,
       email:           p.email,
+      username:        p.username,
       full_name:       p.fullName,
       phone:           p.phone,
       role:            'employee',
@@ -1032,6 +960,7 @@ async function finalizeWorkerAccount(authData) {
       const wpResult = await dbClient.from('worker_profiles').upsert({
         session_id:    user.id,
         full_name:     p.fullName,
+        username:      p.username,
         email:         p.email,
         phone:         p.phone,
         phone_number:  p.phone,
@@ -1086,25 +1015,23 @@ async function finalizeWorkerAccount(authData) {
       name: p.fullName,
       email: p.email,
       userId: user ? user.id : null,
-      profileSetupUrl: window.location.origin + '/employee-profile-setup.html'
+      dashboardUrl: window.location.origin + '/employee-dashboard.html'
     })
   }).catch(function (e) {
     console.warn('[SoundsCare] Welcome email dispatch failed:', e);
   });
 
-  if (otpInterval !== null) { clearInterval(otpInterval); otpInterval = null; }
-
-  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-form').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
-  document.getElementById('successName').textContent  = p.fullName || '';
-  document.getElementById('successEmail').textContent = p.email || '';
+  document.getElementById('successName').textContent     = p.fullName || '';
+  document.getElementById('successUsername').textContent = p.username || '';
 
-  // Auto-redirect into profile setup. The Supabase client persists the
-  // session (localStorage) by default, so employee-profile-setup.html
+  // Auto-redirect into the employee dashboard. The Supabase client persists
+  // the session (localStorage) by default, so employee-dashboard.html
   // picks it up on load via dbClient.auth.getSession() — no token needs
   // to be passed manually.
   setTimeout(function () {
-    window.location.href = 'employee-profile-setup.html';
+    window.location.href = 'employee-dashboard.html';
   }, 2000);
 }
 
