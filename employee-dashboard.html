@@ -641,6 +641,15 @@
     .verify-badge i { font-size: 9px; }
     .msg-from-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+    /* ─── WELCOME NAME VERIFICATION BADGE (image) ─── */
+    .welcome-name-row { display: flex; align-items: center; gap: 8px; }
+    .welcome-verify-badge {
+      width: 18px; height: 18px;
+      display: none; /* shown via JS only when workerProfile.verification_stage === 'verified' */
+      flex-shrink: 0;
+    }
+    .welcome-verify-badge.show { display: inline-block; }
+
     /* ─── CHAT SPLIT LAYOUT (Desktop: sidebar + conversation) ─── */
     .chat-split {
       display: flex;
@@ -1093,7 +1102,10 @@
   <!-- WELCOME BANNER -->
   <div class="welcome-banner" id="welcome-banner">
     <div>
-      <h2 id="welcome-name">Welcome back 👋</h2>
+      <div class="welcome-name-row">
+        <h2 id="welcome-name">Welcome back 👋</h2>
+        <img src="verification_badge.jpeg" alt="Verified" title="Verified" class="welcome-verify-badge" id="welcome-verify-badge">
+      </div>
       <p id="welcome-sub">Your dashboard is loading…</p>
     </div>
     <div class="profile-completeness">
@@ -2360,6 +2372,9 @@ async function loadDashboard() {
     document.getElementById('account-name').textContent = name;
     document.getElementById('account-email').textContent = currentUser.email;
     document.getElementById('account-role').textContent = 'Employee · ' + (workerProfile?.verification_stage || 'unverified');
+    // Verification badge on welcome banner — reflects worker_profiles.verification_stage from DB
+    const isWorkerVerified = (workerProfile?.verification_stage || '').toLowerCase() === 'verified';
+    document.getElementById('welcome-verify-badge').classList.toggle('show', isWorkerVerified);
     // New account modal info badges
     const verifEl = document.getElementById('acct-verif-badge');
     const payEl = document.getElementById('acct-pay-badge');
