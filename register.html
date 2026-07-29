@@ -23,7 +23,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -310,12 +309,6 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
             <input type="checkbox" id="updatesCheck" name="updatesCheck">
             <label for="updatesCheck">Send me job updates and new job alerts (optional)</label>
           </div>
-        </div>
-
-        <!-- RECAPTCHA -->
-        <div class="fg">
-          <!-- RECAPTCHA_SITE_KEY_HERE with your real Google reCAPTCHA v2 site key -->
-          <div class="g-recaptcha" data-sitekey="6LfwQmstAAAAAHYkoBCQINulApi948DSqY2xszwi"></div>
         </div>
 
         <!-- SUBMIT BUTTON -->
@@ -799,13 +792,6 @@ async function handleRegister(event) {
     return;
   }
 
-  // reCAPTCHA check ("I'm not a robot")
-  const recaptchaResponse = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
-  if (!recaptchaResponse) {
-    showAlert('alertError', 'alertErrorText', 'Please confirm you are not a robot.');
-    return; 
-  }
-  
   const fullName = document.getElementById('fullName').value.trim();
   const username = generatedUsername;
   const email = document.getElementById('regEmail').value.trim().toLowerCase();
@@ -905,7 +891,6 @@ async function handleRegister(event) {
 
   if (signUpResult.error) {
     setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
     showAlert('alertError', 'alertErrorText', friendlyAuthError(signUpResult.error.message));
     return;
   }
