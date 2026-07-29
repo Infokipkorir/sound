@@ -286,6 +286,7 @@
     .view-all-link{font-size:13px;font-weight:600;color:var(--green);display:flex;align-items:center;gap:.3rem;white-space:nowrap;transition:all .18s}
     .view-all-link:hover{color:var(--green-dark)}
     .feed-section{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+    .feed-section.single{grid-template-columns:1fr;max-width:720px;margin:0 auto}
     @media(max-width:900px){.feed-section{grid-template-columns:1fr}}
     .feed-column{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.5rem;display:flex;flex-direction:column}
     .feed-header{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
@@ -311,6 +312,10 @@
     .tag.blue{background:var(--blue-light);color:var(--blue-dark)}
     .tag.urgent{background:#FFF0EB;color:#C04A1A}
     .card-salary{font-size:12px;color:var(--text-muted);margin:.5rem 0;display:flex;align-items:center;gap:.35rem}
+    .card-jobstats{display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;font-size:11.5px;color:var(--text-muted);margin:.5rem 0;padding:.55rem .7rem;background:var(--surface-alt);border-radius:8px}
+    .card-jobstats span{display:flex;align-items:center;gap:.3rem}
+    .card-jobstats i{font-size:12px;color:var(--blue)}
+    .card-jobstats .stat-interview i{color:var(--amber)}
     .card-footer{display:flex;gap:.5rem;margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border)}
     .btn-small{flex:1;padding:7px 10px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.3rem}
     .btn-small.green{background:var(--green);color:#fff}.btn-small.green:hover{background:var(--green-dark)}
@@ -623,18 +628,7 @@
 
 <!-- MAIN FEED -->
 <div class="container" id="main-feed">
-  <div class="feed-section">
-    <div class="feed-column" id="workers-section">
-      <div class="feed-header">
-        <div class="feed-header-left">
-          <i class="bi bi-person-lines-fill" style="color:var(--green);font-size:1.3rem"></i>
-          <h3>Worker Profiles</h3>
-        </div>
-        <span class="feed-badge" id="workers-badge">—</span>
-      </div>
-      <div id="workers-feed"><div class="feed-empty"><i class="bi bi-hourglass-split"></i>Loading profiles…</div></div>
-      <a href="employees.html" class="view-all-link" style="margin-top:1.2rem;justify-content:flex-end">View all workers <i class="bi bi-arrow-right"></i></a>
-    </div>
+  <div class="feed-section single">
     <div class="feed-column" id="jobs-section">
       <div class="feed-header">
         <div class="feed-header-left">
@@ -850,6 +844,10 @@ function showToast(msg,type='info'){
 function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatDate(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'});
+}
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>closeModal(m.id)); });
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); }));
 
@@ -1059,60 +1057,6 @@ async function submitAnonEmployee(){
 }
 
 /* ── DB FETCH: WORKERS ── */
-async function loadWorkers(){
-  const {data,error}=await sb.from('worker_profiles')
-    .select('id,full_name,job_title,preferred_role,county,current_town,key_skills,salary_min,salary_max,salary_range,is_verified,created_at,submitted_at,account_deactivated,is_deleted,profile_visible,status')
-    .eq('account_deactivated',false)
-    .eq('is_deleted',false)
-    .order('created_at',{ascending:false})
-    .limit(6);
-
-  const feed=document.getElementById('workers-feed');
-  const badge=document.getElementById('workers-badge');
-
-  if(error){
-    console.error('Workers error:',error);
-    feed.innerHTML='<div class="feed-empty"><i class="bi bi-exclamation-circle"></i>Could not load profiles.</div>';
-    return;
-  }
-  if(!data||data.length===0){
-    feed.innerHTML='<div class="feed-empty"><i class="bi bi-person-slash"></i>No worker profiles yet. Be the first!</div>';
-    badge.textContent='0 workers';
-    return;
-  }
-
-  badge.textContent=data.length+' workers';
-
-  feed.innerHTML=data.map(w=>{
-    // key_skills is a comma-separated text field
-    const skillsRaw = w.key_skills||'';
-    const skills = skillsRaw.split(',').map(s=>s.trim()).filter(Boolean);
-    const role = w.job_title || w.preferred_role || 'Domestic Worker';
-    const location = w.current_town ? w.current_town+(w.county?', '+w.county:'') : (w.county||'Kenya');
-    const ago = timeAgo(w.created_at||w.submitted_at);
-    // salary_range is text like "15000-25000", fall back to min/max
-    let salDisplay = salary(w.salary_min, w.salary_max);
-    if(salDisplay==='Negotiable' && w.salary_range) salDisplay = 'KES '+w.salary_range+'/mo';
-    return `
-    <div class="card" onclick="goToWorker('${w.id}')">
-      <div class="card-header">
-        <div class="card-avatar">${initials(w.full_name)}</div>
-        <div class="card-meta">
-          <div class="card-title">${esc(w.full_name||'—')}</div>
-          <div class="card-subtitle">${esc(role)} &middot; ${esc(location)}</div>
-        </div>
-        ${w.is_verified?'<div class="card-verified"><i class="bi bi-check"></i></div>':''}
-      </div>
-      ${skills.length?'<div class="card-tags">'+skills.slice(0,4).map(s=>'<span class="tag">'+esc(s)+'</span>').join('')+'</div>':''}
-      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salDisplay}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
-      <div class="card-footer">
-        <button class="btn-small green" onclick="event.stopPropagation();goToWorker('${w.id}')"><i class="bi bi-person-check-fill"></i> Hire</button>
-        <button class="btn-small outline" onclick="event.stopPropagation();goToWorker('${w.id}')"><i class="bi bi-chat-fill"></i> Contact</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 /* ── DB FETCH: JOBS ── */
 async function loadJobs(){
   const {data,error}=await sb.from('job_postings')
@@ -1137,12 +1081,29 @@ async function loadJobs(){
 
   badge.textContent=data.length+' open';
 
+  // Applications + interviews per job, for the visible batch of jobs only
+  const jobIds = data.map(j=>j.id);
+  const [appsRes, interviewsRes] = await Promise.all([
+    sb.from('job_applications').select('job_id').in('job_id', jobIds),
+    sb.from('interviews').select('job_id').in('job_id', jobIds)
+  ]);
+  if(appsRes.error) console.error('Applications count error:', appsRes.error);
+  if(interviewsRes.error) console.error('Interviews count error:', interviewsRes.error);
+
+  const appCounts = {};
+  (appsRes.data||[]).forEach(a=>{ appCounts[a.job_id] = (appCounts[a.job_id]||0)+1; });
+  const interviewCounts = {};
+  (interviewsRes.data||[]).forEach(iv=>{ interviewCounts[iv.job_id] = (interviewCounts[iv.job_id]||0)+1; });
+
   feed.innerHTML=data.map(j=>{
     const company = j.company_name||'Employer';
     const ago = timeAgo(j.created_at);
+    const postedOn = formatDate(j.created_at);
     const jobLocation = j.location||(j.county||'Kenya');
     const role = j.job_role||j.category||'General';
     const type = j.job_type||j.work_type||'Full Time';
+    const applicationCount = appCounts[j.id]||0;
+    const interviewCount = interviewCounts[j.id]||0;
     let salDisplay = salary(j.salary_min, j.salary_max);
     if(salDisplay==='Negotiable' && j.salary_range) salDisplay = 'KES '+j.salary_range+'/mo';
     return `
@@ -1161,6 +1122,11 @@ async function loadJobs(){
         <span class="tag">${esc(type)}</span>
       </div>
       <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salDisplay}<span style="margin-left:auto;opacity:.6">${ago}</span></div>
+      <div class="card-jobstats">
+        <span class="stat-date"><i class="bi bi-calendar-event"></i> Posted ${postedOn}</span>
+        <span class="stat-apps"><i class="bi bi-send-check-fill"></i> ${applicationCount} application${applicationCount===1?'':'s'}</span>
+        <span class="stat-interview"><i class="bi bi-camera-video-fill"></i> ${interviewCount} interview${interviewCount===1?'':'s'}</span>
+      </div>
       <div class="card-footer">
         <button class="btn-small blue" onclick="event.stopPropagation();goToJob('${j.id}')"><i class="bi bi-send-fill"></i> Apply Now</button>
         <button class="btn-small outline" onclick="event.stopPropagation();goToJob('${j.id}')"><i class="bi bi-eye-fill"></i> View Job</button>
@@ -1359,7 +1325,7 @@ function showWelcomeNotif(){
 document.addEventListener('DOMContentLoaded',async ()=>{
   showWelcomeNotif();
   initCookieBanner();
-  await Promise.all([loadWorkers(),loadJobs()]);
+  await loadJobs();
   loadStats();
   loadInsights();
 });
