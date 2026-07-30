@@ -936,7 +936,60 @@ table { width: 100%; border-collapse: collapse; }
   <i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON — the public site is showing a maintenance page to visitors.
 </div>
 
-<div data-include="sidebar"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <a href="dashboard.html" class="sb-logo">
+      <span class="sb-logo-icon"><i class="bi bi-soundwave"></i></span>
+      SoundsCare Admin
+    </a>
+    <button class="sb-close-btn" onclick="toggleSidebar()" title="Collapse sidebar"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">AD</div>
+    <div class="sb-user-text">
+      <h3 id="sb-admin-name">Admin</h3>
+      <p>Administrator</p>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <a class="sb-link" data-page="dashboard" href="dashboard.html"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a class="sb-link" data-page="notifications" href="notifications.html"><i class="bi bi-bell"></i><span>Notifications</span><span class="sb-badge" id="badge-notif">0</span></a>
+
+    <div class="sb-section">People</div>
+    <a class="sb-link" data-page="users" href="users.html"><i class="bi bi-people"></i><span>Users</span></a>
+    <a class="sb-link" data-page="jobseekers" href="jobseekers.html"><i class="bi bi-person-badge"></i><span>Job Seekers</span><span class="sb-badge sky" id="badge-emp">0</span></a>
+    <a class="sb-link" data-page="employers" href="employers.html"><i class="bi bi-building"></i><span>Employers</span><span class="sb-badge sky" id="badge-empr">0</span></a>
+
+    <div class="sb-section">Jobs</div>
+    <a class="sb-link" data-page="jobs" href="jobs.html"><i class="bi bi-briefcase"></i><span>Job Postings</span><span class="sb-badge green" id="badge-jobs">0</span></a>
+    <a class="sb-link" data-page="applications" href="applications.html"><i class="bi bi-file-earmark-check"></i><span>Applications</span><span class="sb-badge" id="badge-apps">0</span></a>
+    <a class="sb-link" data-page="preqs" href="profile-post-requests.html"><i class="bi bi-person-lines-fill"></i><span>Profile Post Requests</span><span class="sb-badge amber" id="badge-preqs">0</span></a>
+
+    <div class="sb-section">Finance</div>
+    <a class="sb-link" data-page="payments" href="payments.html"><i class="bi bi-cash-stack"></i><span>Payments</span></a>
+    <a class="sb-link" data-page="subscriptions" href="subscriptions.html"><i class="bi bi-arrow-repeat"></i><span>Subscriptions</span></a>
+
+    <div class="sb-section">Support</div>
+    <a class="sb-link" data-page="verification" href="verification.html"><i class="bi bi-patch-check"></i><span>Verification Queue</span></a>
+    <a class="sb-link" data-page="support" href="support.html"><i class="bi bi-life-preserver"></i><span>Support Tickets</span><span class="sb-badge amber" id="badge-tickets">0</span></a>
+
+    <div class="sb-section">System</div>
+    <a class="sb-link" data-page="system-health" href="system-health.html"><i class="bi bi-hdd-network"></i><span>System Health</span></a>
+    <a class="sb-link" data-page="reports" href="reports.html"><i class="bi bi-bar-chart"></i><span>Reports</span></a>
+    <a class="sb-link" data-page="settings" href="settings.html"><i class="bi bi-gear"></i><span>Settings</span></a>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-maintenance">
+      <span><i class="bi bi-cone-striped"></i> Maintenance Mode</span>
+      <button class="toggle-switch" role="switch" aria-checked="false" onclick="toggleMaintenance(this)" title="Toggle maintenance mode"></button>
+    </div>
+    <button class="sb-logout-btn" onclick="handleLogout()"><i class="bi bi-box-arrow-right"></i> Log Out</button>
+  </div>
+</div>
 
 <div class="main" id="main">
   <div data-include="topbar"></div>
@@ -970,7 +1023,7 @@ table { width: 100%; border-collapse: collapse; }
           <a class="btn btn-secondary btn-sm" href="verification.html"><i class="bi bi-patch-check"></i> Verification Queue</a>
           <a class="btn btn-secondary btn-sm" href="jobs.html"><i class="bi bi-plus-circle"></i> Manage Jobs</a>
           <a class="btn btn-secondary btn-sm" href="support.html"><i class="bi bi-life-preserver"></i> Support Tickets</a>
-          <button class="btn btn-secondary btn-sm" onclick="openModal('send-notif-bulk-modal')"><i class="bi bi-megaphone"></i> Send Notification</button>
+          <button class="btn btn-secondary btn-sm" onclick="openSendNotifModal()"><i class="bi bi-megaphone"></i> Send Notification</button>
         </div>
       </div>
     </div>
@@ -1001,6 +1054,36 @@ table { width: 100%; border-collapse: collapse; }
       <div class="table-wrap"><table><thead><tr><th>User</th><th>Amount</th><th>Type</th><th>Date</th></tr></thead><tbody id="recent-payments-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted)">Loading…</td></tr></tbody></table></div>
     </div>
 
+  </div>
+</div>
+
+<!-- SEND NOTIFICATION MODAL -->
+<div id="send-notif-bulk-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-megaphone"></i> Send Notification</h2><button class="modal-close" onclick="closeModal('send-notif-bulk-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Audience</label>
+        <select id="notif-audience" onchange="updateNotifRecipientCount()">
+          <option value="all">All Users</option>
+          <option value="workers">Job Seekers</option>
+          <option value="employers">Employers</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Title</label>
+        <input id="notif-title" placeholder="Notification title">
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea id="notif-message" rows="4" placeholder="Notification message" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical"></textarea>
+      </div>
+      <p style="font-size:12px;color:var(--muted)" id="notif-recipient-count"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('send-notif-bulk-modal')">Cancel</button>
+      <button class="btn btn-primary" id="send-notif-btn" onclick="sendBulkNotification()"><i class="bi bi-send"></i> Send</button>
+    </div>
   </div>
 </div>
 
