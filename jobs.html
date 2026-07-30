@@ -1,704 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--
-=============================================================================
-  SUMMARY OF CHANGES — Employee Dashboard Job Applications Section
-=============================================================================
-
-### DATABASE (Supabase project `phoahudvrcelfrykoeuo`)
-
-NEW COLUMNS on `job_postings`:
-  • duration_type: 'ongoing' | 'fixed_term' | 'one_time' | 'recurring'
-  • duration_value: free text (e.g., "1 Year", "3 days a week", "4 hours a day")
-  • loves_count: denormalized, auto-synced count of hearts
-  • employer_avg_rating: denormalized cache from employer ratings (auto-synced)
-  • employer_rating_count: denormalized cache count (auto-synced)
-  • work_type: reused for Onsite/Remote/Hybrid
-  • company_verified / company_name: reused for verified badge
-
-NEW COLUMNS on `employer_profiles`:
-  • avg_rating: calculated average of employer ratings (1–5 stars)
-  • rating_count: count of ratings received
-
-NEW TABLES:
-  • saved_jobs
-    - worker bookmarks/whitelists a job
-    - RLS scoped to worker via session_id = auth.uid()
-  
-  • job_loves
-    - worker "hearts" a job
-    - insert/delete triggers sync to job_postings.loves_count
-  
-  • job_reports
-    - reason enum: fraud | scam | fake_listing | discriminatory | 
-                   inappropriate | already_filled | other
-    - status workflow: pending → reviewed | dismissed | action_taken
-  
-  • employer_ratings
-    - worker rates employer after completed interview
-    - 1–5 stars + optional review text
-    - triggers recalculate employer_profiles avg_rating/rating_count
-    - cascades into job_postings.employer_avg_rating
-
-All new tables have RLS policies following existing pattern (worker-scoped via
-worker_profiles.session_id, plus is_admin() catch-all for admin management).
-
-### FRONTEND (employee-dashboard.html)
-
-STATS ROW:
-  • Added 3 new stat cards: Applications, Interviewed, Saved Jobs
-  • Grid made responsive to fit 6 cards
-
-JOB CARDS NOW DISPLAY:
-  • Verified employer badge (bi-patch-check-fill icon)
-  • Employer star rating + rating count
-  • Urgent / job type / work-type (Onsite-Remote-Hybrid) / duration / county chips
-  • Love count + heart toggle button
-  • Save/whitelist bookmark toggle button
-  • Share button (builds jobs.html?job=<id> link, Web Share API with fallback)
-  • Report button
-  • Apply button (shows "Applied" state on first load if already applied)
-
-NEW MODALS:
-  • Saved Jobs — lists bookmarked positions
-  • My Applications — status-colored list (pending/reviewed/shortlisted/hired/rejected)
-  • Report Job — reason dropdown + details textarea
-  • Rate Employer — 5-star picker + optional review textarea
-
-INTERVIEWS MODAL ENHANCEMENT:
-  • New "pending ratings" section at top
-  • Prompts worker to rate any employer from completed interviews (not yet rated)
-
-NEW JAVASCRIPT FUNCTIONS:
-  • toggleSaveJob() — bookmark/unbookmark a job
-  • toggleLoveJob() — heart/unheart a job (updates loves_count)
-  • openReportModal(jobId) / submitJobReport() — job reporting flow
-  • shareJob(jobId) — builds shareable link & uses Web Share API
-  • buildJobShareUrl(jobId) — constructs jobs.html?job=<id> URL
-  • loadApplications() — fetches worker's job applications
-  • loadSavedJobs() — fetches worker's bookmarked jobs
-  • jobCardHtml(job) — shared card HTML renderer
-  • workTypeChip(type) — renders work-type badge (Onsite/Remote/Hybrid)
-  • durationChip(type, value) — renders duration badge
-  • renderStars(rating, count) — renders star display with count
-  • loadPendingEmployerRatings() — fetches completed interviews pending rating
-  • openRateEmployerModal(employerId) / setRatingStars(n) — rating flow
-  • submitEmployerRating(employerId, stars, review) — posts rating to db
-
-ICONS:
-  • Uses Bootstrap Icons throughout (bi-heart-fill, bi-bookmark-fill, 
-    bi-share, bi-flag, bi-star-fill, etc.)
-  • No new icon library added
-
-OUTSTANDING DEPENDENCIES:
-  ⚠️  jobs.html needs to read ?job= query param to display single posting
-  ⚠️  Employer/admin side must set interviews.status = 'completed' 
-      for rating prompts to appear
-  ⚠️  Frontend integration with employee-dashboard.html modals & functions
-
-=============================================================================
--->
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Browse Domestic Job Vacancies in Kenya & East Africa | SoundsCare</title>
-<meta name="description" content="Browse live vacancies for nannies, housekeepers, drivers, gardeners, security guards, cooks and caregivers across Kenya, Uganda and Tanzania. No account needed to browse — apply free on SoundsCare.">
-<meta name="keywords" content="domestic jobs Kenya, nanny jobs, housekeeper jobs, driver jobs Kenya, gardener jobs, security guard jobs, cook jobs, caregiver jobs, house help vacancies, SoundsCare jobs">
-<meta name="robots" content="index,follow">
-<link rel="canonical" href="https://www.sounds.co.ke/jobs.html">
-
-<!-- Open Graph -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="Browse Domestic Job Vacancies | SoundsCare">
-<meta property="og:description" content="Live vacancies for nannies, housekeepers, drivers, gardeners, security guards and more across East Africa.">
-<meta property="og:url" content="https://www.sounds.co.ke/jobs.html">
-<meta property="og:image" content="https://www.sounds.co.ke/sound_logo.png">
-
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Browse Domestic Job Vacancies | SoundsCare">
-<meta name="twitter:description" content="Live vacancies for nannies, housekeepers, drivers, gardeners, security guards and more across East Africa.">
-<meta name="twitter:image" content="https://www.sounds.co.ke/sound_logo.png">
-
-<!-- Favicons -->
-<link rel="icon" href="/favicon.ico" type="image/x-icon">
-<link rel="icon" type="image/png" sizes="32x32" href="/sound_logo.png">
-<link rel="apple-touch-icon" href="/sound_logo.png">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<title>Jobs — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-<!-- Breadcrumb schema -->
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"BreadcrumbList",
-  "itemListElement":[
-    {"@type":"ListItem","position":1,"name":"Home","item":"https://www.sounds.co.ke/"},
-    {"@type":"ListItem","position":2,"name":"Jobs","item":"https://www.sounds.co.ke/jobs.html"}
-  ]
-}
-</script>
-<!-- CollectionPage schema -->
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"CollectionPage",
-  "name":"Domestic Job Vacancies in East Africa",
-  "url":"https://www.sounds.co.ke/jobs.html",
-  "isPartOf":{"@type":"WebSite","name":"Sounds Care Services","url":"https://www.sounds.co.ke"},
-  "description":"Live job vacancies for domestic workers, nannies, drivers, gardeners, security guards, cooks and caregivers across Kenya, Uganda and Tanzania."
-}
-</script>
-<script type="application/ld+json" id="jobposting-schema"></script>
-
-<style>
-:root{
-  --green:#1A7A5E;--green-dark:#145c47;--green-light:#e8f5f0;--green-mid:#2DB877;
-  --blue:#3B8ED4;--blue-dark:#2574b8;--blue-light:#EBF4FC;
-  --surface:#f7f9f8;--surface-alt:#f0f4f2;--border:#dae3de;
-  --text:#18281f;--text-muted:#6b7c75;--red:#E24B4A;--amber:#E9A23B;
-  --dark-bg:#0d2118;--dark-bg2:#142b1e;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6}
-a{color:inherit;text-decoration:none;transition:all .2s}
-h1,h2,h3{font-family:'Playfair Display',serif}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-
-/* NAVBAR */
-.navbar{display:flex;align-items:center;justify-content:space-between;gap:30px;padding:14px 6%;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.08);position:sticky;top:0;z-index:1000}
-.brand-logo{display:flex;align-items:center;gap:14px;text-decoration:none;flex-shrink:0}
-.brand-img{width:60px;height:60px;object-fit:contain}
-.brand-text{display:flex;flex-direction:column}
-.brand-title{font-size:1.6rem;font-weight:800;color:#0f172a;line-height:1.1}
-.brand-sub{font-size:.78rem;color:#64748b;line-height:1.3;max-width:250px}
-.nav-links{display:flex;align-items:center;justify-content:center;gap:32px;list-style:none;margin:0;padding:0;flex:1}
-.nav-links a{color:#334155;text-decoration:none;font-weight:600;transition:.3s}
-.nav-links a:hover,.nav-links a.active{color:#16a34a}
-.nav-buttons{display:flex;align-items:center}
-.btn-primary{display:flex;align-items:center;gap:8px;padding:12px 22px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-weight:600;cursor:pointer;transition:.3s}
-.btn-primary:hover{background:#15803d;transform:translateY(-2px);box-shadow:0 8px 20px rgba(22,163,74,.3)}
-@media(max-width:992px){.navbar{flex-wrap:wrap;justify-content:center;gap:20px}.brand-logo{width:100%;justify-content:center}.nav-links{width:100%;justify-content:center;flex-wrap:wrap;gap:18px}.nav-buttons{width:100%;justify-content:center}.brand-sub{text-align:center;max-width:none}}
-
-/* PAGE HERO */
-.page-hero{position:relative;padding:3.2rem 1.5rem 2.4rem;text-align:center;overflow:hidden;background:linear-gradient(135deg,var(--dark-bg),var(--dark-bg2))}
-.page-hero::before{content:'';position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1400&q=60') center/cover no-repeat;opacity:.16}
-.page-hero-inner{position:relative;z-index:1;max-width:760px;margin:0 auto}
-.page-hero .eyebrow{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:50px;padding:5px 16px;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#78d9b4;margin-bottom:1rem}
-.page-hero h1{color:#fff;font-size:clamp(1.7rem,4vw,2.5rem);font-weight:700;margin-bottom:.6rem;line-height:1.25}
-.page-hero p{color:rgba(255,255,255,.82);font-size:14px;max-width:520px;margin:0 auto 1.6rem}
-.search-bar{display:flex;gap:.6rem;flex-wrap:wrap;background:#fff;border-radius:14px;padding:.6rem;box-shadow:0 14px 40px rgba(0,0,0,.25);max-width:640px;margin:0 auto}
-.search-bar input,.search-bar select{border:none;border-radius:9px;padding:11px 14px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--surface-alt);flex:1;min-width:140px}
-.search-bar input:focus,.search-bar select:focus{outline:2px solid var(--green)}
-.search-bar button{border:none;border-radius:9px;padding:11px 22px;background:var(--green);color:#fff;font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:.4rem;white-space:nowrap}
-.search-bar button:hover{background:var(--green-dark)}
-
-/* FILTER BAR */
-.filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:.9rem 1.5rem;position:sticky;top:88px;z-index:900}
-.filter-inner{max-width:1200px;margin:0 auto;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
-.filter-inner select{border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fff;cursor:pointer}
-.filter-inner select:focus{outline:none;border-color:var(--green)}
-.filter-clear{margin-left:auto;font-size:12px;color:var(--text-muted);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:.3rem}
-.filter-clear:hover{color:var(--red)}
-@media(max-width:768px){.filter-bar{position:static}.filter-inner{justify-content:flex-start}.filter-clear{margin-left:0}}
-
-/* TOOLBAR */
-.container{max-width:1200px;margin:0 auto;padding:1.6rem 1.5rem 3rem}
-.toolbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.3rem;flex-wrap:wrap}
-.toolbar h2{font-size:1rem;color:var(--text-muted);font-weight:600;font-family:'DM Sans',sans-serif}
-.toolbar h2 strong{color:var(--text);font-weight:700}
-.toolbar select{border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;background:#fff}
-
-/* GRID + CARDS */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
-@media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.grid{grid-template-columns:1fr}}
-.card{padding:1.1rem;border:1px solid var(--border);border-radius:13px;background:#fff;transition:all .2s;cursor:pointer;display:flex;flex-direction:column}
-.card:hover{border-color:var(--blue);box-shadow:0 8px 24px rgba(59,142,212,.14);transform:translateY(-2px)}
-.card-header{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.75rem}
-.card-avatar{width:46px;height:46px;border-radius:9px;background:linear-gradient(135deg,#3B8ED4,#2574b8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;flex-shrink:0}
-.card-meta{flex:1;min-width:0}
-.card-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-subtitle{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:.3rem}
-.card-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}
-.tag{display:inline-block;background:var(--green-light);color:var(--green-dark);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600}
-.tag.blue{background:var(--blue-light);color:var(--blue-dark)}
-.tag.urgent{background:#FFF0EB;color:#C04A1A}
-.card-desc{font-size:12px;color:var(--text-muted);margin:.3rem 0;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-salary{font-size:12.5px;color:var(--text);font-weight:600;margin:.5rem 0;display:flex;align-items:center;gap:.35rem}
-.card-footer{display:flex;gap:.5rem;margin-top:auto;padding-top:.8rem;border-top:1px solid var(--border)}
-.btn-small{flex:1;padding:8px 10px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.3rem}
-.btn-small.blue{background:var(--blue);color:#fff}.btn-small.blue:hover{background:var(--blue-dark)}
-.btn-small.outline{border:1.5px solid var(--border);background:transparent;color:var(--text)}
-.btn-small.outline:hover{border-color:var(--blue);color:var(--blue)}
-.feed-empty{grid-column:1/-1;text-align:center;padding:3.5rem 1rem;color:var(--text-muted);font-size:13.5px}
-.feed-empty i{font-size:2.4rem;display:block;margin-bottom:.7rem;opacity:.35}
-.skel{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
-@media(max-width:980px){.skel{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.skel{grid-template-columns:1fr}}
-.skel-card{height:190px;border-radius:13px;background:linear-gradient(90deg,#eef1ef 25%,#f7f9f8 37%,#eef1ef 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite}
-@keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
-
-.load-more-wrap{text-align:center;margin-top:2.2rem}
-.btn-load{border:1.5px solid var(--border);background:#fff;color:var(--text);padding:11px 26px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:.5rem;transition:all .18s}
-.btn-load:hover{border-color:var(--blue);color:var(--blue)}
-.btn-load:disabled{opacity:.5;cursor:not-allowed}
-
-/* EMPLOYER CTA STRIP */
-.cta-strip{background:linear-gradient(90deg,var(--green-light),var(--blue-light));border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1.4rem 1.5rem;display:flex;align-items:center;justify-content:center;gap:1.2rem;flex-wrap:wrap;text-align:center}
-.cta-strip p{font-size:13px;font-weight:600;color:var(--text)}
-.cta-strip a{background:var(--green);color:#fff;padding:9px 20px;border-radius:8px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:.4rem}
-.cta-strip a:hover{background:var(--green-dark)}
-
-/* MODALS (reused pattern) */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(2px)}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);animation:slideUp .25s ease}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-header{padding:1.4rem 1.5rem 1rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2}
-.modal-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--text)}
-.modal-subtitle{font-size:12px;color:var(--text-muted);margin-top:.2rem}
-.modal-close{width:32px;height:32px;flex-shrink:0;border:none;background:var(--surface-alt);border-radius:50%;cursor:pointer;font-size:16px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;transition:all .18s}
-.modal-close:hover{background:#fee2e2;color:var(--red)}
-.modal-body{padding:1.4rem 1.5rem}
-.modal-preview{display:flex;align-items:center;gap:.9rem;background:var(--blue-light);border-radius:10px;padding:1rem;margin-bottom:1.2rem}
-.modal-preview .av{width:50px;height:50px;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0}
-.modal-preview .info strong{display:block;font-size:14px;font-weight:700}
-.modal-preview .info span{font-size:12px;color:var(--text-muted)}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.1rem}
-.detail-item{background:var(--surface-alt);border-radius:9px;padding:.7rem .8rem}
-.detail-item span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);font-weight:700;margin-bottom:.2rem}
-.detail-item strong{font-size:13px;color:var(--text)}
-.detail-section{margin-bottom:1.1rem}
-.detail-section h5{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);font-weight:700;margin-bottom:.5rem}
-.detail-section p{font-size:13px;color:var(--text);line-height:1.7}
-.gate{border:1.5px dashed var(--border);border-radius:12px;padding:1.4rem;text-align:center}
-.gate i.gate-icon{font-size:2.2rem;color:var(--blue);margin-bottom:.8rem;display:block}
-.gate h4{font-size:15px;font-weight:700;margin-bottom:.5rem}
-.gate p{font-size:12.5px;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.6}
-.gate-btns{display:flex;gap:.6rem;flex-wrap:wrap}
-.gate-btns button{flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;border:none}
-.gate-primary{background:var(--blue);color:#fff}.gate-primary:hover{background:var(--blue-dark)}
-.gate-secondary{background:#fff;color:var(--text);border:1.5px solid var(--border)!important}.gate-secondary:hover{border-color:var(--blue)!important;color:var(--blue)}
-
-#toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
-.toast{display:flex;align-items:center;gap:.7rem;background:#1e2a23;color:#fff;padding:.8rem 1.1rem;border-radius:10px;font-size:13px;font-weight:500;min-width:220px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:all}
-.toast.success i{color:#78d9b4}.toast.error i{color:#f87171}.toast.info i{color:#7dd3fc}
-@keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes toastOut{to{transform:translateX(110%);opacity:0}}
-
-#cookie-banner{position:fixed;bottom:0;left:0;right:0;background:#0d2118;color:#fff;padding:1rem 1.5rem;z-index:8000;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(0,0,0,.2);transform:translateY(100%);transition:transform .4s ease}
-#cookie-banner.visible{transform:translateY(0)}
-#cookie-banner p{font-size:13px;opacity:.85;flex:1;line-height:1.5;min-width:220px}
-.cookie-btns{display:flex;gap:.6rem;flex-shrink:0}
-.cookie-accept{background:var(--green);color:#fff;border:none;border-radius:7px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-.cookie-decline{background:transparent;color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-
-.footer{background:var(--dark-bg);color:#fff;padding:2.5rem 1.5rem;text-align:center;margin-top:2rem}
-.footer-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#78d9b4;margin-bottom:.5rem}
-.footer p{font-size:13px;opacity:.7;max-width:480px;margin:0 auto;line-height:1.6}
-.footer-links{display:flex;justify-content:center;gap:1.5rem;margin:1.2rem 0;flex-wrap:wrap}
-.footer-links a{font-size:12.5px;opacity:.6;color:#fff;transition:opacity .18s}.footer-links a:hover{opacity:1}
-.footer-copy{font-size:11.5px;opacity:.4;margin-top:1.5rem!important}
-</style>
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css">
+<link rel="stylesheet" href="css/tables.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/responsive.css">
 </head>
-<body>
+<body data-page="jobs">
 
-<div id="toast-container"></div>
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <a href="index.html" class="brand-logo">
-    <img src="sound_logo.png" alt="SoundsCare Logo" class="brand-img">
-    <div class="brand-text">
-      <span class="brand-title">SoundsCare</span>
-      <span class="brand-sub">East Africa's Domestic Services Employment Agency</span>
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>Job Postings</h1><p>All active and draft job listings</p></div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
     </div>
-  </a>
-  <ul class="nav-links">
-    <li><a href="index.html">Home</a></li>
-    <li><a href="employees.html">Workers</a></li>
-    <li><a href="jobs.html" class="active">Jobs</a></li>
-    <li><a href="about.html">About</a></li>
-  </ul>
-  <div class="nav-buttons">
-    <button class="btn-primary" onclick="location.href='post-job.html'">
-      Post a Job <i class="bi bi-arrow-right-circle-fill"></i>
-    </button>
-  </div>
-</nav>
-
-<!-- PAGE HERO / SEARCH -->
-<header class="page-hero">
-  <div class="page-hero-inner">
-    <div class="eyebrow"><i class="bi bi-briefcase-fill"></i> Live Vacancies · East Africa</div>
-    <h1>Find Your Next Domestic Job</h1>
-    <p>Browse verified vacancies for nannies, housekeepers, drivers, gardeners, security guards, cooks and caregivers — no account needed to look.</p>
-    <div class="search-bar">
-      <label class="sr-only" for="q">Search jobs</label>
-      <input type="text" id="q" placeholder="Search job title, e.g. Nanny, Driver..." oninput="debouncedSearch()">
-      <label class="sr-only" for="f-county">County</label>
-      <select id="f-county" onchange="applyFilters()"><option value="">All counties</option></select>
-      <button onclick="applyFilters()"><i class="bi bi-search"></i> Search</button>
-    </div>
-  </div>
-</header>
-
-<!-- FILTER BAR -->
-<div class="filter-bar">
-  <div class="filter-inner">
-    <select id="f-category" onchange="applyFilters()">
-      <option value="">All categories</option>
-      <option>Nanny</option><option>Housekeeper</option><option>Driver</option><option>Gardener</option>
-      <option>Security Guard</option><option>Cook</option><option>Caregiver</option><option>Cleaner</option>
-      <option>General Worker</option>
-    </select>
-    <select id="f-type" onchange="applyFilters()">
-      <option value="">Any job type</option>
-      <option>Full Time</option><option>Part Time</option><option>Live-in</option><option>Live-out</option><option>Contract</option>
-    </select>
-    <select id="f-sort" onchange="applyFilters()">
-      <option value="new">Newest first</option>
-      <option value="sal-high">Salary: High to Low</option>
-      <option value="sal-low">Salary: Low to High</option>
-    </select>
-    <span class="filter-clear" onclick="clearFilters()"><i class="bi bi-x-circle"></i> Clear filters</span>
-  </div>
-</div>
-
-<!-- MAIN -->
-<main class="container">
-  <div class="toolbar">
-    <h2 id="results-count">Loading jobs…</h2>
-  </div>
-  <div id="jobs-grid" class="grid">
-    <div class="skel"><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div></div>
-  </div>
-  <div class="load-more-wrap" id="load-more-wrap" style="display:none">
-    <button class="btn-load" id="load-more-btn" onclick="loadMore()"><i class="bi bi-arrow-down-circle"></i> Load more jobs</button>
-  </div>
-</main>
-
-<!-- CTA STRIP -->
-<div class="cta-strip">
-  <p><i class="bi bi-info-circle-fill" style="color:var(--green);margin-right:.3rem"></i> Looking for staff instead? Post a vacancy free — no account required.</p>
-  <a href="post-job.html"><i class="bi bi-briefcase-fill"></i> Post a Job</a>
-</div>
-
-<!-- FOOTER -->
-<footer class="footer">
-  <div class="footer-logo">SoundsCare</div>
-  <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda and Ethiopia.</p>
-  <div class="footer-links">
-    <a href="index.html">Home</a>
-    <a href="employees.html">Browse Workers</a>
-    <a href="post-my-profile.html">List as Worker</a>
-    <a href="employer-login.html">Employer Portal</a>
-  </div>
-  <p class="footer-copy">&copy; 2026 Sounds Care. All rights reserved.</p>
-</footer>
-
-<!-- JOB DETAIL / APPLY MODAL -->
-<div class="modal-overlay" id="job-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="jm-title">Job Details</div>
-        <div class="modal-subtitle" id="jm-subtitle"></div>
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="jobs-search" placeholder="🔍 Search job title, location…" oninput="filterJobs()">
+        <select class="filter-select" id="jobs-status-filter" onchange="filterJobs()">
+          <option value="">All</option>
+          <option value="active">Active</option>
+          <option value="closed">Closed</option>
+          <option value="draft">Draft</option>
+          <option value="expired">Expired</option>
+        </select>
+        <select class="filter-select" id="jobs-featured-filter" onchange="filterJobs()">
+          <option value="">All Jobs</option>
+          <option value="featured">Featured Only</option>
+        </select>
       </div>
-      <button class="modal-close" onclick="closeModal('job-modal')">&#215;</button>
+      <div class="table-wrap"><table><thead><tr><th>Title</th><th>Employer</th><th>Location</th><th>Type</th><th>Salary</th><th>Status</th><th>Posted</th><th>Applications</th><th>Actions</th></tr></thead><tbody id="jobs-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      <div class="pagination" id="jobs-pagination"></div>
     </div>
+  </div>
+</div>
+
+<!-- POST JOB MODAL -->
+<div id="post-job-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2 id="post-job-title"><i class="bi bi-briefcase-fill"></i> Post Job (Admin)</h2><button class="modal-close" onclick="closeModal('post-job-modal')">×</button></div>
     <div class="modal-body">
-      <div class="modal-preview">
-        <div class="av" id="jm-av"></div>
-        <div class="info"><strong id="jm-company"></strong><span id="jm-loc"></span></div>
+      <input type="hidden" id="edit-job-id">
+      <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--amber)">
+        <i class="bi bi-info-circle"></i> Posting as admin — no employer details required. This job will appear publicly as a SoundsCare listing.
       </div>
-      <div class="detail-grid">
-        <div class="detail-item"><span>Salary</span><strong id="jm-salary"></strong></div>
-        <div class="detail-item"><span>Job Type</span><strong id="jm-type"></strong></div>
-        <div class="detail-item"><span>Category</span><strong id="jm-category"></strong></div>
-        <div class="detail-item"><span>Posted</span><strong id="jm-posted"></strong></div>
+      <div class="form-row">
+        <div class="form-group"><label>Job Title *</label><input id="job-title" placeholder="e.g. House Manager"></div>
+        <div class="form-group"><label>Job Role</label><input id="job-role" placeholder="e.g. Housekeeper, Cook"></div>
       </div>
-      <div class="detail-section" id="jm-desc-wrap">
-        <h5>Job Description</h5>
-        <p id="jm-desc"></p>
+      <div class="form-row">
+        <div class="form-group"><label>Location</label><input id="job-location" placeholder="e.g. Nairobi, Karen"></div>
+        <div class="form-group"><label>County</label><input id="job-county" placeholder="e.g. Nairobi County"></div>
       </div>
-      <div class="detail-section" id="jm-req-wrap" style="display:none">
-        <h5>Requirements</h5>
-        <p id="jm-req"></p>
-      </div>
-      <div class="detail-section" id="jm-ben-wrap" style="display:none">
-        <h5>Benefits</h5>
-        <div class="card-tags" id="jm-benefits"></div>
-      </div>
-      <div class="gate">
-        <i class="bi bi-send-fill gate-icon"></i>
-        <h4>Apply for this job</h4>
-        <p>Create a free worker profile to apply and get contacted directly by this employer.</p>
-        <div class="gate-btns">
-          <button class="gate-primary" onclick="location.href='register.html'"><i class="bi bi-person-plus-fill"></i> Create Free Account</button>
-          <button class="gate-secondary" onclick="location.href='login.html'">Log In</button>
+      <div class="form-row">
+        <div class="form-group"><label>Job Type</label>
+          <select id="job-type"><option value="full-time">Full-Time</option><option value="part-time">Part-Time</option><option value="contract">Contract</option><option value="temporary">Temporary</option></select>
+        </div>
+        <div class="form-group"><label>Work Type</label>
+          <select id="job-work-type"><option value="Live-In">Live-In</option><option value="Live-Out">Live-Out</option><option value="Flexible">Flexible</option></select>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<div id="cookie-banner">
-  <p>We use cookies to improve your experience. <a href="#" style="color:#78d9b4;text-decoration:underline">Learn more</a></p>
-  <div class="cookie-btns">
-    <button class="cookie-accept" onclick="acceptCookies()">Accept</button>
-    <button class="cookie-decline" onclick="declineCookies()">Decline</button>
-  </div>
-</div>
-
-<!-- TAWK.TO -->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
-(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
-s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
-</script>
-
-<script>
-/* ── SUPABASE (public, anon key — no auth required) ── */
-const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const KE_COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo',
-  'Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale',
-  'Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Murang\'a',
-  'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta',
-  'Tana River','Tharaka-Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'];
-
-const PAGE_SIZE = 12;
-let page = 0, totalCount = 0, searchTimer = null, currentJobs = [];
-
-/* ── INIT COUNTY DROPDOWN ── */
-(function(){
-  const sel = document.getElementById('f-county');
-  KE_COUNTIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-})();
-
-/* ── UTILS ── */
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function initials(n){ return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
-function salary(a,b){
-  const f=n=>'KES '+Number(n).toLocaleString();
-  if(a&&b) return f(a)+' – '+f(b)+'/mo';
-  if(a) return 'From '+f(a)+'/mo';
-  if(b) return 'Up to '+f(b)+'/mo';
-  return 'Negotiable';
-}
-function timeAgo(ts){
-  if(!ts)return '';
-  const s=Math.floor((Date.now()-new Date(ts))/1000);
-  if(s<60)return 'just now';
-  if(s<3600)return Math.floor(s/60)+'m ago';
-  if(s<86400)return Math.floor(s/3600)+'h ago';
-  return Math.floor(s/86400)+'d ago';
-}
-function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>closeModal(m.id)); });
-document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); }));
-function showToast(msg,type='info'){
-  const icons={success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
-  const t=document.createElement('div');
-  t.className='toast '+type;
-  t.innerHTML='<i class="bi '+icons[type]+'"></i><span>'+msg+'</span>';
-  document.getElementById('toast-container').appendChild(t);
-  setTimeout(()=>{t.style.animation='toastOut .3s ease forwards';setTimeout(()=>t.remove(),300);},3500);
-}
-function debouncedSearch(){ clearTimeout(searchTimer); searchTimer=setTimeout(applyFilters,450); }
-function clearFilters(){
-  document.getElementById('q').value='';
-  document.getElementById('f-county').value='';
-  document.getElementById('f-category').value='';
-  document.getElementById('f-type').value='';
-  document.getElementById('f-sort').value='new';
-  applyFilters();
-}
-function applyFilters(){ page=0; currentJobs=[]; fetchJobs(true); }
-function loadMore(){ page++; fetchJobs(false); }
-
-/* ── FETCH JOBS FROM SUPABASE ── */
-async function fetchJobs(reset){
-  const grid = document.getElementById('jobs-grid');
-  const btn = document.getElementById('load-more-btn');
-  if(reset){ grid.innerHTML='<div class="skel"><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div></div>'; }
-  if(btn){ btn.disabled=true; btn.innerHTML='<i class="bi bi-hourglass-split"></i> Loading…'; }
-
-  const q = document.getElementById('q').value.trim();
-  const county = document.getElementById('f-county').value;
-  const category = document.getElementById('f-category').value;
-  const type = document.getElementById('f-type').value;
-  const sort = document.getElementById('f-sort').value;
-
-  let query = sb.from('job_postings')
-    .select('id,title,description,location,county,salary_min,salary_max,salary_range,job_type,category,job_role,work_type,requirements,is_urgent,is_featured,created_at,employer_id,employer_profiles(id,full_name,company_name,profile_photo_url,is_verified)', {count:'exact'})
-    .eq('status','active');
-
-  if(q) query = query.or(`title.ilike.%${q}%,category.ilike.%${q}%,job_role.ilike.%${q}%,description.ilike.%${q}%`);
-  if(county) query = query.eq('county', county);
-  if(category) query = query.or(`category.ilike.%${category}%,job_role.ilike.%${category}%,title.ilike.%${category}%`);
-  if(type) query = query.or(`job_type.ilike.%${type}%,work_type.ilike.%${type}%`);
-
-  if(sort==='sal-high') query = query.order('salary_max',{ascending:false, nullsFirst:false});
-  else if(sort==='sal-low') query = query.order('salary_min',{ascending:true, nullsFirst:false});
-  else query = query.order('is_featured',{ascending:false}).order('created_at',{ascending:false});
-
-  const from = page*PAGE_SIZE, to = from+PAGE_SIZE-1;
-  query = query.range(from, to);
-
-  const {data, error, count} = await query;
-
-  if(btn){ btn.disabled=false; btn.innerHTML='<i class="bi bi-arrow-down-circle"></i> Load more jobs'; }
-
-  if(error){
-    console.error('Jobs fetch error:', error);
-    grid.innerHTML = '<div class="feed-empty"><i class="bi bi-exclamation-circle"></i>Could not load jobs. Please refresh.</div>';
-    document.getElementById('results-count').textContent = 'Error loading jobs';
-    document.getElementById('load-more-wrap').style.display='none';
-    return;
-  }
-
-  totalCount = count||0;
-  currentJobs = reset ? (data||[]) : currentJobs.concat(data||[]);
-
-  document.getElementById('results-count').innerHTML = totalCount>0
-    ? `<strong>${totalCount.toLocaleString()}</strong> job${totalCount===1?'':'s'} found`
-    : 'No jobs found';
-
-  if(currentJobs.length===0){
-    grid.innerHTML = '<div class="feed-empty"><i class="bi bi-briefcase"></i>No jobs match your search. Try clearing filters.</div>';
-    document.getElementById('load-more-wrap').style.display='none';
-    return;
-  }
-
-  grid.innerHTML = currentJobs.map(j=>cardHtml(j)).join('');
-  document.getElementById('load-more-wrap').style.display = currentJobs.length < totalCount ? 'block' : 'none';
-
-  injectJobSchema(currentJobs);
-}
-
-function cardHtml(j){
-  const emp = j.employer_profiles || {};
-  const company = emp.company_name || emp.full_name || 'SoundsCare Employer';
-  const jobLocation = j.location || j.county || 'Kenya';
-  const role = j.job_role || j.category || 'General';
-  const type = j.job_type || j.work_type || 'Full Time';
-  let salDisplay = salary(j.salary_min, j.salary_max);
-  if(salDisplay==='Negotiable' && j.salary_range) salDisplay = 'KES '+j.salary_range+'/mo';
-  const desc = (j.description||'').trim();
-  return `
-  <div class="card" onclick='openJobModal(${JSON.stringify(j).replace(/'/g,"&#39;")})'>
-    <div class="card-header">
-      <div class="card-avatar">${initials(company)}</div>
-      <div class="card-meta">
-        <div class="card-title">${esc(j.title||'Domestic Job')}</div>
-        <div class="card-subtitle"><i class="bi bi-building" style="font-size:10px"></i> ${esc(company)} &middot; ${esc(jobLocation)}</div>
+      <div class="form-row">
+        <div class="form-group"><label>Salary Min (Ksh)</label><input id="job-sal-min" type="number" placeholder="15000"></div>
+        <div class="form-group"><label>Salary Max (Ksh)</label><input id="job-sal-max" type="number" placeholder="25000"></div>
       </div>
-      ${j.is_urgent?'<span class="tag urgent" style="flex-shrink:0">🔥 Urgent</span>':(j.is_featured?'<span class="tag blue" style="flex-shrink:0">⭐ Featured</span>':'')}
+      <div class="form-group"><label>Description</label><textarea id="job-description" placeholder="Job description and responsibilities…"></textarea></div>
+      <div class="form-group"><label>Requirements</label><textarea id="job-requirements" placeholder="Skills, experience, certifications…" style="min-height:70px"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Deadline</label><input id="job-deadline" type="date"></div>
+        <div class="form-group"><label>Slots</label><input id="job-slots" type="number" value="1"></div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="job-featured"> <label style="text-transform:none;letter-spacing:0;margin:0">Mark as Featured</label>
+        <input type="checkbox" id="job-urgent" style="margin-left:16px"> <label style="text-transform:none;letter-spacing:0;margin:0">Urgent</label>
+      </div>
     </div>
-    <div class="card-tags"><span class="tag blue">${esc(role)}</span><span class="tag">${esc(type)}</span></div>
-    ${desc?`<p class="card-desc">${esc(desc)}</p>`:''}
-    <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salDisplay}<span style="margin-left:auto;font-weight:400;color:var(--text-muted)">${timeAgo(j.created_at)}</span></div>
-    <div class="card-footer">
-      <button class="btn-small blue" onclick='event.stopPropagation();openJobModal(${JSON.stringify(j).replace(/'/g,"&#39;")})'><i class="bi bi-send-fill"></i> Apply Now</button>
-      <button class="btn-small outline" onclick='event.stopPropagation();openJobModal(${JSON.stringify(j).replace(/'/g,"&#39;")})'><i class="bi bi-eye-fill"></i> View</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('post-job-modal')">Cancel</button>
+      <button class="btn btn-primary" id="post-job-save-btn" onclick="postJobAsAdmin()"><i class="bi bi-briefcase"></i> Post Job</button>
     </div>
-  </div>`;
-}
+  </div>
+</div>
 
-function openJobModal(j){
-  const emp = j.employer_profiles || {};
-  const company = emp.company_name || emp.full_name || 'SoundsCare Employer';
-  document.getElementById('jm-av').textContent = initials(company);
-  document.getElementById('jm-title').textContent = j.title || 'Job Details';
-  document.getElementById('jm-subtitle').textContent = (j.job_role||j.category||'') + (j.is_urgent?' · Urgent hire':'');
-  document.getElementById('jm-company').textContent = company + (emp.is_verified?' ✓':'');
-  document.getElementById('jm-loc').textContent = j.location || j.county || 'Kenya';
-  let salDisplay = salary(j.salary_min, j.salary_max);
-  if(salDisplay==='Negotiable' && j.salary_range) salDisplay = 'KES '+j.salary_range+'/mo';
-  document.getElementById('jm-salary').textContent = salDisplay;
-  document.getElementById('jm-type').textContent = j.job_type || j.work_type || 'Full Time';
-  document.getElementById('jm-category').textContent = j.job_role || j.category || 'General';
-  document.getElementById('jm-posted').textContent = timeAgo(j.created_at) || '—';
+<div data-include="modal"></div>
+<div data-include="toast"></div>
 
-  const descWrap = document.getElementById('jm-desc-wrap');
-  if(j.description){ descWrap.style.display='block'; document.getElementById('jm-desc').textContent = j.description; }
-  else descWrap.style.display='none';
-
-  const reqWrap = document.getElementById('jm-req-wrap');
-  if(j.requirements){ reqWrap.style.display='block'; document.getElementById('jm-req').textContent = j.requirements; }
-  else reqWrap.style.display='none';
-
-  const benWrap = document.getElementById('jm-ben-wrap');
-  let benefits = j.benefits;
-  if(typeof benefits==='string'){ benefits = benefits.split(',').map(s=>s.trim()).filter(Boolean); }
-  if(Array.isArray(benefits) && benefits.length){
-    benWrap.style.display='block';
-    document.getElementById('jm-benefits').innerHTML = benefits.map(b=>'<span class="tag">'+esc(b)+'</span>').join('');
-  } else benWrap.style.display='none';
-
-  openModal('job-modal');
-}
-
-/* ── SEO: dynamic JobPosting JSON-LD for crawlers ── */
-function injectJobSchema(jobs){
-  const list = jobs.slice(0,20).map(j=>{
-    const emp = j.employer_profiles || {};
-    return {
-      "@type":"JobPosting",
-      "title": j.title || "Domestic Job",
-      "description": (j.description || j.title || "Domestic services job in East Africa").slice(0,500),
-      "datePosted": j.created_at ? new Date(j.created_at).toISOString().slice(0,10) : undefined,
-      "employmentType": (j.job_type||j.work_type||"FULL_TIME").toUpperCase().replace(/[\s-]/g,'_'),
-      "hiringOrganization":{"@type":"Organization","name": emp.company_name || emp.full_name || "SoundsCare Employer"},
-      "jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality": j.location || j.county || "Kenya","addressRegion": j.county || "", "addressCountry":"KE"}},
-      "baseSalary": (j.salary_min||j.salary_max) ? {"@type":"MonetaryAmount","currency":"KES","value":{"@type":"QuantitativeValue","minValue":j.salary_min||undefined,"maxValue":j.salary_max||undefined,"unitText":"MONTH"}} : undefined
-    };
-  });
-  const el = document.getElementById('jobposting-schema');
-  if(el) el.textContent = JSON.stringify({"@context":"https://schema.org","@graph":list});
-}
-
-/* ── COOKIE ── */
-function initCookieBanner(){ if(localStorage.getItem('sc_cookies'))return; setTimeout(()=>document.getElementById('cookie-banner').classList.add('visible'),1500); }
-function acceptCookies(){ localStorage.setItem('sc_cookies','accepted'); hideCookie(); }
-function declineCookies(){ localStorage.setItem('sc_cookies','declined'); hideCookie(); }
-function hideCookie(){ const b=document.getElementById('cookie-banner');b.style.transform='translateY(100%)';setTimeout(()=>b.remove(),400); }
-
-/* ── DEEP LINK: open a specific job from index.html (?job=ID) ── */
-async function openJobFromQuery(){
-  const params = new URLSearchParams(window.location.search);
-  const jobId = params.get('job');
-  if(!jobId) return;
-
-  const {data, error} = await sb.from('job_postings')
-    .select('id,title,description,location,county,salary_min,salary_max,salary_range,job_type,category,job_role,work_type,requirements,is_urgent,is_featured,created_at,employer_id,employer_profiles(id,full_name,company_name,profile_photo_url,is_verified)')
-    .eq('id', jobId)
-    .maybeSingle();
-
-  if(error){ console.error('Deep-link job fetch error:', error); return; }
-  if(!data){ showToast('That job is no longer available.','info'); return; }
-
-  openJobModal(data);
-}
-
-/* ── INIT ── */
-document.addEventListener('DOMContentLoaded', ()=>{
-  initCookieBanner();
-  fetchJobs(true);
-  openJobFromQuery();
-});
+<script src="js/supabase.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/delete-engine.js"></script>
+<script src="js/jobs.js"></script>
+<script>
+(async function(){
+  await initLayout();
+  const admin = await requireAuth();
+  if(!admin) return;
+  await initJobsPage();
+})();
 </script>
 </body>
 </html>

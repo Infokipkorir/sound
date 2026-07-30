@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Seekers — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css">
+<link rel="stylesheet" href="css/tables.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="jobseekers">
+
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
+
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>Job Seekers</h1><p>Domestic workers and job seekers</p></div>
+    </div>
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="emp-search" placeholder="🔍 Search name, email, phone…" oninput="filterEmployees()">
+        <select class="filter-select" id="emp-status-filter" onchange="filterEmployees()">
+          <option value="">All Statuses</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="banned">Banned</option>
+        </select>
+        <select class="filter-select" id="emp-verified-filter" onchange="filterEmployees()">
+          <option value="">Verification</option>
+          <option value="verified">Verified</option>
+          <option value="unverified">Unverified</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Verified</th><th>Payment</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="employees-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      <div class="pagination" id="emp-pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPLOYEE PROFILE MODAL -->
+<div id="emp-profile-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-person-badge"></i> Job Seeker Profile</h2><button class="modal-close" onclick="closeModal('emp-profile-modal')">×</button></div>
+    <div class="modal-body" id="emp-profile-body">Loading…</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('emp-profile-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div data-include="modal"></div>
+<div data-include="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/delete-engine.js"></script>
+<script src="js/pdf-biodata.js"></script>
+<script src="js/jobseekers.js"></script>
+<script>
+(async function(){
+  await initLayout();
+  const admin = await requireAuth();
+  if(!admin) return;
+  await initJobSeekersPage();
+})();
+</script>
+</body>
+</html>

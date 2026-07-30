@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login History — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/dashboard.css"><link rel="stylesheet" href="css/sidebar.css"><link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css"><link rel="stylesheet" href="css/tables.css"><link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css"><link rel="stylesheet" href="css/responsive.css">
+</head><body data-page="login-history">
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+  <div class="content">
+    <div class="page-head"><div><h1>Login History</h1><p>Admin sign-in activity</p></div></div>
+    <div class="section">
+      <div class="section-body">
+        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--amber);margin-bottom:1rem">
+          <i class="bi bi-info-circle"></i> No login history is being recorded yet — the current login flow (in <code>auth.js</code>) checks the <code>admin_users</code> table but never writes a record anywhere when someone signs in. This page can't show real data until that logging exists.
+        </div>
+        <p style="font-size:13px;color:var(--text);margin-bottom:.6rem">To make this page real, two small changes are needed:</p>
+        <ol style="font-size:13px;color:var(--muted);padding-left:1.2rem;line-height:1.8">
+          <li>Add an <code>admin_login_history</code> table: <code>id, admin_id, username, ip_address, user_agent, success, created_at</code>.</li>
+          <li>In <code>auth.js</code>'s login flow, insert a row into it on every attempt (success and failure) — IP address would need to come from a small server-side function or edge function, since the browser can't reliably read its own public IP.</li>
+        </ol>
+        <button class="btn btn-secondary btn-sm" style="margin-top:1rem" onclick="checkLoginHistoryTable()"><i class="bi bi-arrow-clockwise"></i> Check if the table exists now</button>
+        <div id="login-history-result" style="margin-top:1rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div data-include="modal"></div><div data-include="toast"></div>
+<script src="js/supabase.js"></script><script src="js/utils.js"></script><script src="js/layout.js"></script>
+<script src="js/auth.js"></script><script src="js/api.js"></script><script src="js/login-history.js"></script>
+<script>(async function(){await initLayout();const admin=await requireAuth();if(!admin)return;await checkLoginHistoryTable();})();</script>
+</body></html>

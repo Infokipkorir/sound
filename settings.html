@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/dashboard.css"><link rel="stylesheet" href="css/sidebar.css"><link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css"><link rel="stylesheet" href="css/tables.css"><link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css"><link rel="stylesheet" href="css/responsive.css">
+</head><body data-page="settings">
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+  <div class="content">
+    <div class="page-head"><div><h1>Settings</h1><p>System configuration, database monitor, and trash</p></div></div>
+    <div id="settings-tabs-wrap">
+      <div class="sub-tabs">
+        <button class="tab-btn active" onclick="switchSettingsTab(event,'general')">General</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'email')">Email &amp; SMTP</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'security')">Security</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'notif-prefs')">Notifications</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'db')">Database</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'backup')">Backup</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'trash')">Trash</button>
+      </div>
+
+      <div id="settings-tab-general" class="tab-content active">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-sliders"></i> General / Site Config</div></div>
+          <div class="section-body">
+            <div class="form-row">
+              <div class="form-group"><label>Site Name</label><input id="cfg-site-name" value="SoundsCare"></div>
+              <div class="form-group"><label>Support Email</label><input id="cfg-support-email" placeholder="support@sounds.co.ke"></div>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:10px">
+              <input type="checkbox" id="cfg-theme-dark"><label style="text-transform:none;letter-spacing:0;margin:0">Dark theme (site-wide default)</label>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:.5rem"><i class="bi bi-info-circle"></i> This form doesn't persist anywhere yet — same as in the original single-page dashboard. Wire it to a <code>site_config</code> table when you're ready to make it real.</p>
+            <button class="btn btn-primary" onclick="saveSiteConfig()">Save Configuration</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-email" class="tab-content">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-envelope"></i> Email &amp; SMTP</div></div>
+          <div class="section-body">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:1rem">Not wired to a backend yet — this dashboard currently writes to <code>email_logs</code> for tracking but doesn't send email itself (that's handled by your Node/Resend backend per your existing setup). This form is a placeholder for when SMTP config needs to live here too.</p>
+            <div class="form-row">
+              <div class="form-group"><label>SMTP Host</label><input placeholder="smtp.resend.com" disabled></div>
+              <div class="form-group"><label>SMTP Port</label><input placeholder="587" disabled></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-security" class="tab-content">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-shield-lock"></i> Security</div></div>
+          <div class="section-body">
+            <p style="font-size:12px;color:var(--muted)">Admin accounts and role management live on the <a href="roles.html" style="color:var(--brand);font-weight:600">Roles &amp; Permissions</a> page. Password change for your own account is under <a href="account.html" style="color:var(--brand);font-weight:600">My Account</a>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-notif-prefs" class="tab-content">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-bell"></i> Notification Preferences</div></div>
+          <div class="section-body">
+            <p style="font-size:12px;color:var(--muted)">Send/manage actual notifications on the <a href="notifications.html" style="color:var(--brand);font-weight:600">Notifications</a> page. This section is reserved for admin-level notification preferences (e.g. which events page you personally.)</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-db" class="tab-content">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-database"></i> Database Status</div>
+          <button class="btn btn-sm btn-secondary" onclick="loadDBStats()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+          <div class="section-body">
+            <div id="db-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:1.5rem"></div>
+            <h3 style="font-size:13px;font-weight:700;margin-bottom:1rem">Tables Status</h3>
+            <div id="db-tables-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-backup" class="tab-content">
+        <div class="section"><div class="section-header"><div class="section-title"><i class="bi bi-cloud-arrow-down"></i> Backup</div></div>
+          <div class="section-body">
+            <p style="font-size:12px;color:var(--muted)">Supabase handles automatic daily backups on paid plans — check Project Settings → Database → Backups in your Supabase dashboard directly. No custom backup tooling has been built into this admin panel yet.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-tab-trash" class="tab-content">
+        <div class="section">
+          <div class="section-header"><div class="section-title"><i class="bi bi-trash3"></i> Trash</div>
+            <button class="btn btn-sm btn-danger" onclick="emptyTrash()"><i class="bi bi-trash3-fill"></i> Empty Trash</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Type</th><th>Entity / Reason</th><th>Deleted By</th><th>Deleted At</th><th>Actions</th></tr></thead>
+          <tbody id="trash-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div data-include="modal"></div><div data-include="toast"></div>
+<script src="js/supabase.js"></script><script src="js/utils.js"></script><script src="js/layout.js"></script>
+<script src="js/auth.js"></script><script src="js/api.js"></script>
+<script src="js/delete-engine.js"></script>
+<script src="js/settings.js"></script>
+<script>(async function(){await initLayout();const admin=await requireAuth();if(!admin)return;await initSettingsPage();})();</script>
+</body></html>
