@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Users — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css">
+<link rel="stylesheet" href="css/tables.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="users">
+
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
+
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>Users</h1><p>Every registered account on the platform</p></div>
+      <button class="btn btn-primary btn-sm" onclick="openAddUserModal()"><i class="bi bi-plus-lg"></i> Add User</button>
+    </div>
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="users-search" placeholder="🔍 Search by name, email, phone…" oninput="filterUsers()">
+        <select class="filter-select" id="users-role-filter" onchange="filterUsers()">
+          <option value="">All Roles</option>
+          <option value="employee">Employee</option>
+          <option value="employer">Employer</option>
+          <option value="admin">Admin</option>
+        </select>
+        <select class="filter-select" id="users-status-filter" onchange="filterUsers()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>User</th><th>Role</th><th>Phone</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="users-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      <div class="pagination" id="users-pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT USER MODAL -->
+<div id="add-user-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2 id="add-user-title"><i class="bi bi-person-plus"></i> Add User</h2><button class="modal-close" onclick="closeModal('add-user-modal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-user-id">
+      <div class="form-row">
+        <div class="form-group"><label>Full Name</label><input id="user-full-name" placeholder="Full Name"></div>
+        <div class="form-group"><label>Email</label><input id="user-email" type="email" placeholder="email@example.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone</label><input id="user-phone" placeholder="+254…"></div>
+        <div class="form-group"><label>Role</label>
+          <select id="user-role"><option value="employee">Employee</option><option value="employer">Employer</option><option value="admin">Admin</option></select>
+        </div>
+      </div>
+      <div class="form-group" id="user-password-group"><label>Password</label><input id="user-password" type="password" placeholder="Minimum 6 characters"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-user-modal')">Cancel</button>
+      <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<div data-include="modal"></div>
+<div data-include="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/delete-engine.js"></script>
+<script src="js/user-modal.js"></script>
+<script src="js/users.js"></script>
+<script>
+(async function(){
+  await initLayout();
+  const admin = await requireAuth();
+  if(!admin) return;
+  await initUsersPage();
+})();
+</script>
+</body>
+</html>

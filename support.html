@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support Tickets — SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/dashboard.css"><link rel="stylesheet" href="css/sidebar.css"><link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css"><link rel="stylesheet" href="css/tables.css"><link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css"><link rel="stylesheet" href="css/responsive.css">
+</head><body data-page="support">
+<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
+<div data-include="sidebar"></div>
+<div class="main" id="main">
+  <div data-include="topbar"></div>
+  <div class="content">
+    <div class="page-head"><div><h1>Support Tickets</h1><p>Customer support requests</p></div></div>
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="tix-search" placeholder="🔍 Search subject…" oninput="filterTickets()">
+        <select class="filter-select" id="tix-status-filter" onchange="filterTickets()">
+          <option value="">All Statuses</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody id="tix-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      <div class="pagination" id="tix-pagination"></div>
+    </div>
+  </div>
+</div>
+
+<div id="ticket-detail-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-life-preserver"></i> Ticket Detail</h2><button class="modal-close" onclick="closeModal('ticket-detail-modal')">×</button></div>
+    <div class="modal-body">
+      <div id="ticket-detail-meta"></div>
+      <div id="ticket-messages" style="max-height:320px;overflow-y:auto;margin:1rem 0;padding:10px;background:var(--bg);border-radius:10px"></div>
+      <div class="form-group"><textarea id="ticket-reply-input" placeholder="Type a reply…" style="min-height:70px"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <select class="filter-select" id="ticket-status-select" onchange="updateTicketStatus()">
+        <option value="open">Open</option><option value="in_progress">In Progress</option><option value="closed">Closed</option>
+      </select>
+      <button class="btn btn-primary" onclick="sendTicketReply()"><i class="bi bi-send"></i> Send Reply</button>
+    </div>
+  </div>
+</div>
+<div data-include="modal"></div><div data-include="toast"></div>
+<script src="js/supabase.js"></script><script src="js/utils.js"></script><script src="js/layout.js"></script>
+<script src="js/auth.js"></script><script src="js/api.js"></script><script src="js/support.js"></script>
+<script>(async function(){await initLayout();const admin=await requireAuth();if(!admin)return;await initSupportPage();})();</script>
+</body></html>
