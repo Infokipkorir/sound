@@ -919,8 +919,8 @@ table { width: 100%; border-collapse: collapse; }
     <div class="auth-error" id="auth-error"></div>
     <form onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label>Email</label>
-        <input id="auth-email" type="email" placeholder="you@soundscare.admin" autocomplete="email" required style="font-size:13px">
+        <label>Username</label>
+        <input id="auth-username" type="text" placeholder="admin" autocomplete="username" required style="font-size:13px">
       </div>
       <div class="form-group" style="position:relative">
         <label>Password</label>
@@ -953,17 +953,47 @@ table { width: 100%; border-collapse: collapse; }
  * auth.js, api.js, and dashboard.js will fail.
  *
  * >>> AUTH MODEL <<<
- * Login now goes through real Supabase Auth (sb.auth.signInWithPassword),
- * not a plaintext password column. admin_users is a profile table keyed
- * by id = auth.users.id (role, badge, status) — it must NOT have a
- * password column anymore, and RLS should restrict reads to
- * `auth.uid() = id` (or a service role). Each admin needs a real
- * Supabase Auth user (Dashboard → Authentication → Users → Invite),
- * whose email matches what they type in on this page.
+ * Login goes through real Supabase Auth (sb.auth.signInWithPassword), not
+ * a plaintext password column — admin_users.password no longer exists.
+ * admin_users is now a *profile* table keyed by id = auth.users.id (role,
+ * badge, status), RLS-restricted to `auth.uid() = id` (or a service role).
+ *
+ * Admins still log in with a plain USERNAME on this page (see
+ * ADMIN_EMAIL_DOMAIN / usernameToEmail below), because Supabase Auth
+ * itself only speaks email+password. The username is converted to a
+ * synthetic, non-deliverable email before it's sent to Supabase — that
+ * email is never used to send mail, it's just a unique identifier.
+ * When creating an admin in Supabase Dashboard → Authentication → Users
+ * → Invite, use "<their username>@soundscare.admin" as that user's email
+ * so it matches what this page will generate at login time.
  */
 const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
 const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ADMIN_EMAIL_DOMAIN = 'soundscare.admin';
+
+function usernameToEmail(username) {
+  // Already an email? Pass it through as-is (covers accounts created directly with a real address).
+  return username.includes('@') ? username : `${username}@${ADMIN_EMAIL_DOMAIN}`;
+}
+
+// Wrapped so a bad/placeholder URL or key fails loudly and locally, on this page,
+// instead of leaving `sb` undefined and surfacing as a confusing "sb is not defined"
+// error somewhere downstream (auth.js, dashboard.js, etc.) that's hard to trace back here.
+let sb;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (err) {
+  console.error('Failed to initialize Supabase client — check SUPABASE_URL / SUPABASE_ANON_KEY at the top of admin-login.html', err);
+  window.addEventListener('DOMContentLoaded', () => {
+    const errEl = document.getElementById('auth-error');
+    const btn = document.getElementById('auth-submit-btn');
+    if (errEl) {
+      errEl.textContent = 'Admin login is not connected to the database yet. Contact an administrator.';
+      errEl.classList.add('show');
+    }
+    if (btn) btn.disabled = true;
+  });
+}
 </script>
 <script>
 /* ==== inlined utils.js ==== */
@@ -1038,7 +1068,7 @@ function redirectAfterLogin(){
 
 async function handleLogin(e){
   e.preventDefault();
-  const email = document.getElementById('auth-email').value.trim();
+  const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
   errEl.textContent = '';
@@ -1063,9 +1093,9 @@ async function handleLogin(e){
   };
 
   try {
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email: usernameToEmail(username), password });
     if (error) throw error;
-    if (!data?.session) { showErr('Invalid email or password.'); return; }
+    if (!data?.session) { showErr('Invalid username or password.'); return; }
 
     // Confirm this authenticated user actually has an active admin profile —
     // being a valid Supabase Auth user is not by itself permission to use the dashboard.
@@ -1081,7 +1111,12 @@ async function handleLogin(e){
     }
 
     redirectAfterLogin();
-  } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
+  } catch(err) {
+    // Supabase returns "Invalid login credentials" for a wrong email/password — reword it
+    // since admins only ever see a username here, never the synthetic email behind it.
+    const msg = err.message === 'Invalid login credentials' ? 'Invalid username or password.' : (err.message || 'Sign in failed. Please try again.');
+    showErr(msg);
+  }
 }
 function toggleAdminPw(){
   const inp = document.getElementById('auth-password');
