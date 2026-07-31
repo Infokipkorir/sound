@@ -1090,12 +1090,516 @@ table { width: 100%; border-collapse: collapse; }
 <div data-include="modal"></div>
 <div data-include="toast"></div>
 
-<script src="js/supabase.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/layout.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/api.js"></script>
-<script src="js/dashboard.js"></script>
+<script>
+/* ==== inlined supabase.js ==== */
+/**
+ * supabase.js — creates the shared `sb` client every other file depends on.
+ *
+ * >>> ACTION NEEDED <<<
+ * Replace the two placeholders below with your real Supabase project URL
+ * and anon/public API key (Supabase Dashboard → Project Settings → API).
+ * Until these are real values, every sb.from(...) call across auth.js,
+ * api.js, and dashboard.js will fail — which is almost certainly the
+ * "not pointing to db" symptom you're seeing.
+ */
+const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script>
+/* ==== inlined utils.js ==== */
+/**
+ * utils.js — shared helpers used across api.js / auth.js / layout.js and
+ * every page's inline onclick handlers (openModal/closeModal/showToast).
+ */
+
+// ---- Tiny in-memory cache with TTL, backing api.js's loadX(force) pattern ----
+const _cache = {};
+function cacheGet(key, maxAgeMs) {
+  const entry = _cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.time > maxAgeMs) return null;
+  return entry.value;
+}
+function cacheSet(key, value) {
+  _cache[key] = { value, time: Date.now() };
+}
+
+// ---- Toast notifications — appends into #toast-stack (see components/toast.html) ----
+function showToast(type, message) {
+  const stack = document.getElementById('toast-stack');
+  if (!stack) { console.log(`[toast:${type}]`, message); return; }
+  const icon = type === 'ok' ? 'bi-check-circle-fill' : type === 'err' ? 'bi-x-circle-fill' : 'bi-info-circle-fill';
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<i class="bi ${icon}"></i><span>${message}</span><button class="toast-close" aria-label="Dismiss">&times;</button>`;
+  el.querySelector('.toast-close').onclick = () => el.remove();
+  stack.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+// ---- Modal open/close — toggles the .open class used by .modal-overlay ----
+function openModal(id) {
+  document.getElementById(id)?.classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id)?.classList.remove('open');
+}
+
+// ---- Initials for the sidebar/topbar avatar ----
+function getInitials(name) {
+  if (!name) return '?';
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+// ---- Small date formatter used in recent-activity tables ----
+function formatDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+</script>
+<script>
+/* ==== inlined layout.js ==== */
+/**
+ * layout.js — fetches the shared HTML components (components/*.html) and
+ * injects them into the placeholders every page declares, e.g.:
+ *   <div data-include="sidebar"></div>
+ *   <div data-include="topbar"></div>
+ * Then highlights the active sidebar link based on <body data-page="...">
+ * and wires the mobile sidebar toggle.
+ *
+ * IMPORTANT: this uses fetch() to load local .html fragments, which only
+ * works when the site is served over http/https (Vercel, any static host,
+ * `npx serve`, etc). Opening a page directly via file:// in the browser
+ * will NOT load the components, since fetch() is blocked on file:// by
+ * browser CORS rules. Always test through a local server, not by double
+ * clicking the html file.
+ */
+async function includeComponents() {
+  const nodes = document.querySelectorAll('[data-include]');
+  await Promise.all(Array.from(nodes).map(async (el) => {
+    const name = el.getAttribute('data-include');
+    try {
+      const res = await fetch(`components/${name}.html`);
+      if (!res.ok) throw new Error(res.status);
+      el.outerHTML = await res.text();
+    } catch (err) {
+      console.error(`Failed to load component "${name}" — is this page being served over http(s)?`, err);
+      el.innerHTML = `<div style="padding:8px;font-size:11px;color:#c0392b">Failed to load ${name} component</div>`;
+    }
+  }));
+}
+
+function highlightActiveNav() {
+  const page = document.body.dataset.page;
+  if (!page) return;
+  document.querySelectorAll('.sb-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.page === page);
+  });
+  const titleEl = document.getElementById('nav-title');
+  const activeLink = document.querySelector(`.sb-link[data-page="${page}"] span`);
+  if (titleEl && activeLink) titleEl.textContent = activeLink.textContent;
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar')?.classList.toggle('collapsed');
+  document.getElementById('main')?.classList.toggle('expanded');
+}
+
+// Ported as-is from the original single-page dashboard: this is in-memory only
+// (not persisted to the DB, and not shared across tabs/pages/reloads). It was
+// already like this before the refactor. Worth wiring to a real `site_config`
+// row so it persists and actually reflects on the public site — flagging as a
+// follow-up rather than fixing silently, since it changes behaviour.
+let maintenanceMode = false;
+function toggleMaintenance(btn){
+  maintenanceMode=!maintenanceMode;
+  btn.classList.toggle('on',maintenanceMode);
+  btn.setAttribute('aria-checked',maintenanceMode?'true':'false');
+  const banner=document.getElementById('maintenance-banner');
+  if(banner)banner.style.display=maintenanceMode?'block':'none';
+  showToast(maintenanceMode?'info':'ok',maintenanceMode?'Maintenance mode ON — site offline for users':'Maintenance mode OFF — site is live');
+}
+
+/**
+ * Call once at the top of every page's script, before requireAuth():
+ *   await initLayout();
+ */
+async function initLayout() {
+  await includeComponents();
+  highlightActiveNav();
+}
+</script>
+<script>
+/* ==== inlined auth.js ==== */
+/**
+ * auth.js — shared session guard for every admin page.
+ *
+ * NOTE ON THE CURRENT AUTH MODEL: this dashboard authenticates against a
+ * plain `admin_users` table (username/password columns), NOT Supabase Auth.
+ * That means `sb.auth` never has a real session and `auth.uid()` is always
+ * null for every request this dashboard makes — which is also why private
+ * storage buckets (id_verification, selfie-verification, Certificate)
+ * can't be read from here yet (see the document-viewer conversation).
+ * This file preserves that existing behaviour as-is during the refactor;
+ * it does not change the auth model. If/when you move to real Supabase
+ * Auth for admins, this is the one file that needs to change.
+ */
+window.adminRecord = null;
+window.currentUser = null;
+
+/** Call at the top of every protected page. Redirects to login.html if not signed in. */
+async function requireAuth() {
+  const stored = localStorage.getItem('sc_admin_session');
+  if (!stored) {
+    redirectToLogin();
+    return null;
+  }
+  try {
+    const sess = JSON.parse(stored);
+    const { data, error } = await sb.from('admin_users')
+      .select('*')
+      .eq('id', sess.id)
+      .eq('status', 'Active')
+      .maybeSingle();
+    if (error || !data) {
+      redirectToLogin();
+      return null;
+    }
+    window.adminRecord = data;
+    window.currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
+    renderTopbarUser(data);
+    return data;
+  } catch (err) {
+    console.error('requireAuth failed', err);
+    redirectToLogin();
+    return null;
+  }
+}
+
+function redirectToLogin() {
+  const here = encodeURIComponent(location.pathname + location.search);
+  location.href = `login.html?next=${here}`;
+}
+
+function renderTopbarUser(data) {
+  const nameEl = document.getElementById('sb-admin-name');
+  const avatarEl = document.getElementById('sb-avatar');
+  if (nameEl) nameEl.textContent = data.username;
+  if (avatarEl) avatarEl.textContent = getInitials(data.username);
+}
+
+async function handleLogout() {
+  if (typeof teardownRealtimeSubscriptions === 'function') teardownRealtimeSubscriptions();
+  window.adminRecord = null;
+  window.currentUser = null;
+  localStorage.removeItem('sc_admin_session');
+  location.href = 'login.html';
+}
+</script>
+<script>
+/* ==== inlined api.js ==== */
+/**
+ * api.js — data-loading helpers shared across pages.
+ * Each function caches its result briefly (see utils.js cacheGet/cacheSet) so
+ * navigating Dashboard -> Job Seekers -> Dashboard within a minute doesn't
+ * re-hit Supabase for data that hasn't changed. Pages call `force=true` after
+ * a mutation (create/update/delete) to bypass the cache and get fresh data.
+ */
+const CACHE_MS = 45000;
+
+async function loadWorkers(force=false){
+  if(!force){const hit=cacheGet('workers',CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from('worker_profiles').select('*').order('created_at',{ascending:false});
+  if(error){console.error('loadWorkers',error);return [];}
+  cacheSet('workers',data||[]);
+  return data||[];
+}
+
+async function loadEmployers(force=false){
+  if(!force){const hit=cacheGet('employers',CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from('employer_profiles').select('*').order('created_at',{ascending:false});
+  if(error){console.error('loadEmployers',error);return [];}
+  cacheSet('employers',data||[]);
+  return data||[];
+}
+
+async function loadUsers(force=false){
+  if(!force){const hit=cacheGet('users',CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from('users').select('*').order('created_at',{ascending:false});
+  if(error){console.error('loadUsers',error);return [];}
+  cacheSet('users',data||[]);
+  return data||[];
+}
+
+async function loadJobs(force=false){
+  if(!force){const hit=cacheGet('jobs',CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from('job_postings').select('*').order('created_at',{ascending:false});
+  if(error){console.error('loadJobs',error);return [];}
+  cacheSet('jobs',data||[]);
+  return data||[];
+}
+
+async function loadApplications(force=false){
+  if(!force){const hit=cacheGet('applications',CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from('job_applications').select('*').order('created_at',{ascending:false});
+  if(error){console.error('loadApplications',error);return [];}
+  cacheSet('applications',data||[]);
+  return data||[];
+}
+
+/** Dashboard overview: lightweight counts only — never pull full row sets for the homepage. */
+async function loadDashboardStats(){
+  const hit=cacheGet('dash-stats',CACHE_MS);
+  if(hit)return hit;
+  const counts=await Promise.all([
+    sb.from('worker_profiles').select('id',{count:'exact',head:true}),
+    sb.from('employer_profiles').select('id',{count:'exact',head:true}),
+    sb.from('job_postings').select('id',{count:'exact',head:true}).eq('status','active'),
+    sb.from('job_applications').select('id',{count:'exact',head:true}),
+    sb.from('payments').select('id',{count:'exact',head:true}),
+    sb.from('support_tickets').select('id',{count:'exact',head:true}).neq('status','closed'),
+  ]);
+  const stats={
+    workers: counts[0].count||0,
+    employers: counts[1].count||0,
+    activeJobs: counts[2].count||0,
+    applications: counts[3].count||0,
+    payments: counts[4].count||0,
+    openTickets: counts[5].count||0,
+  };
+  cacheSet('dash-stats',stats);
+  return stats;
+}
+
+async function loadRecent(table,limit=6,force=false){
+  const key=`recent-${table}`;
+  if(!force){const hit=cacheGet(key,CACHE_MS);if(hit)return hit;}
+  const {data,error}=await sb.from(table).select('*').order('created_at',{ascending:false}).limit(limit);
+  if(error){console.error('loadRecent',table,error);return [];}
+  cacheSet(key,data||[]);
+  return data||[];
+}
+
+/** Updates sidebar count badges — call after loading each page's primary dataset. */
+async function updateSidebarBadges(){
+  try{
+    const [workers,employers,jobs,apps,notifs,tickets,preqs] = await Promise.all([
+      sb.from('worker_profiles').select('id',{count:'exact',head:true}).eq('is_deleted',false),
+      sb.from('employer_profiles').select('id',{count:'exact',head:true}),
+      sb.from('job_postings').select('id',{count:'exact',head:true}).eq('status','active'),
+      sb.from('job_applications').select('id',{count:'exact',head:true}),
+      sb.from('notifications').select('id',{count:'exact',head:true}).eq('is_read',false),
+      sb.from('support_tickets').select('id',{count:'exact',head:true}).neq('status','closed'),
+      sb.from('profile_post_requests').select('id',{count:'exact',head:true}).eq('status','pending'),
+    ]);
+    setBadge('badge-emp',workers.count);
+    setBadge('badge-empr',employers.count);
+    setBadge('badge-jobs',jobs.count);
+    setBadge('badge-apps',apps.count);
+    setBadge('badge-notif',notifs.count);
+    setBadge('badge-tickets',tickets.count);
+    setBadge('badge-preqs',preqs.count);
+  }catch(err){console.error('updateSidebarBadges',err);}
+}
+function setBadge(id,count){
+  const el=document.getElementById(id);
+  if(el)el.textContent=count||0;
+}
+</script>
+<script>
+/* ==== inlined dashboard.js ==== */
+/**
+ * dashboard.js — page logic for dashboard.html.
+ * Reconstructed to match the confirmed element IDs in the page markup and
+ * the loaders already defined in api.js. Two pieces are best-effort because
+ * the original dashboard.js wasn't available to copy from — see the NOTE
+ * comments below (notifications insert shape, and the signups chart).
+ */
+
+async function initDashboardPage() {
+  document.getElementById('notif-audience')?.addEventListener('change', updateNotifRecipientCount);
+  await refreshDashboard();
+}
+
+async function refreshDashboard(force = false) {
+  await Promise.all([
+    renderStats(force),
+    renderRecentWorkers(force),
+    renderRecentJobs(force),
+    renderRecentPayments(force),
+    renderLatestNotifications(force),
+    renderSystemStatus(),
+    updateSidebarBadges(),
+  ]);
+}
+
+async function renderStats(force) {
+  const stats = await loadDashboardStats(force);
+  setText('stat-workers', stats.workers);
+  setText('stat-employers', stats.employers);
+  setText('stat-jobs', stats.activeJobs);
+  setText('stat-apps', stats.applications);
+  setText('stat-payments', stats.payments);
+  setText('stat-tickets', stats.openTickets);
+}
+
+async function renderRecentWorkers(force) {
+  const rows = await loadRecent('worker_profiles', 6, force);
+  const tbody = document.getElementById('recent-workers-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = emptyRow(4); return; }
+  tbody.innerHTML = rows.map(w => `
+    <tr>
+      <td>${escapeHtml(w.full_name || w.name || '—')}</td>
+      <td>${escapeHtml(w.role || w.job_role || '—')}</td>
+      <td>${escapeHtml(w.county || '—')}</td>
+      <td>${formatDate(w.created_at)}</td>
+    </tr>`).join('');
+}
+
+async function renderRecentJobs(force) {
+  const rows = await loadRecent('job_postings', 6, force);
+  const tbody = document.getElementById('recent-jobs-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = emptyRow(3); return; }
+  tbody.innerHTML = rows.map(j => `
+    <tr>
+      <td>${escapeHtml(j.title || '—')}</td>
+      <td><span class="badge">${escapeHtml(j.status || '—')}</span></td>
+      <td>${formatDate(j.created_at)}</td>
+    </tr>`).join('');
+}
+
+async function renderRecentPayments(force) {
+  const rows = await loadRecent('payments', 6, force);
+  const tbody = document.getElementById('recent-payments-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = emptyRow(4); return; }
+  tbody.innerHTML = rows.map(p => `
+    <tr>
+      <td>${escapeHtml(p.user_name || p.user_id || '—')}</td>
+      <td>${p.amount != null ? 'KSh ' + Number(p.amount).toLocaleString() : '—'}</td>
+      <td>${escapeHtml(p.type || p.payment_type || '—')}</td>
+      <td>${formatDate(p.created_at)}</td>
+    </tr>`).join('');
+}
+
+/**
+ * NOTE: updateSidebarBadges() (api.js) already confirms a `notifications`
+ * table with an `is_read` column. Row shape for `title`/`message` fields is
+ * inferred from the send-notification modal below — adjust field names here
+ * if your actual schema differs.
+ */
+async function renderLatestNotifications(force) {
+  const el = document.getElementById('latest-notifs');
+  if (!el) return;
+  const rows = await loadRecent('notifications', 5, force);
+  if (!rows.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No notifications yet.</p>'; return; }
+  el.innerHTML = rows.map(n => `
+    <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-weight:600;font-size:13px">${escapeHtml(n.title || 'Notification')}</div>
+      <div style="font-size:12px;color:var(--muted)">${escapeHtml(n.message || '')}</div>
+      <div style="font-size:11px;color:var(--muted)">${formatDate(n.created_at)}</div>
+    </div>`).join('');
+}
+
+/** Lightweight connectivity check — not a full health dashboard, just proves `sb` can reach the DB. */
+async function renderSystemStatus() {
+  const el = document.getElementById('system-status');
+  if (!el) return;
+  try {
+    const { error } = await sb.from('worker_profiles').select('id', { count: 'exact', head: true });
+    el.innerHTML = error
+      ? `<span style="color:var(--rose)"><i class="bi bi-x-circle-fill"></i> Database error: ${escapeHtml(error.message)}</span>`
+      : `<span style="color:var(--green)"><i class="bi bi-check-circle-fill"></i> Connected to Supabase</span>`;
+  } catch (err) {
+    el.innerHTML = `<span style="color:var(--rose)"><i class="bi bi-x-circle-fill"></i> ${escapeHtml(err.message)}</span>`;
+  }
+}
+
+/**
+ * NOTE (signups chart): no charting library is loaded on this page and there's
+ * no confirmed data source for a 14-day signup series, so the canvas is left
+ * inert rather than guessing at both. Wire this up once you confirm which
+ * chart lib to load (e.g. Chart.js) and the query/view backing it.
+ */
+
+function openSendNotifModal() {
+  document.getElementById('notif-title').value = '';
+  document.getElementById('notif-message').value = '';
+  openModal('send-notif-bulk-modal');
+  updateNotifRecipientCount();
+}
+
+async function updateNotifRecipientCount() {
+  const audience = document.getElementById('notif-audience')?.value || 'all';
+  const el = document.getElementById('notif-recipient-count');
+  if (!el) return;
+  el.textContent = 'Calculating…';
+  let count = 0;
+  if (audience === 'workers') count = (await loadWorkers()).length;
+  else if (audience === 'employers') count = (await loadEmployers()).length;
+  else count = (await loadUsers()).length;
+  el.textContent = `This will notify ${count} recipient${count === 1 ? '' : 's'}.`;
+}
+
+/**
+ * NOTE: inserts one row per recipient into `notifications`, matching the
+ * columns implied elsewhere (user_id, title, message, is_read, created_at).
+ * Confirm this matches your actual table before relying on it in production.
+ */
+async function sendBulkNotification() {
+  const audience = document.getElementById('notif-audience')?.value || 'all';
+  const title = document.getElementById('notif-title')?.value.trim();
+  const message = document.getElementById('notif-message')?.value.trim();
+  if (!title || !message) { showToast('err', 'Title and message are required.'); return; }
+
+  const btn = document.getElementById('send-notif-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending…'; }
+
+  try {
+    let recipients;
+    if (audience === 'workers') recipients = await loadWorkers();
+    else if (audience === 'employers') recipients = await loadEmployers();
+    else recipients = await loadUsers();
+
+    const rows = recipients.map(r => ({
+      user_id: r.id,
+      title,
+      message,
+      is_read: false,
+    }));
+
+    const { error } = await sb.from('notifications').insert(rows);
+    if (error) throw error;
+
+    showToast('ok', `Notification sent to ${rows.length} recipient${rows.length === 1 ? '' : 's'}.`);
+    closeModal('send-notif-bulk-modal');
+    await renderLatestNotifications(true);
+    await updateSidebarBadges();
+  } catch (err) {
+    console.error('sendBulkNotification', err);
+    showToast('err', 'Failed to send notification: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Send'; }
+  }
+}
+
+// ---- small local helpers ----
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+function emptyRow(cols) {
+  return `<tr><td colspan="${cols}" style="text-align:center;color:var(--muted)">Nothing here yet</td></tr>`;
+}
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+</script>
 <script>
 (async function(){
   await initLayout();
