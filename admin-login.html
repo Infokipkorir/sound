@@ -919,8 +919,8 @@ table { width: 100%; border-collapse: collapse; }
     <div class="auth-error" id="auth-error"></div>
     <form onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label>Username</label>
-        <input id="auth-email" type="text" placeholder="admin" autocomplete="username" required style="font-size:13px">
+        <label>Email</label>
+        <input id="auth-email" type="email" placeholder="you@soundscare.admin" autocomplete="email" required style="font-size:13px">
       </div>
       <div class="form-group" style="position:relative">
         <label>Password</label>
@@ -949,9 +949,17 @@ table { width: 100%; border-collapse: collapse; }
  * >>> ACTION NEEDED <<<
  * Replace the two placeholders below with your real Supabase project URL
  * and anon/public API key (Supabase Dashboard → Project Settings → API).
- * Until these are real values, every sb.from(...) call across auth.js,
- * api.js, and dashboard.js will fail — which is almost certainly the
- * "not pointing to db" symptom you're seeing.
+ * Until these are real values, every sb.from(...) / sb.auth.* call across
+ * auth.js, api.js, and dashboard.js will fail.
+ *
+ * >>> AUTH MODEL <<<
+ * Login now goes through real Supabase Auth (sb.auth.signInWithPassword),
+ * not a plaintext password column. admin_users is a profile table keyed
+ * by id = auth.users.id (role, badge, status) — it must NOT have a
+ * password column anymore, and RLS should restrict reads to
+ * `auth.uid() = id` (or a service role). Each admin needs a real
+ * Supabase Auth user (Dashboard → Authentication → Users → Invite),
+ * whose email matches what they type in on this page.
  */
 const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
 const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
@@ -1014,14 +1022,13 @@ function formatDate(value) {
 <script>
 // If already signed in, skip straight to the dashboard (or the page they were headed to)
 (async()=>{
-  const stored = localStorage.getItem('sc_admin_session');
-  if(!stored) return;
-  try{
-    const sess = JSON.parse(stored);
-    const {data} = await sb.from('admin_users').select('id').eq('id',sess.id).eq('status','Active').maybeSingle();
-    if(data) redirectAfterLogin();
-  }catch(e){}
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) redirectAfterLogin();
 })();
+
+// Clean up the legacy pre-auth localStorage key from before this page moved to sb.auth,
+// so stale fabricated/leftover values can't confuse anything during the cutover.
+localStorage.removeItem('sc_admin_session');
 
 function redirectAfterLogin(){
   const params = new URLSearchParams(location.search);
@@ -1031,7 +1038,7 @@ function redirectAfterLogin(){
 
 async function handleLogin(e){
   e.preventDefault();
-  const username = document.getElementById('auth-email').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const errEl = document.getElementById('auth-error');
   errEl.textContent = '';
@@ -1056,15 +1063,23 @@ async function handleLogin(e){
   };
 
   try {
-    const { data, error } = await sb.from('admin_users')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    if (!data?.session) { showErr('Invalid email or password.'); return; }
+
+    // Confirm this authenticated user actually has an active admin profile —
+    // being a valid Supabase Auth user is not by itself permission to use the dashboard.
+    const { data: profile, error: profileErr } = await sb.from('admin_users')
+      .select('id, status')
+      .eq('id', data.user.id)
       .eq('status', 'Active')
       .maybeSingle();
-    if (error) throw error;
-    if (!data) { showErr('Invalid username or password.'); return; }
-    localStorage.setItem('sc_admin_session', JSON.stringify({ id: data.id, username: data.username, role: data.role, badge: data.badge }));
+    if (profileErr || !profile) {
+      await sb.auth.signOut();
+      showErr('This account is not an active admin.');
+      return;
+    }
+
     redirectAfterLogin();
   } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
 }
