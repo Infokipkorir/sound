@@ -1091,22 +1091,39 @@ table { width: 100%; border-collapse: collapse; }
 <div data-include="toast"></div>
 
 <script>
-/* ==== inlined supabase.js ==== */
-/**
- * supabase.js — creates the shared `sb` client every other file depends on.
- *
- * >>> ACTION NEEDED <<<
- * Replace the two placeholders below with your real Supabase project URL
- * and anon/public API key (Supabase Dashboard → Project Settings → API).
- * Until these are real values, every sb.from(...) call across auth.js,
- * api.js, and dashboard.js will fail — which is almost certainly the
- * "not pointing to db" symptom you're seeing.
- */
-const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
-<script>
+
+async function requireAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { redirectToLogin(); return null; }
+
+  const { data, error } = await sb.from('admin_users')
+    .select('*')
+    .eq('id', session.user.id)
+    .eq('status', 'Active')
+    .maybeSingle();
+
+  if (error || !data) {
+    await sb.auth.signOut();
+    redirectToLogin();
+    return null;
+  }
+  window.adminRecord = data;
+  window.currentUser = { id: data.id, email: session.user.email, role: data.role };
+  renderTopbarUser(data);
+  return data;
+}
+
+async function handleLogout() {
+  if (typeof teardownRealtimeSubscriptions === 'function') teardownRealtimeSubscriptions();
+  window.adminRecord = null;
+  window.currentUser = null;
+  await sb.auth.signOut();
+  location.href = 'admin-login.html';
+     }
+
 /* ==== inlined utils.js ==== */
 /**
  * utils.js — shared helpers used across api.js / auth.js / layout.js and
