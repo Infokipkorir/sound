@@ -1091,39 +1091,22 @@ table { width: 100%; border-collapse: collapse; }
 <div data-include="toast"></div>
 
 <script>
+/* ==== inlined supabase.js ==== */
+/**
+ * supabase.js — creates the shared `sb` client every other file depends on.
+ *
+ * >>> ACTION NEEDED <<<
+ * Replace the two placeholders below with your real Supabase project URL
+ * and anon/public API key (Supabase Dashboard → Project Settings → API).
+ * Until these are real values, every sb.from(...) call across auth.js,
+ * api.js, and dashboard.js will fail — which is almost certainly the
+ * "not pointing to db" symptom you're seeing.
+ */
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function requireAuth() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { redirectToLogin(); return null; }
-
-  const { data, error } = await sb.from('admin_users')
-    .select('*')
-    .eq('id', session.user.id)
-    .eq('status', 'Active')
-    .maybeSingle();
-
-  if (error || !data) {
-    await sb.auth.signOut();
-    redirectToLogin();
-    return null;
-  }
-  window.adminRecord = data;
-  window.currentUser = { id: data.id, email: session.user.email, role: data.role };
-  renderTopbarUser(data);
-  return data;
-}
-
-async function handleLogout() {
-  if (typeof teardownRealtimeSubscriptions === 'function') teardownRealtimeSubscriptions();
-  window.adminRecord = null;
-  window.currentUser = null;
-  await sb.auth.signOut();
-  location.href = 'admin-login.html';
-     }
-
+</script>
+<script>
 /* ==== inlined utils.js ==== */
 /**
  * utils.js — shared helpers used across api.js / auth.js / layout.js and
@@ -1254,39 +1237,36 @@ async function initLayout() {
 /**
  * auth.js — shared session guard for every admin page.
  *
- * NOTE ON THE CURRENT AUTH MODEL: this dashboard authenticates against a
- * plain `admin_users` table (username/password columns), NOT Supabase Auth.
- * That means `sb.auth` never has a real session and `auth.uid()` is always
- * null for every request this dashboard makes — which is also why private
- * storage buckets (id_verification, selfie-verification, Certificate)
- * can't be read from here yet (see the document-viewer conversation).
- * This file preserves that existing behaviour as-is during the refactor;
- * it does not change the auth model. If/when you move to real Supabase
- * Auth for admins, this is the one file that needs to change.
+ * NOTE ON THE CURRENT AUTH MODEL: login goes through real Supabase Auth
+ * (sb.auth.signInWithPassword) — see admin-login.html. admin_users is now
+ * a *profile* table keyed by id = auth.users.id (role, status, etc.), not
+ * a plaintext password table anymore. This guard checks the real Supabase
+ * session instead of the old localStorage 'sc_admin_session' key, which
+ * the login page no longer writes.
  */
 window.adminRecord = null;
 window.currentUser = null;
 
 /** Call at the top of every protected page. Redirects to admin-login.html if not signed in. */
 async function requireAuth() {
-  const stored = localStorage.getItem('sc_admin_session');
-  if (!stored) {
-    redirectToLogin();
-    return null;
-  }
   try {
-    const sess = JSON.parse(stored);
+    const { data: { session }, error: sessErr } = await sb.auth.getSession();
+    if (sessErr || !session) {
+      redirectToLogin();
+      return null;
+    }
     const { data, error } = await sb.from('admin_users')
       .select('*')
-      .eq('id', sess.id)
+      .eq('id', session.user.id)
       .eq('status', 'Active')
       .maybeSingle();
     if (error || !data) {
+      await sb.auth.signOut();
       redirectToLogin();
       return null;
     }
     window.adminRecord = data;
-    window.currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
+    window.currentUser = { id: data.id, email: session.user.email, role: data.role };
     renderTopbarUser(data);
     return data;
   } catch (err) {
@@ -1312,7 +1292,7 @@ async function handleLogout() {
   if (typeof teardownRealtimeSubscriptions === 'function') teardownRealtimeSubscriptions();
   window.adminRecord = null;
   window.currentUser = null;
-  localStorage.removeItem('sc_admin_session');
+  await sb.auth.signOut();
   location.href = 'admin-login.html';
 }
 </script>
