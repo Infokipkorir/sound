@@ -136,10 +136,23 @@
     .welcome-banner p { font-size: 13px; opacity: 0.8; }
     .profile-completeness {
       text-align: right; min-width: 140px;
+      cursor: pointer; border-radius: 12px; padding: 6px 8px; transition: 0.18s;
     }
+    .profile-completeness:hover { background: rgba(255,255,255,0.1); }
     .profile-completeness .pct { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .profile-completeness-hint { font-size: 10px; opacity: 0.65; margin-top: 2px; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
     .progress-bar { width: 140px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 4px; }
     .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s; }
+
+    /* ─── WELCOME BANNER: LOVED JOBS COUNT ─── */
+    .welcome-loves {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; border-radius: 20px;
+      padding: 3px 10px; font-size: 11px; font-weight: 600;
+      margin-top: 8px;
+    }
+    .welcome-loves i { color: var(--rose); }
 
     /* STATS */
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
@@ -462,6 +475,25 @@
     .tick.waiting { color: rgba(0,0,0,.4); }
     .bubble-audio { display: flex; align-items: center; gap: 8px; min-width: 180px; }
     .bubble-audio audio { height: 32px; max-width: 180px; }
+
+    /* ─── CALL MESSAGE BUBBLE (voice / video call events in chat) ─── */
+    .bubble-call {
+      display: flex; align-items: center; gap: 10px;
+      min-width: 190px; padding: 4px 2px; cursor: default;
+    }
+    .bubble-call-icon {
+      width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%;
+      background: var(--brand); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .bubble-call.joinable .bubble-call-icon { background: var(--green); cursor: pointer; }
+    .bubble-call.joinable { cursor: pointer; }
+    .bubble-call.joinable:hover { opacity: 0.85; }
+    .bubble-call-info { display: flex; flex-direction: column; gap: 1px; }
+    .bubble-call-label { font-weight: 700; font-size: 13px; }
+    .bubble-call-status { font-size: 11px; color: rgba(0,0,0,.55); display: flex; align-items: center; gap: 4px; }
+    .bubble-call-status .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     /* TYPING INDICATOR */
     .typing-indicator { display: none; align-items: center; gap: 4px; padding: 6px 10px; }
@@ -1104,14 +1136,18 @@
     <div>
       <div class="welcome-name-row">
         <h2 id="welcome-name">Welcome back 👋</h2>
-        <img src="verification_badge.jpeg" alt="Verified" title="Verified" class="welcome-verify-badge" id="welcome-verify-badge">
+        <img src="verification_badge.jpeg" alt="Verified" title="Verified" class="welcome-verify-badge" id="welcome-verify-badge" onerror="this.style.display='none';">
       </div>
       <p id="welcome-sub">Your dashboard is loading…</p>
+      <div class="welcome-loves" id="welcome-loves" title="Jobs you've loved">
+        <i class="bi bi-heart-fill"></i> <span id="welcome-loves-count">0</span> Jobs Loved
+      </div>
     </div>
-    <div class="profile-completeness">
+    <div class="profile-completeness" id="profile-completeness" onclick="openEditProfile()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEditProfile();}" title="Click to complete your profile" role="button" tabindex="0">
       <div class="pct" id="profile-pct">—</div>
       <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">Profile Complete</div>
       <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0"></div></div>
+      <div class="profile-completeness-hint"><i class="bi bi-pencil-square"></i> Edit Profile</div>
     </div>
   </div>
 
@@ -1172,6 +1208,20 @@
     </div>
   </div>
 
+  <!-- RECENT MESSAGES PREVIEW -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
+      Recent Messages
+      <span style="margin-left: auto;">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-messages')">View All</button>
+      </span>
+    </div>
+    <div id="recent-messages">
+      <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
+    </div>
+  </div>
+
   <!-- RECENT INTERVIEWS PREVIEW -->
   <div class="section">
     <div class="section-title">
@@ -1183,6 +1233,20 @@
     </div>
     <div id="recent-interviews">
       <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
+    </div>
+  </div>
+
+  <!-- SAVED JOBS PREVIEW -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-bookmark-check" style="color: var(--brand);"></i>
+      Saved Jobs
+      <span style="margin-left: auto;">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-saved-jobs')">View All</button>
+      </span>
+    </div>
+    <div id="saved-jobs-preview">
+      <div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>
     </div>
   </div>
 
@@ -2442,6 +2506,7 @@ async function loadDashboard() {
     try {
       await renderConversationList();
       console.log('✅ Conversation list rendered');
+      renderRecentMessagesPreview();
       await loadRecentInterviews();
     } catch (renderErr) {
       console.error('❌ renderConversationList failed:', renderErr.message);
@@ -2480,6 +2545,10 @@ async function loadDashboard() {
         document.getElementById('stat-saved-jobs').textContent = savedJobIds.size;
         document.getElementById('stat-applications').textContent = myApplications.length;
         document.getElementById('stat-interviewed').textContent = interviewCount ?? 0;
+        // Loves count — shown as a pill inside the welcome banner
+        document.getElementById('welcome-loves-count').textContent = lovedJobIds.size;
+        // Saved Jobs dashboard section preview
+        loadSavedJobs();
       } catch (statErr) {
         console.error('❌ Could not load saved/loved/applications/interview stats:', statErr.message);
       }
@@ -2599,18 +2668,22 @@ async function renderConversationList() {
         employerCache[e.user_id] = {
           name: twoWordName(e.company_name || e.full_name || 'Employer'),
           photo: e.profile_photo_url || null,
+          is_verified: !!e.is_verified,
+          ringback_tone_url: e.ringback_tone_url || null,
         };
       });
     } else {
       // Fallback: direct query (works if RLS allows it or is disabled)
       console.warn('get_employer_names RPC failed, falling back to direct query:', rpcErr?.message);
       const { data } = await sb.from('employer_profiles')
-        .select('user_id, full_name, company_name, profile_photo_url')
+        .select('user_id, full_name, company_name, profile_photo_url, is_verified, ringback_tone_url')
         .in('user_id', employerIds);
       (data || []).forEach(e => {
         employerCache[e.user_id] = {
           name: twoWordName(e.company_name || e.full_name || 'Employer'),
           photo: e.profile_photo_url || null,
+          is_verified: !!e.is_verified,
+          ringback_tone_url: e.ringback_tone_url || null,
         };
       });
     }
@@ -2657,6 +2730,52 @@ async function renderConversationList() {
   }).join('');
 
   inbox.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════
+//  RECENT MESSAGES PREVIEW (dashboard section)
+// ════════════════════════════════════════════════════════
+function renderRecentMessagesPreview() {
+  const el = document.getElementById('recent-messages');
+  if (!el) return;
+
+  if (!allConversations.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>No messages yet. Employers will contact you here.</p></div>';
+    return;
+  }
+
+  const recent = [...allConversations]
+    .sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0))
+    .slice(0, 3);
+
+  el.innerHTML = recent.map(conv => {
+    const isSupport = conv.is_admin_thread;
+    const emp = employerCache[conv.employer_id] || { name: 'Employer', photo: null };
+    const name = isSupport ? 'Support' : emp.name;
+    const init = (name[0] || '?').toUpperCase();
+    const preview = (conv.last_message_text || 'No messages yet').substring(0, 70);
+    const unread = conv.employee_unread > 0;
+    const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
+    const avatarInner = emp.photo && !isSupport ? `<img src="${esc(emp.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : esc(init);
+    const badgeColor = isSupport ? 'var(--sky)' : 'var(--accent)';
+    const roleLabel = isSupport ? 'Support' : 'Employer';
+
+    return `
+    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openModal('modal-messages'); openConversation('${conv.id}');" style="cursor:pointer;">
+      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-from">${esc(name)}</span>
+          <span class="msg-badge employer" style="background:${badgeColor};"><i class="bi bi-${isSupport ? 'headset' : 'building'}"></i> ${roleLabel}</span>
+        </div>
+        <div class="msg-preview">${esc(preview)}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
+        <span class="msg-time">${time}</span>
+        ${unread ? `<span style="min-width:18px; height:18px; background:var(--brand); color:#fff; border-radius:50%; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;">${conv.employee_unread > 9 ? '9+' : conv.employee_unread}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════
@@ -2824,6 +2943,9 @@ function renderTick(m) {
 }
 
 function renderBubbleContent(m) {
+  if (m.msg_type === 'call') {
+    return renderCallBubbleContent(m);
+  }
   if (m.msg_type === 'audio' && m.file_url) {
     return `<div class="bubble-audio"><audio controls src="${m.file_url}"></audio></div>`;
   }
@@ -2833,6 +2955,91 @@ function renderBubbleContent(m) {
   }
   const text = m.content || m.body || m.message || '';
   return `<span class="bubble-text">${esc(text)}</span>`;
+}
+
+// ────────────────────────────────────────────────────────
+//  CALL MESSAGE BUBBLE — voice/video call events shown in chat
+// ────────────────────────────────────────────────────────
+function renderCallBubbleContent(m) {
+  const callKey = m.call_id || m.id || '';
+  const isVideo = m.call_type === 'video';
+  const icon = isVideo ? 'camera-video-fill' : 'telephone-fill';
+  const label = isVideo ? 'Video Call' : 'Voice Call';
+  return `
+    <div class="bubble-call" id="call-bubble-${callKey}" data-call-id="${m.call_id || ''}" onclick="joinCallFromMessage('${m.call_id || ''}')">
+      <div class="bubble-call-icon"><i class="bi bi-${icon}"></i></div>
+      <div class="bubble-call-info">
+        <div class="bubble-call-label">${label}</div>
+        <div class="bubble-call-status" id="call-status-${callKey}"><i class="bi bi-arrow-repeat spin"></i> Checking status…</div>
+      </div>
+    </div>`;
+}
+
+function formatCallDuration(sec) {
+  sec = parseInt(sec) || 0;
+  const mins = Math.floor(sec / 60);
+  const secs = sec % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Batch-refresh call status/duration labels for all call bubbles in a message set,
+// reading live truth from the `calls` table (the chat message itself is never updated).
+async function refreshCallBubbleStatuses(msgs) {
+  const callIds = [...new Set((msgs || []).filter(m => m.msg_type === 'call' && m.call_id).map(m => m.call_id))];
+  if (!callIds.length) return;
+  const { data, error } = await sb.from('calls').select('id, status, duration').in('id', callIds);
+  if (error) { console.warn('refreshCallBubbleStatuses error:', error.message); return; }
+  const byId = {};
+  (data || []).forEach(c => { byId[c.id] = c; });
+
+  callIds.forEach(id => {
+    const statusEl = document.getElementById('call-status-' + id);
+    const bubbleEl = document.getElementById('call-bubble-' + id);
+    if (!statusEl) return;
+    const call = byId[id];
+    let html = '<i class="bi bi-telephone"></i> Call';
+    let joinable = false;
+    if (!call) {
+      html = '<i class="bi bi-question-circle"></i> Unavailable';
+    } else if (call.status === 'ringing') {
+      html = '<i class="bi bi-telephone-outbound"></i> Ringing — tap to join';
+      joinable = true;
+    } else if (call.status === 'accepted' || call.status === 'connected') {
+      html = '<i class="bi bi-telephone"></i> In progress — tap to join';
+      joinable = true;
+    } else if (call.status === 'ended') {
+      html = `<i class="bi bi-check2"></i> Call ended${call.duration ? ' · ' + formatCallDuration(call.duration) : ''}`;
+    } else if (call.status === 'missed') {
+      html = '<i class="bi bi-telephone-x"></i> Missed call';
+    } else if (call.status === 'rejected') {
+      html = '<i class="bi bi-telephone-x"></i> Declined';
+    }
+    statusEl.innerHTML = html;
+    if (bubbleEl) bubbleEl.classList.toggle('joinable', joinable);
+  });
+}
+
+// Rejoin a still-active call directly from a chat call-bubble
+async function joinCallFromMessage(callId) {
+  if (!callId) return;
+  if (activeCallId) { showToast('info', 'bi-telephone', 'Already in a Call', 'End the current call first.'); return; }
+
+  const { data: callRow, error } = await sb.from('calls')
+    .select('id, status, caller_id, receiver_id, call_type, room_id')
+    .eq('id', callId).maybeSingle();
+
+  if (error || !callRow) { showToast('err', 'bi-exclamation-circle', 'Unavailable', 'This call is no longer available.'); return; }
+  if (!['ringing', 'accepted', 'connected'].includes(callRow.status)) {
+    showToast('info', 'bi-telephone-x', 'Call Ended', 'This call has already ended.'); return;
+  }
+  if (callRow.caller_id === currentUser.id) {
+    showToast('info', 'bi-telephone', 'Outgoing Call', 'You started this call — check your active call screen.'); return;
+  }
+
+  const conv = allConversations.find(c => c.id === activeConvId) || {};
+  const emp = employerCache[callRow.caller_id] || { name: conv.is_admin_thread ? 'Support' : 'Employer' };
+  incomingCallData = { callerName: emp.name, callType: callRow.call_type, convId: activeConvId, callId: callRow.id, roomId: callRow.room_id };
+  await acceptIncomingCall();
 }
 
 function renderMessageBubble(m) {
@@ -2978,6 +3185,7 @@ async function openConversation(convId) {
   const convEl = document.getElementById('conversation-messages');
   convEl.innerHTML = (msgs || []).map(renderMessageBubble).join('');
   convEl.scrollTop = convEl.scrollHeight;
+  refreshCallBubbleStatuses(msgs);
 
   // Mark incoming messages as seen + clear unread badge
   await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() })
@@ -3165,7 +3373,9 @@ async function startCall(type) {
     body: `${type} call`,
   });
 
-  playRingtone('outgoing');
+  // Use the employer's own ringback tone if they've set one in the DB,
+  // otherwise fall back to the default local ringback.mp3
+  playRingtone('outgoing', emp.ringback_tone_url);
 
   // Auto-cancel after 30s if not answered
   missedCallTimeout = setTimeout(() => missedCall(), 30000);
@@ -3602,13 +3812,47 @@ function renderStatusPill(status, lastSeen) {
 }
 
 // ────────────────────────────────────────────────────────
-//  12. RINGTONE (Web Audio API)
+//  12. RINGTONE / RINGBACK (real audio files, with synth fallback)
+//  - Incoming calls (callee hears): local file  ringtone.mp3
+//  - Outgoing calls (caller hears): employer's custom ringback
+//    (employer_profiles.ringback_tone_url, fetched from DB via
+//    get_employer_names RPC into employerCache) — falls back to
+//    the default local file  ringback.mp3  if the employer has
+//    not set one, or to the Web Audio synth tone if playback fails.
 // ────────────────────────────────────────────────────────
-function playRingtone(mode) {
+let ringtoneAudioEl = null;
+
+function playRingtone(mode, customUrl) {
   stopRingtone();
+
+  const src = mode === 'incoming'
+    ? 'ringtone.mp3'
+    : (customUrl || 'ringback.mp3');
+
   try {
+    ringtoneAudioEl = new Audio(src);
+    ringtoneAudioEl.loop = true;
+    ringtoneAudioEl.volume = 0.7;
+    ringtoneAudioEl.preload = 'auto';
+
+    // If the file 404s / can't decode / can't autoplay, fall back to the
+    // synthesized tone so the call still rings audibly.
+    ringtoneAudioEl.addEventListener('error', () => playSynthRingtone(mode), { once: true });
+
+    const playPromise = ringtoneAudioEl.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => playSynthRingtone(mode));
+    }
+  } catch (e) {
+    console.warn('Ringtone audio error, falling back to synth:', e);
+    playSynthRingtone(mode);
+  }
+}
+
+function playSynthRingtone(mode) {
+  try {
+    if (ringtoneCtx) { try { ringtoneCtx.close(); } catch(e) {} }
     ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let phase = 0;
     const masterGain = ringtoneCtx.createGain();
     masterGain.gain.value = 0.18;
     masterGain.connect(ringtoneCtx.destination);
@@ -3640,10 +3884,17 @@ function playRingtone(mode) {
       }
     }
     ringtoneNode = masterGain;
-  } catch (e) { console.warn('Ringtone error:', e); }
+  } catch (e) { console.warn('Synth ringtone error:', e); }
 }
 
 function stopRingtone() {
+  try {
+    if (ringtoneAudioEl) {
+      ringtoneAudioEl.pause();
+      ringtoneAudioEl.src = '';
+      ringtoneAudioEl = null;
+    }
+  } catch(e) {}
   try { if (ringtoneCtx) { ringtoneCtx.close(); ringtoneCtx = null; ringtoneNode = null; } } catch(e) {}
 }
 
@@ -4002,8 +4253,11 @@ async function toggleSaveJob(jobId, btn) {
 
 async function loadSavedJobs() {
   const el = document.getElementById('saved-jobs-list');
+  const previewEl = document.getElementById('saved-jobs-preview');
   if (!workerProfile?.id) {
-    el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Complete your profile to save jobs.</p></div>';
+    const msg = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Complete your profile to save jobs.</p></div>';
+    if (el) el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
     return;
   }
   el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>';
@@ -4014,15 +4268,20 @@ async function loadSavedJobs() {
 
   if (error) {
     console.error('❌ loadSavedJobs error:', error.message);
-    el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
+    const msg = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
+    el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
     return;
   }
   const jobs = (data || []).map(r => r.job_postings).filter(Boolean);
   if (!jobs.length) {
-    el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>You haven\'t saved any jobs yet.</p></div>';
+    const msg = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>You haven\'t saved any jobs yet.</p></div>';
+    el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
     return;
   }
   el.innerHTML = jobs.map(j => jobCardHtml(j)).join('');
+  if (previewEl) previewEl.innerHTML = jobs.slice(0, 3).map(j => jobCardHtml(j)).join('');
 }
 
 function jobCardHtml(j) {
@@ -4102,6 +4361,8 @@ async function toggleLoveJob(jobId, btn) {
       job.loves_count = Math.max((job.loves_count || 0) + (wasLoved ? -1 : 1), 0);
       if (countEl) countEl.textContent = job.loves_count;
     }
+    const welcomeLovesEl = document.getElementById('welcome-loves-count');
+    if (welcomeLovesEl) welcomeLovesEl.textContent = lovedJobIds.size;
   } catch (err) {
     showToast('err', 'bi-exclamation-circle', 'Error', err.message);
   } finally {
@@ -4837,6 +5098,7 @@ function subscribeToRealtime() {
       try {
       await renderConversationList();
       console.log('✅ Conversation list rendered');
+      renderRecentMessagesPreview();
     } catch (renderErr) {
       console.error('❌ renderConversationList failed:', renderErr.message);
       document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
