@@ -555,6 +555,11 @@ tr:hover td { background: rgba(27,107,69,.02); }
             <option value="verified">Verified</option>
             <option value="unverified">Unverified</option>
           </select>
+          <select class="filter-select" id="emp-hired-filter" onchange="filterEmployees()">
+            <option value="">Hiring Status</option>
+            <option value="hired">Hired</option>
+            <option value="available">Available</option>
+          </select>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Verified</th><th>Payment</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="employees-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
       </div>
@@ -1587,14 +1592,17 @@ function renderEmployees(){
   const q=(document.getElementById('emp-search')?.value||'').toLowerCase();
   const sf=document.getElementById('emp-status-filter')?.value||'';
   const vf=document.getElementById('emp-verified-filter')?.value||'';
+  const hf=document.getElementById('emp-hired-filter')?.value||'';
   let data=allWorkers.filter(w=>{
     const m=!q||[(w.full_name||''),(w.email||''),(w.phone||'')].join(' ').toLowerCase().includes(q);
     const s=!sf||(sf==='approved'?!!w.approved_at:sf==='banned'?!!w.ban_reason:!w.approved_at&&!w.ban_reason);
     const v=!vf||(vf==='verified'?w.is_verified:!w.is_verified);
-    return m&&s&&v;
+    const h=!hf||(hf==='hired'?!!w.is_currently_hired:!w.is_currently_hired);
+    return m&&s&&v&&h;
   });
   document.getElementById('employees-tbody').innerHTML=data.map(w=>{
     const status=w.ban_reason?'<span class="badge badge-rose">Banned</span>':w.approved_at?'<span class="badge badge-green">Approved</span>':'<span class="badge badge-amber">Pending</span>';
+    const hiredBadge=w.is_currently_hired?'<span class="badge badge-sky" title="'+(w.last_hired_at?('Since '+fmtDate(w.last_hired_at)):'')+'">Hired</span>':'';
     const payment=w.payment_status==='paid'?'<span class="badge badge-green">Paid</span>':w.payment_status==='partial'?'<span class="badge badge-amber">Partial</span>':'<span class="badge badge-muted">Unpaid</span>';
     return `<tr>
       <td><div class="user-cell">
@@ -1604,7 +1612,7 @@ function renderEmployees(){
       <td>${esc(w.email||'—')}</td>
       <td>${esc(w.phone||'—')}</td>
       <td>${esc(w.preferred_role||'—')}</td>
-      <td>${status}</td>
+      <td>${status}${hiredBadge?' '+hiredBadge:''}</td>
       <td>${w.is_verified?'<span class="badge badge-green">✓ Yes</span>':'<span class="badge badge-muted">No</span>'}</td>
       <td>${payment}</td>
       <td>${fmtDate(w.created_at)}</td>
@@ -1612,6 +1620,7 @@ function renderEmployees(){
         <button class="btn btn-sm btn-ghost" onclick="viewEmployeeProfile('${w.id}')"><i class="bi bi-eye"></i></button>
         <button class="btn btn-sm btn-primary" onclick="approveEmployee('${w.id}',${!w.approved_at})">${w.approved_at?'Unapprove':'Approve'}</button>
         <button class="btn btn-sm btn-amber" onclick="toggleBanWorker('${w.id}',${!!w.ban_reason})">${w.ban_reason?'Unban':'Ban'}</button>
+        <button class="btn btn-sm ${w.is_currently_hired?'btn-secondary':'btn-sky'}" onclick="toggleHiredStatus('${w.id}',${!!w.is_currently_hired})">${w.is_currently_hired?'Mark Available':'Mark Hired'}</button>
         <button class="btn btn-sm btn-sky" onclick="openUserPaymentHistory('${w.session_id||w.id}')"><i class="bi bi-cash"></i></button>
         <button class="btn btn-sm btn-violet" onclick="openInterviewHistory('${w.id}')"><i class="bi bi-camera-video"></i></button>
         <button class="btn btn-sm btn-sky" onclick="openDirectMsg('${escAttr(w.email)}','${escAttr(w.full_name)}')" title="Send notification"><i class="bi bi-bell"></i></button>
@@ -2523,6 +2532,17 @@ async function toggleBanWorker(id,unban){
     await sb.from('worker_profiles').update({ban_reason:null,banned_at:null,account_deactivated:false}).eq('id',id);
   }
   await loadAll();showToast('ok',unban?'User unbanned':'User banned');
+}
+async function toggleHiredStatus(id,currentlyHired){
+  const nowHired=!currentlyHired;
+  const patch=nowHired
+    ? {is_currently_hired:true,last_hired_at:new Date().toISOString()}
+    : {is_currently_hired:false};
+  await sb.from('worker_profiles').update(patch).eq('id',id);
+  const w=allWorkers.find(w=>w.id===id);
+  if(w){w.is_currently_hired=patch.is_currently_hired;if(patch.last_hired_at)w.last_hired_at=patch.last_hired_at;}
+  renderEmployees();
+  showToast('ok',nowHired?'Marked as hired':'Marked as available');
 }
 async function toggleVerifyEmployer(id,verify){
   await sb.from('employer_profiles').update({is_verified:verify,verified_at:verify?new Date().toISOString():null}).eq('id',id);
