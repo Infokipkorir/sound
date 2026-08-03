@@ -1375,13 +1375,12 @@ async function handleLogin(e){
   };
 
   try {
-    const { data, error } = await sb.from('admin_users')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-      .eq('status', 'Active')
-      .maybeSingle();
+    const { data: rows, error } = await sb.rpc('admin_login', {
+      p_username: username,
+      p_password: password
+    });
     if (error) throw error;
+    const data = rows && rows.length ? rows[0] : null;
     if (!data) { showErr('Invalid username or password.'); return; }
     adminRecord = data;
     currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
