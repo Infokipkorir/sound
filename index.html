@@ -82,6 +82,7 @@
       --dark-bg:#0d2118;--dark-bg2:#142b1e;
     }
     *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
     body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6}
     a{color:inherit;text-decoration:none;transition:all .2s}
 
@@ -423,7 +424,7 @@
 
   </style>
 </head>
-<body>
+<body id="top">
 
 <div id="toast-container"></div>
 
@@ -503,7 +504,7 @@
 </div>
 
 <div id="cookie-banner">
-  <p>We use cookies to improve your experience. <a href="#" style="color:#78d9b4;text-decoration:underline">Learn more</a></p>
+  <p>We use cookies to improve your experience. <a href="legal.html#cookies" style="color:#78d9b4;text-decoration:underline">Learn more</a></p>
   <div class="cookie-btns">
     <button class="cookie-accept" onclick="acceptCookies()">Accept</button>
     <button class="cookie-decline" onclick="declineCookies()">Decline</button>
@@ -520,7 +521,7 @@
     </div>
   </a>
   <ul class="nav-links">
-    <li><a href="#" class="active">Home</a></li>
+    <li><a href="#top" class="active">Home</a></li>
     <li><a href="#workers-section">Workers</a></li>
     <li><a href="#jobs-section">Jobs</a></li>
     <li><a href="about.html">About</a></li>
@@ -556,6 +557,9 @@
   <div class="stat"><span class="stat-number" id="stat-workers">0</span><span class="stat-label">Verified Workers</span></div>
   <div class="stat"><span class="stat-number" id="stat-jobs">0</span><span class="stat-label">Active Jobs</span></div>
   <div class="stat"><span class="stat-number" id="stat-employers">0</span><span class="stat-label">Trusted Employers</span></div>
+  <div class="stat"><span class="stat-number" id="stat-accounts">0</span><span class="stat-label">Registered Accounts</span></div>
+  <div class="stat"><span class="stat-number" id="stat-interviews">0</span><span class="stat-label">Interviews Done</span></div>
+  <div class="stat"><span class="stat-number" id="stat-hired">0</span><span class="stat-label">Workers Hired</span></div>
 </div>
 
 <!-- QUICK ACTIONS BAR -->
@@ -1137,14 +1141,20 @@ async function loadJobs(){
 
 /* ── DB FETCH: STATS ── */
 async function loadStats(){
-  const [wRes, jRes, eRes] = await Promise.all([
+  const [wRes, jRes, eRes, aRes, ivRes, hRes] = await Promise.all([
     sb.from('worker_profiles').select('*',{count:'exact',head:true}).eq('account_deactivated',false).eq('is_deleted',false),
     sb.from('job_postings').select('*',{count:'exact',head:true}).eq('status','active'),
-    sb.from('employer_profiles').select('*',{count:'exact',head:true})
+    sb.from('employer_profiles').select('*',{count:'exact',head:true}),
+    sb.from('users').select('*',{count:'exact',head:true}),
+    sb.from('interviews').select('*',{count:'exact',head:true}).eq('status','completed'),
+    sb.from('hires').select('*',{count:'exact',head:true})
   ]);
   animateCounter('stat-workers',  wRes.count || 0);
   animateCounter('stat-jobs',     jRes.count || 0);
   animateCounter('stat-employers', eRes.count || 0);
+  animateCounter('stat-accounts',  aRes.count || 0);
+  animateCounter('stat-interviews', ivRes.count || 0);
+  animateCounter('stat-hired',     hRes.count || 0);
 }
 
 /* ── DEEP-LINK REDIRECTS ── */
