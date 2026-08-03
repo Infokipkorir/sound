@@ -527,6 +527,14 @@ document.addEventListener('DOMContentLoaded', async function () {
       .eq('session_id', currentUser.id)
       .maybeSingle();
 
+    // This page is for INITIAL setup only. Once a profile has been
+    // completed, editing happens from the dashboard — send them there
+    // instead of letting them re-run the wizard.
+    if (profileRow && profileRow.profile_setup_completed) {
+      window.location.href = 'employee-dashboard.html';
+      return;
+    }
+
     existingProfile = profileRow || null;
     prefillFromExisting();
 
@@ -979,6 +987,7 @@ async function submitProfile() {
     profile_visible: true,
     job_seeking: true,
     looking_for_job: true,
+    profile_setup_completed: true,
     last_updated_at: new Date().toISOString()
   };
 

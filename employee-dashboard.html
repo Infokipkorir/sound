@@ -2318,7 +2318,7 @@ async function loadDashboard() {
     // Attempt 1: session_id match — use limit(2) so duplicate rows never cause a 406 crash
     console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
     const { data: bySessionRows, error: e1 } = await sb.from('worker_profiles')
-      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
+      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
       .eq('session_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(2);
@@ -2334,7 +2334,7 @@ async function loadDashboard() {
       // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
       console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
       const { data: byEmailRows, error: e2 } = await sb.from('worker_profiles')
-        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, created_at')
+        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
         .eq('email', currentUser.email)
         .order('created_at', { ascending: false })
         .limit(2);
@@ -2363,6 +2363,15 @@ async function loadDashboard() {
     if (wpErr) console.warn('worker_profiles final error:', wpErr?.message);
     workerProfile = wp || null;
     console.log('📋 workerProfile now:', workerProfile);
+
+    // Gate: this dashboard is only for workers who've finished initial
+    // profile setup. No row yet, or setup started but not finished —
+    // send them to the setup wizard instead of a half-empty dashboard.
+    if (!workerProfile || !workerProfile.profile_setup_completed) {
+      console.log('⏩ Profile setup incomplete — redirecting to setup wizard');
+      window.location.href = 'employee-profile-setup.html';
+      return;
+    }
 
     // Welcome banner
     const name = workerProfile?.full_name || currentUser.email?.split('@')[0] || 'Worker';
