@@ -139,6 +139,19 @@ tr:hover td{background:rgba(27,107,69,.02);}
 .applicant-info{flex:1;min-width:0;}
 .applicant-name{font-weight:700;font-size:13.5px;color:var(--ink);}
 .applicant-meta{font-size:11.5px;color:var(--muted);margin-top:1px;}
+.call-hist-filters{display:flex;gap:6px;flex-wrap:wrap;}
+.chf{padding:6px 12px;border:1px solid var(--border);background:#fff;border-radius:20px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;font-family:inherit;}
+.chf:hover{border-color:var(--brand);color:var(--brand);}
+.chf.active{background:var(--brand);border-color:var(--brand);color:#fff;}
+.call-row{display:flex;align-items:center;gap:12px;padding:.9rem 1.2rem;border-bottom:1px solid var(--border);}
+.call-row:last-child{border-bottom:none;}
+.call-dir-ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.call-dir-ic.out{background:rgba(27,107,69,.1);color:var(--brand);}
+.call-dir-ic.in{background:rgba(56,161,214,.12);color:var(--sky);}
+.call-row-info{flex:1;min-width:0;}
+.call-row-name{font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.call-row-meta{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;}
+.call-row-dur{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;}
 
 /* ─── BUTTONS ─── */
 .btn{padding:8px 14px;border:none;border-radius:9px;cursor:pointer;font-weight:600;font-size:12.5px;transition:.15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
@@ -462,6 +475,7 @@ tr:hover td{background:rgba(27,107,69,.02);}
   <button class="sb-link" onclick="showPanel('employees',this)"><i class="bi bi-people-fill"></i> Find Employees</button>
   <button class="sb-link" onclick="showPanel('messages',this)"><i class="bi bi-chat-dots-fill"></i> Messages <span class="sb-badge" id="sb-msg-badge" style="display:none">0</span></button>
   <button class="sb-link" onclick="showPanel('interviews',this)"><i class="bi bi-camera-video-fill"></i> Interviews</button>
+  <button class="sb-link" onclick="showPanel('calls',this)"><i class="bi bi-clock-history"></i> Call History</button>
   <button class="sb-link" onclick="showPanel('jobs',this)"><i class="bi bi-briefcase-fill"></i> Posted Jobs</button>
   <button class="sb-link" onclick="showPanel('hires',this)"><i class="bi bi-check-circle-fill"></i> My Hires</button>
 
@@ -603,6 +617,25 @@ tr:hover td{background:rgba(27,107,69,.02);}
     <div class="section">
       <div class="sec-head"><div class="sec-title"><i class="bi bi-camera-video-fill"></i> All Interviews</div></div>
       <div id="all-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
+    </div>
+  </div>
+
+  <!-- ── CALL HISTORY PANEL ── -->
+  <div class="panel" id="panel-calls">
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title"><i class="bi bi-clock-history"></i> Call History</div>
+        <div class="call-hist-filters" id="call-hist-filters">
+          <button class="chf active" data-filter="all" onclick="setCallHistoryFilter('all')">All</button>
+          <button class="chf" data-filter="ongoing" onclick="setCallHistoryFilter('ongoing')">Ongoing</button>
+          <button class="chf" data-filter="outgoing" onclick="setCallHistoryFilter('outgoing')">Outgoing</button>
+          <button class="chf" data-filter="incoming" onclick="setCallHistoryFilter('incoming')">Incoming</button>
+          <button class="chf" data-filter="missed" onclick="setCallHistoryFilter('missed')">Missed</button>
+          <button class="chf" data-filter="rejected" onclick="setCallHistoryFilter('rejected')">Declined</button>
+          <button class="chf" data-filter="cancelled" onclick="setCallHistoryFilter('cancelled')">Cancelled</button>
+        </div>
+      </div>
+      <div id="call-history-list"><div class="empty"><i class="bi bi-telephone"></i><p>No calls yet</p></div></div>
     </div>
   </div>
 
@@ -943,6 +976,7 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 let sb, currentUser, employerProfile, employerProfileId;
 let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [];
 let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {};
+let allCalls = [], callHistoryFilter = 'all';
 let presenceMap = {}, workerMap = {};
 let activeConvId = null;
 let convMessages = {}; // convId -> [{id,from,text,t,status}]
@@ -1064,6 +1098,12 @@ async function loadAll() {
     .select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(30);
   allNotifs = notifs || [];
 
+  // call history — both calls we placed and calls we received
+  const { data: calls } = await sb.from('calls')
+    .select('*').or(`caller_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order('started_at', { ascending: false }).limit(200);
+  allCalls = calls || [];
+
   renderAll();
 }
 
@@ -1077,6 +1117,7 @@ function renderAll() {
   renderJobsTable();
   renderInterviewsPanel();
   renderHiresPanel();
+  renderCallHistory();
   renderPayHistory();
   renderProfileModal();
   renderNotifs();
@@ -2045,10 +2086,11 @@ function showPanel(id, btn) {
   document.getElementById('panel-'+id)?.classList.add('active');
   document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const titles = { dashboard:'Dashboard',employees:'Browse Workers',messages:'Messages',interviews:'Interviews',jobs:'Posted Jobs',hires:'My Hires',fraud:'Report Fraud' };
+  const titles = { dashboard:'Dashboard',employees:'Browse Workers',messages:'Messages',interviews:'Interviews',jobs:'Posted Jobs',hires:'My Hires',fraud:'Report Fraud',calls:'Call History' };
   document.getElementById('nav-title').textContent = titles[id]||id;
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'messages') renderConvList();
+  if (id === 'calls') renderCallHistory();
 }
 
 // ── SIDEBAR ──
@@ -2133,6 +2175,7 @@ let activeCallRole    = null;
 let activeCallPeer    = null;
 let callTimer         = null;
 let callSeconds       = 0;
+let callWasConnected  = false;
 let isMuted           = false;
 let isCamOff          = false;
 let isSpeakerOn       = true;
@@ -2237,6 +2280,7 @@ async function startCall(type) {
 
 // ── 2. SHOW CALL SCREEN ──
 function showCallScreen(type, name, photo, statusText, role) {
+  callWasConnected = false;
   if (type === 'voice') {
     document.getElementById('vc-avatar-init').textContent = (name[0]||'?').toUpperCase();
     document.getElementById('vc-name').textContent = name;
@@ -2336,21 +2380,24 @@ async function endCall(type) {
   clearInterval(callTimer); callTimer = null;
   clearTimeout(missedCallTimeout);
   stopRingtone();
+  const finalStatus = callWasConnected ? 'ended' : 'cancelled';
   if (activeCallId) {
     const _endedAt = new Date().toISOString();
-    await sb.from('calls').update({ status: 'ended', ended_at: _endedAt, call_ended_at: _endedAt, duration: callSeconds, call_duration_seconds: callSeconds }).eq('id', activeCallId);
+    await sb.from('calls').update({ status: finalStatus, ended_at: _endedAt, call_ended_at: _endedAt, duration: callSeconds, call_duration_seconds: callSeconds }).eq('id', activeCallId);
     await safeFire(sb.from('call_participants').update({ left_at: new Date().toISOString() }).eq('call_id', activeCallId).eq('user_id', currentUser.id));
   }
   if (peerConnection) { peerConnection.close(); peerConnection = null; }
   stopLocalStream();
   document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
   const dur = callSeconds > 0 ? `${Math.floor(callSeconds/60)}m ${callSeconds%60}s` : '';
-  showToast('ok','bi-telephone-x','Call Ended', dur ? `Duration: ${dur}` : 'Call ended.');
+  if (finalStatus === 'cancelled') showToast('info','bi-telephone-x','Call Cancelled', 'The call was ended before it connected.');
+  else showToast('ok','bi-telephone-x','Call Ended', dur ? `Duration: ${dur}` : 'Call ended.');
   callSeconds = 0;
   if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
   activeCallId = null; activeCallType = null; activeCallRole = null;
   isMuted = false; isCamOff = false; isSpeakerOn = true;
   updateUserCallStatus('online');
+  renderCallHistory();
 }
 
 async function missedCall() {
@@ -2428,6 +2475,7 @@ function subscribeCallSignaling(callId, roomId) {
 function startCallTimer(type) {
   stopRingtone();
   callSeconds = 0;
+  callWasConnected = true;
   if (type === 'voice') {
     document.getElementById('vc-label').textContent = 'Connected';
     const el = document.getElementById('vc-timer');
@@ -2612,6 +2660,12 @@ function stopLocalStream() { if (localStream) { localStream.getTracks().forEach(
 // use it for any "fire and forget, don't fail the call over this" write.
 async function safeFire(promiseLike) {
   try { return await promiseLike; } catch (e) { console.warn('[safeFire]', e); return null; }
+}
+
+function patchCallLocally(callId, patch) {
+  const idx = allCalls.findIndex(c => c.id === callId);
+  if (idx > -1) allCalls[idx] = { ...allCalls[idx], ...patch };
+  renderCallHistory();
 }
 
 // ── 14. SUBSCRIBE TO INCOMING CALLS ──
