@@ -2507,6 +2507,7 @@ async function updateUserCallStatus(status) {
 // set on the employer's profile (employer_profiles.ringback_tone_url) it takes priority
 // for outgoing calls, so ringback can be personalized per employer straight from the DB.
 let ringAudioEl = null;
+let ringFallbackTimer = null;
 
 function resolveRingSrc(mode) {
   if (mode === 'outgoing' && employerProfile?.ringback_tone_url) return employerProfile.ringback_tone_url;
@@ -2515,18 +2516,33 @@ function resolveRingSrc(mode) {
 
 function playRingtone(mode) {
   stopRingtone();
+  let usedFallback = false;
+  let confirmedPlaying = false;
+  const fallback = (reason) => {
+    if (usedFallback || confirmedPlaying) return;
+    usedFallback = true;
+    if (ringFallbackTimer) { clearTimeout(ringFallbackTimer); ringFallbackTimer = null; }
+    console.warn('[ringtone] falling back to synth tone —', reason);
+    playSynthRingtone(mode);
+  };
   try {
     ringAudioEl = new Audio(resolveRingSrc(mode));
     ringAudioEl.loop = true;
     ringAudioEl.preload = 'auto';
     ringAudioEl.volume = 0.85;
-    ringAudioEl.onerror = () => { playSynthRingtone(mode); };
+    ringAudioEl.addEventListener('error', () => fallback('file failed to load'), { once: true });
+    ringAudioEl.addEventListener('playing', () => { confirmedPlaying = true; }, { once: true });
     const playPromise = ringAudioEl.play();
-    if (playPromise?.catch) playPromise.catch(() => playSynthRingtone(mode));
-  } catch (e) { playSynthRingtone(mode); }
+    if (playPromise?.catch) playPromise.catch((err) => fallback(err?.message || 'play() rejected'));
+    // Safety net: some browsers neither fire "error" nor reject play() for a missing/
+    // unsupported file — they just sit silently. If audio isn't actually flowing shortly
+    // after we asked it to play, fall back so the caller/callee always hears *something*.
+    ringFallbackTimer = setTimeout(() => { if (!confirmedPlaying) fallback('no audio confirmed within 700ms'); }, 700);
+  } catch (e) { fallback(e?.message || 'exception'); }
 }
 
 function stopRingtone() {
+  if (ringFallbackTimer) { clearTimeout(ringFallbackTimer); ringFallbackTimer = null; }
   if (ringAudioEl) { try { ringAudioEl.pause(); ringAudioEl.currentTime = 0; } catch (e) {} ringAudioEl = null; }
   try { if (ringtoneCtx) { ringtoneCtx.close(); ringtoneCtx = null; ringtoneNode = null; } } catch (e) {}
 }
