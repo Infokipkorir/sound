@@ -2170,54 +2170,69 @@ async function startCall(type) {
   try { localStream = await navigator.mediaDevices.getUserMedia(constraints); }
   catch (err) { showToast('err','bi-mic-mute','Permission Denied','Allow microphone access and try again.'); return; }
 
-  const roomId = crypto.randomUUID ? crypto.randomUUID() : 'r-' + Date.now();
-  const { data: callRow, error: callErr } = await sb.from('calls').insert({
-    caller_id:       currentUser.id,
-    receiver_id:     receiverId,
-    initiated_by:    currentUser.id,
-    conversation_id: activeConvId,
-    call_type:       type,
-    status:          'ringing',
-    room_id:         roomId,
-    started_at:      new Date().toISOString(),
-    caller_name:      employerProfile?.full_name || employerProfile?.company_name || 'Employer',
-    receiver_name:    name,
-    is_video_available: type === 'video',
-  }).select().single();
-
-  if (callErr) { showToast('err','bi-exclamation-circle','Call Failed', callErr.message); stopLocalStream(); return; }
-
-  activeCallId   = callRow.id;
+  // Show the "Calling…" screen the moment we have the mic — don't wait on the database
+  // round-trip, so the UI never sits silently in the background with the mic just on.
   activeCallType = type;
   activeCallRole = 'caller';
   activeCallPeer = name;
-
-  // Register ourselves as a participant so the call is reliably tracked through to the other end
-  await sb.from('call_participants').insert({ call_id: callRow.id, user_id: currentUser.id }).catch(() => {});
-
   showCallScreen(type, name, null, 'Calling…', 'caller');
-  subscribeCallSignaling(callRow.id, roomId);
-  await createPeerConnection(type);
-
-  const offer = await peerConnection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: type === 'video' });
-  await peerConnection.setLocalDescription(offer);
-  await sb.from('calls').update({ sdp_offer: JSON.stringify(offer) }).eq('id', callRow.id);
-
-  // Drop a chat message so realtime reaches the worker
-  await sb.from('messages').insert({
-    conversation_id: activeConvId,
-    sender_id:       currentUser.id,
-    msg_type:        'call',
-    call_type:       type,
-    call_status:     'initiated',
-    call_id:         callRow.id,
-    room_id:         roomId,
-    content: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
-    body:    `${type} call`,
-  }).catch(() => {});
-
   playRingtone('outgoing');
-  missedCallTimeout = setTimeout(() => missedCall(), 30000);
+
+  try {
+    const roomId = crypto.randomUUID ? crypto.randomUUID() : 'r-' + Date.now();
+    const { data: callRow, error: callErr } = await sb.from('calls').insert({
+      caller_id:       currentUser.id,
+      receiver_id:     receiverId,
+      initiated_by:    currentUser.id,
+      conversation_id: activeConvId,
+      call_type:       type,
+      status:          'ringing',
+      room_id:         roomId,
+      started_at:      new Date().toISOString(),
+      caller_name:     employerProfile?.full_name || employerProfile?.company_name || 'Employer',
+      receiver_name:   name,
+      is_video_available: type === 'video',
+    }).select().single();
+
+    if (callErr) throw new Error(callErr.message);
+
+    activeCallId = callRow.id;
+
+    // Register ourselves as a participant so the call is reliably tracked through to the other end
+    await sb.from('call_participants').insert({ call_id: callRow.id, user_id: currentUser.id }).catch(() => {});
+
+    subscribeCallSignaling(callRow.id, roomId);
+    await createPeerConnection(type);
+
+    const offer = await peerConnection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: type === 'video' });
+    await peerConnection.setLocalDescription(offer);
+    await sb.from('calls').update({ sdp_offer: JSON.stringify(offer) }).eq('id', callRow.id);
+
+    // Drop a chat message so realtime reaches the worker
+    await sb.from('messages').insert({
+      conversation_id: activeConvId,
+      sender_id:       currentUser.id,
+      msg_type:        'call',
+      call_type:       type,
+      call_status:     'initiated',
+      call_id:         callRow.id,
+      room_id:         roomId,
+      content: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
+      body:    `${type} call`,
+    }).catch(() => {});
+
+    missedCallTimeout = setTimeout(() => missedCall(), 30000);
+  } catch (err) {
+    console.error('[startCall] failed:', err);
+    showToast('err','bi-exclamation-circle','Call Failed', err?.message || 'Could not place the call. Check your connection and try again.');
+    document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
+    stopRingtone();
+    stopLocalStream();
+    if (peerConnection) { peerConnection.close(); peerConnection = null; }
+    if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
+    activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
+    updateUserCallStatus('online');
+  }
 }
 
 // ── 2. SHOW CALL SCREEN ──
@@ -2277,20 +2292,34 @@ async function acceptIncomingCall() {
   if (convId) activeConvId = convId;
   const constraints = callType === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
   try { localStream = await navigator.mediaDevices.getUserMedia(constraints); }
-  catch { showToast('err','bi-mic-mute','Permission Denied','Allow microphone to answer.'); return; }
+  catch { showToast('err','bi-mic-mute','Permission Denied','Allow microphone to answer.'); activeCallId = null; activeCallType = null; activeCallRole = null; return; }
+
   showCallScreen(callType, callerName, null, 'Connecting…', 'callee');
-  subscribeCallSignaling(callId, roomId);
-  await createPeerConnection(callType);
-  const { data: callRow } = await sb.from('calls').select('sdp_offer').eq('id', callId).single();
-  if (callRow?.sdp_offer) {
-    const offer = JSON.parse(callRow.sdp_offer);
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    await sb.from('calls').update({ status: 'accepted', sdp_answer: JSON.stringify(answer), answered_at: new Date().toISOString(), call_answered_at: new Date().toISOString() }).eq('id', callId);
+
+  try {
+    subscribeCallSignaling(callId, roomId);
+    await createPeerConnection(callType);
+    const { data: callRow, error: fetchErr } = await sb.from('calls').select('sdp_offer').eq('id', callId).single();
+    if (fetchErr) throw new Error(fetchErr.message);
+    if (callRow?.sdp_offer) {
+      const offer = JSON.parse(callRow.sdp_offer);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await sb.from('calls').update({ status: 'accepted', sdp_answer: JSON.stringify(answer), answered_at: new Date().toISOString(), call_answered_at: new Date().toISOString() }).eq('id', callId);
+    }
+    await sb.from('call_participants').insert({ call_id: callId, user_id: currentUser.id }).catch(() => {});
+    updateUserCallStatus('in_call');
+  } catch (err) {
+    console.error('[acceptIncomingCall] failed:', err);
+    showToast('err','bi-exclamation-circle','Call Failed', err?.message || 'Could not connect the call.');
+    document.getElementById(callType === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
+    stopLocalStream();
+    if (peerConnection) { peerConnection.close(); peerConnection = null; }
+    if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
+    activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
+    updateUserCallStatus('online');
   }
-  await sb.from('call_participants').insert({ call_id: callId, user_id: currentUser.id }).catch(() => {});
-  updateUserCallStatus('in_call');
 }
 
 // ── 5. DECLINE INCOMING CALL ──
@@ -2392,7 +2421,7 @@ function subscribeCallSignaling(callId, roomId) {
         catch (e) { console.warn('ICE error:', e); }
       }
     })
-    .subscribe();
+    .subscribe((status) => { if (status !== 'SUBSCRIBED') console.log(`[call-signal-${callId}] status:`, status); });
 }
 
 // ── 9. CALL TIMER ──
@@ -2578,8 +2607,10 @@ function playSynthRingtone(mode) {
 function stopLocalStream() { if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } }
 
 // ── 14. SUBSCRIBE TO INCOMING CALLS ──
+let incomingCallsChan = null;
 function subscribeIncomingCalls() {
-  sb.channel('incoming-calls-employer')
+  if (incomingCallsChan) { try { sb.removeChannel(incomingCallsChan); } catch (e) {} }
+  incomingCallsChan = sb.channel('incoming-calls-employer')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls', filter: `receiver_id=eq.${currentUser.id}` }, async (payload) => {
       const row = payload.new;
       if (row.status !== 'ringing') return;
@@ -2594,10 +2625,14 @@ function subscribeIncomingCalls() {
       const conv = allConvs.find(c => c.employee_id === row.caller_id || c.employer_id === row.caller_id);
       showIncomingCall(callerName, row.call_type || 'voice', conv?.id || null, row.id, row.room_id);
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[incoming-calls-employer] status:', status);
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('[incoming-calls-employer] realtime subscription failed — incoming calls from employees may not be delivered. Retrying…');
+        setTimeout(subscribeIncomingCalls, 3000);
+      }
+    });
 }
-
-// ── HOOK INTO INIT ──
 // Call subscribeIncomingCalls() after auth is confirmed
 const _origLoadAll = typeof loadAll === 'function' ? loadAll : null;
 document.addEventListener('DOMContentLoaded', () => {
