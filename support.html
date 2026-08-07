@@ -298,14 +298,43 @@
     <div class="ssc-center-note"><div class="ssc-spin"></div></div>
   </div>
 
-  <!-- Not logged in -->
-  <div class="ssc-view" id="viewGate">
+  <!-- Guest details gate: name / email / phone -->
+  <div class="ssc-view" id="viewStart">
+    <div class="ssc-form-wrap">
+      <div class="ssc-welcome" style="margin-bottom:1.1rem;">
+        <h2 style="font-size:1rem;">Let's get you help</h2>
+        <p>Share a few details so we know who we're talking to &mdash; if you already have a SoundsCare account we'll get you signed in.</p>
+      </div>
+      <form id="startForm" novalidate>
+        <div class="ssc-field" id="fieldStartName">
+          <label for="stName">Full name<span class="req">*</span></label>
+          <input type="text" id="stName" placeholder="e.g. Amina Wanjiru" required autocomplete="name">
+          <div class="ssc-field-error">Please enter your name.</div>
+        </div>
+        <div class="ssc-field" id="fieldStartEmail">
+          <label for="stEmail">Email address<span class="req">*</span></label>
+          <input type="email" id="stEmail" placeholder="you@example.com" required autocomplete="email">
+          <div class="ssc-field-error">Please enter a valid email address.</div>
+        </div>
+        <div class="ssc-field" id="fieldStartPhone">
+          <label for="stPhone">Phone number<span class="req">*</span></label>
+          <input type="tel" id="stPhone" placeholder="e.g. 0712 345 678" required autocomplete="tel">
+          <div class="ssc-field-error">Please enter your phone number.</div>
+        </div>
+        <button type="submit" class="ssc-btn-primary" id="stSubmitBtn"><i class="bi bi-arrow-right-circle"></i> Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Existing account detected for the entered email -->
+  <div class="ssc-view" id="viewAccountFound">
     <div class="ssc-center-note">
       <div class="ssc-gate-card">
-        <div class="ic"><i class="bi bi-lock"></i></div>
-        <h3>Log in to chat with us</h3>
-        <p>Support tickets are tied to your SoundsCare account, so please log in first &mdash; then we can see your ticket history and get you help faster.</p>
+        <div class="ic"><i class="bi bi-person-check"></i></div>
+        <h3>You already have an account</h3>
+        <p id="afMessage">That email is linked to a SoundsCare account. Log in so we can pull up your ticket history and reply to you securely.</p>
         <a class="ssc-btn-primary" id="sscLoginBtn" href="login.html"><i class="bi bi-box-arrow-in-right"></i> Log in</a>
+        <button class="ssc-mini-btn" id="afGuestBtn" style="width:100%; justify-content:center; margin-top:.6rem;">Continue without logging in</button>
       </div>
     </div>
   </div>
@@ -411,15 +440,28 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // support.html (SoundsCare)
-// Cloned from the Landmark Landscaping support widget, rebuilt against the
-// SoundsCare Supabase project. Landmark's version talked to anonymous,
-// per-browser `support_threads`/`support_messages` tables that don't exist
-// here. SoundsCare instead has a real ticket system: `support_tickets` +
-// `support_ticket_messages`, whose RLS only allows `authenticated` users
-// (ticket owner or an admin) — there is no anon-access policy on either
-// table. So unlike Landmark's public no-login chat, this widget requires an
-// active Supabase Auth session and is meant to be embedded inside the
-// logged-in employee/employer dashboard, not a public marketing page.
+//
+// Two ways in:
+//  1. Logged-in visitors (real Supabase Auth session) keep the original
+//     flow: ticket list + history, reading/writing support_tickets and
+//     support_ticket_messages directly under RLS (owner or admin only).
+//  2. Everyone else sees a short "name / email / phone" form first. We
+//     check the email against existing accounts via check_email_exists(),
+//     a SECURITY DEFINER RPC that returns a boolean and nothing else — no
+//     profile data, and no automatic sign-in. If it matches an account we
+//     send the visitor to a real login (password / magic link); we never
+//     treat "typed a matching email" as proof of identity. If it doesn't
+//     match, they continue as a guest: a ticket is created via
+//     create_guest_ticket(), another SECURITY DEFINER RPC, which returns a
+//     random per-ticket guest_token. That token — not the email/name/phone
+//     — is the credential that gates reading and replying to that one
+//     ticket afterwards (get_guest_ticket / send_guest_message /
+//     guest_request_human / guest_update_ticket_status). It's stored in
+//     localStorage so a page refresh doesn't strand the visitor.
+//
+//     These RPCs are not created by this file — see the accompanying
+//     support_backend_migration.sql, which needs to be run once against
+//     the Supabase project before the guest flow will work.
 //
 // "Human joined" detection: support_tickets.assigned_admin_id is the real
 // signal that a human has taken ownership of a ticket (set from the admin
@@ -427,6 +469,8 @@
 // as sender_type='admin' — the DB check constraint only allows 'user' or
 // 'admin' — but they do NOT set assigned_admin_id, so the "waiting for a
 // human" banner stays accurate regardless of how many auto-replies land.
+// Guest auto-replies go through send_guest_bot_reply() instead of a direct
+// insert, since guests don't have table-level write access.
 
 (function(){
   'use strict';
@@ -446,10 +490,21 @@
     headDot: document.getElementById('sscHeadDot'),
 
     viewLoading: document.getElementById('viewLoading'),
-    viewGate: document.getElementById('viewGate'),
+    viewStart: document.getElementById('viewStart'),
+    viewAccountFound: document.getElementById('viewAccountFound'),
     viewList: document.getElementById('viewList'),
     viewNew: document.getElementById('viewNew'),
     viewThread: document.getElementById('viewThread'),
+
+    startForm: document.getElementById('startForm'),
+    stName: document.getElementById('stName'),
+    stEmail: document.getElementById('stEmail'),
+    stPhone: document.getElementById('stPhone'),
+    stSubmitBtn: document.getElementById('stSubmitBtn'),
+
+    afMessage: document.getElementById('afMessage'),
+    loginBtn: document.getElementById('sscLoginBtn'),
+    afGuestBtn: document.getElementById('afGuestBtn'),
 
     listGreeting: document.getElementById('listGreeting'),
     newTicketBtn: document.getElementById('sscNewTicketBtn'),
@@ -477,7 +532,7 @@
     sendBtn: document.getElementById('sscSendBtn')
   };
 
-  var currentUser = null;   // auth user
+  var currentUser = null;   // auth user (real logged-in session)
   var currentProfile = null; // row from public.users
   var currentTicket = null; // full ticket row while in thread view
   var msgChannel = null;
@@ -485,11 +540,21 @@
   var renderedIds = {};
   var selectedPriority = 'normal';
 
+  // Guest flow state — used when the visitor is not logged in. Filled in
+  // from the "Let's get you help" form. guestTicket holds {id, token} for
+  // an unauthenticated ticket created via the create_guest_ticket RPC; the
+  // token is a capability credential (not a password) that gates read/send
+  // access to that one ticket via SECURITY DEFINER RPCs — it is never used
+  // to grant access to anyone else's account.
+  var guestInfo = null;      // { name, email, phone }
+  var guestTicket = null;    // { id, token }
+  var guestPollTimer = null;
+
   function showView(name){
-    ['viewLoading','viewGate','viewList','viewNew','viewThread'].forEach(function(v){
+    ['viewLoading','viewStart','viewAccountFound','viewList','viewNew','viewThread'].forEach(function(v){
       el[v].classList.toggle('active', v === name);
     });
-    el.backBtn.style.display = (name === 'viewNew' || name === 'viewThread') ? 'flex' : 'none';
+    el.backBtn.style.display = (name === 'viewNew' || name === 'viewThread' || name === 'viewAccountFound') ? 'flex' : 'none';
   }
 
   function closePanel(){
@@ -506,11 +571,19 @@
   el.backBtn.addEventListener('click', function(){
     if (el.viewThread.classList.contains('active')){
       teardownTicketSubscriptions();
+      stopGuestPolling();
       currentTicket = null;
-      loadTicketList();
-      showView('viewList');
+      if (currentUser){
+        loadTicketList();
+        showView('viewList');
+      } else {
+        guestTicket = null;
+        showView('viewStart');
+      }
     } else if (el.viewNew.classList.contains('active')){
-      showView('viewList');
+      showView(currentUser ? 'viewList' : 'viewStart');
+    } else if (el.viewAccountFound.classList.contains('active')){
+      showView('viewStart');
     } else {
       closePanel();
     }
@@ -533,7 +606,15 @@
       var { data: sessionData } = await sb.auth.getSession();
       var session = sessionData && sessionData.session;
       if (!session){
-        showView('viewGate');
+        var restored = null;
+        try{ restored = JSON.parse(localStorage.getItem('ssc_guest_ticket') || 'null'); }catch(e){}
+        if (restored && restored.id && restored.token){
+          guestTicket = restored;
+          try{ await enterGuestTicket(); return; }
+          catch(e){ guestTicket = null; }
+        }
+        showView('viewStart');
+        el.stName.focus();
         return;
       }
       currentUser = session.user;
@@ -551,16 +632,84 @@
       showView('viewList');
     }catch(err){
       console.error('Support widget init failed:', err);
-      showView('viewGate');
+      showView('viewStart');
     }
   }
 
   sb.auth.onAuthStateChange(function(event, session){
     if (event === 'SIGNED_OUT'){
       teardownTicketSubscriptions();
+      stopGuestPolling();
       currentUser = null;
-      showView('viewGate');
+      showView('viewStart');
     }
+  });
+
+  // ---------------------------------------------------------------------
+  // Guest details gate ("Let's get you help")
+  // ---------------------------------------------------------------------
+  // We only ever ask the backend a yes/no question — "does an account
+  // exist for this email?" — via the check_email_exists() RPC, which is
+  // defined to return a boolean and nothing else (no name, no profile
+  // data). We never sign the visitor into that account automatically:
+  // typing someone else's email does not grant access to their tickets.
+  // If a match is found we send them to a real login (password/magic
+  // link), same as before. Only once email ownership is proven that way
+  // does the ticket-history view become available.
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function validateStartForm(){
+    var valid = true;
+    var checks = [
+      { input: el.stName, wrap: document.getElementById('fieldStartName'), ok: (el.stName.value||'').trim().length > 0 },
+      { input: el.stEmail, wrap: document.getElementById('fieldStartEmail'), ok: EMAIL_RE.test((el.stEmail.value||'').trim()) },
+      { input: el.stPhone, wrap: document.getElementById('fieldStartPhone'), ok: (el.stPhone.value||'').replace(/[^\d+]/g,'').length >= 7 }
+    ];
+    checks.forEach(function(c){
+      c.wrap.classList.toggle('error', !c.ok);
+      if (!c.ok) valid = false;
+    });
+    return valid;
+  }
+  [el.stName, el.stEmail, el.stPhone].forEach(function(input){
+    input.addEventListener('input', function(){ input.closest('.ssc-field').classList.remove('error'); });
+  });
+
+  el.startForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!validateStartForm()) return;
+
+    var name = el.stName.value.trim();
+    var email = el.stEmail.value.trim().toLowerCase();
+    var phone = el.stPhone.value.trim();
+    guestInfo = { name: name, email: email, phone: phone };
+
+    el.stSubmitBtn.disabled = true;
+    el.stSubmitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Checking…';
+    try{
+      var { data: exists, error } = await sb.rpc('check_email_exists', { p_email: email });
+      if (error) throw error;
+
+      if (exists){
+        el.afMessage.textContent = 'The email ' + email + ' is linked to a SoundsCare account. Log in so we can pull up your ticket history and reply to you securely.';
+        el.loginBtn.href = 'login.html?email=' + encodeURIComponent(email);
+        showView('viewAccountFound');
+      } else {
+        openNewTicketForm(null, null);
+      }
+    }catch(err){
+      // If we can't reach the check, don't block the visitor — just
+      // continue as a guest rather than getting stuck on an error.
+      console.error('Could not check email:', err);
+      openNewTicketForm(null, null);
+    }finally{
+      el.stSubmitBtn.disabled = false;
+      el.stSubmitBtn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Continue';
+    }
+  });
+
+  el.afGuestBtn.addEventListener('click', function(){
+    openNewTicketForm(null, null);
   });
 
   // ---------------------------------------------------------------------
@@ -628,6 +777,20 @@
     });
     if (prefillSubject) el.ntSubject.value = prefillSubject;
     if (prefillCategory) el.ntCategory.value = prefillCategory;
+
+    var noteEl = document.getElementById('ntGuestNote');
+    if (!currentUser && guestInfo){
+      if (!noteEl){
+        noteEl = document.createElement('p');
+        noteEl.id = 'ntGuestNote';
+        noteEl.style.cssText = 'font-size:.78rem;color:var(--ink-soft);margin:-.6rem 0 1rem;';
+        el.ntForm.parentNode.insertBefore(noteEl, el.ntForm);
+      }
+      noteEl.textContent = 'Sending as ' + guestInfo.name + ' (' + guestInfo.email + ', ' + guestInfo.phone + ').';
+    } else if (noteEl){
+      noteEl.remove();
+    }
+
     showView('viewNew');
     el.ntMessage.focus();
   }
@@ -663,29 +826,52 @@
   el.ntForm.addEventListener('submit', async function(e){
     e.preventDefault();
     if (!validateNewTicket()) return;
-    if (!currentUser) { showView('viewGate'); return; }
+    if (!currentUser && !guestInfo) { showView('viewStart'); return; }
 
+    var msgText = el.ntMessage.value.trim();
     el.ntSubmitBtn.disabled = true;
     try{
-      var { data: ticket, error } = await sb.from('support_tickets').insert({
-        user_id: currentUser.id,
-        subject: el.ntSubject.value.trim(),
-        category: el.ntCategory.value,
-        priority: selectedPriority
-      }).select('id, subject, category, priority, status, assigned_admin_id, created_at, updated_at').single();
-      if (error) throw error;
+      if (currentUser){
+        var { data: ticket, error } = await sb.from('support_tickets').insert({
+          user_id: currentUser.id,
+          subject: el.ntSubject.value.trim(),
+          category: el.ntCategory.value,
+          priority: selectedPriority
+        }).select('id, subject, category, priority, status, assigned_admin_id, created_at, updated_at').single();
+        if (error) throw error;
 
-      var msgText = el.ntMessage.value.trim();
-      var { error: msgErr } = await sb.from('support_ticket_messages').insert({
-        ticket_id: ticket.id,
-        sender_id: currentUser.id,
-        sender_type: 'user',
-        message: msgText
-      });
-      if (msgErr) throw msgErr;
+        var { error: msgErr } = await sb.from('support_ticket_messages').insert({
+          ticket_id: ticket.id,
+          sender_id: currentUser.id,
+          sender_type: 'user',
+          message: msgText
+        });
+        if (msgErr) throw msgErr;
 
-      await enterTicket(ticket);
-      sendAutoReply(ticket.id, msgText);
+        await enterTicket(ticket);
+        sendAutoReply(ticket.id, msgText);
+      } else {
+        // Guest path: create_guest_ticket() is a SECURITY DEFINER RPC that
+        // inserts the ticket + first message and hands back a per-ticket
+        // access token. That token (not the email/name/phone) is what
+        // authorizes reading and replying to this one ticket afterwards.
+        var { data: rows, error: gErr } = await sb.rpc('create_guest_ticket', {
+          p_name: guestInfo.name,
+          p_email: guestInfo.email,
+          p_phone: guestInfo.phone,
+          p_subject: el.ntSubject.value.trim(),
+          p_category: el.ntCategory.value,
+          p_priority: selectedPriority,
+          p_message: msgText
+        });
+        if (gErr) throw gErr;
+        var row = Array.isArray(rows) ? rows[0] : rows;
+        guestTicket = { id: row.id, token: row.guest_token };
+        try{ localStorage.setItem('ssc_guest_ticket', JSON.stringify(guestTicket)); }catch(e){}
+
+        await enterGuestTicket();
+        sendGuestAutoReply(msgText);
+      }
     }catch(err){
       console.error('Failed to create ticket:', err);
       alert('Could not submit your ticket right now — please try again in a moment.');
@@ -737,6 +923,44 @@
     el.input.focus();
   }
 
+  // Guest thread: anon connections don't get a realtime channel (we
+  // deliberately did not grant anon SELECT on the ticket tables — see
+  // note above), so we poll the get_guest_ticket() RPC on an interval
+  // instead. renderMessage()'s renderedIds dedup means re-polling is safe.
+  async function enterGuestTicket(){
+    renderedIds = {};
+    el.thread.innerHTML = '';
+    showView('viewThread');
+    el.input.disabled = false;
+    await refreshGuestTicket(true);
+    stopGuestPolling();
+    guestPollTimer = setInterval(function(){ refreshGuestTicket(false); }, 4000);
+    el.input.focus();
+  }
+
+  async function refreshGuestTicket(scrollAfter){
+    if (!guestTicket) return;
+    try{
+      var { data, error } = await sb.rpc('get_guest_ticket', {
+        p_ticket_id: guestTicket.id, p_token: guestTicket.token
+      });
+      if (error) throw error;
+      currentTicket = data.ticket;
+      el.threadTitle.textContent = currentTicket.subject || 'Ticket';
+      updateThreadSub();
+      updateHumanBanner();
+      updateResolveBtn();
+      (data.messages || []).forEach(renderMessage);
+      if (scrollAfter) scrollThreadToBottom();
+    }catch(err){
+      console.error('Could not refresh guest ticket:', err);
+    }
+  }
+
+  function stopGuestPolling(){
+    if (guestPollTimer){ clearInterval(guestPollTimer); guestPollTimer = null; }
+  }
+
   function updateThreadSub(){
     var bits = [(currentTicket.category || 'General')];
     bits.push((currentTicket.status || 'open').replace('_',' '));
@@ -769,14 +993,23 @@
   el.resolveBtn.addEventListener('click', async function(){
     if (!currentTicket) return;
     var closed = currentTicket.status === 'resolved' || currentTicket.status === 'closed';
-    var patch = closed
-      ? { status: 'open', closed_at: null }
-      : { status: 'resolved', closed_at: new Date().toISOString() };
+    var newStatus = closed ? 'open' : 'resolved';
     try{
-      var { error } = await sb.from('support_tickets').update(patch).eq('id', currentTicket.id);
-      if (error) throw error;
-      currentTicket.status = patch.status;
-      currentTicket.closed_at = patch.closed_at;
+      if (currentUser){
+        var patch = closed
+          ? { status: 'open', closed_at: null }
+          : { status: 'resolved', closed_at: new Date().toISOString() };
+        var { error } = await sb.from('support_tickets').update(patch).eq('id', currentTicket.id);
+        if (error) throw error;
+        currentTicket.status = patch.status;
+        currentTicket.closed_at = patch.closed_at;
+      } else if (guestTicket) {
+        var { error: gErr } = await sb.rpc('guest_update_ticket_status', {
+          p_ticket_id: guestTicket.id, p_token: guestTicket.token, p_status: newStatus
+        });
+        if (gErr) throw gErr;
+        currentTicket.status = newStatus;
+      }
       updateThreadSub();
       updateResolveBtn();
     }catch(err){
@@ -788,14 +1021,22 @@
     if (!currentTicket) return;
     el.requestHumanBtn.disabled = true;
     try{
-      await sb.from('support_ticket_messages').insert({
-        ticket_id: currentTicket.id,
-        sender_id: currentUser.id,
-        sender_type: 'user',
-        message: "🙋 I'd like to speak with a human team member, please."
-      });
       var newPriority = (currentTicket.priority === 'urgent') ? 'urgent' : 'high';
-      await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress' }).eq('id', currentTicket.id);
+      if (currentUser){
+        await sb.from('support_ticket_messages').insert({
+          ticket_id: currentTicket.id,
+          sender_id: currentUser.id,
+          sender_type: 'user',
+          message: "🙋 I'd like to speak with a human team member, please."
+        });
+        await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress' }).eq('id', currentTicket.id);
+      } else if (guestTicket) {
+        var { error: gErr } = await sb.rpc('guest_request_human', {
+          p_ticket_id: guestTicket.id, p_token: guestTicket.token
+        });
+        if (gErr) throw gErr;
+        await refreshGuestTicket(false);
+      }
       currentTicket.priority = newPriority;
       currentTicket.status = 'in_progress';
       updateThreadSub();
@@ -874,30 +1115,43 @@
 
   async function sendMessage(text){
     text = (text || '').trim();
-    if (!text || !currentTicket || !currentUser) return;
+    if (!text || !currentTicket) return;
+    if (!currentUser && !guestTicket) return;
 
     el.sendBtn.disabled = true;
     try{
-      var { data: row, error } = await sb.from('support_ticket_messages').insert({
-        ticket_id: currentTicket.id,
-        sender_id: currentUser.id,
-        sender_type: 'user',
-        message: text
-      }).select('id, sender_id, sender_type, message, created_at').single();
-      if (error) throw error;
-      renderMessage(row);
+      if (currentUser){
+        var { data: row, error } = await sb.from('support_ticket_messages').insert({
+          ticket_id: currentTicket.id,
+          sender_id: currentUser.id,
+          sender_type: 'user',
+          message: text
+        }).select('id, sender_id, sender_type, message, created_at').single();
+        if (error) throw error;
+        renderMessage(row);
 
-      if (currentTicket.status === 'resolved' || currentTicket.status === 'closed'){
-        await sb.from('support_tickets').update({ status: 'open', closed_at: null }).eq('id', currentTicket.id);
-        currentTicket.status = 'open'; currentTicket.closed_at = null;
-        updateThreadSub(); updateResolveBtn();
-      }
+        if (currentTicket.status === 'resolved' || currentTicket.status === 'closed'){
+          await sb.from('support_tickets').update({ status: 'open', closed_at: null }).eq('id', currentTicket.id);
+          currentTicket.status = 'open'; currentTicket.closed_at = null;
+          updateThreadSub(); updateResolveBtn();
+        }
 
-      // Only send the local rule-based auto-reply while no human has taken
-      // the ticket yet — once assigned_admin_id is set, a real person is
-      // handling it and the bot should stay quiet.
-      if (!currentTicket.assigned_admin_id){
-        sendAutoReply(currentTicket.id, text);
+        // Only send the local rule-based auto-reply while no human has taken
+        // the ticket yet — once assigned_admin_id is set, a real person is
+        // handling it and the bot should stay quiet.
+        if (!currentTicket.assigned_admin_id){
+          sendAutoReply(currentTicket.id, text);
+        }
+      } else {
+        var { data: gRow, error: gErr } = await sb.rpc('send_guest_message', {
+          p_ticket_id: guestTicket.id, p_token: guestTicket.token, p_message: text
+        });
+        if (gErr) throw gErr;
+        renderMessage(gRow);
+
+        if (!currentTicket.assigned_admin_id){
+          sendGuestAutoReply(text);
+        }
       }
     }catch(err){
       console.error('Failed to send message:', err);
@@ -982,6 +1236,26 @@
       if (currentTicket && currentTicket.id === ticketId) renderMessage(row);
     }catch(err){
       console.warn('Could not persist auto-reply:', err);
+    }
+  }
+
+  async function sendGuestAutoReply(visitorText){
+    if (!guestTicket) return;
+    var ticketId = guestTicket.id;
+    var reply = buildAutoReply(visitorText);
+    showTyping(true);
+    var delay = 700 + Math.random()*700;
+    await new Promise(function(resolve){ setTimeout(resolve, delay); });
+    showTyping(false);
+
+    try{
+      var { data: row, error } = await sb.rpc('send_guest_bot_reply', {
+        p_ticket_id: ticketId, p_token: guestTicket.token, p_message: reply
+      });
+      if (error) throw error;
+      if (guestTicket && guestTicket.id === ticketId) renderMessage(row);
+    }catch(err){
+      console.warn('Could not persist guest auto-reply:', err);
     }
   }
 
