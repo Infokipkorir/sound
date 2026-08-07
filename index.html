@@ -407,6 +407,33 @@
     .cookie-accept{background:var(--green);color:#fff;border:none;border-radius:7px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
     .cookie-decline{background:transparent;color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 
+    /* ── SUPPORT WIDGET (woman icon) ── */
+    #ssc-support-fab{
+      position:fixed;bottom:1.5rem;right:1.5rem;z-index:9998;
+      width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--green) 0%,var(--green-mid) 100%);
+      box-shadow:0 8px 26px rgba(20,92,71,.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;line-height:1;transition:transform .25s ease,box-shadow .25s ease;
+    }
+    #ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(20,92,71,.48)}
+    #ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2ECC71;border:2px solid #fff}
+    #ssc-support-panel{
+      position:fixed;bottom:5.8rem;right:1.5rem;z-index:9998;
+      width:380px;height:600px;max-height:calc(100vh - 8rem);
+      border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
+      display:none;background:#fff;
+    }
+    #ssc-support-panel.open{display:block;animation:sscPanelIn .28s ease}
+    #ssc-support-panel iframe{width:100%;height:100%;border:0;display:block}
+    @keyframes sscPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @media(max-width:480px){
+      #ssc-support-panel{
+        width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0;
+      }
+      #ssc-support-fab{bottom:1.1rem;right:1.1rem}
+    }
+
     /* ── FOOTER ── */
     .footer{background:var(--dark-bg);color:#fff;padding:2.5rem 1.5rem;text-align:center;margin-top:3rem}
     .footer-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#78d9b4;margin-bottom:.5rem}
@@ -806,9 +833,49 @@
   </div>
 </div>
 
-<!-- TAWK.TO -->
+<!-- SUPPORT WIDGET (woman icon) -->
+<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
+  <span aria-hidden="true">&#128105;&#8205;&#128188;</span>
+  <span class="dot"></span>
+</button>
+<div id="ssc-support-panel">
+  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
+</div>
+
+<script>
+(function(){
+  var fab = document.getElementById('ssc-support-fab');
+  var panel = document.getElementById('ssc-support-panel');
+  var frame = document.getElementById('ssc-support-iframe');
+  var loaded = false;
+
+  function openPanel(){
+    if (!loaded){ frame.src = 'support.html'; loaded = true; }
+    panel.classList.add('open');
+    fab.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    fab.setAttribute('aria-expanded', 'false');
+  }
+  function togglePanel(){
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  }
+
+  fab.addEventListener('click', togglePanel);
+
+  // support.html posts this when its own close button is used inside the iframe
+  window.addEventListener('message', function(e){
+    if (e.data === 'soundscare-support:close') closePanel();
+  });
+})();
+</script>
+
+<!-- TAWK.TO (script kept for backend/session use; visible chat icon hidden — the
+     woman-icon support widget above is now the primary chat entry point) -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
+Tawk_API.onLoad = function(){ Tawk_API.hideWidget(); };
 (function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
 s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
 s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
