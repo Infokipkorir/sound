@@ -1088,6 +1088,29 @@
     .reply-preview-text { flex: 1; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .reply-preview-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; }
 
+    /* ── SUPPORT WIDGET (woman icon) — placed bottom-left since Tawk's
+       live bubble stays active bottom-right for the existing application
+       support handoff (Tawk_API.maximize() elsewhere in this file) ── */
+    #ssc-support-fab{
+      position:fixed;bottom:1.5rem;left:1.5rem;z-index:9995;
+      width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);
+      box-shadow:0 8px 26px rgba(19,79,51,.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;line-height:1;transition:transform .25s ease,box-shadow .25s ease;
+    }
+    #ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(19,79,51,.48)}
+    #ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2ECC71;border:2px solid #fff}
+    #ssc-support-panel{
+      position:fixed;bottom:5.8rem;left:1.5rem;z-index:9995;
+      width:380px;height:600px;max-height:calc(100vh - 8rem);
+      border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
+      display:none;background:#fff;
+    }
+    #ssc-support-panel.open{display:block;animation:sscPanelIn .28s ease}
+    #ssc-support-panel iframe{width:100%;height:100%;border:0;display:block}
+    @keyframes sscPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
     @media (max-width: 700px) {
       .chat-sidebar { display: none; }
       .chat-split { height: auto; flex-direction: column; }
@@ -1095,6 +1118,10 @@
       .conversation { max-height: 320px; }
       .call-overlay { padding: 1rem; }
       .avail-grid { grid-template-columns: 1fr; }
+    }
+    @media(max-width:480px){
+      #ssc-support-panel{width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0;}
+      #ssc-support-fab{bottom:1.1rem;left:1.1rem}
     }
   </style>
 </head>
@@ -2261,6 +2288,43 @@
     </div>
   </div>
 </div>
+
+<!-- SUPPORT WIDGET (woman icon) -->
+<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
+  <span aria-hidden="true">&#128105;&#8205;&#128188;</span>
+  <span class="dot"></span>
+</button>
+<div id="ssc-support-panel">
+  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
+</div>
+
+<script>
+(function(){
+  var fab = document.getElementById('ssc-support-fab');
+  var panel = document.getElementById('ssc-support-panel');
+  var frame = document.getElementById('ssc-support-iframe');
+  var loaded = false;
+
+  function openPanel(){
+    if (!loaded){ frame.src = 'support.html'; loaded = true; }
+    panel.classList.add('open');
+    fab.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    fab.setAttribute('aria-expanded', 'false');
+  }
+  function togglePanel(){
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  }
+
+  fab.addEventListener('click', togglePanel);
+
+  window.addEventListener('message', function(e){
+    if (e.data === 'soundscare-support:close') closePanel();
+  });
+})();
+</script>
 
 <!-- TAWK.TO LIVE SUPPORT -->
 <!--Start of Tawk.to Script-->

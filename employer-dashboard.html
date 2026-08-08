@@ -457,7 +457,30 @@ tr:hover td{background:rgba(27,107,69,.02);}
 .status-pill.status-offline{background:rgba(156,163,175,.12);color:var(--gray);}
 .status-pill.status-in_call{background:rgba(139,92,246,.12);color:var(--violet);}
 .status-pill.status-busy{background:rgba(244,63,94,.12);color:var(--rose);}
-.status-pill .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.status-pill .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}/* ── SUPPORT WIDGET (woman icon) ── */
+#ssc-support-fab{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:9995;
+  width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);
+  box-shadow:0 8px 26px rgba(19,79,51,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;line-height:1;transition:transform .25s ease,box-shadow .25s ease;
+}
+#ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(19,79,51,.48)}
+#ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2ECC71;border:2px solid #fff}
+#ssc-support-panel{
+  position:fixed;bottom:5.8rem;right:1.5rem;z-index:9995;
+  width:380px;height:600px;max-height:calc(100vh - 8rem);
+  border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
+  display:none;background:#fff;
+}
+#ssc-support-panel.open{display:block;animation:sscPanelIn .28s ease}
+#ssc-support-panel iframe{width:100%;height:100%;border:0;display:block}
+@keyframes sscPanelIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:480px){
+  #ssc-support-panel{width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0;}
+  #ssc-support-fab{bottom:1.1rem;right:1.1rem}
+}
 </style>
 </head>
 <body>
@@ -2827,6 +2850,42 @@ const __callPatch = setInterval(() => {
     </div>
   </div>
 </div>
+<!-- SUPPORT WIDGET (woman icon) -->
+<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
+  <span aria-hidden="true">&#128105;&#8205;&#128188;</span>
+  <span class="dot"></span>
+</button>
+<div id="ssc-support-panel">
+  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
+</div>
+
+<script>
+(function(){
+  var fab = document.getElementById('ssc-support-fab');
+  var panel = document.getElementById('ssc-support-panel');
+  var frame = document.getElementById('ssc-support-iframe');
+  var loaded = false;
+
+  function openPanel(){
+    if (!loaded){ frame.src = 'support.html'; loaded = true; }
+    panel.classList.add('open');
+    fab.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    fab.setAttribute('aria-expanded', 'false');
+  }
+  function togglePanel(){
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  }
+
+  fab.addEventListener('click', togglePanel);
+
+  window.addEventListener('message', function(e){
+    if (e.data === 'soundscare-support:close') closePanel();
+  });
+})();
+</script>
 
 </body>
 </html>
