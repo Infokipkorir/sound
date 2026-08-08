@@ -1393,7 +1393,10 @@ function renderTick(status) {
 // ── SEND MESSAGE ──
 async function sendMsg(convId) {
   const conv = allConvs.find(c => c.id === convId);
-  if (!conv || conv.status === 'closed' || conv.employer_blocked || conv.employee_blocked || conv.not_interested_at) return;
+  if (!conv) { showToast('err', 'bi-exclamation-circle', 'Send Failed', 'DIAG: conversation not found in allConvs for id ' + convId); return; }
+  if (conv.status === 'closed') { showToast('err', 'bi-lock-fill', 'Conversation Closed', 'DIAG: blocked by status=closed guard'); return; }
+  if (conv.employer_blocked || conv.employee_blocked) { showToast('err', 'bi-slash-circle-fill', 'Blocked', 'DIAG: blocked by employer_blocked/employee_blocked guard'); return; }
+  if (conv.not_interested_at) { showToast('err', 'bi-hand-thumbs-down-fill', 'Marked Not Interested', 'DIAG: blocked by not_interested_at guard'); return; }
   const input = document.getElementById('chat-input-text');
   const text = input.value.trim();
   if (!text) return;
@@ -1405,21 +1408,31 @@ async function sendMsg(convId) {
   convMessages[convId].push({ id: tmpId, from: 'employer', text, t: Date.now(), status: 'waiting' });
   renderMessages(convId);
 
-  const { data: newMsg, error } = await sb.from('messages').insert({
-    conversation_id: convId,
-    sender_id: currentUser.id,
-    body: text,
-    sender_type: 'employer',
-    delivery_status: 'sent',
-    employer_id: currentUser.id,
-  }).select('id,created_at,delivery_status').maybeSingle();
+  let newMsg, error;
+  try {
+    ({ data: newMsg, error } = await sb.from('messages').insert({
+      conversation_id: convId,
+      sender_id: currentUser.id,
+      body: text,
+      sender_type: 'employer',
+      delivery_status: 'sent',
+      employer_id: currentUser.id,
+    }).select('id,created_at,delivery_status').maybeSingle());
+  } catch (ex) {
+    const msgs = convMessages[convId];
+    const tmp = msgs.find(m => m.id === tmpId);
+    if (tmp) tmp.status = 'waiting';
+    renderMessages(convId);
+    showToast('err', 'bi-x-circle', 'Send Failed', 'DIAG: network/JS exception — ' + (ex?.message || String(ex)));
+    return;
+  }
 
   if (error) {
     const msgs = convMessages[convId];
     const tmp = msgs.find(m => m.id === tmpId);
     if (tmp) tmp.status = 'waiting';
     renderMessages(convId);
-    showToast('err', 'bi-x-circle', 'Send Failed', error.message);
+    showToast('err', 'bi-x-circle', 'Send Failed', 'DIAG: ' + error.message);
     return;
   }
 
@@ -1433,7 +1446,7 @@ async function sendMsg(convId) {
     last_message_text: text,
     last_message_at: new Date().toISOString(),
     employer_unread: 0,
-    employee_unread: conv.employee_unread || 0 + 1,
+    employee_unread: (conv.employee_unread || 0) + 1,
   }).eq('id', convId);
 
   conv.last_message_text = text;

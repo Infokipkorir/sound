@@ -5416,8 +5416,10 @@ async function sendMessageReply() {
   const input = document.getElementById('msg-reply');
   const text = input.value.trim();
 
-  if (!text || !activeConvId) return;
-  if (activeConvMeta?.status === 'closed' || activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) return;
+  if (!text) return;
+  if (!activeConvId) { showToast('err', 'bi-exclamation-circle', 'Send Failed', 'DIAG: activeConvId is not set — no conversation is open'); return; }
+  if (activeConvMeta?.status === 'closed') { showToast('err', 'bi-lock-fill', 'Conversation Closed', 'DIAG: blocked by status=closed guard'); return; }
+  if (activeConvMeta?.employer_blocked || activeConvMeta?.employee_blocked) { showToast('err', 'bi-slash-circle-fill', 'Blocked', 'DIAG: blocked by employer_blocked/employee_blocked guard'); return; }
 
   const sendBtn = document.getElementById('send-btn');
   sendBtn.disabled = true;
@@ -5441,18 +5443,26 @@ async function sendMessageReply() {
   }));
   convEl.scrollTop = convEl.scrollHeight;
 
-  const { error } = await sb.from('messages').insert({
-    conversation_id: activeConvId,
-    sender_id: currentUser.id,
-    body: fullText,
-    content: fullText,
-    is_read: false,
-    delivery_status: 'sent',
-    msg_type: 'text',
-  });
+  let error;
+  try {
+    ({ error } = await sb.from('messages').insert({
+      conversation_id: activeConvId,
+      sender_id: currentUser.id,
+      body: fullText,
+      content: fullText,
+      is_read: false,
+      delivery_status: 'sent',
+      msg_type: 'text',
+    }));
+  } catch (ex) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'DIAG: network/JS exception — ' + (ex?.message || String(ex)));
+    document.querySelector(`[data-id="${tempId}"]`)?.remove();
+    sendBtn.disabled = false;
+    return;
+  }
 
   if (error) {
-    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    showToast('err', 'bi-exclamation-circle', 'Error', 'DIAG: ' + error.message);
     document.querySelector(`[data-id="${tempId}"]`)?.remove();
   } else {
     await sb.from('conversations').update({
