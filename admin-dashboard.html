@@ -248,6 +248,10 @@ tr:hover td { background: rgba(27,107,69,.02); }
 .doc-thumb img:hover { opacity: .85; }
 .doc-thumb button.doc-label-btn { display: block; width: 100%; padding: 6px 10px; font-size: 11px; color: var(--brand); text-align: center; text-decoration: none; font-weight: 600; background: none; border: none; border-top: 1px solid var(--border); cursor: pointer; font-family: inherit; }
 .doc-thumb button.doc-label-btn:hover { background: var(--brand-soft); }
+.ssc-doc-loading { background: linear-gradient(90deg,#eee 25%,#f5f5f5 37%,#eee 63%); background-size: 400% 100%; animation: ssc-doc-shimmer 1.4s ease infinite; }
+@keyframes ssc-doc-shimmer { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+.doc-thumb.ssc-doc-failed { display:flex; align-items:center; justify-content:center; background:#f8f8f8; }
+.doc-thumb.ssc-doc-failed i { font-size:22px; color:var(--muted); }
 
 /* IMAGE LIGHTBOX (in-dashboard document/photo viewer) */
 #lightbox-overlay { position: fixed; inset: 0; background: rgba(10,15,20,.92); z-index: 9000; display: flex; align-items: center; justify-content: center; }
@@ -1389,12 +1393,14 @@ async function handleLogin(e){
     if (!data) { showErr('Invalid username or password.'); return; }
     adminRecord = data;
     currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
-    localStorage.setItem('sc_admin_session', JSON.stringify({ id: data.id, username: data.username, role: data.role, badge: data.badge }));
+    // Intentionally NOT persisted to localStorage/sessionStorage — a page
+    // refresh should always require the admin to sign in again.
     document.getElementById('auth-overlay').classList.add('hidden');
     document.getElementById('sb-admin-name').textContent = data.username;
     document.getElementById('sb-avatar').textContent = getInitials(data.username);
     loadAll();
     setupRealtimeSubscriptions();
+    ensureNotifPermission();
   } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
 }
 function toggleAdminPw(){
@@ -1407,33 +1413,13 @@ async function handleLogout(){
   teardownRealtimeSubscriptions();
   adminRecord = null;
   currentUser = null;
-  localStorage.removeItem('sc_admin_session');
   document.getElementById('auth-overlay').classList.remove('hidden');
   document.getElementById('auth-email').value = '';
   document.getElementById('auth-password').value = '';
 }
-(async()=>{
-  // Restore session from localStorage
-  const stored = localStorage.getItem('sc_admin_session');
-  if (stored) {
-    try {
-      const sess = JSON.parse(stored);
-      // Re-verify the account is still active
-      const { data } = await sb.from('admin_users').select('*').eq('id', sess.id).eq('status', 'Active').maybeSingle();
-      if (data) {
-        adminRecord = data;
-        currentUser = { id: data.id, email: data.username + '@soundscare.admin', role: data.role };
-        document.getElementById('sb-admin-name').textContent = data.username;
-        document.getElementById('sb-avatar').textContent = getInitials(data.username);
-        document.getElementById('auth-overlay').classList.add('hidden');
-        loadAll();
-        setupRealtimeSubscriptions();
-        return;
-      }
-    } catch(e) { /* session invalid */ }
-    localStorage.removeItem('sc_admin_session');
-  }
-})();
+// NOTE: no session-restore-on-load here by design — every page load/refresh
+// requires the admin to sign back in. Nothing is read from or written to
+// localStorage/sessionStorage for the admin session.
 
 // ============================================================
 // REALTIME
@@ -1441,6 +1427,66 @@ async function handleLogout(){
 let realtimeChannel=null;
 let currentEmpDocs=[];
 let currentEmprDocs=[];
+// ============================================================
+// NOTIFICATION SOUND + BROWSER PUSH
+// ============================================================
+// Generates a short two-tone chime via the Web Audio API (no external
+// mp3 file to host/404 on) whenever a new notification/message arrives.
+let _sscAudioCtx=null;
+function playNotifTone(){
+  try{
+    _sscAudioCtx=_sscAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(_sscAudioCtx.state==='suspended')_sscAudioCtx.resume();
+    const now=_sscAudioCtx.currentTime;
+    [880,1320].forEach((freq,i)=>{
+      const osc=_sscAudioCtx.createOscillator();
+      const gain=_sscAudioCtx.createGain();
+      osc.type='sine';
+      osc.frequency.value=freq;
+      osc.connect(gain);gain.connect(_sscAudioCtx.destination);
+      const start=now+i*0.14;
+      gain.gain.setValueAtTime(0,start);
+      gain.gain.linearRampToValueAtTime(0.22,start+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,start+0.28);
+      osc.start(start);osc.stop(start+0.3);
+    });
+  }catch(e){console.warn('playNotifTone failed',e);}
+}
+
+// Browser/OS-level push notification — shows even while the dashboard tab
+// is in the background or another app/window is focused, as long as the
+// browser process is running and permission has been granted.
+let _sscNotifPermRequested=false;
+async function ensureNotifPermission(){
+  if(!('Notification' in window))return false;
+  if(Notification.permission==='granted')return true;
+  if(Notification.permission==='denied')return false;
+  if(_sscNotifPermRequested)return false;
+  _sscNotifPermRequested=true;
+  try{
+    const perm=await Notification.requestPermission();
+    return perm==='granted';
+  }catch(e){return false;}
+}
+function pushBrowserNotification(title,body,tag){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    const n=new Notification(title,{
+      body:body||'',
+      icon:'verification_badge.jpeg',
+      tag:tag||'ssc-admin-notif',
+      renotify:true,
+      requireInteraction:false,
+    });
+    n.onclick=()=>{window.focus();n.close();};
+    setTimeout(()=>n.close(),10000);
+  }catch(e){console.warn('pushBrowserNotification failed',e);}
+}
+function notifyAdmin(title,body,tag){
+  playNotifTone();
+  pushBrowserNotification(title,body,tag);
+}
+
 function setupRealtimeSubscriptions(){
   // Prevent stacking duplicate subscriptions if this is called more than once
   // per page load (e.g. logout -> login again without a full reload).
@@ -1452,6 +1498,7 @@ function setupRealtimeSubscriptions(){
       updateBadges();
       document.getElementById('notif-indicator').style.display='block';
       showToast('info','New notification: '+p.new.title);
+      notifyAdmin(p.new.title||'New notification',p.new.message||'',`notif-${p.new.id}`);
     })
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'users'},(p)=>{
       showToast('info','New user registered: '+(p.new.email||''));
@@ -1459,6 +1506,15 @@ function setupRealtimeSubscriptions(){
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(p)=>{
       if(activeConvId===p.new.conversation_id){loadConversationMessages(activeConvId);}
       document.getElementById('msg-indicator').style.display='block';
+      notifyAdmin('New message',p.new.body||p.new.content||p.new.message||'',`msg-${p.new.id}`);
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'support_ticket_messages'},(p)=>{
+      document.getElementById('msg-indicator').style.display='block';
+      notifyAdmin('New support message',p.new.message||'',`support-msg-${p.new.id}`);
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'support_tickets'},(p)=>{
+      showToast('info','New support ticket: '+(p.new.subject||''));
+      notifyAdmin('New support ticket',p.new.subject||'',`ticket-${p.new.id}`);
     })
     .subscribe();
 }
@@ -2119,18 +2175,19 @@ async function viewEmployeeProfile(id){
   const w=allWorkers.find(w=>w.id===id);
   if(!w){showToast('err','Worker not found');return;}
   const docs=[];
-  if(w.profile_photo_url)docs.push({url:w.profile_photo_url,label:'Profile Photo'});
-  if(w.id_front_url)docs.push({url:w.id_front_url,label:'ID Front'});
-  if(w.id_back_url)docs.push({url:w.id_back_url,label:'ID Back'});
-  if(w.selfie_url)docs.push({url:w.selfie_url,label:'Selfie'});
-  if(w.edu_cert_url)docs.push({url:w.edu_cert_url,label:'Certificate'});
+  if(w.profile_photo_url)docs.push({url:w.profile_photo_url,label:'Profile Photo',field:'profile_photo_url'});
+  if(w.id_front_url)docs.push({url:w.id_front_url,label:'ID Front',field:'id_front_url'});
+  if(w.id_back_url)docs.push({url:w.id_back_url,label:'ID Back',field:'id_back_url'});
+  if(w.selfie_url)docs.push({url:w.selfie_url,label:'Selfie',field:'selfie_url'});
+  if(w.edu_cert_url)docs.push({url:w.edu_cert_url,label:'Certificate',field:'edu_cert_url'});
   currentEmpDocs=docs;
   const docsNoPhoto=docs.filter(d=>d.label!=='Profile Photo');
+  const photoIdx=docs.findIndex(d=>d.label==='Profile Photo');
 
   const body=document.getElementById('emp-profile-body');
   body.innerHTML=`
     <div class="profile-hero">
-      <div class="profile-avatar-lg"${w.profile_photo_url?` style="cursor:pointer" onclick="openLightbox(currentEmpDocs,0)"`:''}>${w.profile_photo_url?`<img src="${esc(w.profile_photo_url)}">`:''}<span>${getInitials(w.full_name)}</span></div>
+      <div class="profile-avatar-lg"${w.profile_photo_url?` style="cursor:pointer" onclick="openLightbox(currentEmpDocs,${photoIdx})"`:''}>${w.profile_photo_url?`<img data-doc-idx="${photoIdx}" class="ssc-doc-loading">`:''}<span>${getInitials(w.full_name)}</span></div>
       <div class="profile-info">
         <h2>${esc(w.full_name||'—')}</h2>
         <p>${esc(w.preferred_role||'')} ${w.county?'• '+esc(w.county):''}</p>
@@ -2165,7 +2222,7 @@ async function viewEmployeeProfile(id){
       <div class="profile-field"><label>Medical Cert</label><span>${w.has_medical_cert?'Yes':'No'}</span></div>
       <div class="profile-field"><label>Good Conduct</label><span>${w.has_good_conduct?'Yes':'No'}</span></div>
     </div></div>
-    ${docsNoPhoto.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docsNoPhoto.map(d=>`<div class="doc-thumb"><img src="${esc(d.url)}" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})" onerror="this.style.display='none'"><button type="button" class="doc-label-btn" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})">${esc(d.label)} <i class="bi bi-arrows-fullscreen" style="font-size:9px"></i></button></div>`).join('')}</div></div>`:''}
+    ${docsNoPhoto.length?`<div class="profile-section"><h3>Documents</h3><div class="doc-grid">${docsNoPhoto.map(d=>`<div class="doc-thumb"><img data-doc-idx="${currentEmpDocs.indexOf(d)}" class="ssc-doc-loading" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})"><button type="button" class="doc-label-btn" onclick="openLightbox(currentEmpDocs,${currentEmpDocs.indexOf(d)})">${esc(d.label)} <i class="bi bi-arrows-fullscreen" style="font-size:9px"></i></button></div>`).join('')}</div></div>`:''}
     ${w.about_text?`<div class="profile-section"><h3>About</h3><p style="font-size:13px;line-height:1.6">${esc(w.about_text)}</p></div>`:''}
     ${w.admin_notes?`<div class="profile-section"><h3>Admin Notes</h3><p style="font-size:13px;color:var(--amber)">${esc(w.admin_notes)}</p></div>`:''}
     <div class="profile-section"><h3><i class="bi bi-clipboard-check"></i> Approval Checklist</h3>
@@ -2197,6 +2254,25 @@ async function viewEmployeeProfile(id){
   document.getElementById('approve-emp-btn').textContent=w.approved_at?'Unapprove':'Approve Profile';
   document.getElementById('approve-emp-btn').onclick=()=>approveEmployee(w.id,!w.approved_at);
   openModal('emp-profile-modal');
+
+  // Resolve document URLs (some live in private buckets and need signing)
+  // then fill in the <img> tags once each one is ready — don't block modal open.
+  docs.forEach((d,i)=>{
+    resolveDocUrl(d.url,d.field).then(resolved=>{
+      if(!resolved){
+        document.querySelectorAll(`img[data-doc-idx="${i}"]`).forEach(img=>{
+          img.closest('.doc-thumb')?.classList.add('ssc-doc-failed');
+          img.replaceWith(Object.assign(document.createElement('i'),{className:'bi bi-file-earmark-x',title:'Could not load document'}));
+        });
+        return;
+      }
+      d.url=resolved; // keeps currentEmpDocs (same object refs) in sync for the lightbox
+      document.querySelectorAll(`img[data-doc-idx="${i}"]`).forEach(img=>{
+        img.src=resolved;
+        img.classList.remove('ssc-doc-loading');
+      });
+    });
+  });
 }
 async function saveChecklistItem(workerId,field,value){
   let vreq=allVerificationReqs.find(v=>v.worker_id===workerId);
@@ -2214,10 +2290,70 @@ async function saveChecklistItem(workerId,field,value){
 // ============================================================
 // Fetches a remote image (public Supabase Storage URL or otherwise) and
 // converts it to a base64 data URL so jsPDF can embed it.
-async function urlToDataURL(url){
+// ============================================================
+// DOCUMENT URL RESOLVER
+// ============================================================
+// Worker documents are spread across 5 storage buckets, some public
+// (Media, worker-documents) and some private (id_verification,
+// selfie-verification, Certificate). Historically some rows also stored
+// just a bare storage path with no host at all. A plain public-style URL
+// pointing at a private bucket returns 400 and silently fails to load in
+// an <img> (or fetch(), for the PDF), which is why documents / PDF
+// attachments have been invisible. This resolves any stored value into a
+// URL that will actually load, signing it when the bucket is private.
+const SSC_PUBLIC_BUCKETS=['Media','worker-documents'];
+const SSC_DOC_BUCKET_BY_FIELD={
+  profile_photo_url:'worker-documents',
+  id_front_url:'id_verification',
+  id_back_url:'id_verification',
+  selfie_url:'selfie-verification',
+  edu_cert_url:'Certificate',
+};
+const _sscDocUrlCache={};
+async function resolveDocUrl(rawValue,fieldKey){
+  if(!rawValue)return null;
+  if(_sscDocUrlCache[rawValue])return _sscDocUrlCache[rawValue];
+  let bucket,path;
+  const signedMatch=rawValue.match(/\/object\/sign\/([^/]+)\/([^?]+)/);
+  const publicMatch=rawValue.match(/\/object\/public\/([^/]+)\/(.+)$/);
+  if(signedMatch){
+    // Already a signed URL — use as-is (works regardless of bucket privacy).
+    return rawValue;
+  }else if(publicMatch){
+    bucket=publicMatch[1];
+    path=decodeURIComponent(publicMatch[2]);
+  }else if(/^https?:\/\//.test(rawValue)){
+    // Some other absolute URL shape we don't recognize — use as-is.
+    return rawValue;
+  }else{
+    // Bare storage path with no host at all — infer bucket from field name.
+    bucket=SSC_DOC_BUCKET_BY_FIELD[fieldKey]||'worker-documents';
+    path=rawValue;
+  }
+  let resolved=null;
+  if(SSC_PUBLIC_BUCKETS.includes(bucket)){
+    const {data}=sb.storage.from(bucket).getPublicUrl(path);
+    resolved=data?.publicUrl||null;
+  }else{
+    try{
+      const {data,error}=await sb.storage.from(bucket).createSignedUrl(path,3600);
+      if(error)throw error;
+      resolved=data.signedUrl;
+    }catch(e){
+      console.warn('resolveDocUrl: failed to sign',bucket,path,e);
+      resolved=null;
+    }
+  }
+  if(resolved)_sscDocUrlCache[rawValue]=resolved;
+  return resolved;
+}
+
+async function urlToDataURL(url,fieldKey){
   if(!url)return null;
   try{
-    const res=await fetch(url,{mode:'cors'});
+    const resolved=await resolveDocUrl(url,fieldKey);
+    if(!resolved)return null;
+    const res=await fetch(resolved,{mode:'cors'});
     if(!res.ok)return null;
     const blob=await res.blob();
     return await new Promise((resolve,reject)=>{
@@ -2285,7 +2421,8 @@ async function buildWorkerBiodataPDF(id){
   y=34;
 
   // Passport photo
-  const photoData=await urlToDataURL(w.profile_photo_url||w.selfie_url);
+  const photoField=w.profile_photo_url?'profile_photo_url':'selfie_url';
+  const photoData=await urlToDataURL(w.profile_photo_url||w.selfie_url,photoField);
   if(photoData){
     try{doc.addImage(photoData,pdfImgFormat(photoData),margin,y,30,36);}catch(e){console.warn('photo embed failed',e);}
   }else{
@@ -2323,7 +2460,12 @@ async function buildWorkerBiodataPDF(id){
     doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(120);
     doc.text(label.toUpperCase(),colX,y);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(20);
-    const lines=doc.splitTextToSize(String(value ?? '—'),colW);
+    let display;
+    if(typeof value==='boolean')display=value?'Yes':'No';
+    else if(Array.isArray(value))display=value.length?value.join(', '):'—';
+    else if(value===null||value===undefined||value==='')display='—';
+    else display=String(value);
+    const lines=doc.splitTextToSize(display,colW);
     doc.text(lines,colX,y+4);
     return 4+lines.length*4.2;
   }
@@ -2402,12 +2544,12 @@ async function buildWorkerBiodataPDF(id){
 
   // Attached documents (each on its own page for legibility)
   const attachments=[
-    {url:w.id_front_url,label:'National ID — Front'},
-    {url:w.id_back_url,label:'National ID — Back'},
-    {url:w.edu_cert_url,label:'Education Certificate'},
+    {url:w.id_front_url,label:'National ID — Front',field:'id_front_url'},
+    {url:w.id_back_url,label:'National ID — Back',field:'id_back_url'},
+    {url:w.edu_cert_url,label:'Education Certificate',field:'edu_cert_url'},
   ].filter(a=>a.url);
   for(const att of attachments){
-    const data=await urlToDataURL(att.url);
+    const data=await urlToDataURL(att.url,att.field);
     if(!data)continue;
     doc.addPage();
     doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(27,107,69);
