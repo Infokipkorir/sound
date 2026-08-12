@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post a Job – SoundsCare</title>
+  <meta name="description" content="Post a job opening and reach verified workers across East Africa.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    :root{
+      --green:#1A7A5E;--green-dark:#145c47;--green-light:#e8f5f0;--green-mid:#2DB877;
+      --blue:#3B8ED4;--blue-dark:#2574b8;--blue-light:#EBF4FC;
+      --surface:#f7f9f8;--surface-alt:#f0f4f2;--border:#dae3de;
+      --text:#18281f;--text-muted:#6b7c75;--red:#E24B4A;--amber:#E9A23B;
+      --dark-bg:#0d2118;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+
+    /* ── TOP BAR ── */
+    .topbar{
+      background:#fff;border-bottom:1px solid var(--border);padding:14px 5%;
+      display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+    }
+    .back-btn{
+      display:inline-flex;align-items:center;gap:.4rem;padding:7px 14px;border:1.5px solid var(--border);
+      border-radius:8px;background:#fff;color:var(--text);font-size:13px;font-weight:600;
+      cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none;
+    }
+    .back-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .topbar-brand{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+    .topbar-brand span{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--text)}
+    .topbar-brand small{font-size:12px;color:var(--text-muted)}
+
+    /* ── PAGE HERO ── */
+    .page-hero{
+      background:linear-gradient(135deg,var(--blue-dark) 0%,var(--blue) 100%);
+      padding:2.5rem 5%;color:#fff;position:relative;overflow:hidden;
+    }
+    .page-hero::before{content:'';position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .page-hero::after{content:'';position:absolute;right:80px;bottom:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.06)}
+    .page-hero-content{position:relative;z-index:1;max-width:680px}
+    .page-hero h1{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;margin-bottom:.5rem}
+    .page-hero p{font-size:14px;opacity:.9;line-height:1.7}
+    .mode-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;margin-bottom:1rem;backdrop-filter:blur(4px)}
+
+    /* ── MAIN LAYOUT ── */
+    .page-body{max-width:720px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+    /* ── CARD ── */
+    .form-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.8rem;margin-bottom:1.4rem;animation:fadeUp .35s ease both}
+    .form-card:nth-child(1){animation-delay:.05s}
+    .form-card:nth-child(2){animation-delay:.1s}
+    .form-card:nth-child(3){animation-delay:.15s}
+    .form-card:nth-child(4){animation-delay:.2s}
+    .form-card:nth-child(5){animation-delay:.25s}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .form-card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+    .form-card-title i{color:var(--blue);font-size:15px}
+
+    /* ── FORM ── */
+    .form-grid{display:grid;gap:.9rem}
+    .form-grid.two-col{grid-template-columns:1fr 1fr}
+    .form-grid.three-col{grid-template-columns:1fr 1fr 1fr}
+    @media(max-width:540px){.form-grid.two-col,.form-grid.three-col{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:.35rem}
+    .form-group label{font-size:12px;font-weight:600;color:var(--text)}
+    .form-group label .req{color:var(--red)}
+    .form-group input,.form-group select,.form-group textarea{
+      border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;
+      font-size:13px;font-family:inherit;color:var(--text);background:#fff;transition:border .18s;width:100%;
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,142,212,.08)}
+    .form-group textarea{resize:vertical;min-height:90px}
+    .form-group .hint{font-size:11px;color:var(--text-muted)}
+
+    /* ── TOGGLE PILL ── */
+    .toggle-pill{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface-alt);border:1.5px solid var(--border);border-radius:20px;padding:8px 14px;cursor:pointer;font-size:12.5px;font-weight:600;user-select:none;transition:all .18s}
+    .toggle-pill input{display:none}
+    .toggle-pill.checked{background:#FFF3E0;border-color:var(--amber);color:#8a5a12}
+    .toggle-pill i{font-size:14px}
+
+    /* ── COMPANY BANNER ── */
+    .company-banner{background:var(--green-light);border:1px solid rgba(26,122,94,.2);border-radius:10px;padding:.8rem 1rem;font-size:12.5px;color:var(--green-dark);display:flex;gap:.6rem;align-items:flex-start;line-height:1.6;margin-bottom:1.4rem}
+    .company-banner i{color:var(--green);flex-shrink:0;font-size:14px;margin-top:.1rem}
+
+    /* ── SUBMIT ROW ── */
+    .submit-row{display:flex;gap:.7rem;margin-top:.4rem}
+    @media(max-width:540px){.submit-row{flex-direction:column}}
+    .submit-btn{flex:1;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+    .submit-btn:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,142,212,.3)}
+    .submit-btn:disabled{background:var(--border);cursor:not-allowed;transform:none;box-shadow:none}
+    .submit-btn.secondary{background:#fff;color:var(--text);border:1.5px solid var(--border)}
+    .submit-btn.secondary:hover{border-color:var(--blue);color:var(--blue);background:#fff;box-shadow:none;transform:none}
+
+    /* ── GATE (not logged in / no employer profile) ── */
+    .gate{max-width:520px;margin:3.5rem auto;text-align:center;padding:0 1.5rem}
+    .gate-icon{width:74px;height:74px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.4rem}
+    .gate-icon i{font-size:1.9rem;color:var(--blue)}
+    .gate h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:.6rem}
+    .gate p{color:var(--text-muted);font-size:13.5px;line-height:1.7;margin-bottom:1.6rem}
+    .gate-actions{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap}
+    .gate-primary{padding:11px 22px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
+    .gate-primary:hover{background:var(--blue-dark)}
+    .gate-secondary{padding:11px 22px;background:#fff;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;gap:.4rem}
+    .gate-secondary:hover{border-color:var(--blue);color:var(--blue)}
+    .gate-loading{max-width:520px;margin:5rem auto;text-align:center;color:var(--text-muted);font-size:13.5px}
+    .gate-loading i{font-size:1.6rem;display:block;margin-bottom:.8rem;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── SUCCESS ── */
+    .success-screen{display:none;text-align:center;padding:3rem 1.5rem}
+    .success-screen.visible{display:block}
+    .success-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--blue-dark),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-icon i{font-size:2rem;color:#fff}
+    .success-screen h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;margin-bottom:.7rem;color:var(--text)}
+    .success-screen p{font-size:14px;color:var(--text-muted);line-height:1.7;max-width:440px;margin:0 auto 2rem}
+    .success-actions{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap}
+    .back-home-btn{display:inline-flex;align-items:center;gap:.5rem;padding:12px 26px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none}
+    .back-home-btn:hover{background:var(--blue-dark)}
+    .back-home-btn.outline{background:#fff;color:var(--text);border:1.5px solid var(--border)}
+    .back-home-btn.outline:hover{border-color:var(--blue);color:var(--blue)}
+
+    /* ── TOAST ── */
+    #toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+    .toast{display:flex;align-items:center;gap:.7rem;background:#1e2a23;color:#fff;padding:.8rem 1.1rem;border-radius:10px;font-size:13px;font-weight:500;min-width:220px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:all}
+    .toast.success i{color:#78d9b4}.toast.error i{color:#f87171}.toast.info i{color:#7dd3fc}
+    @keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes toastOut{to{transform:translateX(110%);opacity:0}}
+
+    /* ── SUPPORT FAB (matches other pages) ── */
+    .support-fab{
+      position:fixed; left:1.5rem; bottom:1.5rem; z-index:7500;
+      width:52px; height:52px; border-radius:50%;
+      background:var(--green); color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; text-decoration:none;
+      box-shadow:0 6px 20px rgba(26,122,94,.35);
+      transition:transform .2s ease, background .2s ease;
+    }
+    .support-fab:hover{background:var(--green-dark); transform:translateY(-3px) scale(1.05)}
+    .support-fab:active{transform:scale(.96)}
+    @media (max-width:600px){.support-fab{width:48px;height:48px;font-size:19px;left:1rem;bottom:1rem}}
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="index.html" class="back-btn"><i class="bi bi-arrow-left"></i> Back to Home</a>
+  <a href="index.html" class="topbar-brand">
+    <span>SoundsCare</span>
+    <small>Post a Job</small>
+  </a>
+</div>
+
+<!-- PAGE HERO -->
+<div class="page-hero">
+  <div class="page-hero-content">
+    <div class="mode-badge"><i class="bi bi-briefcase-fill"></i> Employer Job Posting</div>
+    <h1>Post a Job Opening</h1>
+    <p>Reach verified, ID-checked workers across East Africa. Your listing goes live under your employer profile as soon as you publish it.</p>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- LOADING (while we check auth) -->
+  <div class="gate-loading" id="gate-loading">
+    <i class="bi bi-arrow-repeat"></i>
+    Checking your employer account…
+  </div>
+
+  <!-- GATE: not logged in -->
+  <div class="gate" id="gate-login" style="display:none">
+    <div class="gate-icon"><i class="bi bi-lock-fill"></i></div>
+    <h2>Log in to post a job</h2>
+    <p>Job postings are tied to your employer account so workers can see who's hiring and you can manage applications in one place.</p>
+    <div class="gate-actions">
+      <a href="employer-login.html" class="gate-primary"><i class="bi bi-box-arrow-in-right"></i> Log In</a>
+      <a href="employer-register.html" class="gate-secondary"><i class="bi bi-person-plus-fill"></i> Create Employer Account</a>
+    </div>
+  </div>
+
+  <!-- GATE: logged in but no employer profile yet -->
+  <div class="gate" id="gate-profile" style="display:none">
+    <div class="gate-icon"><i class="bi bi-person-fill-exclamation"></i></div>
+    <h2>Finish setting up your employer profile</h2>
+    <p>We couldn't find an employer profile linked to your account yet. Complete your profile first, then come back here to post your job.</p>
+    <div class="gate-actions">
+      <a href="employer-register.html" class="gate-primary"><i class="bi bi-person-lines-fill"></i> Complete Employer Profile</a>
+      <a href="index.html" class="gate-secondary"><i class="bi bi-house"></i> Back to Home</a>
+    </div>
+  </div>
+
+  <!-- FORM AREA -->
+  <div id="form-area" style="display:none">
+
+    <div class="company-banner" id="company-banner">
+      <i class="bi bi-patch-check-fill"></i>
+      <span>Posting as <strong id="banner-company">—</strong>. Workers will see your company name and location on this listing.</span>
+    </div>
+
+    <!-- ROLE DETAILS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-briefcase-fill"></i> Role Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Job Title <span class="req">*</span></label>
+          <input id="j-title" placeholder="e.g. Live-in Nanny needed in Karen">
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Specific Role <span class="req">*</span></label>
+            <input id="j-role" list="role-suggestions" placeholder="e.g. Nanny, Cook, Gardener">
+            <datalist id="role-suggestions">
+              <option value="House Help"></option>
+              <option value="Nanny / Governess"></option>
+              <option value="Cook"></option>
+              <option value="Gardener"></option>
+              <option value="Driver"></option>
+              <option value="Security Guard"></option>
+              <option value="Caregiver"></option>
+              <option value="Cleaner"></option>
+              <option value="Laundry Attendant"></option>
+              <option value="Property Manager"></option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label>Category <span class="req">*</span></label>
+            <select id="j-category">
+              <option value="">Select category</option>
+              <option>Domestic Work</option>
+              <option>Childcare</option>
+              <option>Landscaping &amp; Gardening</option>
+              <option>Security</option>
+              <option>Driving</option>
+              <option>Property Management</option>
+              <option>Elderly Care</option>
+              <option>Cleaning Services</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description <span class="req">*</span></label>
+          <textarea id="j-description" placeholder="Describe the role, daily duties, household/business context, and what a typical day looks like."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Requirements <span class="hint">(optional)</span></label>
+          <textarea id="j-requirements" placeholder="e.g. 2+ years experience, certificate of good conduct, references required"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-geo-alt-fill"></i> Location</div>
+      <div class="form-grid two-col">
+        <div class="form-group">
+          <label>Town / Area <span class="req">*</span></label>
+          <input id="j-location" placeholder="e.g. Karen, Nairobi">
+        </div>
+        <div class="form-group">
+          <label>County <span class="req">*</span></label>
+          <select id="j-county"><option value="">Select county</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="bi bi-clipboard-check-fill"></i> Job Terms</div>
+      <div class="form-grid">
+        <div class="form-grid three-col">
+          <div class="form-group">
+            <label>Employment Type <span class="req">*</span></label>
+            <select id="j-jobtype">
+              <option value="">Select type</option>
+              <option value="full-time">Full-time</option>
+              <option value="part-time">Part-time</option>
+              <option value="contract">Contract</option>
+              <option value="temporary">Temporary</option>
+              <option value="internship">Internship</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Work Arrangement</label>
+            <select id="j-worktype">
+              <option value="">Select (optional)</option>
+              <option value="Live-in">Live-in</option>
+              <option value="Live-out">Live-out</option>
+              <option value="Day shift">Day shift</option>
+              <option value="Night shift">Night shift</option>
+              <option value="Remote">Remote</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Number of Slots</label>
+            <input id="j-slots" type="number" min="1" value="1">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Duration</label>
+            <select id="j-durationtype">
+              <option value="">Select (optional)</option>
+              <option value="ongoing">Ongoing</option>
+              <option value="fixed_term">Fixed term</option>
+              <option value="one_time">One-time</option>
+              <option value="recurring">Recurring</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Duration Detail <span class="hint">(e.g. "3 months")</span></label>
+            <input id="j-durationvalue" placeholder="e.g. 3 months, 2 weeks">
+          </div>
+        </div>
+        <div class="form-grid two-col">
+          <div class="form-group">
+            <label>Salary Min (KES/month)</label>
+            <input id="j-salmin" type="number" min="0" placeholder="e.g. 12000">
+          </div>
+          <div class="form-group">
+            <label>Salary Max (KES/month)</label>
+            <input id="j-salmax" type="number" min="0" placeholder="e.g. 18000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Application Deadline <span class="hint">(optional)</span></label>
+          <input id="j-deadline" type="date">
+        </div>
+        <div>
+          <label class="toggle-pill" id="j-urgent-pill">
+            <input type="checkbox" id="j-urgent">
+            <i class="bi bi-lightning-fill"></i> Mark as urgent hire
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <button class="submit-btn secondary" id="draft-btn" onclick="submitJob('draft')">
+        <i class="bi bi-file-earmark-text"></i> Save as Draft
+      </button>
+      <button class="submit-btn" id="publish-btn" onclick="submitJob('active')">
+        <i class="bi bi-send-fill"></i> Publish Job
+      </button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon"><i class="bi bi-check-lg"></i></div>
+    <h2 id="success-title">Job Posted!</h2>
+    <p id="success-text">Your listing is now live and visible to workers browsing SoundsCare.</p>
+    <div class="success-actions">
+      <button class="back-home-btn" onclick="resetForm()"><i class="bi bi-plus-lg"></i> Post Another Job</button>
+      <a href="jobs.html" class="back-home-btn outline"><i class="bi bi-list-ul"></i> View All Jobs</a>
+    </div>
+  </div>
+
+</div>
+
+<a href="support.html" class="support-fab" aria-label="Contact support" title="Need help? Chat with support">
+  <i class="bi bi-headset"></i>
+</a>
+
+<script>
+/* ── SUPABASE ── */
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── KENYA COUNTIES ── */
+const KE_COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo',
+  'Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale',
+  'Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Murang\'a',
+  'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta',
+  'Tana River','Tharaka-Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'];
+(function fillCounties(){
+  const sel = document.getElementById('j-county');
+  KE_COUNTIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+})();
+
+/* ── UTILS ── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg, type='info'){
+  const icons={success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
+  const t = document.createElement('div');
+  t.className = 'toast '+type;
+  t.innerHTML = '<i class="bi '+icons[type]+'"></i><span>'+esc(msg)+'</span>';
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>{ t.style.animation='toastOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+document.getElementById('j-urgent-pill').addEventListener('click', () => {
+  setTimeout(()=>{
+    document.getElementById('j-urgent-pill').classList.toggle('checked', document.getElementById('j-urgent').checked);
+  }, 0);
+});
+
+/* ── AUTH GATE ── */
+let currentEmployer = null; // { id, company_name, location, county }
+
+async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  document.getElementById('gate-loading').style.display = 'none';
+
+  if(!session){
+    document.getElementById('gate-login').style.display = 'block';
+    return;
+  }
+
+  const { data: profile, error } = await sb
+    .from('employer_profiles')
+    .select('id, company_name, full_name, location, county')
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+
+  if(error){
+    console.error('employer_profiles lookup error:', error);
+    showToast('Could not load your employer profile. Please try again.', 'error');
+    document.getElementById('gate-login').style.display = 'block';
+    return;
+  }
+
+  if(!profile){
+    document.getElementById('gate-profile').style.display = 'block';
+    return;
+  }
+
+  currentEmployer = profile;
+  document.getElementById('banner-company').textContent = profile.company_name || profile.full_name || 'your account';
+  if(profile.location) document.getElementById('j-location').value = profile.location;
+  if(profile.county) document.getElementById('j-county').value = profile.county;
+  document.getElementById('form-area').style.display = 'block';
+}
+init();
+
+/* ── SUBMIT ── */
+async function submitJob(status){
+  if(!currentEmployer){ showToast('Your employer profile could not be verified.', 'error'); return; }
+
+  const title       = document.getElementById('j-title').value.trim();
+  const role        = document.getElementById('j-role').value.trim();
+  const category    = document.getElementById('j-category').value;
+  const description = document.getElementById('j-description').value.trim();
+  const location     = document.getElementById('j-location').value.trim();
+  const county        = document.getElementById('j-county').value;
+  const jobType        = document.getElementById('j-jobtype').value;
+
+  if(!title || !role || !category || !description || !location || !county || !jobType){
+    showToast('Please fill all required fields.', 'error');
+    return;
+  }
+
+  const draftBtn = document.getElementById('draft-btn');
+  const publishBtn = document.getElementById('publish-btn');
+  const activeBtn = status === 'active' ? publishBtn : draftBtn;
+  const originalHtml = activeBtn.innerHTML;
+  draftBtn.disabled = true; publishBtn.disabled = true;
+  activeBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+
+  const salMin = parseInt(document.getElementById('j-salmin').value) || null;
+  const salMax = parseInt(document.getElementById('j-salmax').value) || null;
+
+  const { data: { session } } = await sb.auth.getSession();
+
+  const payload = {
+    posted_by:      session ? session.user.id : null,
+    employer_id:    currentEmployer.id,
+    title:          title,
+    company_name:   currentEmployer.company_name || currentEmployer.full_name || null,
+    location:       location,
+    county:         county,
+    job_type:       jobType,
+    category:       category,
+    job_role:       role,
+    description:    description,
+    requirements:   document.getElementById('j-requirements').value.trim() || null,
+    salary_min:     salMin,
+    salary_max:     salMax,
+    deadline:       document.getElementById('j-deadline').value || null,
+    slots:          parseInt(document.getElementById('j-slots').value) || 1,
+    work_type:      document.getElementById('j-worktype').value || null,
+    duration_type:  document.getElementById('j-durationtype').value || null,
+    duration_value: document.getElementById('j-durationvalue').value.trim() || null,
+    is_urgent:      document.getElementById('j-urgent').checked,
+    status:         status,
+  };
+
+  const { error } = await sb.from('job_postings').insert([payload]);
+
+  draftBtn.disabled = false; publishBtn.disabled = false;
+  activeBtn.innerHTML = originalHtml;
+
+  if(error){
+    console.error('job_postings insert error:', error);
+    showToast('Could not save job: ' + (error.message || 'Unknown error'), 'error');
+    return;
+  }
+
+  document.getElementById('form-area').style.display = 'none';
+  const successTitle = document.getElementById('success-title');
+  const successText = document.getElementById('success-text');
+  if(status === 'draft'){
+    successTitle.textContent = 'Draft Saved';
+    successText.textContent = 'Your job listing has been saved as a draft. Publish it any time from your employer dashboard.';
+  } else {
+    successTitle.textContent = 'Job Posted!';
+    successText.textContent = 'Your listing is now live and visible to workers browsing SoundsCare.';
+  }
+  document.getElementById('success-screen').classList.add('visible');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetForm(){
+  document.getElementById('success-screen').classList.remove('visible');
+  document.getElementById('form-area').style.display = 'block';
+  ['j-title','j-role','j-description','j-requirements','j-durationvalue','j-deadline','j-salmin','j-salmax'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('j-category').value = '';
+  document.getElementById('j-jobtype').value = '';
+  document.getElementById('j-worktype').value = '';
+  document.getElementById('j-durationtype').value = '';
+  document.getElementById('j-slots').value = '1';
+  document.getElementById('j-urgent').checked = false;
+  document.getElementById('j-urgent-pill').classList.remove('checked');
+  if(currentEmployer){
+    if(currentEmployer.location) document.getElementById('j-location').value = currentEmployer.location;
+    if(currentEmployer.county) document.getElementById('j-county').value = currentEmployer.county;
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
