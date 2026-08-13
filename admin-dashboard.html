@@ -102,6 +102,12 @@ body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg);
 .sb-link:hover { color: var(--brand); background: var(--brand-soft); }
 .sb-link.active { color: var(--brand); background: var(--brand-soft); font-weight: 600; }
 .sb-link i { font-size: 16px; flex-shrink: 0; }
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; transition: .2s; border-radius: 22px; }
+.switch .slider::before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #fff; transition: .2s; border-radius: 50%; }
+.switch input:checked + .slider { background: var(--brand); }
+.switch input:checked + .slider::before { transform: translateX(18px); }
 .sb-badge { margin-left: auto; background: var(--rose); color: #fff; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 20px; text-align: center; }
 .sb-badge.sky { background: var(--sky); }
 .sb-badge.green { background: var(--green); }
@@ -458,6 +464,9 @@ tr:hover td { background: rgba(27,107,69,.02); }
     <button class="sb-link" onclick="switchTab(event,'comms')"><i class="bi bi-envelope-fill"></i><span>Email / SMS</span></button>
     <button class="sb-link" onclick="switchTab(event,'newsletter')"><i class="bi bi-newspaper"></i><span>Newsletter</span><span class="sb-badge sky" id="badge-newsletter">0</span></button>
     <button class="sb-link" onclick="switchTab(event,'tickets')"><i class="bi bi-life-preserver"></i><span>Support Tickets</span><span class="sb-badge" id="badge-tickets">0</span></button>
+    <button class="sb-link" onclick="switchTab(event,'calls')"><i class="bi bi-camera-video-fill"></i><span>Calls</span><span class="sb-badge sky" id="badge-calls">0</span></button>
+    <button class="sb-link" onclick="switchTab(event,'connects')"><i class="bi bi-coin"></i><span>Connects &amp; Payments</span></button>
+    <button class="sb-link" onclick="switchTab(event,'livelogs')"><i class="bi bi-activity"></i><span>Live Activity</span></button>
     <div class="sb-section">System</div>
     <button class="sb-link" onclick="switchTab(event,'settings')"><i class="bi bi-gear-fill"></i><span>Settings</span></button>
   </nav>
@@ -507,6 +516,17 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <div class="stat-card"><div class="stat-label"><i class="bi bi-file-earmark-check"></i> Applications</div><div class="stat-value violet" id="stat-apps">0</div></div>
         <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-stack"></i> Payments (Ksh)</div><div class="stat-value accent" id="stat-payments">0</div></div>
         <div class="stat-card"><div class="stat-label"><i class="bi bi-bell"></i> Notifications</div><div class="stat-value" id="stat-notifs">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-camera-video-fill"></i> Calls Today</div><div class="stat-value sky" id="stat-calls-today">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-coin"></i> Connects in Circulation</div><div class="stat-value green" id="stat-connects-total">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-life-preserver"></i> Open Tickets</div><div class="stat-value amber" id="stat-tickets-open">0</div></div>
+      </div>
+      <div class="section" style="margin-bottom:1.2rem">
+        <div class="section-header"><div class="section-title"><i class="bi bi-broadcast-pin"></i> Live Right Now</div></div>
+        <div class="section-body" style="display:flex;gap:2rem;flex-wrap:wrap">
+          <div><div style="font-size:11px;color:var(--muted)">Active/Ringing Calls</div><div style="font-size:22px;font-weight:700" id="live-calls-count">0</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Events (last 5 min)</div><div style="font-size:22px;font-weight:700" id="live-events-count">0</div></div>
+          <div style="flex:1;min-width:200px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Newest Event</div><div style="font-size:13px" id="live-latest-event">—</div></div>
+        </div>
       </div>
       <div class="section">
         <div class="section-header"><div class="section-title"><i class="bi bi-activity"></i> Recent Activity</div></div>
@@ -753,7 +773,138 @@ tr:hover td { background: rgba(27,107,69,.02); }
             <option value="closed">Closed</option>
           </select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Subject</th><th>User</th><th>Category</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="tickets-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Ticket #</th><th>Subject</th><th>User</th><th>Category</th><th>Priority</th><th>Assigned</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="tickets-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== CALLS (Voice / Video) ==================== -->
+    <div id="tab-calls" class="tab-content">
+      <div class="page-head">
+        <div><h1>Voice &amp; Video Calls</h1><p>All peer-to-peer calls between users (WebRTC, no third-party provider — signaling via Supabase Realtime)</p></div>
+        <button class="btn btn-secondary btn-sm" onclick="loadCalls()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-telephone-outbound"></i> Total Calls</div><div class="stat-value accent" id="calls-stat-total">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-camera-video"></i> Video</div><div class="stat-value sky" id="calls-stat-video">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-telephone"></i> Voice</div><div class="stat-value green" id="calls-stat-voice">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-telephone-x"></i> Missed/Rejected</div><div class="stat-value rose" id="calls-stat-missed">0</div></div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-broadcast"></i> TURN Server Config</div>
+        </div>
+        <div class="section-body">
+          <p style="color:var(--muted);font-size:12px;margin-bottom:.75rem">Raw WebRTC peer-to-peer needs a TURN server for calls to connect reliably across most home/mobile networks (STUN alone fails whenever both users are behind restrictive NAT — common on Safaricom/Airtel mobile data). Enter your TURN credentials once you have a server (e.g. coturn on a small VPS, or Twilio/Metered's free TURN tier).</p>
+          <div class="form-row">
+            <div class="form-group"><label>TURN URL</label><input id="turn-url" placeholder="turn:your-server.example.com:3478"></div>
+            <div class="form-group"><label>STUN URL</label><input id="stun-url" value="stun:stun.l.google.com:19302"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>TURN Username</label><input id="turn-username" placeholder="turn-user"></div>
+            <div class="form-group"><label>TURN Credential</label><input id="turn-credential" type="password" placeholder="••••••••"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveTurnConfig()">Save ICE Config</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="search-bar">
+          <select class="filter-select" id="calls-type-filter" onchange="filterCalls()">
+            <option value="">All Types</option><option value="voice">Voice</option><option value="video">Video</option>
+          </select>
+          <select class="filter-select" id="calls-status-filter" onchange="filterCalls()">
+            <option value="">All Status</option><option value="active">Active</option><option value="ended">Ended</option><option value="missed">Missed</option><option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Caller</th><th>Receiver</th><th>Type</th><th>Status</th><th>Duration</th><th>Started</th><th>Actions</th></tr></thead><tbody id="calls-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== CONNECTS & PAYMENTS ==================== -->
+    <div id="tab-connects" class="tab-content">
+      <div class="page-head">
+        <div><h1>Connects &amp; Payments</h1><p>Token wallet economy — chat, voice &amp; video are charged in Connects</p></div>
+      </div>
+      <div class="sub-tabs">
+        <button class="tab-btn active" onclick="switchConnectsTab(event,'tariffs')"><i class="bi bi-sliders"></i> Tariffs</button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'wallets')"><i class="bi bi-wallet2"></i> User Wallets</button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'ledger')"><i class="bi bi-list-columns-reverse"></i> Transaction Ledger</button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'providers')"><i class="bi bi-credit-card"></i> Payment Providers</button>
+      </div>
+
+      <div id="connects-tab-tariffs" class="tab-content active">
+        <div class="section">
+          <div class="section-header"><div class="section-title"><i class="bi bi-sliders"></i> Tariff Control</div></div>
+          <div class="section-body">
+            <p style="color:var(--muted);font-size:12px;margin-bottom:1rem">Every user gets a fresh allowance of free Connects at midnight; anything above that is a paid top-up. Rates below apply platform-wide and take effect immediately.</p>
+            <div class="form-row">
+              <div class="form-group"><label>1 Chat Message</label><div style="display:flex;align-items:center;gap:8px"><input id="tariff-message" type="number" step="0.01"><span style="color:var(--muted);font-size:12px">connects</span></div></div>
+              <div class="form-group"><label>Voice Call — per minute</label><div style="display:flex;align-items:center;gap:8px"><input id="tariff-voice" type="number" step="0.01"><span style="color:var(--muted);font-size:12px">connects/min</span></div></div>
+              <div class="form-group"><label>Video Call — per minute</label><div style="display:flex;align-items:center;gap:8px"><input id="tariff-video" type="number" step="0.01"><span style="color:var(--muted);font-size:12px">connects/min</span></div></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Daily Free Connects</label><input id="tariff-daily-free" type="number"></div>
+              <div class="form-group"><label>Reset Hour (0–23, local)</label><input id="tariff-reset-hour" type="number" min="0" max="23"></div>
+            </div>
+            <small style="color:var(--muted);font-size:11px" id="tariff-updated-note"></small>
+            <div style="margin-top:1rem"><button class="btn btn-primary" onclick="saveTariffs()"><i class="bi bi-check-lg"></i> Save Tariffs</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="connects-tab-wallets" class="tab-content">
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="wallets-search" placeholder="🔍 Search by name, email, phone, wallet #…" oninput="filterWallets()">
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>User</th><th>Wallet #</th><th>Connects Balance</th><th>Resets</th><th>Ksh Total Paid</th><th>Actions</th></tr></thead><tbody id="wallets-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <div id="connects-tab-ledger" class="tab-content">
+        <div class="section">
+          <div class="search-bar">
+            <select class="filter-select" id="ledger-type-filter" onchange="renderLedger()">
+              <option value="">All Types</option>
+              <option value="daily_reset">Daily Reset</option>
+              <option value="message_debit">Message Debit</option>
+              <option value="voice_debit">Voice Debit</option>
+              <option value="video_debit">Video Debit</option>
+              <option value="purchase">Purchase</option>
+              <option value="manual_credit">Manual Credit</option>
+              <option value="manual_debit">Manual Debit</option>
+              <option value="refund">Refund</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Balance After</th><th>Note</th><th>By</th><th>Date</th></tr></thead><tbody id="ledger-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <div id="connects-tab-providers" class="tab-content">
+        <div class="section-body" style="padding:0 0 1rem 0">
+          <p style="color:var(--muted);font-size:12px;margin:1rem 1.2rem 0">Connects can be topped up via any enabled provider below. Toggle a provider on once its API credentials are filled in — disabled providers are hidden from users at checkout.</p>
+        </div>
+        <div id="providers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:0 1.2rem 1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- ==================== LIVE ACTIVITY ==================== -->
+    <div id="tab-livelogs" class="tab-content">
+      <div class="page-head">
+        <div><h1>Live Activity</h1><p>Real-time system &amp; admin event stream — like the Supabase log viewer</p></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><input type="checkbox" id="livelogs-auto" checked onchange="toggleLiveLogsAuto()"> Auto-refresh (2s)</label>
+          <button class="btn btn-secondary btn-sm" onclick="loadLiveLogs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="sub-tabs" style="padding:0 1.2rem">
+          <button class="tab-btn active" onclick="switchLiveLogTab(event,'all')">All Events</button>
+          <button class="tab-btn" onclick="switchLiveLogTab(event,'admin')">Admin Actions</button>
+          <button class="tab-btn" onclick="switchLiveLogTab(event,'system')">System Events</button>
+        </div>
+        <div id="livelogs-stream" style="font-family:'SF Mono',Consolas,monospace;font-size:12px;max-height:600px;overflow-y:auto;padding:1rem 1.2rem;background:#0b1220;color:#d1d5db;border-radius:0 0 12px 12px">
+          <div style="color:#6b7280">Loading live activity…</div>
+        </div>
       </div>
     </div>
 
@@ -833,6 +984,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <button class="tab-btn" onclick="switchSettingsTab(event,'db')">DB Monitor</button>
         <button class="tab-btn" onclick="switchSettingsTab(event,'siteconfig')">Site Config</button>
         <button class="tab-btn" onclick="switchSettingsTab(event,'cookies')">Cookies</button>
+        <button class="tab-btn" onclick="switchSettingsTab(event,'backup')">Google Drive Backup</button>
       </div>
       <div id="settings-tab-admins" class="tab-content active">
         <div class="section">
@@ -889,6 +1041,31 @@ tr:hover td { background: rgba(27,107,69,.02); }
               <button class="btn btn-sm btn-secondary" onclick="clearBrowserCache()"><i class="bi bi-trash"></i> Clear Cache</button>
               <button class="btn btn-sm btn-danger" onclick="manageRememberedSessions()"><i class="bi bi-box-arrow-right"></i> Forget Remembered Sessions</button>
             </div>
+          </div>
+        </div>
+      </div>
+      <div id="settings-tab-backup" class="tab-content">
+        <div class="section">
+          <div class="section-header"><div class="section-title"><i class="bi bi-google"></i> Google Drive Backup</div></div>
+          <div class="section-body">
+            <p style="color:var(--muted);font-size:12px;margin-bottom:1rem">Infrastructure only for now — nightly export of the database + media buckets to a Google Drive folder. Wire up the OAuth client and enable when ready; this panel stores the config and shows run history but the export job itself needs a scheduled Edge Function once credentials exist.</p>
+            <div class="form-row">
+              <div class="form-group"><label>Google OAuth Client ID</label><input id="gdrive-client-id" placeholder="xxxxx.apps.googleusercontent.com"></div>
+              <div class="form-group"><label>Google OAuth Client Secret</label><input id="gdrive-client-secret" type="password" placeholder="••••••••"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Destination Drive Folder ID</label><input id="gdrive-folder-id" placeholder="1AbC...xyz"></div>
+              <div class="form-group"><label>Backup Schedule</label>
+                <select id="gdrive-schedule"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="manual">Manual only</option></select>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:.5rem 0 1rem"><input type="checkbox" id="gdrive-enabled"> Enable scheduled backups (requires the Edge Function to be deployed)</label>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary btn-sm" onclick="saveGDriveConfig()"><i class="bi bi-check-lg"></i> Save Config</button>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('info','Connect a Google Cloud OAuth client first, then this will trigger a manual export via Edge Function.')"><i class="bi bi-cloud-arrow-up"></i> Run Backup Now</button>
+            </div>
+            <h3 style="font-size:13px;font-weight:700;margin:1.5rem 0 .75rem">Run History</h3>
+            <div class="empty-state"><i class="bi bi-cloud-slash"></i><p>No backups run yet — connect Google Drive to get started</p></div>
           </div>
         </div>
       </div>
@@ -1247,14 +1424,22 @@ tr:hover td { background: rgba(27,107,69,.02); }
     <div class="modal-body">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px" id="ticket-detail-meta"></div>
       <div id="ticket-thread" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:10px"></div>
+      <div class="form-group"><label>Quick Reply (Macro)</label>
+        <select id="ticket-macro-select" onchange="applyTicketMacro()"><option value="">— Insert a saved macro —</option></select>
+      </div>
       <div class="form-group"><label>Reply</label><textarea id="ticket-reply-msg" placeholder="Type a reply to the user…"></textarea></div>
-      <div class="form-group"><label>Status</label>
-        <select id="ticket-status-select">
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
+      <div class="form-row">
+        <div class="form-group"><label>Status</label>
+          <select id="ticket-status-select">
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Assign To</label>
+          <select id="ticket-assign-select"><option value="">Unassigned</option></select>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1306,6 +1491,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let allWorkers = [], allEmployers = [], allUsers = [], allConversations = [], allNotifications = [], allJobs = [], allApplications = [], allTrash = [], allEmailLogs = [], allSmsLogs = [], allJobReqs = [], allProfileReqs = [];
+let allCalls = [], allWallets = [], allTariffs = null, allConnectsLedger = [], allPaymentProviders = [], allAdmins = [], allTicketMacros = [], allSiteSettings = null, liveLogsAutoTimer = null, currentLiveLogTab = 'all';
 let allVerificationReqs = [], allPayments = [], allNewsletterSubs = [], allNewslettersSent = [], allTickets = [];
 let activeConvId = null;
 let maintenanceMode = false;
@@ -1527,7 +1713,7 @@ function teardownRealtimeSubscriptions(){
 // ============================================================
 async function loadAll(){
   try{
-    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk]=await Promise.all([
+    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk,calls,wal,tariff,ledger,provs,adms,macros,setts]=await Promise.all([
       sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
@@ -1545,6 +1731,14 @@ async function loadAll(){
       sb.from('newsletter_subscribers').select('*').order('created_at',{ascending:false}),
       sb.from('admin_newsletters').select('*').order('created_at',{ascending:false}),
       sb.from('support_tickets').select('*').order('created_at',{ascending:false}),
+      sb.from('calls').select('*').order('created_at',{ascending:false}).limit(200),
+      sb.from('wallets').select('*'),
+      sb.from('connects_tariffs').select('*').eq('id',1).single(),
+      sb.from('connects_transactions').select('*').order('created_at',{ascending:false}).limit(200),
+      sb.from('payment_provider_settings').select('*'),
+      sb.from('admin_users').select('*'),
+      sb.from('ticket_macros').select('*').order('created_at',{ascending:false}),
+      sb.from('settings').select('*').limit(1).maybeSingle(),
     ]);
     allWorkers=w.data||[];
     allEmployers=ep.data||[];
@@ -1563,12 +1757,22 @@ async function loadAll(){
     allNewsletterSubs=nls.data||[];
     allNewslettersSent=nlsent.data||[];
     allTickets=tk.data||[];
+    allCalls=calls.data||[];
+    allWallets=wal.data||[];
+    allTariffs=tariff.data||{message_cost:1,voice_cost_per_min:0.5,video_cost_per_min:2,daily_free_connects:100,reset_hour_local:0};
+    allConnectsLedger=ledger.data||[];
+    allPaymentProviders=provs.data||[];
+    allAdmins=adms.data||[];
+    allTicketMacros=macros.data||[];
+    allSiteSettings=setts.data||null;
 
     renderDashboard();renderUsers();renderEmployees();renderEmployers();
     renderConversations();renderNotifications();renderJobs();
     renderJobReqs();renderProfileReqs();renderTrash();
     renderEmailLogs();renderSmsLogs();
     renderPayments();renderNewsletterSubs();renderNewslettersSent();renderTickets();
+    renderCalls();renderTariffs();renderWallets();renderLedger();renderPaymentProviders();
+    loadLiveLogs();
     updateBadges();
   }catch(err){showToast('err','Error loading data: '+err.message);}
 }
@@ -1590,6 +1794,11 @@ function renderDashboard(){
   setEl('stat-apps',allApplications.length);
   setEl('stat-notifs',allNotifications.length);
   setEl('stat-payments','Ksh '+payments.toLocaleString());
+  const today=new Date().toDateString();
+  setEl('stat-calls-today',allCalls.filter(c=>new Date(c.started_at||c.call_initiated_at).toDateString()===today).length);
+  setEl('stat-connects-total',allWallets.reduce((s,w)=>s+Number(w.connects_balance||0),0).toLocaleString());
+  setEl('stat-tickets-open',allTickets.filter(t=>t.status==='open'||t.status==='in_progress').length);
+  setEl('live-calls-count',allCalls.filter(c=>c.status==='active'||c.status==='ringing').length);
 
   const all=[
     ...allWorkers.slice(0,6).map(w=>({user:w.full_name||'—',action:'Profile Created',role:'employee',time:w.created_at})),
@@ -1970,6 +2179,9 @@ function renderJobs(){
       <td>${fmtDate(j.created_at)}</td>
       <td><button class="btn btn-sm btn-sky" onclick="viewJobApplications('${j.id}')">${appCount} Apps</button></td>
       <td><div class="actions-cell">
+        <button class="btn btn-sm ${j.show_contact_info?'btn-green':'btn-secondary'}" onclick="toggleJobContactVisibility('${j.id}',${!!j.show_contact_info})" title="Employer/company contact info is never shown on the public posting unless you publish it here — applicant counts are always visible regardless">
+          <i class="bi bi-${j.show_contact_info?'eye-fill':'eye-slash'}"></i> Contact ${j.show_contact_info?'Shown':'Hidden'}
+        </button>
         <button class="btn btn-sm btn-amber" onclick="toggleJobStatus('${j.id}','${j.status}')">${j.status==='active'?'Close':'Activate'}</button>
         <button class="btn btn-sm btn-danger" onclick="deleteJob('${j.id}')"><i class="bi bi-trash3"></i></button>
       </div></td>
@@ -1977,6 +2189,12 @@ function renderJobs(){
   }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No jobs found</td></tr>';
 }
 function filterJobs(){renderJobs();}
+async function toggleJobContactVisibility(id,current){
+  const next=!current;
+  await sb.from('job_postings').update({show_contact_info:next}).eq('id',id);
+  const j=allJobs.find(j=>j.id===id);if(j)j.show_contact_info=next;
+  renderJobs();showToast('ok',next?'Contact info will now show on this posting':'Contact info hidden from this posting');
+}
 async function toggleJobStatus(id,status){
   const ns=status==='active'?'closed':'active';
   await sb.from('job_postings').update({status:ns}).eq('id',id);
@@ -3350,16 +3568,30 @@ function renderTickets(){
   if(status)list=list.filter(t=>t.status===status);
   document.getElementById('tickets-tbody').innerHTML=list.map(t=>{
     const u=allUsers.find(u=>u.id===t.user_id);
+    const assignedAdmin=(allAdmins||[]).find(a=>a.id===t.assigned_admin_id);
     return `<tr>
+      <td><span class="badge badge-muted" style="font-family:monospace">${esc(t.ticket_number||t.id.slice(0,8))}</span></td>
       <td>${esc(t.subject)}</td>
-      <td>${esc(u?.full_name||u?.email||t.user_id?.slice(0,8)||'—')}</td>
+      <td>${esc(t.is_guest?(t.guest_name||t.guest_email||'Guest'):(u?.full_name||u?.email||t.user_id?.slice(0,8)||'—'))}</td>
       <td>${esc(t.category||'general')}</td>
       <td><span class="badge badge-${t.priority==='urgent'?'rose':t.priority==='high'?'amber':'muted'}">${t.priority}</span></td>
+      <td>${assignedAdmin?esc(assignedAdmin.username):'<span style="color:var(--muted)">Unassigned</span>'}</td>
       <td><span class="badge badge-${t.status==='open'?'sky':t.status==='resolved'?'green':t.status==='closed'?'muted':'amber'}">${t.status.replace('_',' ')}</span></td>
       <td>${fmtDate(t.created_at)}</td>
       <td><button class="btn btn-sm btn-primary" onclick="openTicketDetail('${t.id}')"><i class="bi bi-chat-square-text"></i> Open</button></td>
     </tr>`;
-  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No support tickets</td></tr>';
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No support tickets</td></tr>';
+}
+function populateTicketDropdowns(){
+  const macroSel=document.getElementById('ticket-macro-select');
+  if(macroSel)macroSel.innerHTML='<option value="">— Insert a saved macro —</option>'+(allTicketMacros||[]).map(m=>`<option value="${escAttr(m.id)}">${esc(m.title)} (${esc(m.shortcut||'')})</option>`).join('');
+  const assignSel=document.getElementById('ticket-assign-select');
+  if(assignSel)assignSel.innerHTML='<option value="">Unassigned</option>'+(allAdmins||[]).map(a=>`<option value="${a.id}">${esc(a.username)}</option>`).join('');
+}
+function applyTicketMacro(){
+  const id=document.getElementById('ticket-macro-select').value;
+  const macro=(allTicketMacros||[]).find(m=>m.id===id);
+  if(macro)document.getElementById('ticket-reply-msg').value=macro.body;
 }
 function filterTickets(){renderTickets();}
 let currentTicketId=null;
@@ -3374,6 +3606,9 @@ async function openTicketDetail(id){
     <span class="badge badge-amber">${t.priority}</span>`;
   document.getElementById('ticket-status-select').value=t.status;
   document.getElementById('ticket-reply-msg').value='';
+  document.getElementById('ticket-detail-subject').textContent=`${t.ticket_number?'['+t.ticket_number+'] ':''}${t.subject}`;
+  populateTicketDropdowns();
+  document.getElementById('ticket-assign-select').value=t.assigned_admin_id||'';
   const {data:msgs}=await sb.from('support_ticket_messages').select('*').eq('ticket_id',id).order('created_at',{ascending:true});
   document.getElementById('ticket-thread').innerHTML=(msgs||[]).map(m=>`
     <div style="align-self:${m.sender_type==='admin'?'flex-end':'flex-start'};max-width:75%;background:${m.sender_type==='admin'?'var(--brand-soft)':'#fff'};border:1px solid var(--border);border-radius:10px;padding:8px 12px">
@@ -3390,7 +3625,8 @@ async function sendTicketReply(){
   try{
     await sb.from('support_ticket_messages').insert({ticket_id:currentTicketId,sender_id:currentUser.id,sender_type:'admin',message});
     const t=allTickets.find(t=>t.id===currentTicketId);
-    const update={status,updated_at:new Date().toISOString()};
+    const assignedAdminId=document.getElementById('ticket-assign-select').value||null;
+    const update={status,updated_at:new Date().toISOString(),assigned_admin_id:assignedAdminId};
     if(status==='closed')update.closed_at=new Date().toISOString();
     await sb.from('support_tickets').update(update).eq('id',currentTicketId);
     if(t)Object.assign(t,update);
@@ -3400,6 +3636,268 @@ async function sendTicketReply(){
     }
     closeModal('ticket-detail-modal');renderTickets();updateBadges();showToast('ok','Reply sent');
   }catch(err){showToast('err',err.message);}
+}
+
+// ============================================================
+// CALLS (Voice / Video) — raw WebRTC, Supabase Realtime signaling
+// ============================================================
+function renderCalls(){
+  const typeF=document.getElementById('calls-type-filter')?.value||'';
+  const statusF=document.getElementById('calls-status-filter')?.value||'';
+  let data=allCalls.filter(c=>(!typeF||c.call_type===typeF)&&(!statusF||c.status===statusF||(statusF==='ended'&&c.status==='accepted')));
+  setEl('calls-stat-total',allCalls.length);
+  setEl('calls-stat-video',allCalls.filter(c=>c.call_type==='video').length);
+  setEl('calls-stat-voice',allCalls.filter(c=>c.call_type==='voice').length);
+  setEl('calls-stat-missed',allCalls.filter(c=>c.status==='missed'||c.status==='rejected').length);
+  document.getElementById('calls-tbody').innerHTML=data.slice(0,150).map(c=>{
+    const dur=c.call_duration_seconds||c.duration;
+    const durStr=dur?`${Math.floor(dur/60)}m ${dur%60}s`:'—';
+    return `<tr>
+      <td>${esc(c.caller_name||c.caller_id?.slice(0,8)||'—')}</td>
+      <td>${esc(c.receiver_name||c.receiver_id?.slice(0,8)||'—')}</td>
+      <td><span class="badge badge-${c.call_type==='video'?'sky':'green'}"><i class="bi bi-${c.call_type==='video'?'camera-video':'telephone'}"></i> ${c.call_type}</span></td>
+      <td><span class="badge badge-${c.status==='active'?'green':c.status==='missed'||c.status==='rejected'?'rose':'muted'}">${c.status}</span></td>
+      <td>${durStr}</td>
+      <td>${fmtDate(c.started_at||c.call_initiated_at)}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick='viewCallDetail(${JSON.stringify(c.id)})'><i class="bi bi-info-circle"></i></button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No calls yet</td></tr>';
+}
+function filterCalls(){renderCalls();}
+function viewCallDetail(id){
+  const c=allCalls.find(c=>c.id===id);if(!c)return;
+  alert(`Call ${c.call_type} • ${c.status}\nRoom: ${c.room_id}\nQuality: ${c.call_quality||'n/a'}\nRecording: ${c.recording_available?'available':'not recorded'}`);
+}
+function saveTurnConfig(){
+  const cfg={turnUrl:document.getElementById('turn-url').value,stunUrl:document.getElementById('stun-url').value,turnUsername:document.getElementById('turn-username').value,turnCredential:document.getElementById('turn-credential').value};
+  localStorage.setItem('sc_admin_ice_config',JSON.stringify(cfg));
+  showToast('ok','ICE config saved. Wire this into the user-facing app\'s RTCPeerConnection iceServers config separately — this panel only stores it for reference.');
+}
+(function loadTurnConfig(){
+  try{
+    const cfg=JSON.parse(localStorage.getItem('sc_admin_ice_config')||'{}');
+    document.addEventListener('DOMContentLoaded',()=>{
+      if(cfg.turnUrl)document.getElementById('turn-url').value=cfg.turnUrl;
+      if(cfg.stunUrl)document.getElementById('stun-url').value=cfg.stunUrl;
+      if(cfg.turnUsername)document.getElementById('turn-username').value=cfg.turnUsername;
+      if(cfg.turnCredential)document.getElementById('turn-credential').value=cfg.turnCredential;
+    });
+  }catch(e){}
+})();
+
+// ============================================================
+// CONNECTS & PAYMENTS
+// ============================================================
+function switchConnectsTab(e,tab){
+  document.querySelectorAll('#tab-connects .sub-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(e)e.target.classList.add('active');
+  document.querySelectorAll('#tab-connects > .tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('connects-tab-'+tab).classList.add('active');
+}
+function renderTariffs(){
+  const t=allTariffs;if(!t)return;
+  setEl2('tariff-message',t.message_cost);
+  setEl2('tariff-voice',t.voice_cost_per_min);
+  setEl2('tariff-video',t.video_cost_per_min);
+  setEl2('tariff-daily-free',t.daily_free_connects);
+  setEl2('tariff-reset-hour',t.reset_hour_local);
+  const note=document.getElementById('tariff-updated-note');
+  if(note)note.textContent=t.updated_at?`Last updated ${fmtDate(t.updated_at)}${t.updated_by?' by '+t.updated_by:''}`:'';
+}
+function setEl2(id,val){const el=document.getElementById(id);if(el&&val!==undefined&&val!==null)el.value=val;}
+async function saveTariffs(){
+  const update={
+    message_cost:parseFloat(document.getElementById('tariff-message').value)||0,
+    voice_cost_per_min:parseFloat(document.getElementById('tariff-voice').value)||0,
+    video_cost_per_min:parseFloat(document.getElementById('tariff-video').value)||0,
+    daily_free_connects:parseFloat(document.getElementById('tariff-daily-free').value)||0,
+    reset_hour_local:parseInt(document.getElementById('tariff-reset-hour').value)||0,
+    updated_by:currentUser?.username||'admin',
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('connects_tariffs').update(update).eq('id',1);
+  if(error){showToast('err',error.message);return;}
+  allTariffs={...allTariffs,...update};renderTariffs();
+  showToast('ok','Tariffs updated — new rates apply immediately platform-wide');
+}
+function renderWallets(){
+  const q=(document.getElementById('wallets-search')?.value||'').toLowerCase();
+  let data=allWallets.filter(w=>{
+    if(!q)return true;
+    const u=allUsers.find(u=>u.id===w.user_id);
+    return [(u?.full_name||''),(u?.email||''),(u?.phone||''),(w.account_number||'')].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('wallets-tbody').innerHTML=data.slice(0,200).map(w=>{
+    const u=allUsers.find(u=>u.id===w.user_id);
+    return `<tr>
+      <td>${esc(u?.full_name||u?.email||w.user_id?.slice(0,8)||'—')}</td>
+      <td style="font-family:monospace">${esc(w.account_number||'—')}</td>
+      <td><strong>${Number(w.connects_balance||0).toLocaleString()}</strong></td>
+      <td>${w.connects_reset_date||'—'}</td>
+      <td>Ksh ${Number(w.total_paid||0).toLocaleString()}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-green" onclick="openWalletAdjust('${w.user_id}',1)"><i class="bi bi-plus-lg"></i> Credit</button>
+        <button class="btn btn-sm btn-amber" onclick="openWalletAdjust('${w.user_id}',-1)"><i class="bi bi-dash-lg"></i> Debit</button>
+      </div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No wallets found</td></tr>';
+}
+function filterWallets(){renderWallets();}
+async function openWalletAdjust(userId,sign){
+  const amountStr=prompt(sign>0?'How many Connects to credit this user?':'How many Connects to debit from this user?');
+  if(!amountStr)return;
+  const amount=Math.abs(parseFloat(amountStr));
+  if(!amount||isNaN(amount)){showToast('err','Enter a valid number');return;}
+  const note=prompt('Reason / note for this manual adjustment (shown in ledger):')||'';
+  const w=allWallets.find(w=>w.user_id===userId);
+  if(!w){showToast('err','Wallet not found');return;}
+  const before=Number(w.connects_balance||0);
+  const after=Math.max(0,before+sign*amount);
+  const {error:e1}=await sb.from('wallets').update({connects_balance:after,updated_at:new Date().toISOString()}).eq('user_id',userId);
+  if(e1){showToast('err',e1.message);return;}
+  const {error:e2}=await sb.from('connects_transactions').insert({
+    user_id:userId,type:sign>0?'manual_credit':'manual_debit',amount:sign*amount,
+    balance_before:before,balance_after:after,admin_id:currentUser?.username||'admin',note
+  });
+  if(e2){showToast('err',e2.message);return;}
+  w.connects_balance=after;
+  await sb.from('notifications').insert({user_id:userId,type:sign>0?'success':'info',title:sign>0?'Connects added':'Connects deducted',message:`Your Connects balance was ${sign>0?'topped up':'adjusted'} by an admin: ${sign>0?'+':'-'}${amount}. New balance: ${after}.${note?' Note: '+note:''}`,source_type:'admin'});
+  renderWallets();
+  const {data:ledgerRow}=await sb.from('connects_transactions').select('*').order('created_at',{ascending:false}).limit(1).single();
+  if(ledgerRow)allConnectsLedger.unshift(ledgerRow);
+  renderLedger();
+  showToast('ok',`Wallet ${sign>0?'credited':'debited'} ${amount} connects`);
+}
+function renderLedger(){
+  const typeF=document.getElementById('ledger-type-filter')?.value||'';
+  let data=allConnectsLedger.filter(l=>!typeF||l.type===typeF);
+  document.getElementById('ledger-tbody').innerHTML=data.slice(0,200).map(l=>{
+    const u=allUsers.find(u=>u.id===l.user_id);
+    return `<tr>
+      <td>${esc(u?.full_name||u?.email||l.user_id?.slice(0,8)||'—')}</td>
+      <td><span class="badge badge-muted">${l.type.replace('_',' ')}</span></td>
+      <td style="color:${l.amount>=0?'var(--green)':'var(--rose)'}">${l.amount>=0?'+':''}${l.amount}</td>
+      <td>${l.balance_after??'—'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.note||'—')}</td>
+      <td>${esc(l.admin_id||'system')}</td>
+      <td>${fmtDate(l.created_at)}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No transactions yet</td></tr>';
+}
+const PROVIDER_META={
+  mpesa_daraja:{label:'M-Pesa (Daraja)',color:'#4caf50',icon:'bi-phone-vibrate',logoText:'M-PESA'},
+  airtel_money:{label:'Airtel Money',color:'#e6231e',icon:'bi-phone',logoText:'Airtel Money'},
+  mtn_momo:{label:'MTN MoMo',color:'#ffcb05',icon:'bi-phone-fill',logoText:'MTN MoMo'},
+  card:{label:'Card (Visa/Mastercard)',color:'#1a1f71',icon:'bi-credit-card-2-front-fill',logoText:'Card'},
+};
+function renderPaymentProviders(){
+  const grid=document.getElementById('providers-grid');if(!grid)return;
+  grid.innerHTML=allPaymentProviders.map(p=>{
+    const meta=PROVIDER_META[p.provider]||{label:p.provider,color:'#666',icon:'bi-credit-card',logoText:p.provider};
+    const cfg=p.config||{};
+    return `<div class="section" style="padding:1rem;margin:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:8px;background:${meta.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="bi ${meta.icon}"></i></div>
+          <div><div style="font-weight:700;font-size:13px">${esc(meta.label)}</div><div style="font-size:11px;color:var(--muted)">${p.is_enabled?'Enabled':'Disabled'}</div></div>
+        </div>
+        <label class="switch"><input type="checkbox" ${p.is_enabled?'checked':''} onchange="toggleProvider('${p.provider}',this.checked)"><span class="slider"></span></label>
+      </div>
+      ${p.provider==='mpesa_daraja'?`
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Consumer Key</label><input data-cfg="consumer_key" value="${escAttr(cfg.consumer_key||'')}" placeholder="Daraja Consumer Key"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Consumer Secret</label><input type="password" data-cfg="consumer_secret" value="${escAttr(cfg.consumer_secret||'')}" placeholder="Daraja Consumer Secret"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Shortcode</label><input data-cfg="shortcode" value="${escAttr(cfg.shortcode||'')}" placeholder="174379"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Passkey</label><input type="password" data-cfg="passkey" value="${escAttr(cfg.passkey||'')}" placeholder="Daraja Passkey"></div>
+      `:p.provider==='airtel_money'?`
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Client ID</label><input data-cfg="client_id" value="${escAttr(cfg.client_id||'')}" placeholder="Airtel Client ID"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Client Secret</label><input type="password" data-cfg="client_secret" value="${escAttr(cfg.client_secret||'')}" placeholder="Airtel Client Secret"></div>
+      `:p.provider==='mtn_momo'?`
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Subscription Key</label><input data-cfg="subscription_key" value="${escAttr(cfg.subscription_key||'')}" placeholder="MTN Subscription Key"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">API User / Key</label><input type="password" data-cfg="api_key" value="${escAttr(cfg.api_key||'')}" placeholder="MTN API Key"></div>
+      `:`
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Public Key</label><input data-cfg="public_key" value="${escAttr(cfg.public_key||'')}" placeholder="Card processor public key"></div>
+        <div class="form-group" style="margin-bottom:6px"><label style="font-size:11px">Secret Key</label><input type="password" data-cfg="secret_key" value="${escAttr(cfg.secret_key||'')}" placeholder="Card processor secret key"></div>
+      `}
+      <button class="btn btn-sm btn-primary" style="width:100%;margin-top:4px" onclick="saveProviderConfig('${p.provider}',this)"><i class="bi bi-check-lg"></i> Save</button>
+    </div>`;
+  }).join('')||'<p style="color:var(--muted)">No providers configured</p>';
+}
+async function toggleProvider(provider,enabled){
+  const {error}=await sb.from('payment_provider_settings').update({is_enabled:enabled,updated_at:new Date().toISOString(),updated_by:currentUser?.username||'admin'}).eq('provider',provider);
+  if(error){showToast('err',error.message);return;}
+  const p=allPaymentProviders.find(p=>p.provider===provider);if(p)p.is_enabled=enabled;
+  showToast('ok',`${PROVIDER_META[provider]?.label||provider} ${enabled?'enabled':'disabled'}`);
+}
+async function saveProviderConfig(provider,btn){
+  const card=btn.closest('.section');
+  const cfg={};
+  card.querySelectorAll('[data-cfg]').forEach(inp=>{cfg[inp.getAttribute('data-cfg')]=inp.value;});
+  const {error}=await sb.from('payment_provider_settings').update({config:cfg,updated_at:new Date().toISOString(),updated_by:currentUser?.username||'admin'}).eq('provider',provider);
+  if(error){showToast('err',error.message);return;}
+  const p=allPaymentProviders.find(p=>p.provider===provider);if(p)p.config=cfg;
+  showToast('ok','Provider credentials saved. Actual charge/STK-push calls still need the matching Edge Function deployed for '+provider+'.');
+}
+
+// ============================================================
+// LIVE ACTIVITY (event_logs + admin_audit_logs, polled)
+// ============================================================
+async function loadLiveLogs(){
+  try{
+    const [ev,aud]=await Promise.all([
+      sb.from('event_logs').select('*').order('created_at',{ascending:false}).limit(60),
+      sb.from('admin_audit_logs').select('*').order('created_at',{ascending:false}).limit(60),
+    ]);
+    const merged=[
+      ...(ev.data||[]).map(e=>({...e,_kind:'system'})),
+      ...(aud.data||[]).map(a=>({...a,_kind:'admin'})),
+    ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,80);
+    renderLiveLogs(merged);
+  }catch(err){/* silent — live panel shouldn't spam toasts every 2s */}
+}
+function renderLiveLogs(merged){
+  const fiveMinAgo=Date.now()-5*60*1000;
+  setEl('live-events-count',merged.filter(l=>new Date(l.created_at).getTime()>=fiveMinAgo).length);
+  const latest=merged[0];
+  const latestEl=document.getElementById('live-latest-event');
+  if(latestEl)latestEl.textContent=latest?`${latest._kind==='admin'?'[Admin] ':''}${latest.action_description||latest.description||latest.action_type||latest.event_type||'event'} — ${new Date(latest.created_at).toLocaleTimeString()}`:'—';
+  const filtered=merged.filter(l=>currentLiveLogTab==='all'||l._kind===currentLiveLogTab);
+  const stream=document.getElementById('livelogs-stream');
+  if(!stream)return;
+  stream.innerHTML=filtered.map(l=>{
+    const ts=new Date(l.created_at).toLocaleTimeString();
+    if(l._kind==='admin'){
+      return `<div style="padding:3px 0;border-bottom:1px solid #1f2937"><span style="color:#6b7280">${ts}</span> <span style="color:#f59e0b">[ADMIN]</span> <span style="color:#e5e7eb">${esc(l.action_description||l.action_type||'action')}</span> ${l.target_table?`<span style="color:#6b7280">→ ${esc(l.target_table)}</span>`:''}</div>`;
+    }
+    return `<div style="padding:3px 0;border-bottom:1px solid #1f2937"><span style="color:#6b7280">${ts}</span> <span style="color:#38bdf8">[SYSTEM]</span> <span style="color:#e5e7eb">${esc(l.description||l.event_type||'event')}</span></div>`;
+  }).join('')||'<div style="color:#6b7280">No activity recorded yet</div>';
+}
+function switchLiveLogTab(e,tab){
+  document.querySelectorAll('#tab-livelogs .sub-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(e)e.target.classList.add('active');
+  currentLiveLogTab=tab;
+  loadLiveLogs();
+}
+function toggleLiveLogsAuto(){
+  const on=document.getElementById('livelogs-auto').checked;
+  if(liveLogsAutoTimer){clearInterval(liveLogsAutoTimer);liveLogsAutoTimer=null;}
+  if(on)liveLogsAutoTimer=setInterval(loadLiveLogs,2000);
+}
+document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('livelogs-auto')?.checked)liveLogsAutoTimer=setInterval(loadLiveLogs,2000);});
+
+// ============================================================
+// GOOGLE DRIVE BACKUP (infrastructure only — no OAuth wired yet)
+// ============================================================
+async function saveGDriveConfig(){
+  const cfg={
+    clientId:document.getElementById('gdrive-client-id').value,
+    clientSecret:document.getElementById('gdrive-client-secret').value,
+    folderId:document.getElementById('gdrive-folder-id').value,
+    schedule:document.getElementById('gdrive-schedule').value,
+    enabled:document.getElementById('gdrive-enabled').checked,
+  };
+  const {error}=await sb.from('settings').update({gdrive_backup_config:cfg}).eq('id',allSiteSettings?.id||1);
+  if(error){showToast('err',error.message);return;}
+  showToast('ok','Google Drive backup config saved. Deploy the export Edge Function before enabling scheduled runs.');
 }
 
 // ============================================================
@@ -3510,6 +4008,7 @@ function updateBadges(){
   setEl('badge-pay',allPayments.filter(p=>p.status==='pending').length);
   setEl('badge-newsletter',allNewsletterSubs.filter(s=>s.status==='subscribed').length);
   setEl('badge-tickets',allTickets.filter(t=>t.status==='open').length);
+  setEl('badge-calls',allCalls.filter(c=>c.status==='ringing'||c.status==='active').length);
   const hasNotif=allNotifications.some(n=>!n.is_read);
   document.getElementById('notif-indicator').style.display=hasNotif?'block':'none';
 }
@@ -3523,9 +4022,10 @@ function switchTab(e,name){
   document.getElementById('tab-'+name)?.classList.add('active');
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
   if(e)e.target.closest('.sb-link')?.classList.add('active');
-  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings',payments:'Payments',newsletter:'Newsletter',tickets:'Support Tickets'};
+  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings',payments:'Payments',newsletter:'Newsletter',tickets:'Support Tickets',calls:'Voice & Video Calls',connects:'Connects & Payments',livelogs:'Live Activity'};
   document.getElementById('nav-title').textContent=titles[name]||name;
   if(name==='db')loadDBStats();
+  if(name==='livelogs')loadLiveLogs();
 }
 function switchSettingsTab(e,tab){
   document.querySelectorAll('#tab-settings .tab-content').forEach(t=>t.classList.remove('active'));
