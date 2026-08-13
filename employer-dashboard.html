@@ -2513,10 +2513,42 @@ function showIncomingCall(callerName, callType, convId, callId, roomId) {
   fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = '';
   document.getElementById('incoming-call-bar').classList.add('show');
   playRingtone('incoming');
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(`${callType === 'video' ? '🎥' : '📞'} Incoming ${callType} call from ${callerName}`, { body: 'SoundsCare · Tap to answer', icon: '/favicon.ico' });
-  }
+  notifyIncomingCallOutsidePage(callerName, callType);
   missedCallTimeout = setTimeout(() => { declineIncomingCall(); }, 30000);
+}
+
+// Pop the call to the user's attention even when they're not looking at this tab/window:
+// an OS-level Notification (works even minimized, needs permission) plus a flashing tab
+// title (works even if Notification permission was denied). Both are cleared as soon as
+// the call is answered, declined, or times out — see stopIncomingCallAttention().
+let __titleFlashTimer = null;
+let __titleFlashOriginal = null;
+function notifyIncomingCallOutsidePage(callerName, callType) {
+  stopIncomingCallAttention(); // clear any stale flash/notification from a previous call
+  if (document.hidden) {
+    __titleFlashOriginal = document.title;
+    let on = false;
+    __titleFlashTimer = setInterval(() => {
+      document.title = on ? __titleFlashOriginal : `📞 ${callerName} is calling…`;
+      on = !on;
+    }, 1000);
+  }
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const n = new Notification(`${callType === 'video' ? '🎥' : '📞'} Incoming ${callType} call`, {
+        body: `${callerName} · SoundsCare — tap to answer`,
+        icon: '/favicon.ico',
+        tag: 'soundscare-incoming-call',
+        requireInteraction: true,
+        vibrate: [300, 150, 300, 150, 300],
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) { console.warn('[notify] failed:', e); }
+  }
+}
+function stopIncomingCallAttention() {
+  if (__titleFlashTimer) { clearInterval(__titleFlashTimer); __titleFlashTimer = null; }
+  if (__titleFlashOriginal != null) { document.title = __titleFlashOriginal; __titleFlashOriginal = null; }
 }
 
 // ── 4. ACCEPT INCOMING CALL ──
@@ -2525,6 +2557,7 @@ async function acceptIncomingCall() {
   document.getElementById('incoming-call-bar').classList.remove('show');
   clearTimeout(missedCallTimeout);
   stopRingtone();
+  stopIncomingCallAttention();
   const { callerName, callType, convId, callId, roomId } = incomingCallData;
   incomingCallData = null;
   activeCallId = callId; activeCallType = callType; activeCallRole = 'callee'; activeCallPeer = callerName;
@@ -2566,6 +2599,7 @@ async function declineIncomingCall() {
   document.getElementById('incoming-call-bar').classList.remove('show');
   clearTimeout(missedCallTimeout);
   stopRingtone();
+  stopIncomingCallAttention();
   if (incomingCallData?.callId) await sb.from('calls').update({ status: 'rejected', ended_at: new Date().toISOString() }).eq('id', incomingCallData.callId);
   incomingCallData = null;
 }
@@ -2878,23 +2912,40 @@ function patchCallLocally(callId, patch) {
 }
 
 // ── 14. SUBSCRIBE TO INCOMING CALLS ──
+// Calls can be "not ringing" for two very different reasons: (a) the realtime channel
+// never delivers the INSERT event (Supabase Realtime replication not enabled on `calls`,
+// RLS blocking the row, a dropped websocket, etc.) or (b) it delivers fine but this tab
+// was in the background and nothing drew the user's eye to it. We fix (a) with a DB
+// polling fallback that catches anything realtime misses, and (b) with the popup/title
+// flash added in notifyIncomingCallOutsidePage() above. _shownCallIds dedupes so a call
+// caught by both paths only pops once.
 let incomingCallsChan = null;
+const _shownCallIds = new Set();
+
+async function _resolveCallerNameAndConv(row) {
+  const wpRes = await safeFire(sb.from('worker_profiles').select('full_name').eq('session_id', row.caller_id).maybeSingle());
+  const epRes = await safeFire(sb.from('employer_profiles').select('full_name').eq('user_id', row.caller_id).maybeSingle());
+  const callerName = wpRes?.data?.full_name || epRes?.data?.full_name || 'Unknown Caller';
+  const conv = allConvs.find(c => c.employee_id === row.caller_id || c.employer_id === row.caller_id);
+  return { callerName, convId: conv?.id || null };
+}
+
+async function _handleIncomingCallRow(row) {
+  if (row.status !== 'ringing' || _shownCallIds.has(row.id)) return;
+  if (activeCallId || incomingCallData) {
+    await safeFire(sb.from('calls').update({ status: 'rejected' }).eq('id', row.id));
+    return;
+  }
+  _shownCallIds.add(row.id);
+  const { callerName, convId } = await _resolveCallerNameAndConv(row);
+  showIncomingCall(callerName, row.call_type || 'voice', convId, row.id, row.room_id);
+}
+
 function subscribeIncomingCalls() {
   if (incomingCallsChan) { try { sb.removeChannel(incomingCallsChan); } catch (e) {} }
   incomingCallsChan = sb.channel('incoming-calls-employer')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls', filter: `receiver_id=eq.${currentUser.id}` }, async (payload) => {
-      const row = payload.new;
-      if (row.status !== 'ringing') return;
-      if (activeCallId) {
-        await sb.from('calls').update({ status: 'rejected' }).eq('id', row.id);
-        return;
-      }
-      // Look up caller name — could be a worker
-      const wpRes = await safeFire(sb.from('worker_profiles').select('full_name').eq('session_id', row.caller_id).maybeSingle());
-      const epRes = await safeFire(sb.from('employer_profiles').select('full_name').eq('user_id', row.caller_id).maybeSingle());
-      const callerName = wpRes?.data?.full_name || epRes?.data?.full_name || 'Unknown Caller';
-      const conv = allConvs.find(c => c.employee_id === row.caller_id || c.employer_id === row.caller_id);
-      showIncomingCall(callerName, row.call_type || 'voice', conv?.id || null, row.id, row.room_id);
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls', filter: `receiver_id=eq.${currentUser.id}` }, (payload) => {
+      _handleIncomingCallRow(payload.new);
     })
     .subscribe((status) => {
       console.log('[incoming-calls-employer] status:', status);
@@ -2903,9 +2954,31 @@ function subscribeIncomingCalls() {
         setTimeout(subscribeIncomingCalls, 3000);
       }
     });
+  startIncomingCallPolling();
 }
+
+// Polling fallback: every 3s, ask the DB directly for a fresh 'ringing' call addressed
+// to us. This is what makes calls ring even if the realtime channel above is silently
+// broken — it's the DB source of truth, not an event stream that can be missed.
+let _incomingCallPollTimer = null;
+function startIncomingCallPolling() {
+  if (_incomingCallPollTimer) return;
+  _incomingCallPollTimer = setInterval(async () => {
+    if (!currentUser?.id || activeCallId || incomingCallData) return;
+    const since = new Date(Date.now() - 30000).toISOString();
+    const { data: rows, error } = await sb.from('calls')
+      .select('*')
+      .eq('receiver_id', currentUser.id)
+      .eq('status', 'ringing')
+      .gte('started_at', since)
+      .order('started_at', { ascending: false })
+      .limit(1);
+    if (error) { console.warn('[incoming-call-poll]', error.message); return; }
+    if (rows && rows[0]) await _handleIncomingCallRow(rows[0]);
+  }, 3000);
+}
+
 // Call subscribeIncomingCalls() after auth is confirmed
-const _origLoadAll = typeof loadAll === 'function' ? loadAll : null;
 document.addEventListener('DOMContentLoaded', () => {
   // Request notification permission
   if ('Notification' in window && Notification.permission === 'default') {
