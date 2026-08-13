@@ -117,6 +117,18 @@
     }
     .online-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 
+    /* CONNECTS PILL (nav) */
+    .connects-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-soft); border: 1px solid rgba(232,160,64,0.3);
+      color: var(--accent); border-radius: 20px;
+      padding: 6px 12px; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: 0.18s;
+    }
+    .connects-pill:hover { background: rgba(232,160,64,0.22); }
+    .connects-pill.low { background: rgba(244,63,94,0.12); border-color: rgba(244,63,94,0.3); color: var(--rose); }
+    .connects-pill i { font-size: 13px; }
+
     /* PAGE */
     .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.2rem 5rem; }
 
@@ -1148,6 +1160,10 @@
     <button class="nav-btn" onclick="openModal('modal-jobs')" title="Available Jobs">
       <i class="bi bi-briefcase"></i>
     </button>
+    <button class="connects-pill" onclick="openModal('modal-wallet')" title="Connects balance">
+      <i class="bi bi-lightning-charge-fill"></i>
+      <span id="connects-balance-display">—</span>
+    </button>
     <button class="nav-btn" onclick="openModal('modal-wallet')" title="Wallet & Payments">
       <i class="bi bi-wallet2"></i>
     </button>
@@ -1613,6 +1629,24 @@
             <div class="balance-sub">Requires payment</div>
           </div>
         </div>
+      </div>
+
+      <!-- CONNECTS -->
+      <div class="balance-box" style="margin-top:10px; background:var(--accent-soft); border:1px solid rgba(232,160,64,0.25);">
+        <div class="balance-grid">
+          <div class="balance-item">
+            <div class="balance-label"><i class="bi bi-lightning-charge-fill" style="color:var(--accent);"></i> Connects Balance</div>
+            <div class="balance-amount" id="connects-balance-full" style="color:var(--accent);">—</div>
+            <div class="balance-sub" id="connects-reset-hint">—</div>
+          </div>
+          <div class="balance-item">
+            <div class="balance-label">Pricing</div>
+            <div class="balance-sub" id="connects-pricing-hint" style="line-height:1.6;">—</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-full" style="margin-top:10px;" onclick="openBuyConnects()">
+          <i class="bi bi-plus-circle"></i> Buy More Connects
+        </button>
       </div>
 
       <div class="tabs">
@@ -2372,6 +2406,7 @@ let sb, currentUser;
 // notifications: id, user_id, type, title, message, is_read, created_at
 
 let workerProfile = null;
+let connectsTariffs = null; // loaded once in loadDashboard(); { message_cost, voice_cost_per_min, video_cost_per_min, daily_free_connects, reset_hour_local }
 let allConversations = [];
 let activeConvId = null;
 let activeConvMeta = null;
@@ -2631,10 +2666,27 @@ async function loadDashboard() {
     // 4. wallets (RLS: user_id = auth.uid())
     console.log('🔍 4️⃣ Loading wallet for user_id =', currentUser.id);
     const { data: walletData, error: wErr } = await sb.from('wallets')
-      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance')
+      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance, connects_balance, connects_reset_date')
       .eq('user_id', currentUser.id)
       .limit(1);
     const wallet = walletData?.[0] || null;
+
+    // 4b. connects_tariffs — pricing config, readable by any authenticated
+    // user (not just admins), needed client-side to show the pre-flight
+    // "you can't afford this call" check and to render costs in the UI.
+    const { data: tariffData, error: tErr } = await sb.from('connects_tariffs').select('*').eq('id', 1).maybeSingle();
+    if (tErr) console.warn('⚠️ connects_tariffs load failed:', tErr.message);
+    connectsTariffs = tariffData || null;
+    if (wallet) {
+      renderConnectsWidget(wallet);
+    } else {
+      // No wallet row yet — ensureAccountNumber() (called below for the KES
+      // wallet) will upsert one shortly with connects_balance/reset_date
+      // defaulting to 100/today per the column defaults, but show a sane
+      // placeholder now rather than a blank "—" until the next page load.
+      updateConnectsWidget(0);
+      updateConnectsPricingHint();
+    }
 
     console.log('WALLET DATA:', wallet);
     console.log('WALLET ERROR:', wErr);
@@ -3384,6 +3436,19 @@ async function startCall(type) {
 
   if (!receiverId) { showToast('err', 'bi-exclamation-circle', 'Cannot Call', 'Cannot call Support via this channel.'); return; }
 
+  // 1a0. Pre-flight balance check. This does NOT charge anything — actual
+  // duration isn't known until the call ends, so the real debit happens in
+  // endCall(). This just stops someone starting a call they can't afford
+  // even one minute of. connectsTariffs is loaded on dashboard init.
+  const perMinCost = type === 'video' ? connectsTariffs?.video_cost_per_min : connectsTariffs?.voice_cost_per_min;
+  if (perMinCost != null) {
+    const canAfford = await canAffordConnects(perMinCost);
+    if (!canAfford) {
+      showToast('err', 'bi-wallet2', 'Out of Connects', `You need at least ${perMinCost} Connect(s) to start a ${type} call. Buy more from your wallet.`);
+      return;
+    }
+  }
+
   // 1a. Request media
   const constraints = type === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
   try {
@@ -3593,6 +3658,25 @@ async function endCall(type) {
     // Update participant left_at
     await sb.from('call_participants').update({ left_at: new Date().toISOString() })
       .eq('call_id', activeCallId).eq('user_id', currentUser.id);
+
+    // Charge Connects for the actual call duration, rounded up to the
+    // nearest minute (so a 61-second call costs 2 minutes, not 1 — matches
+    // how the tariff is priced per-minute). Only the caller is billed here;
+    // the callee side wires the same debit in its own endCall(). A 0-second
+    // call (rejected/missed before connecting) isn't charged at all.
+    if (callSeconds > 0) {
+      const minutes = Math.ceil(callSeconds / 60);
+      const debit = await debitConnects(type, minutes, 'call', activeCallId);
+      if (debit.success) {
+        updateConnectsWidget(debit.balance);
+      } else {
+        // The call already happened — we can't un-happen it, so this is a
+        // billing reconciliation problem, not something to block the UI on.
+        // Surface it clearly rather than silently losing the charge.
+        console.error('Connects debit failed after call ended:', debit);
+        showToast('err', 'bi-exclamation-triangle', 'Billing Issue', `Couldn't charge Connects for this call (${minutes} min). Contact support if this keeps happening.`);
+      }
+    }
   }
 
   // Cleanup WebRTC
@@ -4954,6 +5038,112 @@ function generateTransactionRef() {
   return `SC-${ts}-${rand}`;
 }
 
+// ────────────────────────────────────────────────────────
+//  CONNECTS — spend helper. Always goes through the debit_connects()
+//  RPC (server-side, SECURITY DEFINER) — never write connects_balance
+//  from the client directly; that column is locked down at the DB level.
+// ────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────
+//  CONNECTS — wallet widget (nav pill + wallet modal section)
+// ────────────────────────────────────────────────────────
+let connectsResetDate = null; // 'YYYY-MM-DD', from wallets.connects_reset_date — used by the live countdown
+let connectsCountdownTimer = null;
+
+// Called once on dashboard load with the fetched wallet row.
+function renderConnectsWidget(wallet) {
+  connectsResetDate = wallet?.connects_reset_date || null;
+  updateConnectsWidget(wallet?.connects_balance ?? 0);
+  updateConnectsPricingHint();
+  updateConnectsCountdown();
+  if (connectsCountdownTimer) clearInterval(connectsCountdownTimer);
+  connectsCountdownTimer = setInterval(updateConnectsCountdown, 60000); // refresh every minute
+}
+
+// Called after every debit (and can be called any time the balance changes)
+// to keep the nav pill and modal in sync without a full reload.
+function updateConnectsWidget(balance) {
+  const bal = Math.max(0, Number(balance) || 0);
+  const lowThreshold = connectsTariffs?.message_cost != null ? connectsTariffs.message_cost * 3 : 5;
+  document.getElementById('connects-balance-display')?.replaceChildren(document.createTextNode(bal));
+  document.getElementById('connects-balance-full')?.replaceChildren(document.createTextNode(bal + ' Connects'));
+  document.querySelector('.connects-pill')?.classList.toggle('low', bal < lowThreshold);
+}
+
+function updateConnectsPricingHint() {
+  const el = document.getElementById('connects-pricing-hint');
+  if (!el || !connectsTariffs) return;
+  el.innerHTML = `Message: ${connectsTariffs.message_cost}/msg<br>Voice: ${connectsTariffs.voice_cost_per_min}/min<br>Video: ${connectsTariffs.video_cost_per_min}/min`;
+}
+
+// Live "resets in Xh Ym" countdown, respecting connects_tariffs.reset_hour_local
+// in Africa/Nairobi time — matches the boundary logic in the debit_connects() RPC.
+function updateConnectsCountdown() {
+  const el = document.getElementById('connects-reset-hint');
+  if (!el) return;
+  const resetHour = connectsTariffs?.reset_hour_local ?? 0;
+
+  // Current time in Nairobi, computed via Intl so it's correct regardless
+  // of the device's own timezone.
+  const nowNairobi = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
+  const nextReset = new Date(nowNairobi);
+  nextReset.setHours(resetHour, 0, 0, 0);
+  if (nextReset <= nowNairobi) nextReset.setDate(nextReset.getDate() + 1);
+
+  const diffMs = nextReset - nowNairobi;
+  const h = Math.floor(diffMs / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  el.textContent = `Resets in ${h}h ${m}m`;
+}
+
+// Buy-more-Connects — only ever show providers that are actually wired up.
+// Right now that's none (M-Pesa/Airtel Edge Functions pending Daraja
+// credentials), so this correctly tells the user there's nothing to buy
+// through yet rather than showing a payment form that silently can't work.
+async function openBuyConnects() {
+  const { data: providers, error } = await sb.from('payment_provider_settings')
+    .select('provider, is_enabled')
+    .eq('is_enabled', true);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Error', 'Could not load payment options.'); return; }
+  if (!providers || providers.length === 0) {
+    showToast('info', 'bi-hourglass-split', 'Coming Soon', 'Buying extra Connects isn\'t available yet — check back soon.');
+    return;
+  }
+  // TODO: once a provider is enabled, render its actual purchase flow here.
+  showToast('info', 'bi-wallet2', 'Buy Connects', `Available: ${providers.map(p => p.provider).join(', ')}`);
+}
+
+async function debitConnects(type, units, referenceType, referenceId) {
+  const { data, error } = await sb.rpc('debit_connects', {
+    p_type: type,
+    p_units: units,
+    p_reference_type: referenceType || null,
+    p_reference_id: referenceId ? String(referenceId) : null,
+  });
+  if (error) {
+    console.error('debitConnects RPC error:', error.message);
+    return { success: false, error: 'rpc_error', message: error.message };
+  }
+  return data; // { success, balance, charged } or { success:false, error:'insufficient_balance', balance, required }
+}
+
+// Quick read-only balance check, used before starting a call so we don't
+// let someone start a call they can't afford even one minute of. This does
+// NOT charge anything — it's purely informational, the real charge happens
+// in debitConnects() at call end once actual duration is known.
+async function canAffordConnects(costPerUnit) {
+  const { data: wallet } = await sb.from('wallets')
+    .select('connects_balance, connects_reset_date')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+  if (!wallet) return false;
+  // If a reset is due, the real balance the RPC will see is the daily
+  // free amount, not whatever's stored right now — so don't block someone
+  // who's just past midnight but hasn't triggered a reset yet today.
+  const today = new Date().toISOString().slice(0, 10);
+  if (wallet.connects_reset_date < today) return true;
+  return (wallet.connects_balance || 0) >= costPerUnit;
+}
+
 // Every user needs a Paybill account number before they can be asked to pay.
 // If the wallet doesn't have one yet, generate one deterministically from their
 // user id, save it to both `wallets` and `worker_profiles`, and reflect it in the UI.
@@ -5487,6 +5677,21 @@ async function sendMessageReply() {
 
   const sendBtn = document.getElementById('send-btn');
   sendBtn.disabled = true;
+
+  // Charge before sending, not after — a message that got sent for free
+  // because the debit happened afterward (or not at all) is exactly the
+  // gap this exists to close. If it fails, nothing gets sent.
+  const debit = await debitConnects('message', 1, 'conversation', activeConvId);
+  if (!debit.success) {
+    sendBtn.disabled = false;
+    if (debit.error === 'insufficient_balance') {
+      showToast('err', 'bi-wallet2', 'Out of Connects', `You need ${debit.required} Connect(s) to send this — you have ${debit.balance}. Buy more from your wallet.`);
+    } else {
+      showToast('err', 'bi-exclamation-circle', 'Send Failed', debit.message || 'Could not process Connects charge.');
+    }
+    return;
+  }
+  updateConnectsWidget(debit.balance);
 
   const fullText = replyToText
     ? `↩ "${replyToText.substring(0,40)}${replyToText.length > 40 ? '…' : ''}" \n${text}`
