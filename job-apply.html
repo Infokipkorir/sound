@@ -328,27 +328,56 @@ async function resolveApplicantAndRender(){
 }
 
 function renderLoginRequired(){
+  // Remember what they were trying to do so we can resume it the moment they're
+  // back and logged in — see restorePendingApply() below.
+  savePendingApply();
   document.getElementById('apply-panel').innerHTML = `
     <div class="state-block">
       <div class="state-icon blue"><i class="bi bi-person-lock"></i></div>
       <h3>Log In to Apply</h3>
-      <p>You'll need a free SoundsCare worker account to apply. It only takes a minute, and your profile is reused for every job.</p>
+      <p>You'll need a free SoundsCare worker account to apply. It only takes a minute, and your profile is reused for every job. We'll bring you right back here once you're in.</p>
       <div class="state-actions">
         <button class="btn-apply" onclick="location.href='login.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-box-arrow-in-right"></i> Log In</button>
-        <button class="btn-outline" onclick="location.href='post-my-profile.html'"><i class="bi bi-person-plus"></i> Create a Free Account</button>
+        <button class="btn-outline" onclick="location.href='post-my-profile.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-person-plus"></i> Create a Free Account</button>
       </div>
     </div>`;
 }
 function renderProfileRequired(){
+  savePendingApply();
   document.getElementById('apply-panel').innerHTML = `
     <div class="state-block">
       <div class="state-icon amber"><i class="bi bi-person-exclamation"></i></div>
       <h3>Finish Your Profile First</h3>
-      <p>You're logged in, but we couldn't find a worker profile on your account yet. Complete it so employers can see who's applying.</p>
+      <p>You're logged in, but we couldn't find a worker profile on your account yet. Complete it so employers can see who's applying — we'll bring you right back here once it's done.</p>
       <div class="state-actions">
-        <button class="btn-apply" onclick="location.href='post-my-profile.html'"><i class="bi bi-person-check"></i> Complete My Profile</button>
+        <button class="btn-apply" onclick="location.href='post-my-profile.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-person-check"></i> Complete My Profile</button>
       </div>
     </div>`;
+}
+
+/* ── PENDING-APPLY MEMORY ──
+   When someone needs to log in or finish their profile before they can apply, we
+   remember which job they were on in localStorage. login.html / post-my-profile.html
+   redirect back here (via ?redirect=) once they're done, and on the next load we spot
+   the saved intent and pick up right where they left off instead of making them
+   search for the job again. */
+const PENDING_APPLY_KEY = 'sc_pending_apply';
+const PENDING_APPLY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // don't resume anything older than a day
+function savePendingApply(){
+  try{ localStorage.setItem(PENDING_APPLY_KEY, JSON.stringify({ jobId, ts: Date.now() })); }catch(e){}
+}
+function getPendingApply(){
+  try{
+    const raw = localStorage.getItem(PENDING_APPLY_KEY);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(!obj || obj.jobId !== jobId) return null;
+    if(Date.now() - obj.ts > PENDING_APPLY_MAX_AGE_MS) return null;
+    return obj;
+  }catch(e){ return null; }
+}
+function clearPendingApply(){
+  try{ localStorage.removeItem(PENDING_APPLY_KEY); }catch(e){}
 }
 function renderAlreadyApplied(app){
   const dt = app.applied_at ? new Date(app.applied_at).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '';
@@ -366,9 +395,11 @@ function renderAlreadyApplied(app){
 function renderApplyForm(){
   const name = workerProfile.full_name || 'Your Profile';
   const phone = workerProfile.phone || workerProfile.phone_number || '';
+  const resumed = getPendingApply();
+  if(resumed) clearPendingApply();
   document.getElementById('apply-panel').innerHTML = `
     <h2>Submit Your Application</h2>
-    <p class="sub">Your profile details are shared with the employer automatically. Add a short note if you'd like to introduce yourself.</p>
+    <p class="sub">${resumed ? "Welcome back — pick up right where you left off. " : ''}Your profile details are shared with the employer automatically. Add a short note if you'd like to introduce yourself.</p>
     <div class="applicant-card">
       <div class="applicant-avatar">${initials(name)}</div>
       <div class="applicant-info">
@@ -381,6 +412,7 @@ function renderApplyForm(){
     <div class="char-count"><span id="cc">0</span>/800</div>
     <button class="btn-apply" id="submit-apply-btn" onclick="submitApplication()"><i class="bi bi-send-fill"></i> Submit Application</button>
   `;
+  if(resumed) showToast("Welcome back! You're logged in — just hit submit to finish applying.", 'success');
 }
 
 /* ── SUBMIT APPLICATION ── */
