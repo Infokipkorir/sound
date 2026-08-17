@@ -1,35 +1,980 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interviews — SoundsCare Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#132038">
+<title>Interviews | SoundsCare</title>
+<link rel="icon" href="sound_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link rel="stylesheet" href="css/dashboard.css"><link rel="stylesheet" href="css/sidebar.css"><link rel="stylesheet" href="css/buttons.css">
-<link rel="stylesheet" href="css/modal.css"><link rel="stylesheet" href="css/tables.css"><link rel="stylesheet" href="css/cards.css">
-<link rel="stylesheet" href="css/forms.css"><link rel="stylesheet" href="css/responsive.css">
-</head><body data-page="interviews">
-<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
-<div data-include="sidebar"></div>
-<div class="main" id="main">
-  <div data-include="topbar"></div>
-  <div class="content">
-    <div class="page-head"><div><h1>Interviews</h1><p id="int-subtitle">All scheduled interviews</p></div>
-      <a class="btn btn-secondary btn-sm" href="interviews.html" id="int-clear-filter" style="display:none"><i class="bi bi-x-lg"></i> Clear filter</a></div>
-    <div class="section">
-      <div class="search-bar">
-        <select class="filter-select" id="int-status-filter" onchange="filterInterviews()">
-          <option value="">All Statuses</option><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
-        </select>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>Candidate</th><th>Employer</th><th>Type</th><th>Scheduled</th><th>Status</th><th>Fee</th><th>Rating</th><th>Actions</th></tr></thead>
-      <tbody id="int-tbody"><tr><td colspan="8" style="text-align:center">Loading…</td></tr></tbody></table></div>
-      <div class="pagination" id="int-pagination"></div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#132038;
+    --navy-deep:#0c1626;
+    --navy-mid:#1c2f4f;
+    --gold:#D9A441;
+    --gold-soft:#f4e2b8;
+    --green:#1F9D63;
+    --green-soft:#e5f6ed;
+    --red:#C24B3F;
+    --red-soft:#fbe8e5;
+    --paper:#F7F5F0;
+    --card:#FFFFFF;
+    --ink:#161B22;
+    --ink-soft:#5C6470;
+    --line:#E7E3DA;
+    --radius:14px;
+    --font-display:'Sora',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{width:100%;overflow-x:hidden;}
+  body{margin:0;width:100%;max-width:100vw;overflow-x:hidden;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---- Shell layout ---- */
+  .shell{display:flex;flex-direction:column;min-height:100vh;width:100%;max-width:100vw;}
+
+  /* ---- Sidebar ----
+     Mobile-first: hidden off-canvas is the DEFAULT, unconditional state.
+     Desktop widens/pins it via the min-width query further down.
+     This way, if a compression proxy or slow JS strips the media query
+     or delays script execution, the safe fallback is "sidebar closed,
+     dashboard visible" — never a stray sidebar block sitting on top of content. */
+  .sidebar{
+    width:82%;max-width:300px;flex-shrink:0;background:var(--card);color:var(--ink);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;padding:24px 18px;
+    padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(18px + env(safe-area-inset-bottom));
+    position:fixed;top:0;left:0;height:100dvh;z-index:70;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:8px 0 30px rgba(0,0,0,.15);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 26px;}
+  .brand-mark{
+    width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b9822c);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:var(--navy-deep);
+  }
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:16.5px;line-height:1.15;color:var(--ink);}
+  .brand-name span{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+
+  .nav-group-label{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin:18px 10px 8px;}
+  nav.primary-nav{display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+    color:var(--ink);font-size:14.5px;font-weight:500;transition:background .15s,color .15s;
+  }
+  .nav-item:hover{background:var(--green-soft);color:var(--ink);}
+  .nav-item.active{background:var(--green-soft);color:var(--green);font-weight:700;box-shadow:none;}
+  .nav-item .dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex-shrink:0;}
+  .nav-item.active .dot{background:var(--green);}
+  .nav-item .soon{margin-left:auto;font-size:9.5px;color:var(--ink-soft);letter-spacing:.05em;text-transform:uppercase;}
+
+  .sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);}
+  .agent-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;}
+  .agent-avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#a3771f;flex-shrink:0;}
+  .agent-meta{overflow:hidden;}
+  .agent-meta .name{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-meta .role{font-size:11.5px;color:var(--ink-soft);}
+  .logout-btn{
+    width:100%;margin-top:10px;background:transparent;border:1px solid var(--line);color:var(--ink-soft);
+    padding:9px;border-radius:10px;font-size:13px;font-weight:600;
+  }
+  .logout-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-soft);}
+
+  /* ---- Main ---- */
+  main{flex:1;min-width:0;padding:28px 34px 60px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px;flex-wrap:wrap;}
+  .topbar h1{font-family:var(--font-display);font-size:25px;margin:0 0 4px;letter-spacing:-.01em;}
+  .topbar p.sub{margin:0;color:var(--ink-soft);font-size:14px;}
+  .referral-chip{
+    display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px;
+  }
+  .referral-chip .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);}
+  .referral-chip code{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--navy);}
+  .copy-btn{
+    border:none;background:var(--navy);color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:7px;
+  }
+  .copy-btn:hover{background:var(--navy-mid);}
+
+  /* status banner */
+  .banner{border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;display:flex;gap:12px;align-items:flex-start;}
+  .banner.pending{background:var(--gold-soft);border:1px solid #e6c877;}
+  .banner.rejected,.banner.suspended{background:var(--red-soft);border:1px solid #e8b6ae;}
+  .banner strong{display:block;font-size:14.5px;margin-bottom:2px;}
+  .banner p{margin:0;font-size:13.5px;color:var(--ink-soft);}
+
+  /* stat cards */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+  @media(max-width:980px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;
+    position:relative;overflow:hidden;
+  }
+  .stat-card .stat-label{font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em;margin-bottom:10px;}
+  .stat-card .stat-value{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-.01em;}
+  .stat-card .stat-value small{font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
+  .stat-card.gold{border-top:3px solid var(--gold);}
+  .stat-card.green{border-top:3px solid var(--green);}
+  .stat-card.navy{border-top:3px solid var(--navy);}
+  .stat-card.neutral{border-top:3px solid #a9a196;}
+  .stat-foot{margin-top:8px;font-size:12px;color:var(--ink-soft);}
+
+  /* quick actions */
+  .section-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin:0 0 14px;}
+  .quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px;}
+  @media(max-width:980px){.quick-grid{grid-template-columns:repeat(2,1fr);}}
+  .quick-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;
+    display:flex;flex-direction:column;gap:8px;transition:transform .12s,box-shadow .12s;
+  }
+  .quick-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(19,32,56,.08);}
+  .quick-card .icon{width:34px;height:34px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .quick-card .qtitle{font-weight:700;font-size:14px;}
+  .quick-card .qdesc{font-size:12.5px;color:var(--ink-soft);line-height:1.4;}
+  .quick-card.disabled{opacity:.55;pointer-events:none;}
+
+  /* activity */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .activity-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .activity-row:last-child{border-bottom:none;}
+  .activity-left{display:flex;align-items:center;gap:10px;}
+  .activity-type{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+  .activity-type.hire{background:var(--green);}
+  .amount{font-weight:700;color:var(--green);}
+  .empty-state{text-align:center;padding:34px 10px;color:var(--ink-soft);font-size:13.5px;}
+
+  #loadingOverlay{
+    position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;z-index:50;
+  }
+  .spinner{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #loadingOverlay p{font-size:13px;color:var(--ink-soft);}
+
+  #authGate{
+    position:fixed;inset:0;background:var(--paper);display:none;align-items:center;justify-content:center;z-index:60;
+  }
+  .gate-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:36px 32px;text-align:center;max-width:340px;}
+  .gate-card h2{font-family:var(--font-display);margin:0 0 8px;font-size:19px;}
+  .gate-card p{color:var(--ink-soft);font-size:13.5px;margin:0 0 18px;}
+  .gate-card a.btn{display:inline-block;background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-weight:600;font-size:13.5px;}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:80;
+    max-width:calc(100% - 32px);text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---- Mobile topbar (hidden on desktop via min-width query below) ---- */
+  .mobile-topbar{
+    display:flex;position:sticky;top:0;z-index:40;align-items:center;justify-content:space-between;
+    gap:10px;background:var(--navy);color:#fff;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));
+  }
+  .hamburger-btn{
+    width:40px;height:40px;flex-shrink:0;border:none;background:rgba(255,255,255,.08);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;
+  }
+  .mobile-topbar .mt-brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
+  .mobile-topbar .mt-brand .brand-mark{width:30px;height:30px;font-size:12.5px;flex-shrink:0;}
+  .mobile-topbar .mt-title{font-family:var(--font-display);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mobile-topbar .mt-agent{display:flex;align-items:center;gap:8px;flex-shrink:0;max-width:42%;}
+  .mobile-topbar .mt-name{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mobile-topbar .mt-avatar{
+    width:34px;height:34px;border-radius:50%;background:var(--navy-mid);color:var(--gold);font-weight:700;font-size:12.5px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  .sidebar-overlay{
+    display:block;position:fixed;inset:0;background:rgba(9,14,24,.5);z-index:69;opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .sidebar-overlay.show{opacity:1;pointer-events:auto;}
+
+  .sidebar-close-btn{
+    display:flex;align-items:center;justify-content:center;margin-left:auto;width:32px;height:32px;
+    border:none;background:var(--paper);border-radius:9px;color:var(--ink);font-size:15px;
+  }
+
+  /* ---- Bottom tab bar (mobile only, hidden on desktop below) ---- */
+  .bottom-nav{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--card);
+    border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    justify-content:space-around;align-items:stretch;box-shadow:0 -4px 16px rgba(19,32,56,.06);
+  }
+  .bottom-nav-item{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    flex:1;min-width:0;padding:6px 2px;border-radius:10px;color:var(--ink-soft);font-size:10.5px;font-weight:600;
+    background:transparent;border:none;
+  }
+  .bottom-nav-item .bn-icon{font-size:18px;line-height:1;}
+  .bottom-nav-item.active{color:var(--navy);}
+  .bottom-nav-item.active .bn-icon{color:var(--gold);}
+  .bottom-nav-item span.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+
+  /* ================= MOBILE (default) FINE-TUNING ================= */
+  /* These already apply unconditionally so a stripped stylesheet still
+     leaves a usable, correctly-spaced mobile layout. */
+  .shell{min-height:0;}
+  main{padding:18px 14px calc(90px + env(safe-area-inset-bottom));}
+  .nav-item{padding:12px 12px;font-size:15px;}
+  .topbar{margin-bottom:16px;}
+  .topbar h1{font-size:21px;}
+  .referral-chip{width:100%;justify-content:space-between;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px;}
+  .stat-card{padding:14px 14px 12px;}
+  .stat-card .stat-value{font-size:21px;}
+  .quick-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+  .quick-card{padding:13px;}
+  .panel{padding:14px;}
+  .activity-row{font-size:13px;}
+  .toast{bottom:calc(78px + env(safe-area-inset-bottom));}
+
+  @media(max-width:400px){
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .quick-grid{grid-template-columns:1fr 1fr;}
+    .mobile-topbar .mt-title{display:none;}
+    .mobile-topbar .mt-agent{max-width:60%;}
+  }
+
+  /* ================= DESKTOP ENHANCEMENT ================= */
+  /* Above ~861px, keep the sidebar as a closable drawer (default closed) so the
+     Overview dashboard always gets the full screen — only the top bar (with its
+     toggle button) stays on to reopen the sidebar on demand. This is layered ON
+     TOP of the safe mobile base above — if this query is ever stripped, the
+     site simply stays in its perfectly usable mobile layout instead of breaking. */
+  @media(min-width:861px){
+    .shell{min-height:100vh;}
+    main{padding:28px 34px 60px;}
+
+    .bottom-nav{display:none!important;}
+    .mobile-topbar .mt-title{display:block;}
+    .mobile-topbar .mt-agent{max-width:none;}
+
+    .sidebar{width:280px;}
+    .nav-item{padding:10px 12px;font-size:14.5px;}
+
+    .topbar{margin-bottom:22px;}
+    .topbar h1{font-size:25px;}
+    .referral-chip{width:auto;}
+
+    .stat-grid{grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+    .stat-card{padding:18px 18px 16px;}
+    .stat-card .stat-value{font-size:26px;}
+
+    .quick-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px;}
+    .quick-card{padding:16px;}
+
+    .panel{padding:20px;}
+    .activity-row{font-size:13.5px;}
+
+    .toast{bottom:22px;}
+  }
+  @media(min-width:861px) and (max-width:980px){
+    .stat-grid,.quick-grid{grid-template-columns:repeat(2,1fr);}
+  }
+
+  /* ---- shared extra components (badges, tabs, cards, modal, forms) ---- */
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:capitalize;}
+  .badge.active,.badge.hired,.badge.completed,.badge.shortlisted{background:var(--green-soft);color:var(--green);}
+  .badge.closed,.badge.reviewed{background:#eef2f7;color:var(--navy);}
+  .badge.draft,.badge.pending,.badge.scheduled,.badge.rescheduled{background:var(--gold-soft);color:#a3771f;}
+  .badge.expired,.badge.cancelled,.badge.rejected,.badge.no_show{background:var(--red-soft);color:var(--red);}
+
+  .tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+  .tab-btn{border:1px solid var(--line);background:var(--card);color:var(--ink-soft);font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:999px;white-space:nowrap;flex-shrink:0;}
+  .tab-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+  .item-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;}
+  .item-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .item-card h3{margin:0 0 4px;font-family:var(--font-display);font-size:15.5px;}
+  .item-card .meta{font-size:12.5px;color:var(--ink-soft);display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;}
+  .item-card .meta span{display:inline-flex;align-items:center;gap:4px;}
+  .item-card .note{font-size:12.5px;color:var(--ink-soft);margin-top:8px;background:var(--paper);border-radius:8px;padding:8px 10px;}
+  .item-card-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+
+  .btn-sm{border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;}
+  .btn-sm:hover{border-color:var(--navy);}
+  .btn-sm.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .btn-sm.primary:hover{background:var(--navy-mid);}
+  .btn-sm.danger{color:var(--red);border-color:var(--red-soft);}
+  .btn-sm.danger:hover{background:var(--red-soft);}
+  .btn-sm.gold{color:#a3771f;border-color:var(--gold-soft);}
+  .btn-sm.gold:hover{background:var(--gold-soft);}
+  .btn-sm:disabled{opacity:.5;pointer-events:none;}
+
+  .page-head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(9,14,24,.5);z-index:90;display:none;align-items:flex-end;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;padding:22px 20px calc(22px + env(safe-area-inset-bottom));}
+  @media(min-width:640px){.modal-overlay{align-items:center;}.modal-box{border-radius:18px;max-height:85vh;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;}
+  .modal-head h2{font-family:var(--font-display);font-size:18px;margin:0;}
+  .modal-head p{margin:4px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .modal-close{border:none;background:var(--paper);width:30px;height:30px;border-radius:9px;color:var(--ink);flex-shrink:0;font-size:14px;}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.form-grid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:6px;position:relative;}
+  .field.full{grid-column:1/-1;}
+  .field label{font-size:12.5px;font-weight:600;color:var(--ink);}
+  .field .hint{font-size:11.5px;color:var(--ink-soft);}
+  .field input,.field select,.field textarea{
+    font-family:inherit;font-size:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy);}
+  .field textarea{resize:vertical;min-height:90px;}
+  .checkbox-row{display:flex;align-items:center;gap:8px;}
+  .checkbox-row input{width:auto;}
+  .form-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+  .btn-primary{background:var(--navy);color:#fff;border:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;}
+  .btn-primary:hover{background:var(--navy-mid);}
+  .btn-primary:disabled{opacity:.55;pointer-events:none;}
+  .btn-secondary{background:transparent;border:1px solid var(--line);color:var(--ink);padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;}
+  .btn-secondary:hover{border-color:var(--navy);}
+
+  .applicant-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;}
+  .applicant-row:last-child{border-bottom:none;}
+  .applicant-name{font-weight:700;font-size:13.5px;}
+  .applicant-sub{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .applicant-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+  .ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(19,32,56,.12);max-height:220px;overflow-y:auto;z-index:20;display:none;}
+  .ac-list.show{display:block;}
+  .ac-item{padding:9px 12px;font-size:13px;cursor:pointer;}
+  .ac-item:hover{background:var(--green-soft);}
+  .ac-empty,.ac-loading{padding:10px 12px;font-size:12.5px;color:var(--ink-soft);}
+  .linked-chip{display:inline-flex;align-items:center;gap:8px;background:var(--green-soft);color:var(--green);font-size:12.5px;font-weight:700;padding:7px 10px;border-radius:9px;}
+  .linked-chip button{border:none;background:transparent;color:var(--green);font-weight:700;cursor:pointer;}
+
+  .commission-chip{
+    display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px;
+  }
+  .commission-chip .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);}
+  .commission-chip .value{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--navy);}
+
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay"><div class="spinner"></div><p>Loading your dashboard…</p></div>
+
+<div id="authGate">
+  <div class="gate-card">
+    <h2>Agent sign-in required</h2>
+    <p>Log in with your agent account to view your dashboard, earnings, and jobs.</p>
+    <a class="btn" href="agent-login.html">Go to agent login</a>
   </div>
 </div>
-<div data-include="modal"></div><div data-include="toast"></div>
-<script src="js/supabase.js"></script><script src="js/utils.js"></script><script src="js/layout.js"></script>
-<script src="js/auth.js"></script><script src="js/api.js"></script><script src="js/interviews.js"></script>
-<script>(async function(){await initLayout();const admin=await requireAuth();if(!admin)return;await initInterviewsPage();})();</script>
-</body></html>
+
+
+<div class="shell" id="shell" style="display:none;">
+  <div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><i class="bi bi-list"></i></button>
+    <div class="mt-brand">
+      <div class="brand-mark">SC</div>
+      <div class="mt-title" id="mtTitle">Agent Portal</div>
+    </div>
+    <div class="mt-agent">
+      <div class="mt-avatar" id="mtAvatar">–</div>
+      <div class="mt-name" id="mtName">Loading…</div>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-name">SoundsCare<span>Agent Portal</span></div>
+      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    <div class="nav-group-label">Overview</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="agent-dashboard.html"><span class="dot"></span>Dashboard</a>
+    </nav>
+
+    <div class="nav-group-label">Work</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="post%20a%20job.html"><span class="dot"></span>Post a job</a>
+      <a class="nav-item" href="myjobs.html"><span class="dot"></span>My jobs</a>
+      <a class="nav-item" href="interviews.html"><span class="dot"></span>Interviews</a>
+      <a class="nav-item" href="#"><span class="dot"></span>Hires</a>
+    </nav>
+
+    <div class="nav-group-label">Directory</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="#"><span class="dot"></span>Employers</a>
+      <a class="nav-item" href="#"><span class="dot"></span>Employees</a>
+      <a class="nav-item" href="#"><span class="dot"></span>Verify employee</a>
+    </nav>
+
+    <div class="nav-group-label">Earnings</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="#"><span class="dot"></span>Withdraw funds</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="agent-chip">
+        <div class="agent-avatar" id="agentInitials">–</div>
+        <div class="agent-meta">
+          <div class="name" id="agentName">Loading…</div>
+          <div class="role" id="agentStatus">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Log out</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="page-head-row" style="width:100%;">
+        <div>
+          <h1>Interviews</h1>
+          <p class="sub">Schedule and track interviews for applicants on your jobs.</p>
+        </div>
+        <button class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;" id="openScheduleBtn"><i class="bi bi-plus-lg"></i> Schedule interview</button>
+      </div>
+    </div>
+
+    <div id="statusBannerHolder"></div>
+
+    <div class="tabs" id="interviewTabs">
+      <button class="tab-btn active" data-filter="upcoming">Upcoming</button>
+      <button class="tab-btn" data-filter="completed">Completed</button>
+      <button class="tab-btn" data-filter="cancelled">Cancelled / no-show</button>
+      <button class="tab-btn" data-filter="all">All</button>
+    </div>
+
+    <div id="interviewsList"><div class="empty-state">Loading interviews…</div></div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item" href="agent-dashboard.html">
+      <span class="bn-icon"><i class="bi bi-house-door-fill"></i></span><span class="label">Home</span>
+    </a>
+    <a class="bottom-nav-item" href="myjobs.html">
+      <span class="bn-icon"><i class="bi bi-briefcase-fill"></i></span><span class="label">Jobs</span>
+    </a>
+    <a class="bottom-nav-item" href="#">
+      <span class="bn-icon"><i class="bi bi-people-fill"></i></span><span class="label">Hires</span>
+    </a>
+    <a class="bottom-nav-item" href="#">
+      <span class="bn-icon"><i class="bi bi-arrow-down-circle-fill"></i></span><span class="label">Withdraw</span>
+    </a>
+    <button class="bottom-nav-item" id="bottomMoreBtn" type="button">
+      <span class="bn-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span><span class="label">More</span>
+    </button>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="scheduleModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2>Schedule an interview</h2>
+        <p>Pick one of your applicants and set a time.</p>
+      </div>
+      <button class="modal-close" id="scheduleModalClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form id="scheduleForm">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="sApplication">Applicant *</label>
+          <select id="sApplication" required>
+            <option value="">Select an applicant</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sDate">Date &amp; time *</label>
+          <input type="datetime-local" id="sDate" required>
+        </div>
+        <div class="field">
+          <label for="sType">Interview type</label>
+          <select id="sType">
+            <option value="initial">Initial</option>
+            <option value="second">Second</option>
+            <option value="final">Final</option>
+            <option value="technical">Technical</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sDuration">Duration (minutes)</label>
+          <input type="number" id="sDuration" value="30" min="5">
+        </div>
+        <div class="field">
+          <label for="sZoom">Video call link (optional)</label>
+          <input type="text" id="sZoom" placeholder="https://…">
+        </div>
+        <div class="field full">
+          <label for="sNotes">Notes (optional)</label>
+          <textarea id="sNotes" placeholder="Anything the interviewer should know…"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="scheduleSubmitBtn">Schedule interview</button>
+        <button type="button" class="btn-secondary" id="scheduleCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h2>Reschedule interview</h2></div>
+      <button class="modal-close" id="rescheduleModalClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form id="rescheduleForm">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="rDate">New date &amp; time *</label>
+          <input type="datetime-local" id="rDate" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Save new time</button>
+        <button type="button" class="btn-secondary" id="rescheduleCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="completeModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><h2>Mark interview completed</h2></div>
+      <button class="modal-close" id="completeModalClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form id="completeForm">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="cRating">Rating (optional)</label>
+          <select id="cRating">
+            <option value="">No rating</option>
+            <option value="5">5 — Excellent</option>
+            <option value="4">4 — Good</option>
+            <option value="3">3 — Average</option>
+            <option value="2">2 — Below average</option>
+            <option value="1">1 — Poor</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="cNotes">Notes (optional)</label>
+          <textarea id="cNotes" placeholder="How did it go?"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Save</button>
+        <button type="button" class="btn-secondary" id="completeCancelBtn">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const fmtKES = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function showAuthGate() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('authGate').style.display = 'flex';
+}
+
+function initials(name) {
+  if (!name) return 'A';
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+let CURRENT_AGENT = null;
+
+function renderStatusBanner(agent) {
+  const holder = document.getElementById('statusBannerHolder');
+  if (!holder) return;
+  if (agent.status === 'active') { holder.innerHTML = ''; return; }
+
+  const copy = {
+    pending: {
+      title: 'Your agent account is pending approval',
+      body: 'You can browse this page, but posting jobs, scheduling interviews, and withdrawals unlock once an admin approves your account.'
+    },
+    suspended: {
+      title: 'Your agent account is suspended',
+      body: 'Contact SoundsCare support to find out why and how to get reinstated.'
+    },
+    rejected: {
+      title: 'Your agent application was not approved',
+      body: agent.rejection_reason || 'Contact SoundsCare support for details.'
+    }
+  }[agent.status];
+
+  if (!copy) { holder.innerHTML = ''; return; }
+  holder.innerHTML = `<div class="banner ${agent.status}"><div><strong>${copy.title}</strong><p>${copy.body}</p></div></div>`;
+}
+
+/* Loads the signed-in agent, populates the shared sidebar chip, and hands
+   control to the page-specific loader (onReady) once we know who's asking. */
+async function loadAgentContext(onReady) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showAuthGate(); return; }
+
+  const user = session.user;
+
+  const { data: agent, error: agentErr } = await sb
+    .from('agents')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (agentErr || !agent) { showAuthGate(); return; }
+
+  CURRENT_AGENT = agent;
+
+  const displayName = agent.full_name || user.email;
+  document.getElementById('agentName').textContent = displayName;
+  document.getElementById('agentInitials').textContent = initials(agent.full_name);
+  document.getElementById('mtAvatar').textContent = initials(agent.full_name);
+  document.getElementById('mtName').textContent = agent.full_name ? agent.full_name.split(' ')[0] : displayName;
+  document.getElementById('agentStatus').textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1) + ' agent';
+
+  renderStatusBanner(agent);
+
+  try {
+    await onReady(agent, user);
+  } catch (err) {
+    console.error(err);
+    showToast('Something went wrong loading this page.');
+  }
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('shell').style.display = 'flex';
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  window.location.href = 'agent-login.html';
+});
+
+/* ---- Mobile drawer nav ---- */
+const sidebarEl = document.getElementById('sidebar');
+const overlayEl = document.getElementById('sidebarOverlay');
+const mobileTopbarEl = document.querySelector('.mobile-topbar');
+const bottomNavEl = document.querySelector('.bottom-nav');
+const mainEl = document.querySelector('main');
+
+function applyLayoutMode() {
+  const isMobile = window.innerWidth <= 860;
+  sidebarEl.style.position = 'fixed';
+  sidebarEl.style.left = '0';
+  sidebarEl.style.transform = sidebarEl.classList.contains('open') ? 'translateX(0)' : 'translateX(-100%)';
+  sidebarEl.style.height = '100dvh';
+  sidebarEl.style.width = '';
+  sidebarEl.style.zIndex = '70';
+  mobileTopbarEl.style.display = 'flex';
+  document.getElementById('sidebarCloseBtn').style.display = 'flex';
+
+  if (isMobile) {
+    bottomNavEl.style.display = 'flex';
+    if (mainEl) mainEl.style.paddingBottom = 'calc(90px + env(safe-area-inset-bottom))';
+  } else {
+    bottomNavEl.style.display = 'none';
+    if (mainEl) mainEl.style.paddingBottom = '';
+  }
+}
+
+function markActiveNav() {
+  const current = location.pathname.split('/').pop() || 'agent-dashboard.html';
+  document.querySelectorAll('.nav-item, .bottom-nav-item[href]').forEach(el => {
+    const href = el.getAttribute('href');
+    el.classList.toggle('active', href === current);
+  });
+}
+
+function openSidebar() {
+  sidebarEl.classList.add('open');
+  overlayEl.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  applyLayoutMode();
+}
+function closeSidebar() {
+  sidebarEl.classList.remove('open');
+  overlayEl.classList.remove('show');
+  document.body.style.overflow = '';
+  applyLayoutMode();
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
+document.getElementById('bottomMoreBtn').addEventListener('click', openSidebar);
+document.getElementById('sidebarCloseBtn').addEventListener('click', closeSidebar);
+overlayEl.addEventListener('click', closeSidebar);
+sidebarEl.querySelectorAll('.nav-item, .logout-btn').forEach(el => {
+  el.addEventListener('click', closeSidebar);
+});
+
+window.addEventListener('resize', applyLayoutMode);
+applyLayoutMode();
+markActiveNav();
+
+
+let ALL_INTERVIEWS = [];
+let ELIGIBLE_APPLICATIONS = [];
+let INTERVIEW_FILTER = 'upcoming';
+let ACTIVE_INTERVIEW_ID = null;
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-KE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function toDatetimeLocalValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function filterInterviews() {
+  if (INTERVIEW_FILTER === 'all') return ALL_INTERVIEWS;
+  if (INTERVIEW_FILTER === 'upcoming') return ALL_INTERVIEWS.filter(i => ['scheduled', 'rescheduled'].includes(i.status));
+  if (INTERVIEW_FILTER === 'completed') return ALL_INTERVIEWS.filter(i => i.status === 'completed');
+  if (INTERVIEW_FILTER === 'cancelled') return ALL_INTERVIEWS.filter(i => ['cancelled', 'no_show'].includes(i.status));
+  return ALL_INTERVIEWS;
+}
+
+function renderInterviews() {
+  const list = document.getElementById('interviewsList');
+  const items = filterInterviews();
+
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      ${ALL_INTERVIEWS.length === 0 ? 'No interviews scheduled yet.' : 'Nothing in this filter.'}
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(iv => {
+    const job = iv.job_postings || {};
+    const app = iv.job_applications || {};
+    const isUpcoming = ['scheduled', 'rescheduled'].includes(iv.status);
+    return `<div class="item-card">
+      <div class="item-card-top">
+        <div>
+          <h3>${escapeHtml(app.worker_name || 'Applicant')}</h3>
+          <div class="meta">
+            <span><i class="bi bi-briefcase"></i> ${escapeHtml(job.title || '—')}${job.company_name ? ' · ' + escapeHtml(job.company_name) : ''}</span>
+          </div>
+          <div class="meta">
+            <span><i class="bi bi-calendar-event"></i> ${fmtDateTime(iv.scheduled_at)}</span>
+            <span><i class="bi bi-stopwatch"></i> ${iv.duration_minutes || 30} min</span>
+          </div>
+          ${iv.notes ? `<div class="note">${escapeHtml(iv.notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+          <span class="badge ${iv.status}">${escapeHtml((iv.status || '').replace('_',' '))}</span>
+          <span class="badge" style="background:#eef2f7;color:var(--navy);">${escapeHtml(iv.interview_type || 'initial')}</span>
+        </div>
+      </div>
+      <div class="item-card-actions">
+        ${iv.zoom_link ? `<a class="btn-sm gold" href="${iv.zoom_link}" target="_blank" rel="noopener"><i class="bi bi-camera-video"></i> Join link</a>` : ''}
+        ${isUpcoming ? `<button class="btn-sm primary" data-complete="${iv.id}">Mark completed</button>` : ''}
+        ${isUpcoming ? `<button class="btn-sm" data-reschedule="${iv.id}" data-current="${iv.scheduled_at || ''}">Reschedule</button>` : ''}
+        ${isUpcoming ? `<button class="btn-sm danger" data-cancel="${iv.id}">Cancel</button>` : ''}
+        ${iv.status === 'scheduled' || iv.status === 'rescheduled' ? `<button class="btn-sm danger" data-noshow="${iv.id}">No-show</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-complete]').forEach(btn => btn.addEventListener('click', () => openCompleteModal(btn.dataset.complete)));
+  list.querySelectorAll('[data-reschedule]').forEach(btn => btn.addEventListener('click', () => openRescheduleModal(btn.dataset.reschedule, btn.dataset.current)));
+  list.querySelectorAll('[data-cancel]').forEach(btn => btn.addEventListener('click', () => setInterviewStatus(btn.dataset.cancel, 'cancelled')));
+  list.querySelectorAll('[data-noshow]').forEach(btn => btn.addEventListener('click', () => setInterviewStatus(btn.dataset.noshow, 'no_show')));
+}
+
+document.getElementById('interviewTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('#interviewTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  INTERVIEW_FILTER = btn.dataset.filter;
+  renderInterviews();
+});
+
+async function setInterviewStatus(id, status) {
+  const { error } = await sb.from('interviews').update({ status }).eq('id', id);
+  if (error) { showToast('Could not update the interview.'); return; }
+  const iv = ALL_INTERVIEWS.find(i => i.id === id);
+  if (iv) iv.status = status;
+  renderInterviews();
+  showToast('Interview updated.');
+}
+
+function openCompleteModal(id) {
+  ACTIVE_INTERVIEW_ID = id;
+  document.getElementById('cRating').value = '';
+  document.getElementById('cNotes').value = '';
+  document.getElementById('completeModal').classList.add('show');
+}
+document.getElementById('completeModalClose').addEventListener('click', () => document.getElementById('completeModal').classList.remove('show'));
+document.getElementById('completeCancelBtn').addEventListener('click', () => document.getElementById('completeModal').classList.remove('show'));
+document.getElementById('completeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const rating = document.getElementById('cRating').value ? Number(document.getElementById('cRating').value) : null;
+  const notes = document.getElementById('cNotes').value.trim() || null;
+  const { error } = await sb.from('interviews').update({ status: 'completed', rating, notes }).eq('id', ACTIVE_INTERVIEW_ID);
+  if (error) { showToast('Could not save.'); return; }
+  const iv = ALL_INTERVIEWS.find(i => i.id === ACTIVE_INTERVIEW_ID);
+  if (iv) { iv.status = 'completed'; iv.rating = rating; iv.notes = notes; }
+  document.getElementById('completeModal').classList.remove('show');
+  renderInterviews();
+  showToast('Interview marked completed.');
+});
+
+function openRescheduleModal(id, currentIso) {
+  ACTIVE_INTERVIEW_ID = id;
+  document.getElementById('rDate').value = toDatetimeLocalValue(currentIso);
+  document.getElementById('rescheduleModal').classList.add('show');
+}
+document.getElementById('rescheduleModalClose').addEventListener('click', () => document.getElementById('rescheduleModal').classList.remove('show'));
+document.getElementById('rescheduleCancelBtn').addEventListener('click', () => document.getElementById('rescheduleModal').classList.remove('show'));
+document.getElementById('rescheduleForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const newIso = new Date(document.getElementById('rDate').value).toISOString();
+  const { error } = await sb.from('interviews').update({ status: 'rescheduled', scheduled_at: newIso }).eq('id', ACTIVE_INTERVIEW_ID);
+  if (error) { showToast('Could not reschedule.'); return; }
+  const iv = ALL_INTERVIEWS.find(i => i.id === ACTIVE_INTERVIEW_ID);
+  if (iv) { iv.status = 'rescheduled'; iv.scheduled_at = newIso; }
+  document.getElementById('rescheduleModal').classList.remove('show');
+  renderInterviews();
+  showToast('Interview rescheduled.');
+});
+
+/* ---- Schedule new interview ---- */
+function populateApplicationSelect(preselectId) {
+  const sel = document.getElementById('sApplication');
+  sel.innerHTML = '<option value="">Select an applicant</option>' + ELIGIBLE_APPLICATIONS.map(app => {
+    const jobTitle = app.job_postings ? app.job_postings.title : 'Job';
+    return `<option value="${app.id}">${escapeHtml(app.worker_name || 'Applicant')} — ${escapeHtml(jobTitle)}</option>`;
+  }).join('');
+  if (preselectId) sel.value = preselectId;
+}
+
+function openScheduleModal(preselectAppId) {
+  document.getElementById('scheduleForm').reset();
+  populateApplicationSelect(preselectAppId);
+  document.getElementById('scheduleModal').classList.add('show');
+}
+document.getElementById('openScheduleBtn').addEventListener('click', () => openScheduleModal());
+document.getElementById('scheduleModalClose').addEventListener('click', () => document.getElementById('scheduleModal').classList.remove('show'));
+document.getElementById('scheduleCancelBtn').addEventListener('click', () => document.getElementById('scheduleModal').classList.remove('show'));
+
+document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!CURRENT_AGENT || CURRENT_AGENT.status !== 'active') {
+    showToast('Your agent account must be active to schedule interviews.');
+    return;
+  }
+  const appId = document.getElementById('sApplication').value;
+  const app = ELIGIBLE_APPLICATIONS.find(a => a.id === appId);
+  if (!app) { showToast('Please select an applicant.'); return; }
+
+  const job = app.job_postings || {};
+  const employerUserId = (job.employer_profiles && job.employer_profiles.user_id) || null;
+
+  const payload = {
+    job_application_id: app.id,
+    job_id: app.job_id,
+    worker_id: app.worker_id,
+    employer_id: employerUserId,
+    agent_id: CURRENT_AGENT.id,
+    interviewer_id: (await sb.auth.getSession()).data.session.user.id,
+    scheduled_at: new Date(document.getElementById('sDate').value).toISOString(),
+    interview_type: document.getElementById('sType').value,
+    duration_minutes: Number(document.getElementById('sDuration').value) || 30,
+    zoom_link: document.getElementById('sZoom').value.trim() || null,
+    notes: document.getElementById('sNotes').value.trim() || null,
+    status: 'scheduled'
+  };
+
+  const btn = document.getElementById('scheduleSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Scheduling…';
+
+  const { error } = await sb.from('interviews').insert(payload);
+
+  btn.disabled = false;
+  btn.textContent = 'Schedule interview';
+
+  if (error) { console.error(error); showToast('Could not schedule the interview.'); return; }
+
+  document.getElementById('scheduleModal').classList.remove('show');
+  showToast('Interview scheduled.');
+  loadInterviews();
+});
+
+async function loadEligibleApplications() {
+  const { data, error } = await sb
+    .from('job_applications')
+    .select('*, job_postings!inner(id, title, company_name, posted_by_agent_id, employer_id, employer_profiles(user_id))')
+    .eq('job_postings.posted_by_agent_id', CURRENT_AGENT.id)
+    .in('status', ['pending', 'reviewed', 'shortlisted'])
+    .order('applied_at', { ascending: false });
+
+  if (!error && data) ELIGIBLE_APPLICATIONS = data;
+}
+
+async function loadInterviews() {
+  const { data, error } = await sb
+    .from('interviews')
+    .select('*, job_postings(title, company_name), job_applications(worker_name, worker_phone)')
+    .eq('agent_id', CURRENT_AGENT.id)
+    .order('scheduled_at', { ascending: true });
+
+  if (error) {
+    document.getElementById('interviewsList').innerHTML = '<div class="empty-state">Could not load interviews.</div>';
+    return;
+  }
+  ALL_INTERVIEWS = data || [];
+  renderInterviews();
+}
+
+async function initInterviewsPage(agent) {
+  await Promise.all([loadInterviews(), loadEligibleApplications()]);
+
+  const params = new URLSearchParams(window.location.search);
+  const prefillAppId = params.get('application_id');
+  if (prefillAppId) {
+    openScheduleModal(prefillAppId);
+  }
+}
+
+loadAgentContext(initInterviewsPage);
+
+</script>
+</body>
+</html>
