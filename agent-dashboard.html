@@ -30,12 +30,13 @@
     --font-body:'Inter',sans-serif;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  html{width:100%;overflow-x:hidden;}
+  body{margin:0;width:100%;max-width:100vw;overflow-x:hidden;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
 
   /* ---- Shell layout ---- */
-  .shell{display:flex;min-height:100vh;}
+  .shell{display:flex;min-height:100vh;width:100%;max-width:100vw;}
 
   /* ---- Sidebar ---- */
   .sidebar{
@@ -173,6 +174,8 @@
   .mobile-topbar .mt-brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
   .mobile-topbar .mt-brand .brand-mark{width:30px;height:30px;font-size:12.5px;flex-shrink:0;}
   .mobile-topbar .mt-title{font-family:var(--font-display);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mobile-topbar .mt-agent{display:flex;align-items:center;gap:8px;flex-shrink:0;max-width:42%;}
+  .mobile-topbar .mt-name{font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mobile-topbar .mt-avatar{
     width:34px;height:34px;border-radius:50%;background:var(--navy-mid);color:var(--gold);font-weight:700;font-size:12.5px;
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -242,6 +245,8 @@
   @media(max-width:400px){
     .stat-grid{grid-template-columns:1fr 1fr;}
     .quick-grid{grid-template-columns:1fr 1fr;}
+    .mobile-topbar .mt-title{display:none;}
+    .mobile-topbar .mt-agent{max-width:60%;}
   }
 </style>
 </head>
@@ -262,9 +267,12 @@
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
     <div class="mt-brand">
       <div class="brand-mark">SC</div>
-      <div class="mt-title">Agent Portal</div>
+      <div class="mt-title" id="mtTitle">Agent Portal</div>
     </div>
-    <div class="mt-avatar" id="mtAvatar">–</div>
+    <div class="mt-agent">
+      <div class="mt-avatar" id="mtAvatar">–</div>
+      <div class="mt-name" id="mtName">Loading…</div>
+    </div>
   </div>
 
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -510,9 +518,11 @@ async function loadDashboard() {
     sb.from('agent_commissions').select('*').eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(8)
   ]);
 
-  document.getElementById('agentName').textContent = agent.full_name || user.email;
+  const displayName = agent.full_name || user.email;
+  document.getElementById('agentName').textContent = displayName;
   document.getElementById('agentInitials').textContent = initials(agent.full_name);
   document.getElementById('mtAvatar').textContent = initials(agent.full_name);
+  document.getElementById('mtName').textContent = agent.full_name ? agent.full_name.split(' ')[0] : displayName;
   document.getElementById('agentStatus').textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1) + ' agent';
   document.getElementById('welcomeName').textContent = agent.full_name ? ', ' + agent.full_name.split(' ')[0] : '';
   document.getElementById('referralCode').textContent = agent.referral_code || '—';
@@ -551,16 +561,48 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 /* ---- Mobile drawer nav ---- */
 const sidebarEl = document.getElementById('sidebar');
 const overlayEl = document.getElementById('sidebarOverlay');
+const mobileTopbarEl = document.querySelector('.mobile-topbar');
+const bottomNavEl = document.querySelector('.bottom-nav');
+const mainEl = document.querySelector('main');
+
+/*
+  Some mobile browsers (carrier/data-saver compression proxies in particular)
+  can mangle or drop @media rules while still running JS. This enforces the
+  mobile layout with inline styles as a safety net so the sidebar never sits
+  inline next to a squeezed main column.
+*/
+function applyLayoutMode() {
+  const isMobile = window.innerWidth <= 860;
+  if (isMobile) {
+    sidebarEl.style.position = 'fixed';
+    sidebarEl.style.transform = sidebarEl.classList.contains('open') ? 'translateX(0)' : 'translateX(-100%)';
+    sidebarEl.style.height = '100dvh';
+    sidebarEl.style.zIndex = '70';
+    mobileTopbarEl.style.display = 'flex';
+    bottomNavEl.style.display = 'flex';
+    if (mainEl) mainEl.style.paddingBottom = 'calc(90px + env(safe-area-inset-bottom))';
+  } else {
+    sidebarEl.style.position = '';
+    sidebarEl.style.transform = '';
+    sidebarEl.style.height = '';
+    sidebarEl.style.zIndex = '';
+    mobileTopbarEl.style.display = 'none';
+    bottomNavEl.style.display = 'none';
+    if (mainEl) mainEl.style.paddingBottom = '';
+  }
+}
 
 function openSidebar() {
   sidebarEl.classList.add('open');
   overlayEl.classList.add('show');
   document.body.style.overflow = 'hidden';
+  applyLayoutMode();
 }
 function closeSidebar() {
   sidebarEl.classList.remove('open');
   overlayEl.classList.remove('show');
   document.body.style.overflow = '';
+  applyLayoutMode();
 }
 
 document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
@@ -570,7 +612,9 @@ overlayEl.addEventListener('click', closeSidebar);
 sidebarEl.querySelectorAll('.nav-item, .logout-btn').forEach(el => {
   el.addEventListener('click', closeSidebar);
 });
-window.addEventListener('resize', () => { if (window.innerWidth > 860) closeSidebar(); });
+
+window.addEventListener('resize', applyLayoutMode);
+applyLayoutMode();
 
 loadDashboard().catch(err => {
   console.error(err);
