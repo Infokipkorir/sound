@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Become an Agent | SoundsCare</title>
+<link rel="icon" href="sound_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#132038;
+    --navy-deep:#0c1626;
+    --navy-mid:#1c2f4f;
+    --gold:#D9A441;
+    --gold-soft:#f4e2b8;
+    --green:#1F9D63;
+    --green-soft:#e5f6ed;
+    --red:#C24B3F;
+    --red-soft:#fbe8e5;
+    --paper:#F7F5F0;
+    --card:#FFFFFF;
+    --ink:#161B22;
+    --ink-soft:#5C6470;
+    --line:#E7E3DA;
+    --radius:14px;
+    --font-display:'Sora',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+
+  .wrap{min-height:100vh;display:flex;}
+
+  /* left brand panel */
+  .brand-panel{
+    flex:0 0 42%;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-deep) 100%);
+    color:#fff;padding:48px 44px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;
+  }
+  .brand-panel::after{
+    content:"";position:absolute;right:-120px;bottom:-120px;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(217,164,65,.16),transparent 70%);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b9822c);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:var(--navy-deep);
+  }
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:17px;}
+  .brand-name span{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:#9fb0c9;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+  .pitch h1{font-family:var(--font-display);font-size:30px;line-height:1.25;margin:0 0 14px;max-width:380px;}
+  .pitch p{color:#b7c3d9;font-size:14.5px;line-height:1.6;max-width:360px;margin:0 0 22px;}
+  .pitch-list{display:flex;flex-direction:column;gap:12px;}
+  .pitch-item{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#dbe3f0;}
+  .pitch-item .check{width:20px;height:20px;border-radius:50%;background:rgba(217,164,65,.2);color:var(--gold);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+  .foot-note{font-size:12px;color:#7a8aa6;}
+
+  /* right form panel */
+  .form-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+  .form-card{width:100%;max-width:420px;}
+
+  .step-track{display:flex;align-items:center;gap:6px;margin-bottom:22px;}
+  .step-dot{flex:1;height:4px;border-radius:3px;background:var(--line);}
+  .step-dot.active{background:var(--navy);}
+
+  .form-card h2{font-family:var(--font-display);font-size:21px;margin:0 0 6px;}
+  .form-card p.sub{margin:0 0 22px;color:var(--ink-soft);font-size:13.5px;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .field .hint{font-weight:400;color:var(--ink-soft);text-transform:none;letter-spacing:0;}
+  .field input,.field select{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(19,32,56,.08);}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .field-error{display:none;color:var(--red);font-size:12px;margin-top:5px;}
+  .field.invalid input{border-color:var(--red);}
+  .field.invalid .field-error{display:block;}
+
+  .terms-row{display:flex;gap:9px;align-items:flex-start;margin:18px 0 4px;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+  .terms-row input{width:16px;height:16px;margin-top:1px;flex-shrink:0;accent-color:var(--navy);}
+
+  .submit-btn{
+    width:100%;background:var(--navy);color:#fff;border:none;padding:12.5px;border-radius:10px;font-size:14.5px;font-weight:700;
+    margin-top:14px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .submit-btn:hover{background:var(--navy-mid);}
+  .submit-btn:disabled{opacity:.6;pointer-events:none;}
+  .btn-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .submit-btn.loading .btn-spinner{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .alert{border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:16px;display:none;}
+  .alert.error{background:var(--red-soft);color:#8a3327;border:1px solid #e8b6ae;display:block;}
+  .alert.success{background:var(--green-soft);color:#166a41;border:1px solid #aeddc3;display:block;}
+
+  .swap-note{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px;}
+  .swap-note a{color:var(--navy);font-weight:700;text-decoration:underline;}
+
+  /* success state */
+  .success-card{display:none;text-align:center;padding:8px 4px;}
+  .success-card .icon-circle{
+    width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--green);
+    display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;
+  }
+  .success-card h2{font-family:var(--font-display);font-size:20px;margin:0 0 8px;}
+  .success-card p{color:var(--ink-soft);font-size:13.5px;line-height:1.55;margin:0 0 22px;}
+  .success-card a.btn{
+    display:inline-block;background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-weight:700;font-size:13.5px;
+  }
+
+  @media(max-width:840px){.brand-panel{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <aside class="brand-panel">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-name">SoundsCare<span>Agent Portal</span></div>
+    </div>
+    <div class="pitch">
+      <h1>Earn commission connecting employers with trusted domestic workers.</h1>
+      <p>SoundsCare agents post jobs, verify employees, and log hires on behalf of employers across Kenya, Uganda, and Tanzania — earning a payout for every confirmed action.</p>
+      <div class="pitch-list">
+        <div class="pitch-item"><span class="check">✓</span>Earn a fixed commission per job posting and per confirmed hire</div>
+        <div class="pitch-item"><span class="check">✓</span>Withdraw your balance straight to M-Pesa</div>
+        <div class="pitch-item"><span class="check">✓</span>Track every referral, job, and payout from one dashboard</div>
+      </div>
+    </div>
+    <div class="foot-note">© 2026 SoundsCare. All rights reserved.</div>
+  </aside>
+
+  <section class="form-panel">
+    <div class="form-card">
+
+      <!-- REGISTER FORM -->
+      <div id="registerView">
+        <div class="step-track"><div class="step-dot active"></div></div>
+
+        <h2>Become a SoundsCare agent</h2>
+        <p class="sub">Fill in your details below. Your account will be reviewed before it's activated.</p>
+
+        <div class="alert error" id="errorAlert"></div>
+
+        <form id="registerForm" novalidate>
+          <div class="field" id="f-regName">
+            <label for="regName">Full name</label>
+            <input type="text" id="regName" required placeholder="Jane Wanjiru">
+            <div class="field-error">Please enter your full name.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field" id="f-regPhone">
+              <label for="regPhone">Phone number</label>
+              <input type="tel" id="regPhone" required placeholder="07XX XXX XXX">
+              <div class="field-error">Enter a valid phone number.</div>
+            </div>
+            <div class="field" id="f-regCounty">
+              <label for="regCounty">County</label>
+              <input type="text" id="regCounty" required placeholder="Nairobi">
+              <div class="field-error">Required.</div>
+            </div>
+          </div>
+
+          <div class="field" id="f-regEmail">
+            <label for="regEmail">Email</label>
+            <input type="email" id="regEmail" required autocomplete="email" placeholder="you@example.com">
+            <div class="field-error">Enter a valid email address.</div>
+          </div>
+
+          <div class="field" id="f-regIdNumber">
+            <label for="regIdNumber">National ID number</label>
+            <input type="text" id="regIdNumber" required placeholder="12345678">
+            <div class="field-error">Required for identity verification.</div>
+          </div>
+
+          <div class="field" id="f-regPassword">
+            <label for="regPassword">Password <span class="hint">(min. 6 characters)</span></label>
+            <input type="password" id="regPassword" required minlength="6" autocomplete="new-password" placeholder="••••••••">
+            <div class="field-error">Password must be at least 6 characters.</div>
+          </div>
+
+          <div class="field" id="f-regPassword2">
+            <label for="regPassword2">Confirm password</label>
+            <input type="password" id="regPassword2" required autocomplete="new-password" placeholder="••••••••">
+            <div class="field-error">Passwords don't match.</div>
+          </div>
+
+          <label class="terms-row">
+            <input type="checkbox" id="regTerms" required>
+            <span>I confirm the details above are accurate and I agree to SoundsCare's Agent Terms and commission policy.</span>
+          </label>
+
+          <button class="submit-btn" type="submit" id="registerBtn">
+            <span class="btn-spinner"></span><span class="btn-label">Create agent account</span>
+          </button>
+        </form>
+
+        <div class="swap-note">Already an agent? <a href="agent-login.html">Log in</a></div>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="success-card" id="successView">
+        <div class="icon-circle">✓</div>
+        <h2 id="successHeading">Account created</h2>
+        <p id="successBody">Your agent account has been created.</p>
+        <a class="btn" href="agent-login.html" id="successBtn">Continue to log in</a>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const errorAlert = document.getElementById('errorAlert');
+const registerForm = document.getElementById('registerForm');
+const registerBtn = document.getElementById('registerBtn');
+
+function clearAlert() {
+  errorAlert.style.display = 'none';
+}
+function showError(msg) {
+  errorAlert.textContent = msg;
+  errorAlert.style.display = 'block';
+}
+function setLoading(loading) {
+  registerBtn.classList.toggle('loading', loading);
+  registerBtn.disabled = loading;
+}
+
+function friendlyAuthError(err) {
+  const msg = (err && err.message) || 'Something went wrong. Please try again.';
+  if (/invalid login credentials/i.test(msg)) return 'Incorrect email or password.';
+  if (/already registered|already exists|user already/i.test(msg)) return 'An account with this email already exists. Try logging in instead.';
+  if (/password/i.test(msg) && /at least|should be/i.test(msg)) return 'Password must be at least 6 characters.';
+  if (/rate limit/i.test(msg)) return 'Too many attempts. Please wait a moment and try again.';
+  return msg;
+}
+
+function setFieldError(fieldId, hasError) {
+  document.getElementById(fieldId).classList.toggle('invalid', hasError);
+}
+
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function isValidPhone(v) { return /^[0-9+ ()-]{7,15}$/.test(v); }
+
+function validateForm(vals) {
+  let ok = true;
+
+  setFieldError('f-regName', !vals.full_name);
+  if (!vals.full_name) ok = false;
+
+  setFieldError('f-regPhone', !isValidPhone(vals.phone));
+  if (!isValidPhone(vals.phone)) ok = false;
+
+  setFieldError('f-regCounty', !vals.county);
+  if (!vals.county) ok = false;
+
+  setFieldError('f-regEmail', !isValidEmail(vals.email));
+  if (!isValidEmail(vals.email)) ok = false;
+
+  setFieldError('f-regIdNumber', !vals.id_number);
+  if (!vals.id_number) ok = false;
+
+  setFieldError('f-regPassword', vals.password.length < 6);
+  if (vals.password.length < 6) ok = false;
+
+  setFieldError('f-regPassword2', vals.password !== vals.password2);
+  if (vals.password !== vals.password2) ok = false;
+
+  return ok;
+}
+
+function showSuccess({ needsEmailConfirm }) {
+  document.getElementById('registerView').style.display = 'none';
+  const view = document.getElementById('successView');
+  view.style.display = 'block';
+  if (needsEmailConfirm) {
+    document.getElementById('successHeading').textContent = 'Check your email';
+    document.getElementById('successBody').textContent =
+      "We've sent a confirmation link to your email. Confirm your address, then log in to reach your agent dashboard.";
+    document.getElementById('successBtn').textContent = 'Go to log in';
+  } else {
+    document.getElementById('successHeading').textContent = 'Account created';
+    document.getElementById('successBody').textContent =
+      "Your agent account has been created and is pending review. You can log in now to view your dashboard while you wait for approval.";
+    document.getElementById('successBtn').textContent = 'Continue to log in';
+  }
+}
+
+registerForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearAlert();
+
+  const vals = {
+    full_name: document.getElementById('regName').value.trim(),
+    phone: document.getElementById('regPhone').value.trim(),
+    county: document.getElementById('regCounty').value.trim(),
+    email: document.getElementById('regEmail').value.trim(),
+    id_number: document.getElementById('regIdNumber').value.trim(),
+    password: document.getElementById('regPassword').value,
+    password2: document.getElementById('regPassword2').value,
+  };
+
+  if (!validateForm(vals)) return;
+
+  if (!document.getElementById('regTerms').checked) {
+    showError('Please confirm your details and accept the agent terms to continue.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+      email: vals.email,
+      password: vals.password
+    });
+    if (signUpErr) throw signUpErr;
+
+    if (!signUpData.session) {
+      // Email confirmation required — agent profile is created after they confirm and log in.
+      showSuccess({ needsEmailConfirm: true });
+      return;
+    }
+
+    const userId = signUpData.user.id;
+
+    const { data: agentRow, error: agentErr } = await sb
+      .from('agents')
+      .insert({
+        user_id: userId,
+        full_name: vals.full_name,
+        phone: vals.phone,
+        county: vals.county,
+        email: vals.email,
+        id_number: vals.id_number
+      })
+      .select('id')
+      .single();
+    if (agentErr) throw agentErr;
+
+    await sb.from('agent_wallets').insert({ agent_id: agentRow.id });
+
+    showSuccess({ needsEmailConfirm: false });
+  } catch (err) {
+    console.error(err);
+    showError(friendlyAuthError(err));
+  } finally {
+    setLoading(false);
+  }
+});
+
+// clear inline field errors as the person fixes them
+['regName','regPhone','regCounty','regEmail','regIdNumber','regPassword','regPassword2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const wrapper = document.getElementById('f-' + id);
+    if (wrapper) wrapper.classList.remove('invalid');
+  });
+});
+
+// If already logged in and already an agent, skip straight to dashboard
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data: agent } = await sb.from('agents').select('id').eq('user_id', session.user.id).maybeSingle();
+  if (agent) window.location.href = 'agent-dashboard.html';
+})();
+</script>
+</body>
+</html>

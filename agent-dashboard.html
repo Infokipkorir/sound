@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Dashboard | SoundsCare</title>
+<link rel="icon" href="sound_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#132038;
+    --navy-deep:#0c1626;
+    --navy-mid:#1c2f4f;
+    --gold:#D9A441;
+    --gold-soft:#f4e2b8;
+    --green:#1F9D63;
+    --green-soft:#e5f6ed;
+    --red:#C24B3F;
+    --red-soft:#fbe8e5;
+    --paper:#F7F5F0;
+    --card:#FFFFFF;
+    --ink:#161B22;
+    --ink-soft:#5C6470;
+    --line:#E7E3DA;
+    --radius:14px;
+    --font-display:'Sora',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---- Shell layout ---- */
+  .shell{display:flex;min-height:100vh;}
+
+  /* ---- Sidebar ---- */
+  .sidebar{
+    width:264px;flex-shrink:0;background:var(--navy);color:#fff;
+    display:flex;flex-direction:column;padding:24px 18px;position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 26px;}
+  .brand-mark{
+    width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b9822c);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:var(--navy-deep);
+  }
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:16.5px;line-height:1.15;}
+  .brand-name span{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:#9fb0c9;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+
+  .nav-group-label{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#7a8aa6;margin:18px 10px 8px;}
+  nav.primary-nav{display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+    color:#c9d3e3;font-size:14.5px;font-weight:500;transition:background .15s,color .15s;
+  }
+  .nav-item:hover{background:var(--navy-mid);color:#fff;}
+  .nav-item.active{background:var(--navy-mid);color:#fff;box-shadow:inset 3px 0 0 var(--gold);}
+  .nav-item .dot{width:6px;height:6px;border-radius:50%;background:#4a5a78;flex-shrink:0;}
+  .nav-item.active .dot{background:var(--gold);}
+  .nav-item .soon{margin-left:auto;font-size:9.5px;color:#6d7d99;letter-spacing:.05em;text-transform:uppercase;}
+
+  .sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);}
+  .agent-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;}
+  .agent-avatar{width:34px;height:34px;border-radius:50%;background:var(--navy-mid);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--gold);flex-shrink:0;}
+  .agent-meta{overflow:hidden;}
+  .agent-meta .name{font-size:13.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .agent-meta .role{font-size:11.5px;color:#8fa0bd;}
+  .logout-btn{
+    width:100%;margin-top:10px;background:transparent;border:1px solid rgba(255,255,255,.14);color:#c9d3e3;
+    padding:9px;border-radius:10px;font-size:13px;font-weight:600;
+  }
+  .logout-btn:hover{border-color:var(--red);color:#fff;background:rgba(194,75,63,.18);}
+
+  /* ---- Main ---- */
+  main{flex:1;min-width:0;padding:28px 34px 60px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px;flex-wrap:wrap;}
+  .topbar h1{font-family:var(--font-display);font-size:25px;margin:0 0 4px;letter-spacing:-.01em;}
+  .topbar p.sub{margin:0;color:var(--ink-soft);font-size:14px;}
+  .referral-chip{
+    display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px;
+  }
+  .referral-chip .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);}
+  .referral-chip code{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--navy);}
+  .copy-btn{
+    border:none;background:var(--navy);color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:7px;
+  }
+  .copy-btn:hover{background:var(--navy-mid);}
+
+  /* status banner */
+  .banner{border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;display:flex;gap:12px;align-items:flex-start;}
+  .banner.pending{background:var(--gold-soft);border:1px solid #e6c877;}
+  .banner.rejected,.banner.suspended{background:var(--red-soft);border:1px solid #e8b6ae;}
+  .banner strong{display:block;font-size:14.5px;margin-bottom:2px;}
+  .banner p{margin:0;font-size:13.5px;color:var(--ink-soft);}
+
+  /* stat cards */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+  @media(max-width:980px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;
+    position:relative;overflow:hidden;
+  }
+  .stat-card .stat-label{font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em;margin-bottom:10px;}
+  .stat-card .stat-value{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-.01em;}
+  .stat-card .stat-value small{font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
+  .stat-card.gold{border-top:3px solid var(--gold);}
+  .stat-card.green{border-top:3px solid var(--green);}
+  .stat-card.navy{border-top:3px solid var(--navy);}
+  .stat-card.neutral{border-top:3px solid #a9a196;}
+  .stat-foot{margin-top:8px;font-size:12px;color:var(--ink-soft);}
+
+  /* quick actions */
+  .section-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin:0 0 14px;}
+  .quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px;}
+  @media(max-width:980px){.quick-grid{grid-template-columns:repeat(2,1fr);}}
+  .quick-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;
+    display:flex;flex-direction:column;gap:8px;transition:transform .12s,box-shadow .12s;
+  }
+  .quick-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(19,32,56,.08);}
+  .quick-card .icon{width:34px;height:34px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .quick-card .qtitle{font-weight:700;font-size:14px;}
+  .quick-card .qdesc{font-size:12.5px;color:var(--ink-soft);line-height:1.4;}
+  .quick-card.disabled{opacity:.55;pointer-events:none;}
+
+  /* activity */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+  .activity-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .activity-row:last-child{border-bottom:none;}
+  .activity-left{display:flex;align-items:center;gap:10px;}
+  .activity-type{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+  .activity-type.hire{background:var(--green);}
+  .amount{font-weight:700;color:var(--green);}
+  .empty-state{text-align:center;padding:34px 10px;color:var(--ink-soft);font-size:13.5px;}
+
+  #loadingOverlay{
+    position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;z-index:50;
+  }
+  .spinner{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #loadingOverlay p{font-size:13px;color:var(--ink-soft);}
+
+  #authGate{
+    position:fixed;inset:0;background:var(--paper);display:none;align-items:center;justify-content:center;z-index:60;
+  }
+  .gate-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:36px 32px;text-align:center;max-width:340px;}
+  .gate-card h2{font-family:var(--font-display);margin:0 0 8px;font-size:19px;}
+  .gate-card p{color:var(--ink-soft);font-size:13.5px;margin:0 0 18px;}
+  .gate-card a.btn{display:inline-block;background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-weight:600;font-size:13.5px;}
+
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;
+    padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:80;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay"><div class="spinner"></div><p>Loading your dashboard…</p></div>
+
+<div id="authGate">
+  <div class="gate-card">
+    <h2>Agent sign-in required</h2>
+    <p>Log in with your agent account to view your dashboard, earnings, and jobs.</p>
+    <a class="btn" href="agent-login.html">Go to agent login</a>
+  </div>
+</div>
+
+<div class="shell" id="shell" style="display:none;">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-name">SoundsCare<span>Agent Portal</span></div>
+    </div>
+
+    <div class="nav-group-label">Overview</div>
+    <nav class="primary-nav">
+      <a class="nav-item active" href="agent-dashboard.html"><span class="dot"></span>Dashboard</a>
+    </nav>
+
+    <div class="nav-group-label">Work</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="agent-post-job.html"><span class="dot"></span>Post a job</a>
+      <a class="nav-item" href="agent-jobs.html"><span class="dot"></span>My jobs</a>
+      <a class="nav-item" href="agent-interviews.html"><span class="dot"></span>Interviews</a>
+      <a class="nav-item" href="agent-hires.html"><span class="dot"></span>Hires</a>
+    </nav>
+
+    <div class="nav-group-label">Directory</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="agent-employers.html"><span class="dot"></span>Employers</a>
+      <a class="nav-item" href="agent-employees.html"><span class="dot"></span>Employees</a>
+      <a class="nav-item" href="agent-verify.html"><span class="dot"></span>Verify employee</a>
+    </nav>
+
+    <div class="nav-group-label">Earnings</div>
+    <nav class="primary-nav">
+      <a class="nav-item" href="agent-withdraw.html"><span class="dot"></span>Withdraw funds</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="agent-chip">
+        <div class="agent-avatar" id="agentInitials">–</div>
+        <div class="agent-meta">
+          <div class="name" id="agentName">Loading…</div>
+          <div class="role" id="agentStatus">—</div>
+        </div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Log out</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>Welcome back<span id="welcomeName"></span></h1>
+        <p class="sub">Here's how your SoundsCare agent account is doing.</p>
+      </div>
+      <div class="referral-chip">
+        <div>
+          <div class="label">Your referral code</div>
+          <code id="referralCode">—</code>
+        </div>
+        <button class="copy-btn" id="copyReferral">Copy</button>
+      </div>
+    </div>
+
+    <div id="statusBannerHolder"></div>
+
+    <div class="stat-grid">
+      <div class="stat-card gold">
+        <div class="stat-label">Wallet balance</div>
+        <div class="stat-value" id="statBalance">KES 0</div>
+        <div class="stat-foot">Available to withdraw</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Total earned</div>
+        <div class="stat-value" id="statEarned">KES 0</div>
+        <div class="stat-foot">Lifetime commissions</div>
+      </div>
+      <div class="stat-card navy">
+        <div class="stat-label">Jobs posted</div>
+        <div class="stat-value" id="statJobs">0</div>
+        <div class="stat-foot" id="statJobsFoot">All time</div>
+      </div>
+      <div class="stat-card neutral">
+        <div class="stat-label">Workers hired</div>
+        <div class="stat-value" id="statHires">0</div>
+        <div class="stat-foot" id="statHiresFoot">Via your referrals</div>
+      </div>
+    </div>
+
+    <div class="section-title">Quick actions</div>
+    <div class="quick-grid" id="quickGrid">
+      <a class="quick-card" href="agent-post-job.html">
+        <div class="icon">＋</div>
+        <div class="qtitle">Post a job</div>
+        <div class="qdesc">Earn KES <span id="qJobFee">100</span> per job posting.</div>
+      </a>
+      <a class="quick-card" href="agent-verify.html">
+        <div class="icon">✓</div>
+        <div class="qtitle">Verify an employee</div>
+        <div class="qdesc">Submit ID checks for pending workers.</div>
+      </a>
+      <a class="quick-card" href="agent-hires.html">
+        <div class="icon">🤝</div>
+        <div class="qtitle">Log a hire</div>
+        <div class="qdesc">Earn KES <span id="qHireFee">500</span> per confirmed hire.</div>
+      </a>
+      <a class="quick-card" href="agent-withdraw.html">
+        <div class="icon">↓</div>
+        <div class="qtitle">Withdraw funds</div>
+        <div class="qdesc">Send your balance to M-Pesa.</div>
+      </a>
+    </div>
+
+    <div class="section-title">Recent commission activity</div>
+    <div class="panel">
+      <div id="activityList">
+        <div class="empty-state">Loading activity…</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const fmtKES = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function showAuthGate() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('authGate').style.display = 'flex';
+}
+
+function initials(name) {
+  if (!name) return 'A';
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+function renderStatusBanner(agent) {
+  const holder = document.getElementById('statusBannerHolder');
+  if (agent.status === 'active') { holder.innerHTML = ''; return; }
+
+  const copy = {
+    pending: {
+      title: 'Your agent account is pending approval',
+      body: 'You can browse the dashboard, but posting jobs, verifying employees, and withdrawals unlock once an admin approves your account.'
+    },
+    suspended: {
+      title: 'Your agent account is suspended',
+      body: 'Contact SoundsCare support to find out why and how to get reinstated.'
+    },
+    rejected: {
+      title: 'Your agent application was not approved',
+      body: agent.rejection_reason || 'Contact SoundsCare support for details.'
+    }
+  }[agent.status];
+
+  if (!copy) { holder.innerHTML = ''; return; }
+  holder.innerHTML = `<div class="banner ${agent.status}"><div><strong>${copy.title}</strong><p>${copy.body}</p></div></div>`;
+
+  if (agent.status !== 'active') {
+    document.querySelectorAll('.quick-card').forEach(el => {
+      if (!el.href.includes('agent-dashboard')) el.classList.add('disabled');
+    });
+  }
+}
+
+function renderActivity(commissions) {
+  const list = document.getElementById('activityList');
+  if (!commissions || commissions.length === 0) {
+    list.innerHTML = '<div class="empty-state">No commission activity yet. Post a job or log a hire to start earning.</div>';
+    return;
+  }
+  list.innerHTML = commissions.map(c => {
+    const label = c.type === 'hire' ? 'Hire commission' : c.type === 'job_post' ? 'Job posting commission' : 'Adjustment';
+    const dotClass = c.type === 'hire' ? 'hire' : '';
+    const date = new Date(c.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<div class="activity-row">
+      <div class="activity-left"><span class="activity-type ${dotClass}"></span>
+        <div>${label}<div style="color:var(--ink-soft);font-size:12px;">${date} · ${c.status}</div></div>
+      </div>
+      <div class="amount">+${fmtKES(c.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadDashboard() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { showAuthGate(); return; }
+
+  const user = session.user;
+
+  const { data: agent, error: agentErr } = await sb
+    .from('agents')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (agentErr || !agent) { showAuthGate(); return; }
+
+  const { data: settings } = await sb
+    .from('agent_commission_settings')
+    .select('job_post_commission, hire_commission')
+    .eq('id', 1)
+    .maybeSingle();
+
+  const { data: wallet } = await sb
+    .from('agent_wallets')
+    .select('balance, total_earned, total_withdrawn')
+    .eq('agent_id', agent.id)
+    .maybeSingle();
+
+  const [{ count: jobsCount }, { count: hiresCount }, { data: commissions }] = await Promise.all([
+    sb.from('job_postings').select('id', { count: 'exact', head: true }).eq('posted_by_agent_id', agent.id),
+    sb.from('job_applications').select('id', { count: 'exact', head: true }).eq('hired_by_agent_id', agent.id),
+    sb.from('agent_commissions').select('*').eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(8)
+  ]);
+
+  document.getElementById('agentName').textContent = agent.full_name || user.email;
+  document.getElementById('agentInitials').textContent = initials(agent.full_name);
+  document.getElementById('agentStatus').textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1) + ' agent';
+  document.getElementById('welcomeName').textContent = agent.full_name ? ', ' + agent.full_name.split(' ')[0] : '';
+  document.getElementById('referralCode').textContent = agent.referral_code || '—';
+
+  document.getElementById('statBalance').textContent = fmtKES(wallet?.balance);
+  document.getElementById('statEarned').textContent = fmtKES(wallet?.total_earned);
+  document.getElementById('statJobs').textContent = jobsCount ?? 0;
+  document.getElementById('statHires').textContent = hiresCount ?? 0;
+
+  if (settings) {
+    document.getElementById('qJobFee').textContent = Number(settings.job_post_commission).toLocaleString();
+    document.getElementById('qHireFee').textContent = Number(settings.hire_commission).toLocaleString();
+  }
+
+  renderStatusBanner(agent);
+  renderActivity(commissions);
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('shell').style.display = 'flex';
+}
+
+document.getElementById('copyReferral').addEventListener('click', () => {
+  const code = document.getElementById('referralCode').textContent;
+  if (code && code !== '—') {
+    navigator.clipboard.writeText(code);
+    showToast('Referral code copied');
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  window.location.href = 'agent-login.html';
+});
+
+loadDashboard().catch(err => {
+  console.error(err);
+  showAuthGate();
+});
+</script>
+</body>
+</html>
