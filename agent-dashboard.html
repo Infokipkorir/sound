@@ -8,6 +8,7 @@
 <link rel="icon" href="sound_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -38,11 +39,21 @@
   /* ---- Shell layout ---- */
   .shell{display:flex;min-height:100vh;width:100%;max-width:100vw;}
 
-  /* ---- Sidebar ---- */
+  /* ---- Sidebar ----
+     Mobile-first: hidden off-canvas is the DEFAULT, unconditional state.
+     Desktop widens/pins it via the min-width query further down.
+     This way, if a compression proxy or slow JS strips the media query
+     or delays script execution, the safe fallback is "sidebar closed,
+     dashboard visible" — never a stray sidebar block sitting on top of content. */
   .sidebar{
-    width:264px;flex-shrink:0;background:var(--navy);color:#fff;
-    display:flex;flex-direction:column;padding:24px 18px;position:sticky;top:0;height:100vh;
+    width:82%;max-width:300px;flex-shrink:0;background:var(--navy);color:#fff;
+    display:flex;flex-direction:column;padding:24px 18px;
+    padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(18px + env(safe-area-inset-bottom));
+    position:fixed;top:0;left:0;height:100dvh;z-index:70;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:8px 0 30px rgba(0,0,0,.25);
   }
+  .sidebar.open{transform:translateX(0);}
   .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 26px;}
   .brand-mark{
     width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b9822c);
@@ -161,16 +172,15 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  /* ---- Mobile topbar (hidden on desktop) ---- */
+  /* ---- Mobile topbar (hidden on desktop via min-width query below) ---- */
   .mobile-topbar{
-    display:none;position:sticky;top:0;z-index:40;align-items:center;justify-content:space-between;
+    display:flex;position:sticky;top:0;z-index:40;align-items:center;justify-content:space-between;
     gap:10px;background:var(--navy);color:#fff;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));
   }
   .hamburger-btn{
     width:40px;height:40px;flex-shrink:0;border:none;background:rgba(255,255,255,.08);border-radius:10px;
-    display:flex;align-items:center;justify-content:center;gap:3px;flex-direction:column;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:19px;
   }
-  .hamburger-btn span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;}
   .mobile-topbar .mt-brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
   .mobile-topbar .mt-brand .brand-mark{width:30px;height:30px;font-size:12.5px;flex-shrink:0;}
   .mobile-topbar .mt-title{font-family:var(--font-display);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -182,15 +192,18 @@
   }
 
   .sidebar-overlay{
-    display:none;position:fixed;inset:0;background:rgba(9,14,24,.5);z-index:69;opacity:0;pointer-events:none;transition:opacity .2s;
+    display:block;position:fixed;inset:0;background:rgba(9,14,24,.5);z-index:69;opacity:0;pointer-events:none;transition:opacity .2s;
   }
   .sidebar-overlay.show{opacity:1;pointer-events:auto;}
 
-  .sidebar-close-btn{display:none;}
+  .sidebar-close-btn{
+    display:flex;align-items:center;justify-content:center;margin-left:auto;width:32px;height:32px;
+    border:none;background:rgba(255,255,255,.08);border-radius:9px;color:#fff;font-size:15px;
+  }
 
-  /* ---- Bottom tab bar (mobile only) ---- */
+  /* ---- Bottom tab bar (mobile only, hidden on desktop below) ---- */
   .bottom-nav{
-    display:none;position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--card);
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--card);
     border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));
     justify-content:space-around;align-items:stretch;box-shadow:0 -4px 16px rgba(19,32,56,.06);
   }
@@ -204,49 +217,66 @@
   .bottom-nav-item.active .bn-icon{color:var(--gold);}
   .bottom-nav-item span.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 
-  /* ================= MOBILE BREAKPOINT ================= */
-  @media(max-width:860px){
-    .shell{min-height:0;}
-    main{padding:18px 14px calc(90px + env(safe-area-inset-bottom));}
-
-    .mobile-topbar{display:flex;}
-    .sidebar-overlay{display:block;}
-    .bottom-nav{display:flex;}
-
-    .sidebar{
-      position:fixed;top:0;left:0;height:100%;height:100dvh;width:82%;max-width:300px;z-index:70;
-      transform:translateX(-100%);transition:transform .25s ease;padding-top:calc(20px + env(safe-area-inset-top));
-      padding-bottom:calc(18px + env(safe-area-inset-bottom));box-shadow:8px 0 30px rgba(0,0,0,.25);
-    }
-    .sidebar.open{transform:translateX(0);}
-    .sidebar-close-btn{
-      display:flex;align-items:center;justify-content:center;margin-left:auto;width:32px;height:32px;
-      border:none;background:rgba(255,255,255,.08);border-radius:9px;color:#fff;font-size:16px;
-    }
-    .nav-item{padding:12px 12px;font-size:15px;}
-
-    .topbar{margin-bottom:16px;}
-    .topbar h1{font-size:21px;}
-    .referral-chip{width:100%;justify-content:space-between;}
-
-    .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px;}
-    .stat-card{padding:14px 14px 12px;}
-    .stat-card .stat-value{font-size:21px;}
-
-    .quick-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
-    .quick-card{padding:13px;}
-
-    .panel{padding:14px;}
-    .activity-row{font-size:13px;}
-
-    .toast{bottom:calc(78px + env(safe-area-inset-bottom));}
-  }
+  /* ================= MOBILE (default) FINE-TUNING ================= */
+  /* These already apply unconditionally so a stripped stylesheet still
+     leaves a usable, correctly-spaced mobile layout. */
+  .shell{min-height:0;}
+  main{padding:18px 14px calc(90px + env(safe-area-inset-bottom));}
+  .nav-item{padding:12px 12px;font-size:15px;}
+  .topbar{margin-bottom:16px;}
+  .topbar h1{font-size:21px;}
+  .referral-chip{width:100%;justify-content:space-between;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px;}
+  .stat-card{padding:14px 14px 12px;}
+  .stat-card .stat-value{font-size:21px;}
+  .quick-grid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:24px;}
+  .quick-card{padding:13px;}
+  .panel{padding:14px;}
+  .activity-row{font-size:13px;}
+  .toast{bottom:calc(78px + env(safe-area-inset-bottom));}
 
   @media(max-width:400px){
     .stat-grid{grid-template-columns:1fr 1fr;}
     .quick-grid{grid-template-columns:1fr 1fr;}
     .mobile-topbar .mt-title{display:none;}
     .mobile-topbar .mt-agent{max-width:60%;}
+  }
+
+  /* ================= DESKTOP ENHANCEMENT ================= */
+  /* Above ~861px, promote the sidebar to a permanent pinned column and
+     retire the mobile chrome. This is layered ON TOP of the safe mobile
+     base above — if this query is ever stripped, the site simply stays
+     in its perfectly usable mobile layout instead of breaking. */
+  @media(min-width:861px){
+    .shell{min-height:100vh;}
+    main{padding:28px 34px 60px;}
+
+    .mobile-topbar,.sidebar-overlay,.bottom-nav,.sidebar-close-btn{display:none!important;}
+
+    .sidebar{
+      position:sticky;top:0;left:auto;height:100vh;width:264px;max-width:none;z-index:auto;
+      transform:none;transition:none;box-shadow:none;padding-top:24px;padding-bottom:0;
+    }
+    .nav-item{padding:10px 12px;font-size:14.5px;}
+
+    .topbar{margin-bottom:22px;}
+    .topbar h1{font-size:25px;}
+    .referral-chip{width:auto;}
+
+    .stat-grid{grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+    .stat-card{padding:18px 18px 16px;}
+    .stat-card .stat-value{font-size:26px;}
+
+    .quick-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px;}
+    .quick-card{padding:16px;}
+
+    .panel{padding:20px;}
+    .activity-row{font-size:13.5px;}
+
+    .toast{bottom:22px;}
+  }
+  @media(min-width:861px) and (max-width:980px){
+    .stat-grid,.quick-grid{grid-template-columns:repeat(2,1fr);}
   }
 </style>
 </head>
@@ -264,7 +294,7 @@
 
 <div class="shell" id="shell" style="display:none;">
   <div class="mobile-topbar">
-    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><i class="bi bi-list"></i></button>
     <div class="mt-brand">
       <div class="brand-mark">SC</div>
       <div class="mt-title" id="mtTitle">Agent Portal</div>
@@ -281,12 +311,12 @@
     <div class="brand">
       <div class="brand-mark">SC</div>
       <div class="brand-name">SoundsCare<span>Agent Portal</span></div>
-      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">✕</button>
+      <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
     </div>
 
     <div class="nav-group-label">Overview</div>
     <nav class="primary-nav">
-      <a class="nav-item active" href="agent-dashboard.html"><span class="dot"></span>Dashboard</a>
+      <a class="nav-item" href="agent-dashboard.html"><span class="dot"></span>Dashboard</a>
     </nav>
 
     <div class="nav-group-label">Work</div>
@@ -364,22 +394,22 @@
     <div class="section-title">Quick actions</div>
     <div class="quick-grid" id="quickGrid">
       <a class="quick-card" href="agent-post-job.html">
-        <div class="icon">＋</div>
+        <div class="icon"><i class="bi bi-plus-lg"></i></div>
         <div class="qtitle">Post a job</div>
         <div class="qdesc">Earn KES <span id="qJobFee">100</span> per job posting.</div>
       </a>
       <a class="quick-card" href="agent-verify.html">
-        <div class="icon">✓</div>
+        <div class="icon"><i class="bi bi-patch-check"></i></div>
         <div class="qtitle">Verify an employee</div>
         <div class="qdesc">Submit ID checks for pending workers.</div>
       </a>
       <a class="quick-card" href="agent-hires.html">
-        <div class="icon">🤝</div>
+        <div class="icon"><i class="bi bi-people"></i></div>
         <div class="qtitle">Log a hire</div>
         <div class="qdesc">Earn KES <span id="qHireFee">500</span> per confirmed hire.</div>
       </a>
       <a class="quick-card" href="agent-withdraw.html">
-        <div class="icon">↓</div>
+        <div class="icon"><i class="bi bi-arrow-down-circle"></i></div>
         <div class="qtitle">Withdraw funds</div>
         <div class="qdesc">Send your balance to M-Pesa.</div>
       </a>
@@ -394,20 +424,20 @@
   </main>
 
   <nav class="bottom-nav">
-    <a class="bottom-nav-item active" href="agent-dashboard.html">
-      <span class="bn-icon">🏠</span><span class="label">Home</span>
+    <a class="bottom-nav-item" href="agent-dashboard.html">
+      <span class="bn-icon"><i class="bi bi-house-door-fill"></i></span><span class="label">Home</span>
     </a>
     <a class="bottom-nav-item" href="agent-jobs.html">
-      <span class="bn-icon">💼</span><span class="label">Jobs</span>
+      <span class="bn-icon"><i class="bi bi-briefcase-fill"></i></span><span class="label">Jobs</span>
     </a>
     <a class="bottom-nav-item" href="agent-hires.html">
-      <span class="bn-icon">🤝</span><span class="label">Hires</span>
+      <span class="bn-icon"><i class="bi bi-people-fill"></i></span><span class="label">Hires</span>
     </a>
     <a class="bottom-nav-item" href="agent-withdraw.html">
-      <span class="bn-icon">↓</span><span class="label">Withdraw</span>
+      <span class="bn-icon"><i class="bi bi-arrow-down-circle-fill"></i></span><span class="label">Withdraw</span>
     </a>
     <button class="bottom-nav-item" id="bottomMoreBtn" type="button">
-      <span class="bn-icon">☰</span><span class="label">More</span>
+      <span class="bn-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span><span class="label">More</span>
     </button>
   </nav>
 </div>
@@ -566,30 +596,51 @@ const bottomNavEl = document.querySelector('.bottom-nav');
 const mainEl = document.querySelector('main');
 
 /*
+  The base CSS is mobile-first: the sidebar is hidden off-canvas by default,
+  so even if this script never runs, the dashboard still renders correctly
+  with the sidebar closed (no stray sidebar block over the content).
   Some mobile browsers (carrier/data-saver compression proxies in particular)
-  can mangle or drop @media rules while still running JS. This enforces the
-  mobile layout with inline styles as a safety net so the sidebar never sits
-  inline next to a squeezed main column.
+  can also mangle or drop @media rules while still running JS, so this
+  applies the same rules with inline styles as a second, independent layer —
+  whichever of CSS/JS actually survives keeps the layout correct.
 */
 function applyLayoutMode() {
   const isMobile = window.innerWidth <= 860;
   if (isMobile) {
     sidebarEl.style.position = 'fixed';
+    sidebarEl.style.left = '0';
     sidebarEl.style.transform = sidebarEl.classList.contains('open') ? 'translateX(0)' : 'translateX(-100%)';
     sidebarEl.style.height = '100dvh';
+    sidebarEl.style.width = '';
     sidebarEl.style.zIndex = '70';
     mobileTopbarEl.style.display = 'flex';
     bottomNavEl.style.display = 'flex';
+    document.getElementById('sidebarCloseBtn').style.display = 'flex';
     if (mainEl) mainEl.style.paddingBottom = 'calc(90px + env(safe-area-inset-bottom))';
   } else {
-    sidebarEl.style.position = '';
-    sidebarEl.style.transform = '';
-    sidebarEl.style.height = '';
-    sidebarEl.style.zIndex = '';
+    sidebarEl.style.position = 'sticky';
+    sidebarEl.style.left = 'auto';
+    sidebarEl.style.transform = 'none';
+    sidebarEl.style.height = '100vh';
+    sidebarEl.style.width = '264px';
+    sidebarEl.style.zIndex = 'auto';
     mobileTopbarEl.style.display = 'none';
     bottomNavEl.style.display = 'none';
+    document.getElementById('sidebarCloseBtn').style.display = 'none';
+    overlayEl.classList.remove('show');
     if (mainEl) mainEl.style.paddingBottom = '';
   }
+}
+
+/* Highlight whichever nav link matches the current page, so this same
+   sidebar/bottom-nav block lights up correctly no matter which dashboard
+   page it's copied onto. */
+function markActiveNav() {
+  const current = location.pathname.split('/').pop() || 'agent-dashboard.html';
+  document.querySelectorAll('.nav-item, .bottom-nav-item[href]').forEach(el => {
+    const href = el.getAttribute('href');
+    el.classList.toggle('active', href === current);
+  });
 }
 
 function openSidebar() {
