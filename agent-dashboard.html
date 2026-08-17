@@ -478,24 +478,7 @@ function renderActivity(commissions) {
   }).join('');
 }
 
-const DEMO_MODE = new URLSearchParams(window.location.search).get('demo') === '1';
-
 async function loadDashboard() {
-  if (DEMO_MODE) {
-    // Preview-only fake data so the UI can be reviewed without a live Supabase session.
-    const agent = { full_name: 'Wanjiru Kamau', status: 'active', referral_code: 'WK-4821' };
-    const settings = { job_post_commission: 100, hire_commission: 500 };
-    const wallet = { balance: 12400, total_earned: 48200, total_withdrawn: 35800 };
-    const jobsCount = 14, hiresCount = 9;
-    const commissions = [
-      { type: 'hire', amount: 500, status: 'paid', created_at: '2026-08-14T10:00:00Z' },
-      { type: 'job_post', amount: 100, status: 'paid', created_at: '2026-08-12T10:00:00Z' },
-      { type: 'hire', amount: 500, status: 'pending', created_at: '2026-08-09T10:00:00Z' }
-    ];
-    renderDashboard(agent, 'demo@soundscare.co', settings, wallet, jobsCount, hiresCount, commissions);
-    return;
-  }
-
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { showAuthGate(); return; }
 
@@ -527,11 +510,7 @@ async function loadDashboard() {
     sb.from('agent_commissions').select('*').eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(8)
   ]);
 
-  renderDashboard(agent, user.email, settings, wallet, jobsCount, hiresCount, commissions);
-}
-
-function renderDashboard(agent, email, settings, wallet, jobsCount, hiresCount, commissions) {
-  document.getElementById('agentName').textContent = agent.full_name || email;
+  document.getElementById('agentName').textContent = agent.full_name || user.email;
   document.getElementById('agentInitials').textContent = initials(agent.full_name);
   document.getElementById('mtAvatar').textContent = initials(agent.full_name);
   document.getElementById('agentStatus').textContent = agent.status.charAt(0).toUpperCase() + agent.status.slice(1) + ' agent';
