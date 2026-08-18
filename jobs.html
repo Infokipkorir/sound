@@ -152,6 +152,11 @@
   .card-subtitle{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:.3rem}
   .card-subtitle .verified-dot{width:14px;height:14px;background:var(--green);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
   .card-subtitle .verified-dot i{color:#fff;font-size:8px}
+  .card-subtitle .verified-dot.blue{background:var(--blue)}
+
+  .agent-tag{display:inline-flex;align-items:center;gap:.3rem;background:var(--blue-light);color:var(--blue-dark);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600}
+  .agent-tag .verified-dot{width:13px;height:13px}
+  .agent-tag .verified-dot i{font-size:7px}
 
   .card-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}
   .tag{display:inline-block;background:var(--green-light);color:var(--green-dark);padding:3px 9px;border-radius:6px;font-size:11px;font-weight:500}
@@ -443,7 +448,7 @@ async function loadJobs(){
   const todayISO = new Date().toISOString().slice(0,10);
 
   let q = sb.from('job_postings')
-    .select('*', {count:'exact'})
+    .select('*, agent:posted_by_agent_id(id,full_name,status)', {count:'exact'})
     .eq('status','active')
     .eq('is_paused', false)
     .eq('is_closed', false)
@@ -506,6 +511,7 @@ async function loadJobs(){
         ${j.job_role?`<span class="tag blue">${esc(j.job_role)}</span>`:''}
         ${j.work_type?`<span class="tag">${esc(j.work_type)}</span>`:''}
         ${j.is_urgent?'<span class="tag urgent">🔥 Urgent</span>':''}
+        ${j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
         ${deadlineTag(j.deadline)}
       </div>
       <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range)}<span style="margin-left:auto;opacity:.6">${timeAgo(j.created_at)}</span></div>
@@ -535,12 +541,13 @@ function renderPagination(total){
 
 /* ── JOB DETAIL MODAL + DEEP LINK (?job=ID from index.html card clicks) ── */
 async function openJobDetail(id){
-  const { data: j, error } = await sb.from('job_postings').select('*').eq('id', id).single();
+  const { data: j, error } = await sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status)').eq('id', id).single();
   if(error || !j){ showToast('Could not load that job.', 'error'); return; }
   document.getElementById('jd-title').textContent = j.title||'Job';
   document.getElementById('jd-subtitle').textContent = (j.company_name||'Employer')+' · '+(j.county||j.location||'East Africa');
   const days = daysUntil(j.deadline);
   document.getElementById('jd-body').innerHTML = `
+    ${j.posted_by_agent_id?`<h4>Posted Via</h4><p class="agent-tag" style="display:inline-flex">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}${j.agent&&j.agent.status==='active'?' · Verified Agent':''}</p>`:''}
     <h4>Salary</h4><p>${salary(j.salary_min,j.salary_max,j.salary_range)}</p>
     <h4>Job Type</h4><p>${esc(j.work_type||j.job_type||'—')}${j.job_role?' · '+esc(j.job_role):''}</p>
     ${j.deadline?`<h4>Deadline</h4><p style="${days!==null&&days<=DEADLINE_SOON_DAYS?'color:var(--red);font-weight:700':''}">${new Date(j.deadline).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'})}${days!==null?` (${days<=0?'closes today':days+' day'+(days===1?'':'s')+' left'})`:''}</p>`:''}
