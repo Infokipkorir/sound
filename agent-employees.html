@@ -498,6 +498,26 @@
   </nav>
 </div>
 
+<div class="modal-overlay" id="contactModalOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2>Request contact details</h2>
+        <p id="contactModalSub">Sent to SoundsCare support as a ticket — an admin will share the employee's contact info once approved.</p>
+      </div>
+      <button class="modal-close" id="contactModalClose"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="field full">
+      <label for="contactRequestNote">Reason for request <span class="hint">(optional)</span></label>
+      <textarea id="contactRequestNote" placeholder="e.g. Employer is ready to schedule an interview for this candidate."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="contactModalSend">Send request</button>
+      <button class="btn-secondary" id="contactModalCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -710,13 +730,15 @@ function renderEmployees(append) {
             <span><i class="bi bi-geo-alt"></i> ${countryFlag(w.country_code)} ${escapeHtml(w.current_town || w.county || w.location || '—')}${w.country_code && w.country_code !== 'KE' ? ' · ' + escapeHtml(countryName(w.country_code)) : ''}</span>
             ${w.avg_rating ? `<span><i class="bi bi-star-fill"></i> ${Number(w.avg_rating).toFixed(1)}</span>` : ''}
           </div>
-          ${w.phone_number || w.phone ? `<div class="meta"><span><i class="bi bi-telephone"></i> ${escapeHtml(w.phone_number || w.phone)}</span></div>` : ''}
         </div>
         <span class="badge ${stageBadgeClass(stage)}">${escapeHtml(stageLabel(stage))}</span>
       </div>
       <div class="item-card-actions">
         <button class="btn-sm primary" data-verify="${w.id}" ${canVerify ? '' : 'disabled'}>
           ${stage === 'approved' ? 'Already verified' : stage === 'pending_review' || stage === 'submitted' ? 'Verification in review' : 'Verify employee'}
+        </button>
+        <button class="btn-sm gold" data-request-contact="${w.id}" data-name="${escapeHtml(name)}">
+          <i class="bi bi-shield-lock"></i> Request contact
         </button>
       </div>
     </div>`;
@@ -728,6 +750,11 @@ function renderEmployees(append) {
       window.location.href = `Verifyemployee.html?worker_id=${btn.dataset.verify}`;
     });
   });
+  list.querySelectorAll('[data-request-contact]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openContactRequestModal(btn.dataset.requestContact, btn.dataset.name);
+    });
+  });
 
   document.getElementById('loadMoreBtn').style.display = EMP_HAS_MORE ? 'inline-flex' : 'none';
 }
@@ -737,7 +764,7 @@ async function fetchEmployees(reset) {
 
   let query = sb
     .from('worker_profiles')
-    .select('id, full_name, first_name, last_name, preferred_role, job_title, current_town, county, location, country_code, phone_number, phone, avg_rating, verification_stage')
+    .select('id, full_name, first_name, last_name, preferred_role, job_title, current_town, county, location, country_code, avg_rating, verification_stage')
     .eq('account_deactivated', false)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -803,6 +830,77 @@ async function initEmployeesPage() {
 }
 
 loadAgentContext(initEmployeesPage);
+
+/* ---- Request contact modal: raises a support ticket instead of exposing phone/email in the table ---- */
+let CONTACT_REQUEST_TARGET = null; // { workerId, name }
+
+const contactOverlay = document.getElementById('contactModalOverlay');
+const contactNoteEl = document.getElementById('contactRequestNote');
+const contactSendBtn = document.getElementById('contactModalSend');
+
+function openContactRequestModal(workerId, name) {
+  CONTACT_REQUEST_TARGET = { workerId, name };
+  document.getElementById('contactModalSub').textContent =
+    `Sent to SoundsCare support as a ticket for ${name} — an admin will share their contact info once approved.`;
+  contactNoteEl.value = '';
+  contactOverlay.classList.add('show');
+}
+function closeContactRequestModal() {
+  contactOverlay.classList.remove('show');
+  CONTACT_REQUEST_TARGET = null;
+}
+document.getElementById('contactModalClose').addEventListener('click', closeContactRequestModal);
+document.getElementById('contactModalCancel').addEventListener('click', closeContactRequestModal);
+contactOverlay.addEventListener('click', (e) => { if (e.target === contactOverlay) closeContactRequestModal(); });
+
+contactSendBtn.addEventListener('click', async () => {
+  if (!CONTACT_REQUEST_TARGET || !CURRENT_AGENT) return;
+  const { workerId, name } = CONTACT_REQUEST_TARGET;
+  const note = contactNoteEl.value.trim();
+
+  contactSendBtn.disabled = true;
+  contactSendBtn.textContent = 'Sending…';
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const userId = session.user.id;
+
+    const { data: ticket, error: ticketErr } = await sb
+      .from('support_tickets')
+      .insert({
+        user_id: userId,
+        subject: `Contact request: ${name}`,
+        category: 'agent_contact_request',
+        priority: 'normal'
+      })
+      .select('id')
+      .single();
+    if (ticketErr) throw ticketErr;
+
+    const messageBody = `Agent ${CURRENT_AGENT.full_name || ''} is requesting contact details (phone/email) for employee "${name}" (worker_id: ${workerId}).` +
+      (note ? `\n\nReason: ${note}` : '');
+
+    const { error: msgErr } = await sb
+      .from('support_ticket_messages')
+      .insert({
+        ticket_id: ticket.id,
+        sender_id: userId,
+        sender_type: 'agent',
+        message: messageBody
+      });
+    if (msgErr) throw msgErr;
+
+    closeContactRequestModal();
+    showToast('Contact request sent to admin support.');
+  } catch (err) {
+    console.error(err);
+    showToast('Could not send the request. Please try again.');
+  } finally {
+    contactSendBtn.disabled = false;
+    contactSendBtn.textContent = 'Send request';
+  }
+});
+
 
 </script>
 </body>
