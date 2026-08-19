@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --navy:#132038;
@@ -361,6 +362,37 @@
   .commission-chip .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);}
   .commission-chip .value{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--navy);}
 
+  /* ---- withdrawal-specific additions ---- */
+  .sla-banner{border-radius:var(--radius);padding:14px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start;font-size:13px;}
+  .sla-banner.open{background:var(--green-soft);border:1px solid #bfe4cf;}
+  .sla-banner.closed{background:var(--gold-soft);border:1px solid #e6c877;}
+  .sla-banner .sla-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+  .sla-banner.open .sla-dot{background:var(--green);}
+  .sla-banner.closed .sla-dot{background:#a3771f;}
+  .sla-banner strong{display:block;margin-bottom:2px;font-size:13.5px;}
+  .sla-banner p{margin:0;color:var(--ink-soft);line-height:1.5;}
+
+  .breakdown-box{background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;margin-top:6px;font-size:12.5px;}
+  .breakdown-box .bd-row{display:flex;justify-content:space-between;padding:4px 0;}
+  .breakdown-box .bd-row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-weight:700;}
+  .breakdown-box .bd-row.tax{color:var(--red);}
+  .breakdown-box .bd-row.net{color:var(--green);font-weight:700;}
+  .fx-note{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+
+  .source-list{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;}
+  .source-list .src-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;color:var(--ink-soft);}
+  .source-list .src-row span:first-child{color:var(--ink);}
+  .toggle-link{background:none;border:none;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer;padding:0;margin-top:8px;}
+  .toggle-link:hover{text-decoration:underline;}
+
+  .receipt-paper{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px;font-size:13px;}
+  .receipt-paper h3{font-family:var(--font-display);margin:0 0 2px;font-size:17px;}
+  .receipt-paper .r-sub{color:var(--ink-soft);font-size:12px;margin-bottom:14px;}
+  .receipt-paper .r-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);}
+  .receipt-paper .r-row span:first-child{color:var(--ink-soft);}
+  .receipt-paper .r-row span:last-child{font-weight:600;text-align:right;}
+  .receipt-paper .r-total{display:flex;justify-content:space-between;padding-top:10px;margin-top:8px;font-size:15px;font-weight:800;color:var(--green);}
+  .ticket-chip{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.03em;}
 </style>
 </head>
 <body>
@@ -449,6 +481,7 @@
     </div>
 
     <div id="statusBannerHolder"></div>
+    <div id="slaBannerHolder"></div>
 
     <div class="stat-row" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
       <div class="commission-chip">
@@ -474,23 +507,27 @@
     <div class="panel">
       <form id="withdrawForm">
         <div class="section-title" style="margin-top:0;">Request a withdrawal</div>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:-8px 0 16px;">Commissions are held in Kenya Shillings (KES). You can still receive payouts on mobile money in other East African countries — we convert at the time of processing. Minimum withdrawal is <strong>KES 600</strong> (or the equivalent in your payout currency).</p>
         <div class="form-grid">
           <div class="field">
             <label for="fAmount">Amount (KES) *</label>
-            <input type="number" id="fAmount" min="1" step="1" required placeholder="e.g. 2000">
+            <input type="number" id="fAmount" min="600" step="1" required placeholder="e.g. 2000">
             <div class="hint" id="maxAmountHint"></div>
           </div>
           <div class="field">
-            <label for="fMethod">Payout method</label>
-            <select id="fMethod">
-              <option value="mpesa">M-Pesa</option>
-            </select>
+            <label for="fCountry">Payout country</label>
+            <select id="fCountry"></select>
           </div>
-          <div class="field full">
-            <label for="fPhone">M-Pesa phone number *</label>
+          <div class="field">
+            <label for="fMethod">Payout method</label>
+            <select id="fMethod"></select>
+          </div>
+          <div class="field">
+            <label for="fPhone">Mobile money phone number *</label>
             <input type="tel" id="fPhone" required placeholder="e.g. 0712345678">
           </div>
         </div>
+        <div class="breakdown-box" id="breakdownBox" style="display:none;"></div>
         <div class="form-actions">
           <button type="submit" class="btn-primary" id="withdrawSubmitBtn">Request withdrawal</button>
         </div>
@@ -522,6 +559,23 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-head">
+      <div>
+        <h2>Withdrawal receipt</h2>
+        <p>Confirmation of your paid-out commission</p>
+      </div>
+      <button class="modal-close" id="receiptCloseBtn"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="receipt-paper" id="receiptPaper"></div>
+    <div class="form-actions">
+      <button type="button" class="btn-primary" id="receiptDownloadBtn"><i class="bi bi-download"></i> Download PDF</button>
+      <button type="button" class="btn-secondary" id="receiptCloseBtn2">Close</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
@@ -680,9 +734,84 @@ markActiveNav();
 
 let WALLET = null;
 
+// ============================================================
+// CONFIG — tax rate & East Africa payout destinations
+// ============================================================
+// Withholding tax on agent commissions. This is a platform-configurable
+// placeholder — confirm the exact statutory rate that applies to your
+// agents with your accountant/KRA before relying on this figure.
+const WITHHOLDING_TAX_RATE = 0.05; // 5%
+const MIN_WITHDRAWAL_KES = 600;
+
+// Approximate indicative FX rates (KES per 1 unit of local currency).
+// These are NOT live rates — they're only shown so the agent knows roughly
+// what to expect. The exact amount paid out is confirmed by SoundsCare
+// support at the time of processing.
+const COUNTRY_CONFIG = {
+  KE: { name: 'Kenya', currency: 'KES', kesPerUnit: 1, methods: [{ v: 'mpesa', l: 'M-Pesa' }] },
+  TZ: { name: 'Tanzania', currency: 'TZS', kesPerUnit: 0.05, methods: [{ v: 'mpesa_tz', l: 'M-Pesa (Tanzania)' }, { v: 'tigo_pesa', l: 'Tigo Pesa' }, { v: 'airtel_money_tz', l: 'Airtel Money' }] },
+  UG: { name: 'Uganda', currency: 'UGX', kesPerUnit: 0.035, methods: [{ v: 'mtn_momo_ug', l: 'MTN Mobile Money' }, { v: 'airtel_money_ug', l: 'Airtel Money' }] },
+  RW: { name: 'Rwanda', currency: 'RWF', kesPerUnit: 0.1, methods: [{ v: 'mtn_momo_rw', l: 'MTN Mobile Money' }] },
+  BI: { name: 'Burundi', currency: 'BIF', kesPerUnit: 0.045, methods: [{ v: 'lumicash', l: 'Lumicash' }, { v: 'ecocash_bi', l: 'EcoCash' }] },
+  SS: { name: 'South Sudan', currency: 'SSP', kesPerUnit: null, methods: [{ v: 'mtn_momo_ss', l: 'MTN Mobile Money' }] },
+};
+
+function populateCountrySelect() {
+  const sel = document.getElementById('fCountry');
+  sel.innerHTML = Object.entries(COUNTRY_CONFIG).map(([code, c]) => `<option value="${code}">${c.name} (${c.currency})</option>`).join('');
+  sel.value = 'KE';
+  populateMethodSelect();
+}
+function populateMethodSelect() {
+  const country = document.getElementById('fCountry').value;
+  const cfg = COUNTRY_CONFIG[country];
+  const sel = document.getElementById('fMethod');
+  sel.innerHTML = cfg.methods.map(m => `<option value="${m.v}">${m.l}</option>`).join('');
+  updateBreakdownPreview();
+}
+document.getElementById('fCountry').addEventListener('change', populateMethodSelect);
+document.getElementById('fAmount').addEventListener('input', updateBreakdownPreview);
+
 function withdrawalStatusBadgeClass(status) {
   const map = { pending: 'pending', approved: 'active', paid: 'active', rejected: 'rejected' };
   return map[status] || 'pending';
+}
+
+// ============================================================
+// SUPPORT WINDOW (East Africa Time) — processing SLA
+// ============================================================
+// Support processes withdrawals Monday 08:30–16:30 and Saturday 09:00–13:00,
+// East Africa Time. Outside those windows a request stays "pending" until
+// the next window opens.
+function getEATParts(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Nairobi', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(date);
+  const map = {};
+  parts.forEach(p => map[p.type] = p.value);
+  const weekdayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { weekday: weekdayMap[map.weekday], minutes: (parseInt(map.hour, 10) % 24) * 60 + parseInt(map.minute, 10) };
+}
+function getSupportWindowStatus() {
+  const { weekday, minutes } = getEATParts(new Date());
+  if (weekday === 1 && minutes >= 510 && minutes < 990) return { open: true, label: 'Monday 08:30–16:30 EAT' };
+  if (weekday === 6 && minutes >= 540 && minutes < 780) return { open: true, label: 'Saturday 09:00–13:00 EAT' };
+  return { open: false };
+}
+function renderSlaBanner() {
+  const holder = document.getElementById('slaBannerHolder');
+  const status = getSupportWindowStatus();
+  if (status.open) {
+    holder.innerHTML = `<div class="sla-banner open"><span class="sla-dot"></span><div>
+      <strong>Support is online — ${escapeHtml(status.label)}</strong>
+      <p>Withdrawals submitted now are typically processed within 1 hour. Every request gets a support ticket number you can use to track it.</p>
+    </div></div>`;
+  } else {
+    holder.innerHTML = `<div class="sla-banner closed"><span class="sla-dot"></span><div>
+      <strong>Outside support hours</strong>
+      <p>Withdrawals are processed Monday 08:30–16:30 and Saturday 09:00–13:00 (East Africa Time). Requests made outside these hours stay <strong>pending</strong> until the next window opens — they are not lost. Track progress with your support ticket number. If a withdrawal ever fails, simply submit a new request.</p>
+    </div></div>`;
+  }
 }
 
 async function loadWallet() {
@@ -697,14 +826,103 @@ async function loadWallet() {
   document.getElementById('walletBalance').textContent = fmtKES(WALLET.balance);
   document.getElementById('walletEarned').textContent = fmtKES(WALLET.total_earned);
   document.getElementById('walletWithdrawn').textContent = fmtKES(WALLET.total_withdrawn);
-  document.getElementById('maxAmountHint').textContent = `Available: ${fmtKES(WALLET.balance)}`;
+  document.getElementById('maxAmountHint').textContent = `Available: ${fmtKES(WALLET.balance)} · Minimum: ${fmtKES(MIN_WITHDRAWAL_KES)}`;
   document.getElementById('fAmount').max = WALLET.balance || 0;
 
-  const canWithdraw = CURRENT_AGENT.status === 'active' && Number(WALLET.balance) > 0;
+  const canWithdraw = CURRENT_AGENT.status === 'active' && Number(WALLET.balance) >= MIN_WITHDRAWAL_KES;
   document.getElementById('withdrawSubmitBtn').disabled = !canWithdraw;
-  if (CURRENT_AGENT.status === 'active' && Number(WALLET.balance) <= 0) {
-    document.getElementById('withdrawSubmitBtn').textContent = 'No balance available';
+  if (CURRENT_AGENT.status === 'active' && Number(WALLET.balance) < MIN_WITHDRAWAL_KES) {
+    document.getElementById('withdrawSubmitBtn').textContent = `Balance below minimum (${fmtKES(MIN_WITHDRAWAL_KES)})`;
   }
+  updateBreakdownPreview();
+}
+
+function updateBreakdownPreview() {
+  const box = document.getElementById('breakdownBox');
+  const amount = Number(document.getElementById('fAmount').value);
+  if (!amount || amount <= 0) { box.style.display = 'none'; return; }
+
+  const tax = Math.round(amount * WITHHOLDING_TAX_RATE);
+  const net = amount - tax;
+  const country = document.getElementById('fCountry').value;
+  const cfg = COUNTRY_CONFIG[country];
+
+  let fxLine = '';
+  if (country !== 'KE') {
+    if (cfg.kesPerUnit) {
+      const estimate = net / cfg.kesPerUnit;
+      fxLine = `<div class="bd-row"><span>Estimated payout (${cfg.currency})</span><span>≈ ${estimate.toLocaleString('en-KE', { maximumFractionDigits: 0 })} ${cfg.currency}</span></div>
+        <div class="fx-note">Indicative estimate only — not a live rate. SoundsCare support confirms the exact ${cfg.currency} amount before sending.</div>`;
+    } else {
+      fxLine = `<div class="fx-note">${cfg.currency} exchange rate varies — SoundsCare support will confirm the exact payout amount for this destination.</div>`;
+    }
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="bd-row"><span>Gross amount</span><span>${fmtKES(amount)}</span></div>
+    <div class="bd-row tax"><span>Withholding tax (${(WITHHOLDING_TAX_RATE * 100).toFixed(0)}%)</span><span>− ${fmtKES(tax)}</span></div>
+    <div class="bd-row net total"><span>Net payout</span><span>${fmtKES(net)}</span></div>
+    ${fxLine}`;
+}
+
+// Walks the agent's approved commissions FIFO, skipping whatever has already
+// been allocated to earlier (non-rejected) withdrawals, so each withdrawal
+// carries a snapshot of which job posting(s)/hire(s) actually funded it.
+async function buildSourceBreakdown(amountNeeded) {
+  const [{ data: commissions }, { data: priorWithdrawals }] = await Promise.all([
+    sb.from('agent_commissions').select('*').eq('agent_id', CURRENT_AGENT.id).eq('status', 'approved').order('created_at', { ascending: true }),
+    sb.from('agent_withdrawals').select('source_breakdown,status').eq('agent_id', CURRENT_AGENT.id).neq('status', 'rejected')
+  ]);
+
+  const allocated = {};
+  (priorWithdrawals || []).forEach(w => {
+    (w.source_breakdown || []).forEach(item => {
+      allocated[item.commission_id] = (allocated[item.commission_id] || 0) + Number(item.amount_applied || 0);
+    });
+  });
+
+  const jobPostIds = new Set(), hireIds = new Set();
+  (commissions || []).forEach(c => {
+    if (c.reference_type === 'job_posting' && c.reference_id) jobPostIds.add(c.reference_id);
+    if (c.reference_type === 'job_application' && c.reference_id) hireIds.add(c.reference_id);
+  });
+  const [{ data: jobs }, { data: apps }] = await Promise.all([
+    jobPostIds.size ? sb.from('job_postings').select('id,title').in('id', [...jobPostIds]) : Promise.resolve({ data: [] }),
+    hireIds.size ? sb.from('job_applications').select('id,job_id,worker_name').in('id', [...hireIds]) : Promise.resolve({ data: [] })
+  ]);
+  const jobTitleById = Object.fromEntries((jobs || []).map(j => [j.id, j.title]));
+  const appById = Object.fromEntries((apps || []).map(a => [a.id, a]));
+  let appJobIds = [...new Set((apps || []).map(a => a.job_id).filter(Boolean))];
+  const { data: appJobs } = appJobIds.length ? await sb.from('job_postings').select('id,title').in('id', appJobIds) : { data: [] };
+  const appJobTitleById = Object.fromEntries((appJobs || []).map(j => [j.id, j.title]));
+
+  const breakdown = [];
+  let remaining = amountNeeded;
+  for (const c of (commissions || [])) {
+    if (remaining <= 0) break;
+    const used = allocated[c.id] || 0;
+    const available = Number(c.amount) - used;
+    if (available <= 0) continue;
+    const take = Math.min(available, remaining);
+    let label = c.description || c.type;
+    if (c.reference_type === 'job_posting') label = 'Job posted: ' + (jobTitleById[c.reference_id] || 'Untitled job');
+    else if (c.reference_type === 'job_application') {
+      const app = appById[c.reference_id];
+      const jobTitle = app ? appJobTitleById[app.job_id] : null;
+      label = 'Hire confirmed: ' + (jobTitle || 'a job') + (app && app.worker_name ? ` (${app.worker_name})` : '');
+    }
+    breakdown.push({ commission_id: c.id, type: c.type, label, amount_applied: take });
+    remaining -= take;
+  }
+  return breakdown;
+}
+
+function renderSourceList(breakdown) {
+  if (!breakdown || !breakdown.length) return '';
+  return `<div class="source-list">
+    ${breakdown.map(b => `<div class="src-row"><span>${escapeHtml(b.label)}</span><span>${fmtKES(b.amount_applied)}</span></div>`).join('')}
+  </div>`;
 }
 
 async function loadWithdrawals() {
@@ -718,25 +936,47 @@ async function loadWithdrawals() {
   if (error) { listEl.innerHTML = '<div class="empty-state">Could not load withdrawal history.</div>'; return; }
   if (!data || data.length === 0) { listEl.innerHTML = '<div class="empty-state">No withdrawal requests yet.</div>'; return; }
 
-  listEl.innerHTML = data.map(w => {
-    const requested = w.requested_at ? new Date(w.requested_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-    const processed = w.processed_at ? new Date(w.processed_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+  const ticketIds = [...new Set(data.map(w => w.support_ticket_id).filter(Boolean))];
+  let ticketsById = {};
+  if (ticketIds.length) {
+    const { data: tickets } = await sb.from('support_tickets').select('id,ticket_number').in('id', ticketIds);
+    ticketsById = Object.fromEntries((tickets || []).map(t => [t.id, t.ticket_number]));
+  }
+
+  WITHDRAWALS_CACHE = data;
+
+  listEl.innerHTML = data.map((w, idx) => {
+    const requested = w.requested_at ? new Date(w.requested_at).toLocaleString('en-KE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    const processed = w.processed_at ? new Date(w.processed_at).toLocaleString('en-KE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
+    const ticketNo = ticketsById[w.support_ticket_id];
+    const bdId = `bd-${idx}`;
     return `<div class="item-card">
       <div class="item-card-top">
         <div>
-          <h3>${fmtKES(w.amount)}</h3>
+          <h3>${fmtKES(w.amount)}${w.tax_amount ? ` <small style="font-size:11.5px;font-weight:600;color:var(--ink-soft);">(net ${fmtKES(w.net_amount ?? (w.amount - w.tax_amount))})</small>` : ''}</h3>
           <div class="meta">
             <span><i class="bi bi-phone"></i> ${escapeHtml(w.phone_number || '—')}</span>
+            <span><i class="bi bi-globe"></i> ${escapeHtml(COUNTRY_CONFIG[w.country]?.name || w.country || 'Kenya')}</span>
             <span><i class="bi bi-calendar-event"></i> Requested ${requested}</span>
             ${processed ? `<span><i class="bi bi-check2-circle"></i> Processed ${processed}</span>` : ''}
           </div>
+          <div class="meta" style="margin-top:6px;">
+            ${w.system_reference ? `<span><i class="bi bi-upc-scan"></i> ${escapeHtml(w.system_reference)}</span>` : ''}
+            ${ticketNo ? `<span class="ticket-chip"><i class="bi bi-life-preserver"></i> ${escapeHtml(ticketNo)}</span>` : ''}
+          </div>
           ${w.status === 'rejected' && w.admin_notes ? `<div class="note">${escapeHtml(w.admin_notes)}</div>` : ''}
+          ${w.source_breakdown && w.source_breakdown.length ? `<button type="button" class="toggle-link" onclick="document.getElementById('${bdId}').style.display=document.getElementById('${bdId}').style.display==='none'?'block':'none';">View which jobs funded this</button><div id="${bdId}" style="display:none;">${renderSourceList(w.source_breakdown)}</div>` : ''}
         </div>
-        <span class="badge ${withdrawalStatusBadgeClass(w.status)}">${escapeHtml(w.status || 'pending')}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <span class="badge ${withdrawalStatusBadgeClass(w.status)}">${escapeHtml(w.status || 'pending')}</span>
+          ${w.status === 'paid' ? `<button type="button" class="btn-sm primary" onclick="openReceipt('${w.id}')"><i class="bi bi-receipt"></i> Receipt</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
 }
+
+let WITHDRAWALS_CACHE = [];
 
 document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -747,41 +987,175 @@ document.getElementById('withdrawForm').addEventListener('submit', async (e) => 
 
   const amount = Number(document.getElementById('fAmount').value);
   if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
+  if (amount < MIN_WITHDRAWAL_KES) { showToast(`Minimum withdrawal is ${fmtKES(MIN_WITHDRAWAL_KES)}.`); return; }
   if (WALLET && amount > Number(WALLET.balance)) {
     showToast('That amount is more than your available balance.');
     return;
   }
+  const phone = document.getElementById('fPhone').value.trim();
+  if (!phone) { showToast('Enter the mobile money phone number to receive this payout.'); return; }
 
   const btn = document.getElementById('withdrawSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
-  const { error } = await sb.from('agent_withdrawals').insert({
-    agent_id: CURRENT_AGENT.id,
-    amount,
-    method: document.getElementById('fMethod').value,
-    phone_number: document.getElementById('fPhone').value.trim(),
-    status: 'pending'
-  });
+  try {
+    const country = document.getElementById('fCountry').value;
+    const cfg = COUNTRY_CONFIG[country];
+    const tax = Math.round(amount * WITHHOLDING_TAX_RATE);
+    const net = amount - tax;
+    const payoutEstimate = cfg.kesPerUnit ? net / cfg.kesPerUnit : null;
+    const breakdown = await buildSourceBreakdown(amount);
 
-  if (error) {
-    console.error(error);
-    showToast(error.message && error.message.includes('Insufficient') ? 'Insufficient wallet balance.' : 'Could not submit the withdrawal.');
+    const { data: wRow, error } = await sb.from('agent_withdrawals').insert({
+      agent_id: CURRENT_AGENT.id,
+      amount,
+      method: document.getElementById('fMethod').value,
+      phone_number: phone,
+      status: 'pending',
+      currency: 'KES',
+      country,
+      payout_currency: cfg.currency,
+      tax_amount: tax,
+      net_amount: net,
+      payout_amount_estimated: payoutEstimate,
+      source_breakdown: breakdown,
+      recipient_name: CURRENT_AGENT.full_name || null
+    }).select().single();
+
+    if (error) {
+      showToast(error.message && error.message.includes('Insufficient') ? 'Insufficient wallet balance.' : 'Could not submit the withdrawal.');
+      btn.disabled = false;
+      btn.textContent = 'Request withdrawal';
+      return;
+    }
+
+    // Auto-open a support ticket so the agent has a single reference number
+    // to track this withdrawal through to payout.
+    const slaStatus = getSupportWindowStatus();
+    const { data: { session } } = await sb.auth.getSession();
+    const { data: ticket } = await sb.from('support_tickets').insert({
+      user_id: session?.user?.id || null,
+      subject: `Agent withdrawal ${wRow.system_reference} — ${fmtKES(amount)}`,
+      category: 'withdrawal',
+      priority: 'normal',
+      status: 'open'
+    }).select().single();
+
+    if (ticket) {
+      await sb.from('agent_withdrawals').update({ support_ticket_id: ticket.id }).eq('id', wRow.id);
+      await sb.from('support_ticket_messages').insert({
+        ticket_id: ticket.id, sender_id: null, sender_type: 'user',
+        message: `Automated: withdrawal request ${wRow.system_reference} for ${fmtKES(amount)} (net ${fmtKES(net)} after ${(WITHHOLDING_TAX_RATE * 100).toFixed(0)}% withholding tax) to ${cfg.name} — ${document.getElementById('fMethod').value}, ${phone}. ${slaStatus.open ? 'Submitted during a support window; expect processing within 1 hour.' : 'Submitted outside support hours; will be processed at the next window (Mon 08:30–16:30 or Sat 09:00–13:00 EAT).'}`
+      });
+    }
+
+    showToast(ticket ? `Withdrawal requested — support ticket ${ticket.ticket_number} opened.` : 'Withdrawal requested — it will be reviewed by SoundsCare.');
+    document.getElementById('withdrawForm').reset();
+    document.getElementById('fCountry').value = 'KE';
+    populateMethodSelect();
+    document.getElementById('fPhone').value = CURRENT_AGENT.phone || '';
+    await loadWallet();
+    await loadWithdrawals();
+  } catch (err) {
+    console.error(err);
+    showToast('Something went wrong submitting your withdrawal. Please try again.');
+  } finally {
     btn.disabled = false;
     btn.textContent = 'Request withdrawal';
-    return;
+  }
+});
+
+// ============================================================
+// RECEIPT (view + PDF download)
+// ============================================================
+function openReceipt(withdrawalId) {
+  const w = WITHDRAWALS_CACHE.find(x => x.id === withdrawalId);
+  if (!w) return;
+  const paper = document.getElementById('receiptPaper');
+  const paidDate = w.processed_at ? new Date(w.processed_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  paper.dataset.withdrawalId = withdrawalId;
+  paper.innerHTML = `
+    <h3>SoundsCare</h3>
+    <div class="r-sub">Agent commission withdrawal receipt</div>
+    <div class="r-row"><span>System reference</span><span>${escapeHtml(w.system_reference || '—')}</span></div>
+    <div class="r-row"><span>Recipient name</span><span>${escapeHtml(w.recipient_name || CURRENT_AGENT.full_name || '—')}</span></div>
+    <div class="r-row"><span>Phone number</span><span>${escapeHtml(w.phone_number || '—')}</span></div>
+    <div class="r-row"><span>M-Pesa receipt no.</span><span>${escapeHtml(w.mpesa_receipt_number || 'Pending')}</span></div>
+    <div class="r-row"><span>Gross amount</span><span>${fmtKES(w.amount)}</span></div>
+    <div class="r-row"><span>Withholding tax</span><span>− ${fmtKES(w.tax_amount || 0)}</span></div>
+    <div class="r-row"><span>Payout method</span><span>${escapeHtml(w.method || '—')}</span></div>
+    <div class="r-row"><span>Time paid</span><span>${escapeHtml(paidDate)}</span></div>
+    <div class="r-total"><span>Net amount paid</span><span>${fmtKES(w.net_amount ?? (w.amount - (w.tax_amount || 0)))}</span></div>
+    ${renderSourceList(w.source_breakdown)}
+  `;
+  document.getElementById('receiptModal').classList.add('show');
+}
+function closeReceipt() { document.getElementById('receiptModal').classList.remove('show'); }
+document.getElementById('receiptCloseBtn').addEventListener('click', closeReceipt);
+document.getElementById('receiptCloseBtn2').addEventListener('click', closeReceipt);
+document.getElementById('receiptModal').addEventListener('click', (e) => { if (e.target.id === 'receiptModal') closeReceipt(); });
+
+document.getElementById('receiptDownloadBtn').addEventListener('click', () => {
+  const withdrawalId = document.getElementById('receiptPaper').dataset.withdrawalId;
+  const w = WITHDRAWALS_CACHE.find(x => x.id === withdrawalId);
+  if (!w || !window.jspdf) { showToast('Could not generate the PDF.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const left = 48; let y = 60;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(19, 32, 56);
+  doc.text('SoundsCare', left, y); y += 20;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(90, 96, 108);
+  doc.text('Agent commission withdrawal receipt', left, y); y += 28;
+  doc.setDrawColor(220, 220, 220); doc.line(left, y, 547, y); y += 24;
+
+  const row = (label, value) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(90, 96, 108);
+    doc.text(label, left, y);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(22, 27, 34);
+    doc.text(String(value), 547, y, { align: 'right' });
+    y += 22;
+  };
+  const paidDate = w.processed_at ? new Date(w.processed_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  row('System reference', w.system_reference || '—');
+  row('Recipient name', w.recipient_name || CURRENT_AGENT.full_name || '—');
+  row('Phone number', w.phone_number || '—');
+  row('M-Pesa receipt no.', w.mpesa_receipt_number || 'Pending');
+  row('Payout method', w.method || '—');
+  row('Time paid', paidDate);
+  y += 6; doc.setDrawColor(230, 230, 230); doc.line(left, y, 547, y); y += 20;
+  row('Gross amount', fmtKES(w.amount));
+  row('Withholding tax', '- ' + fmtKES(w.tax_amount || 0));
+  doc.setDrawColor(220, 220, 220); doc.line(left, y, 547, y); y += 22;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(31, 157, 99);
+  doc.text('Net amount paid', left, y);
+  doc.text(fmtKES(w.net_amount ?? (w.amount - (w.tax_amount || 0))), 547, y, { align: 'right' });
+  y += 34;
+
+  if (w.source_breakdown && w.source_breakdown.length) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(19, 32, 56);
+    doc.text('Funded by', left, y); y += 16;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(90, 96, 108);
+    w.source_breakdown.forEach(item => {
+      doc.text(item.label, left, y);
+      doc.text(fmtKES(item.amount_applied), 547, y, { align: 'right' });
+      y += 16;
+    });
   }
 
-  showToast('Withdrawal requested — it will be reviewed by SoundsCare.');
-  document.getElementById('withdrawForm').reset();
-  await loadWallet();
-  await loadWithdrawals();
-  btn.disabled = false;
-  btn.textContent = 'Request withdrawal';
+  doc.setFontSize(9); doc.setTextColor(150, 150, 150);
+  doc.text('Generated ' + new Date().toLocaleString('en-KE'), left, 800);
+
+  doc.save(`SoundsCare-Receipt-${w.system_reference || w.id}.pdf`);
 });
 
 async function initWithdrawPage(agent) {
   document.getElementById('fPhone').value = agent.phone || '';
+  populateCountrySelect();
+  renderSlaBanner();
+  setInterval(renderSlaBanner, 60000);
   await Promise.all([loadWallet(), loadWithdrawals()]);
 }
 
