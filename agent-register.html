@@ -115,6 +115,27 @@
     display:inline-block;background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-weight:700;font-size:13.5px;
   }
 
+  .field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%235C6470'><path d='M5.5 7.5l4.5 4.5 4.5-4.5' stroke='%235C6470' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+
+  .section-label{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--navy);margin:22px 0 12px;padding-top:16px;border-top:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;}
+  .section-label:first-of-type{margin-top:20px;}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:14px;}
+  .toggle-row .toggle-copy{display:flex;flex-direction:column;gap:2px;}
+  .toggle-row .toggle-copy .t-title{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .toggle-row .toggle-copy .t-hint{font-size:11.5px;color:var(--ink-soft);}
+  .switch{position:relative;width:40px;height:23px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .track{position:absolute;inset:0;background:#d8dce3;border-radius:20px;transition:background .15s;cursor:pointer;}
+  .switch .track::before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .switch input:checked + .track{background:var(--navy);}
+  .switch input:checked + .track::before{transform:translateX(17px);}
+
+  .agency-panel{display:none;background:#fbfaf7;border:1px dashed var(--line);border-radius:12px;padding:14px 14px 2px;margin-bottom:14px;}
+  .agency-panel.open{display:block;}
+
+  .country-opt{display:flex;align-items:center;gap:8px;}
+
   @media(max-width:840px){.brand-panel{display:none;}}
 </style>
 </head>
@@ -182,6 +203,89 @@
             <div class="field-error">Required for identity verification.</div>
           </div>
 
+          <div class="section-label">Location</div>
+
+          <div class="field-row">
+            <div class="field" id="f-regCountry">
+              <label for="regCountry">Country</label>
+              <select id="regCountry" required></select>
+              <div class="field-error">Please select a country.</div>
+            </div>
+            <div class="field" id="f-regResidency">
+              <label for="regResidency">Country of residency</label>
+              <select id="regResidency" required></select>
+              <div class="field-error">Please select your country of residency.</div>
+            </div>
+          </div>
+
+          <div class="field" id="f-regPhysicalOffice">
+            <label for="regPhysicalOffice">Physical office <span class="hint">(building, street, area)</span></label>
+            <input type="text" id="regPhysicalOffice" required placeholder="e.g. Kimathi Street, ABC Plaza, 3rd Floor">
+            <div class="field-error">Please enter your physical office location.</div>
+          </div>
+
+          <div class="section-label">Agency details</div>
+
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <span class="t-title">Registering as an agency</span>
+              <span class="t-hint">Switch on if you represent an agency, not an individual</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="regIsAgency">
+              <span class="track"></span>
+            </label>
+          </div>
+
+          <div class="agency-panel" id="agencyPanel">
+            <div class="field" id="f-regAgencyName">
+              <label for="regAgencyName">Agency name</label>
+              <input type="text" id="regAgencyName" placeholder="e.g. Wanjiru Domestic Staffing Agency">
+              <div class="field-error">Please enter the agency name.</div>
+            </div>
+            <div class="field" id="f-regAgencyOffice">
+              <label for="regAgencyOffice">Agency office location</label>
+              <input type="text" id="regAgencyOffice" placeholder="e.g. Westlands, Nairobi">
+              <div class="field-error">Please enter the agency office location.</div>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-copy">
+                <span class="t-title">Agency is officially registered</span>
+                <span class="t-hint">Registered with the relevant business/labour authority</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="regIsRegistered">
+                <span class="track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-label">Contact &amp; payment</div>
+
+          <div class="field" id="f-regAltContact">
+            <label for="regAltContact">Contact info <span class="hint">(alternate phone, WhatsApp or email)</span></label>
+            <input type="text" id="regAltContact" placeholder="e.g. WhatsApp 07XX XXX XXX">
+            <div class="field-error">Please enter an alternate contact.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field" id="f-regPaymentOption">
+              <label for="regPaymentOption">Payment option</label>
+              <select id="regPaymentOption" required>
+                <option value="">Select payment method</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="airtel_money">Airtel Money</option>
+                <option value="bank">Bank transfer</option>
+              </select>
+              <div class="field-error">Please select a payment option.</div>
+            </div>
+            <div class="field" id="f-regPaymentDetails">
+              <label for="regPaymentDetails">Payment details</label>
+              <input type="text" id="regPaymentDetails" required placeholder="Phone or account number">
+              <div class="field-error">Please enter your payment details.</div>
+            </div>
+          </div>
+
           <div class="field" id="f-regPassword">
             <label for="regPassword">Password <span class="hint">(min. 6 characters)</span></label>
             <input type="password" id="regPassword" required minlength="6" autocomplete="new-password" placeholder="••••••••">
@@ -227,6 +331,69 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const errorAlert = document.getElementById('errorAlert');
 const registerForm = document.getElementById('registerForm');
 const registerBtn = document.getElementById('registerBtn');
+
+// East Africa first, then other common countries agents may reside in
+const COUNTRIES = [
+  { code: 'KE', name: 'Kenya' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'ET', name: 'Ethiopia' },
+  { code: 'SO', name: 'Somalia' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'GH', name: 'Ghana' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'SA', name: 'Saudi Arabia' },
+  { code: 'QA', name: 'Qatar' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+];
+
+function flagEmoji(code) {
+  return code.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+
+function populateCountrySelect(selectEl, placeholder) {
+  const opts = [`<option value="">${placeholder}</option>`]
+    .concat(COUNTRIES.map(c => `<option value="${c.code}">${flagEmoji(c.code)} ${c.name}</option>`));
+  selectEl.innerHTML = opts.join('');
+}
+populateCountrySelect(document.getElementById('regCountry'), 'Select country');
+populateCountrySelect(document.getElementById('regResidency'), 'Select country of residency');
+
+// Agency toggle: show/hide agency-only fields and (de)require them
+const isAgencyEl = document.getElementById('regIsAgency');
+const agencyPanel = document.getElementById('agencyPanel');
+const agencyNameEl = document.getElementById('regAgencyName');
+const agencyOfficeEl = document.getElementById('regAgencyOffice');
+
+function syncAgencyPanel() {
+  const on = isAgencyEl.checked;
+  agencyPanel.classList.toggle('open', on);
+  agencyNameEl.required = on;
+  agencyOfficeEl.required = on;
+  if (!on) {
+    document.getElementById('f-regAgencyName').classList.remove('invalid');
+    document.getElementById('f-regAgencyOffice').classList.remove('invalid');
+  }
+}
+isAgencyEl.addEventListener('change', syncAgencyPanel);
+syncAgencyPanel();
+
+// Payment option: adapt the details placeholder to the chosen method
+const paymentOptionEl = document.getElementById('regPaymentOption');
+const paymentDetailsEl = document.getElementById('regPaymentDetails');
+paymentOptionEl.addEventListener('change', () => {
+  const placeholders = {
+    mpesa: 'M-Pesa number, e.g. 07XX XXX XXX',
+    airtel_money: 'Airtel Money number, e.g. 07XX XXX XXX',
+    bank: 'Bank name, account number'
+  };
+  paymentDetailsEl.placeholder = placeholders[paymentOptionEl.value] || 'Phone or account number';
+});
 
 function clearAlert() {
   errorAlert.style.display = 'none';
@@ -274,6 +441,29 @@ function validateForm(vals) {
   setFieldError('f-regIdNumber', !vals.id_number);
   if (!vals.id_number) ok = false;
 
+  setFieldError('f-regCountry', !vals.country);
+  if (!vals.country) ok = false;
+
+  setFieldError('f-regResidency', !vals.country_of_residency);
+  if (!vals.country_of_residency) ok = false;
+
+  setFieldError('f-regPhysicalOffice', !vals.physical_office);
+  if (!vals.physical_office) ok = false;
+
+  if (vals.is_agency) {
+    setFieldError('f-regAgencyName', !vals.agency_name);
+    if (!vals.agency_name) ok = false;
+
+    setFieldError('f-regAgencyOffice', !vals.agency_office_location);
+    if (!vals.agency_office_location) ok = false;
+  }
+
+  setFieldError('f-regPaymentOption', !vals.payment_option);
+  if (!vals.payment_option) ok = false;
+
+  setFieldError('f-regPaymentDetails', !vals.payment_details);
+  if (!vals.payment_details) ok = false;
+
   setFieldError('f-regPassword', vals.password.length < 6);
   if (vals.password.length < 6) ok = false;
 
@@ -310,6 +500,16 @@ registerForm.addEventListener('submit', async (e) => {
     county: document.getElementById('regCounty').value.trim(),
     email: document.getElementById('regEmail').value.trim(),
     id_number: document.getElementById('regIdNumber').value.trim(),
+    country: document.getElementById('regCountry').value,
+    country_of_residency: document.getElementById('regResidency').value,
+    physical_office: document.getElementById('regPhysicalOffice').value.trim(),
+    is_agency: document.getElementById('regIsAgency').checked,
+    agency_name: document.getElementById('regAgencyName').value.trim(),
+    agency_office_location: document.getElementById('regAgencyOffice').value.trim(),
+    is_agency_registered: document.getElementById('regIsRegistered').checked,
+    alt_contact: document.getElementById('regAltContact').value.trim(),
+    payment_option: document.getElementById('regPaymentOption').value,
+    payment_details: document.getElementById('regPaymentDetails').value.trim(),
     password: document.getElementById('regPassword').value,
     password2: document.getElementById('regPassword2').value,
   };
@@ -346,7 +546,17 @@ registerForm.addEventListener('submit', async (e) => {
         phone: vals.phone,
         county: vals.county,
         email: vals.email,
-        id_number: vals.id_number
+        id_number: vals.id_number,
+        country: vals.country,
+        country_of_residency: vals.country_of_residency,
+        physical_office: vals.physical_office,
+        is_agency: vals.is_agency,
+        agency_name: vals.is_agency ? vals.agency_name : null,
+        agency_office_location: vals.is_agency ? vals.agency_office_location : null,
+        is_agency_registered: vals.is_agency ? vals.is_agency_registered : false,
+        alt_contact: vals.alt_contact || null,
+        payment_option: vals.payment_option,
+        payment_details: vals.payment_details
       })
       .select('id')
       .single();
@@ -364,7 +574,7 @@ registerForm.addEventListener('submit', async (e) => {
 });
 
 // clear inline field errors as the person fixes them
-['regName','regPhone','regCounty','regEmail','regIdNumber','regPassword','regPassword2'].forEach(id => {
+['regName','regPhone','regCounty','regEmail','regIdNumber','regCountry','regResidency','regPhysicalOffice','regAgencyName','regAgencyOffice','regAltContact','regPaymentOption','regPaymentDetails','regPassword','regPassword2'].forEach(id => {
   document.getElementById(id).addEventListener('input', () => {
     const wrapper = document.getElementById('f-' + id);
     if (wrapper) wrapper.classList.remove('invalid');
