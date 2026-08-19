@@ -544,6 +544,8 @@ const COUNTRIES = [
 const getCountry = (code) => COUNTRIES.find(c => c.code === code) || COUNTRIES[0];
 const countryFlag = (code) => getCountry(code).flag;
 const countryName = (code) => getCountry(code).name;
+const getCountryByName = (name) => COUNTRIES.find(c => c.name.toLowerCase() === String(name || '').toLowerCase());
+const flagForCountryName = (name) => (getCountryByName(name) || {}).flag || '';
 const fmtCurrency = (amount, code) => getCountry(code).currency + ' ' + Number(amount || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
 
 function showToast(msg) {
@@ -727,7 +729,7 @@ function renderEmployees(append) {
           <h3>${escapeHtml(name)}</h3>
           <div class="meta">
             <span><i class="bi bi-briefcase"></i> ${escapeHtml(w.preferred_role || w.job_title || '—')}</span>
-            <span><i class="bi bi-geo-alt"></i> ${countryFlag(w.country_code)} ${escapeHtml(w.current_town || w.county || w.location || '—')}${w.country_code && w.country_code !== 'KE' ? ' · ' + escapeHtml(countryName(w.country_code)) : ''}</span>
+            <span><i class="bi bi-geo-alt"></i> ${flagForCountryName(w.country)} ${escapeHtml(w.current_town || w.county || w.location || '—')}${w.country && w.country.toLowerCase() !== 'kenya' ? ' · ' + escapeHtml(w.country) : ''}</span>
             ${w.avg_rating ? `<span><i class="bi bi-star-fill"></i> ${Number(w.avg_rating).toFixed(1)}</span>` : ''}
           </div>
         </div>
@@ -764,7 +766,7 @@ async function fetchEmployees(reset) {
 
   let query = sb
     .from('worker_profiles')
-    .select('id, full_name, first_name, last_name, preferred_role, job_title, current_town, county, location, country_code, avg_rating, verification_stage')
+    .select('id, full_name, first_name, last_name, preferred_role, job_title, current_town, county, location, country, avg_rating, verification_stage')
     .eq('account_deactivated', false)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -777,7 +779,7 @@ async function fetchEmployees(reset) {
     query = query.eq('verification_stage', EMP_STAGE_FILTER);
   }
   if (EMP_COUNTRY !== 'all') {
-    query = query.eq('country_code', EMP_COUNTRY);
+    query = query.eq('country', getCountry(EMP_COUNTRY).name);
   }
 
   const { data, error } = await query;
