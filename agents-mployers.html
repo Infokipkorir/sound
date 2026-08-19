@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#132038">
-<title>Verify employee | SoundsCare</title>
+<title>Employers | SoundsCare</title>
 <link rel="icon" href="sound_logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -442,76 +442,31 @@
     <div class="topbar">
       <div class="page-head-row" style="width:100%;">
         <div>
-          <h1>Verify employee</h1>
-          <p class="sub">Submit ID documents on behalf of a worker for SoundsCare's admin team to review.</p>
+          <h1>Employers</h1>
+          <p class="sub">Verified SoundsCare employers you can post jobs for.</p>
         </div>
       </div>
     </div>
 
     <div id="statusBannerHolder"></div>
 
-    <div class="panel">
-      <form id="verifyForm">
-        <div class="section-title" style="margin-top:0;">Employee</div>
-        <div class="form-grid" style="margin-bottom:8px;">
-          <div class="field full autocomplete-results">
-            <label for="workerSearch">Search employee *</label>
-            <input type="text" id="workerSearch" placeholder="Search by name or phone…" autocomplete="off">
-            <div class="ac-list" id="workerAcList"></div>
-            <div id="workerLinkedChip" style="display:none;margin-top:6px;">
-              <span class="linked-chip"><i class="bi bi-person-check-fill"></i> <span id="workerLinkedName"></span> <button type="button" id="workerUnlink">&times;</button></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section-title">ID documents</div>
-        <div class="form-grid">
-          <div class="field">
-            <label for="fIdFront">ID front photo *</label>
-            <input type="file" id="fIdFront" accept="image/*" required>
-          </div>
-          <div class="field">
-            <label for="fIdBack">ID back photo (optional)</label>
-            <input type="file" id="fIdBack" accept="image/*">
-          </div>
-          <div class="field full">
-            <label for="fSelfie">Selfie with the employee *</label>
-            <input type="file" id="fSelfie" accept="image/*" required>
-            <div class="hint">A clear photo of you with the employee holding their ID helps admin approve faster.</div>
-          </div>
-        </div>
-
-        <div class="section-title">Attestation</div>
-        <div class="form-grid">
-          <div class="field full">
-            <div class="checkbox-row">
-              <input type="checkbox" id="fNameMatch" required>
-              <label for="fNameMatch" style="margin:0;">The name on the ID matches the employee's stated name</label>
-            </div>
-          </div>
-          <div class="field full">
-            <div class="checkbox-row">
-              <input type="checkbox" id="fDobMatch" required>
-              <label for="fDobMatch" style="margin:0;">The date of birth on the ID matches what the employee told me</label>
-            </div>
-          </div>
-          <div class="field full">
-            <div class="checkbox-row">
-              <input type="checkbox" id="fConsent" required>
-              <label for="fConsent" style="margin:0;">The employee consented to me submitting these documents on their behalf</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn-primary" id="verifySubmitBtn">Submit for review</button>
-          <button type="reset" class="btn-secondary">Clear form</button>
-        </div>
-      </form>
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div class="field full">
+        <label for="empSearch">Search by company or location</label>
+        <input type="text" id="empSearch" placeholder="e.g. Karen, Acme Households…">
+      </div>
+      <div class="field full">
+        <label for="empCountryFilter">Country</label>
+        <select id="empCountryFilter">
+          <option value="all">All countries</option>
+        </select>
+      </div>
     </div>
 
-    <div class="section-title" style="margin-top:26px;">Your submitted verifications</div>
-    <div id="verificationsList"><div class="empty-state">Loading…</div></div>
+    <div id="employersList"><div class="empty-state">Loading employers…</div></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn-sm" id="loadMoreBtn" style="display:none;">Load more</button>
+    </div>
 
   </main>
 
@@ -709,172 +664,106 @@ applyLayoutMode();
 markActiveNav();
 
 
-let linkedWorker = null; // { id, full_name, phone_number }
+let EMR_SEARCH = '';
+let EMR_COUNTRY = 'all';
+let EMR_OFFSET = 0;
+const EMR_PAGE_SIZE = 24;
+let EMR_ITEMS = [];
+let EMR_HAS_MORE = true;
 
-function fillFromWorker(w) {
-  linkedWorker = w;
-  const name = w.full_name || [w.first_name, w.last_name].filter(Boolean).join(' ') || 'Employee';
-  document.getElementById('workerLinkedName').textContent = name + (w.phone_number ? ` · ${w.phone_number}` : '');
-  document.getElementById('workerLinkedChip').style.display = 'block';
-  document.getElementById('workerSearch').value = '';
-  document.getElementById('workerSearch').disabled = true;
-  document.getElementById('workerAcList').classList.remove('show');
-}
-
-document.getElementById('workerUnlink').addEventListener('click', () => {
-  linkedWorker = null;
-  document.getElementById('workerLinkedChip').style.display = 'none';
-  document.getElementById('workerSearch').disabled = false;
-});
-
-let workerSearchTimer = null;
-document.getElementById('workerSearch').addEventListener('input', (e) => {
-  const q = e.target.value.trim();
-  const list = document.getElementById('workerAcList');
-  clearTimeout(workerSearchTimer);
-  if (q.length < 2) { list.classList.remove('show'); return; }
-  workerSearchTimer = setTimeout(async () => {
-    list.innerHTML = '<div class="ac-loading">Searching…</div>';
-    list.classList.add('show');
-    const { data, error } = await sb
-      .from('worker_profiles')
-      .select('id, full_name, first_name, last_name, phone_number, phone, verification_stage')
-      .eq('account_deactivated', false)
-      .eq('is_deleted', false)
-      .or(`full_name.ilike.%${q}%,phone_number.ilike.%${q}%,phone.ilike.%${q}%`)
-      .limit(8);
-    if (error || !data || data.length === 0) {
-      list.innerHTML = '<div class="ac-empty">No matching employees found.</div>';
-      return;
-    }
-    list.innerHTML = data.map(w => {
-      const name = w.full_name || [w.first_name, w.last_name].filter(Boolean).join(' ') || 'Unnamed';
-      return `<div class="ac-item" data-id="${w.id}">
-        <strong>${escapeHtml(name)}</strong>
-        <div style="color:var(--ink-soft);font-size:11.5px;">${escapeHtml(w.phone_number || w.phone || '')} · ${escapeHtml((w.verification_stage || 'unverified').replace('_',' '))}</div>
-      </div>`;
-    }).join('');
-    list.querySelectorAll('.ac-item').forEach(el => {
-      el.addEventListener('click', () => {
-        const w = data.find(d => d.id === el.dataset.id);
-        if (w) fillFromWorker(w);
-      });
-    });
-  }, 300);
-});
-
-document.addEventListener('click', (e) => {
-  const wrap = document.getElementById('workerSearch').closest('.autocomplete-results');
-  if (wrap && !wrap.contains(e.target)) document.getElementById('workerAcList').classList.remove('show');
-});
-
-async function uploadVerificationFile(bucket, file, prefix) {
-  const { data: { session } } = await sb.auth.getSession();
-  const ext = file.name.split('.').pop();
-  const path = `${session.user.id}/${prefix}-${Date.now()}.${ext}`;
-  const { error } = await sb.storage.from(bucket).upload(path, file);
-  if (error) throw error;
-  return sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-}
-
-document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!CURRENT_AGENT || CURRENT_AGENT.status !== 'active') {
-    showToast('Your agent account must be active to submit verifications.');
+function renderEmployers() {
+  const list = document.getElementById('employersList');
+  if (EMR_ITEMS.length === 0) {
+    list.innerHTML = '<div class="empty-state">No verified employers match your search.</div>';
+    document.getElementById('loadMoreBtn').style.display = 'none';
     return;
   }
-  if (!linkedWorker) { showToast('Please select an employee first.'); return; }
 
-  const frontFile = document.getElementById('fIdFront').files[0];
-  const backFile = document.getElementById('fIdBack').files[0];
-  const selfieFile = document.getElementById('fSelfie').files[0];
-  if (!frontFile || !selfieFile) { showToast('ID front photo and selfie are required.'); return; }
+  list.innerHTML = EMR_ITEMS.map(emp => `<div class="item-card">
+    <div class="item-card-top">
+      <div>
+        <h3>${escapeHtml(emp.company_name || emp.full_name || 'Household')}</h3>
+        <div class="meta">
+          <span><i class="bi bi-geo-alt"></i> ${countryFlag(emp.country_code)} ${escapeHtml(emp.location || emp.county || '—')}${emp.country_code && emp.country_code !== 'KE' ? ' · ' + escapeHtml(countryName(emp.country_code)) : ''}</span>
+          ${emp.phone_number || emp.phone ? `<span><i class="bi bi-telephone"></i> ${escapeHtml(emp.phone_number || emp.phone)}</span>` : ''}
+          ${emp.avg_rating ? `<span><i class="bi bi-star-fill"></i> ${Number(emp.avg_rating).toFixed(1)} (${emp.rating_count || 0})</span>` : ''}
+        </div>
+        ${emp.hiring_history ? `<div class="meta"><span><i class="bi bi-people"></i> ${emp.hiring_history} past hire${emp.hiring_history === 1 ? '' : 's'}</span></div>` : ''}
+      </div>
+      <span class="badge active"><i class="bi bi-patch-check-fill"></i> Verified</span>
+    </div>
+    <div class="item-card-actions">
+      <button class="btn-sm primary" data-post="${emp.id}">Post a job for them</button>
+    </div>
+  </div>`).join('');
 
-  const btn = document.getElementById('verifySubmitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Uploading…';
-
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const idFrontUrl = await uploadVerificationFile('id_verification', frontFile, 'id-front');
-    const idBackUrl = backFile ? await uploadVerificationFile('id_verification', backFile, 'id-back') : null;
-    const selfieUrl = await uploadVerificationFile('selfie-verification', selfieFile, 'selfie');
-
-    const { error } = await sb.from('profile_verification_requests').insert({
-      worker_id: linkedWorker.id,
-      user_id: session.user.id,
-      submitted_by_agent_id: CURRENT_AGENT.id,
-      id_front_url: idFrontUrl,
-      id_back_url: idBackUrl,
-      selfie_url: selfieUrl,
-      name_matches_id: document.getElementById('fNameMatch').checked,
-      dob_matches_id: document.getElementById('fDobMatch').checked,
-      consent_confirmed: document.getElementById('fConsent').checked,
-      status: 'pending_review'
+  list.querySelectorAll('[data-post]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.href = `post%20a%20job.html?employer_id=${btn.dataset.post}`;
     });
-    if (error) throw error;
+  });
 
-    showToast('Verification submitted for review.');
-    document.getElementById('verifyForm').reset();
-    document.getElementById('workerUnlink').click();
-    loadMyVerifications();
-  } catch (err) {
-    console.error(err);
-    showToast('Could not submit the verification. Please try again.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Submit for review';
+  document.getElementById('loadMoreBtn').style.display = EMR_HAS_MORE ? 'inline-flex' : 'none';
+}
+
+async function fetchEmployers(reset) {
+  if (reset) { EMR_OFFSET = 0; EMR_ITEMS = []; EMR_HAS_MORE = true; }
+
+  let query = sb
+    .from('employer_profiles')
+    .select('id, full_name, company_name, location, county, country_code, phone_number, phone, avg_rating, rating_count, hiring_history')
+    .eq('is_verified', true)
+    .order('created_at', { ascending: false })
+    .range(EMR_OFFSET, EMR_OFFSET + EMR_PAGE_SIZE - 1);
+
+  if (EMR_SEARCH) {
+    query = query.or(`company_name.ilike.%${EMR_SEARCH}%,location.ilike.%${EMR_SEARCH}%,county.ilike.%${EMR_SEARCH}%`);
   }
+  if (EMR_COUNTRY !== 'all') {
+    query = query.eq('country_code', EMR_COUNTRY);
+  }
+
+  const { data, error } = await query;
+  if (error) { console.error(error); document.getElementById('employersList').innerHTML = '<div class="empty-state">Could not load employers.</div>'; return; }
+
+  EMR_HAS_MORE = (data || []).length === EMR_PAGE_SIZE;
+  EMR_ITEMS = reset ? (data || []) : EMR_ITEMS.concat(data || []);
+  EMR_OFFSET += (data || []).length;
+  renderEmployers();
+}
+
+let emrSearchTimer = null;
+document.getElementById('empSearch').addEventListener('input', (e) => {
+  clearTimeout(emrSearchTimer);
+  emrSearchTimer = setTimeout(() => {
+    EMR_SEARCH = e.target.value.trim();
+    fetchEmployers(true);
+  }, 350);
 });
 
-function verifStatusBadgeClass(status) {
-  const map = { pending_review: 'pending', approved: 'active', rejected: 'rejected' };
-  return map[status] || 'pending';
+document.getElementById('loadMoreBtn').addEventListener('click', () => fetchEmployers(false));
+
+document.getElementById('empCountryFilter').addEventListener('change', (e) => {
+  EMR_COUNTRY = e.target.value;
+  fetchEmployers(true);
+});
+
+function populateCountryFilter(selectId) {
+  const sel = document.getElementById(selectId);
+  COUNTRIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = `${c.flag} ${c.name}`;
+    sel.appendChild(opt);
+  });
 }
 
-async function loadMyVerifications() {
-  const listEl = document.getElementById('verificationsList');
-  const { data, error } = await sb
-    .from('profile_verification_requests')
-    .select('*, worker_profiles(full_name, first_name, last_name)')
-    .eq('submitted_by_agent_id', CURRENT_AGENT.id)
-    .order('created_at', { ascending: false });
-
-  if (error) { listEl.innerHTML = '<div class="empty-state">Could not load your submissions.</div>'; return; }
-  if (!data || data.length === 0) { listEl.innerHTML = '<div class="empty-state">You haven\'t submitted any verifications yet.</div>'; return; }
-
-  listEl.innerHTML = data.map(v => {
-    const w = v.worker_profiles || {};
-    const name = w.full_name || [w.first_name, w.last_name].filter(Boolean).join(' ') || 'Employee';
-    const submitted = v.created_at ? new Date(v.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-    return `<div class="item-card">
-      <div class="item-card-top">
-        <div>
-          <h3>${escapeHtml(name)}</h3>
-          <div class="meta"><span>Submitted ${submitted}</span></div>
-          ${v.status === 'rejected' && v.admin_notes ? `<div class="note">${escapeHtml(v.admin_notes)}</div>` : ''}
-        </div>
-        <span class="badge ${verifStatusBadgeClass(v.status)}">${escapeHtml((v.status || 'pending_review').replace('_',' '))}</span>
-      </div>
-    </div>`;
-  }).join('');
+async function initEmployersPage() {
+  populateCountryFilter('empCountryFilter');
+  await fetchEmployers(true);
 }
 
-async function initVerifyPage() {
-  const params = new URLSearchParams(window.location.search);
-  const prefillWorkerId = params.get('worker_id');
-  if (prefillWorkerId) {
-    const { data } = await sb
-      .from('worker_profiles')
-      .select('id, full_name, first_name, last_name, phone_number, phone')
-      .eq('id', prefillWorkerId)
-      .maybeSingle();
-    if (data) fillFromWorker(data);
-  }
-  await loadMyVerifications();
-}
-
-loadAgentContext(initVerifyPage);
+loadAgentContext(initEmployersPage);
 
 </script>
 </body>

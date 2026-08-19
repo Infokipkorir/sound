@@ -505,6 +505,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const fmtKES = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+const COUNTRIES = [
+  { code: 'KE', name: 'Kenya', flag: '\ud83c\uddf0\ud83c\uddea', currency: 'KES' },
+  { code: 'TZ', name: 'Tanzania', flag: '\ud83c\uddf9\ud83c\uddff', currency: 'TZS' },
+  { code: 'UG', name: 'Uganda', flag: '\ud83c\uddfa\ud83c\uddec', currency: 'UGX' },
+  { code: 'RW', name: 'Rwanda', flag: '\ud83c\uddf7\ud83c\uddfc', currency: 'RWF' },
+  { code: 'BI', name: 'Burundi', flag: '\ud83c\udde7\ud83c\uddee', currency: 'BIF' },
+  { code: 'SS', name: 'South Sudan', flag: '\ud83c\uddf8\ud83c\uddf8', currency: 'SSP' },
+  { code: 'ET', name: 'Ethiopia', flag: '\ud83c\uddea\ud83c\uddf9', currency: 'ETB' },
+  { code: 'SO', name: 'Somalia', flag: '\ud83c\uddf8\ud83c\uddf4', currency: 'SOS' },
+  { code: 'AE', name: 'United Arab Emirates', flag: '\ud83c\udde6\ud83c\uddea', currency: 'AED' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '\ud83c\uddf8\ud83c\udde6', currency: 'SAR' },
+  { code: 'QA', name: 'Qatar', flag: '\ud83c\uddf6\ud83c\udde6', currency: 'QAR' }
+];
+const getCountry = (code) => COUNTRIES.find(c => c.code === code) || COUNTRIES[0];
+const countryFlag = (code) => getCountry(code).flag;
+const countryName = (code) => getCountry(code).name;
+const fmtCurrency = (amount, code) => getCountry(code).currency + ' ' + Number(amount || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -682,7 +700,7 @@ function renderJobs() {
         <div>
           <h3>${escapeHtml(job.title)}</h3>
           <div class="meta">
-            <span><i class="bi bi-geo-alt"></i> ${escapeHtml(job.location || '—')}</span>
+            <span><i class="bi bi-geo-alt"></i> ${countryFlag(job.country_code)} ${escapeHtml(job.location || '—')}${job.country_code && job.country_code !== 'KE' ? ' · ' + escapeHtml(countryName(job.country_code)) : ''}</span>
             <span><i class="bi bi-briefcase"></i> ${escapeHtml(job.job_type || '—')}</span>
             ${job.salary_range ? `<span><i class="bi bi-cash"></i> ${escapeHtml(job.salary_range)}</span>` : ''}
             <span><i class="bi bi-people"></i> ${count} applicant${count === 1 ? '' : 's'}</span>
