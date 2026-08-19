@@ -460,6 +460,8 @@ tr:hover td { background: rgba(27,107,69,.02); }
     <button class="sb-link" onclick="switchTab(event,'profilereqs')"><i class="bi bi-person-plus-fill"></i><span>Profile Post Reqs</span><span class="sb-badge" id="badge-preqs">0</span></button>
     <button class="sb-link" onclick="switchTab(event,'trash')"><i class="bi bi-trash3-fill"></i><span>Trash</span></button>
     <button class="sb-link" onclick="switchTab(event,'payments')"><i class="bi bi-cash-coin"></i><span>Payments</span><span class="sb-badge amber" id="badge-pay">0</span></button>
+    <div class="sb-section">Agents Network</div>
+    <button class="sb-link" onclick="switchTab(event,'agents')"><i class="bi bi-person-vcard-fill"></i><span>Agents</span><span class="sb-badge amber" id="badge-agents">0</span></button>
     <div class="sb-section">Communications</div>
     <button class="sb-link" onclick="switchTab(event,'comms')"><i class="bi bi-envelope-fill"></i><span>Email / SMS</span></button>
     <button class="sb-link" onclick="switchTab(event,'newsletter')"><i class="bi bi-newspaper"></i><span>Newsletter</span><span class="sb-badge sky" id="badge-newsletter">0</span></button>
@@ -519,6 +521,8 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <div class="stat-card"><div class="stat-label"><i class="bi bi-camera-video-fill"></i> Calls Today</div><div class="stat-value sky" id="stat-calls-today">0</div></div>
         <div class="stat-card"><div class="stat-label"><i class="bi bi-coin"></i> Connects in Circulation</div><div class="stat-value green" id="stat-connects-total">0</div></div>
         <div class="stat-card"><div class="stat-label"><i class="bi bi-life-preserver"></i> Open Tickets</div><div class="stat-value amber" id="stat-tickets-open">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-vcard"></i> Active Agents</div><div class="stat-value green" id="stat-agents-active">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-coin"></i> Agent Commissions (Ksh)</div><div class="stat-value accent" id="stat-agent-commissions">0</div></div>
       </div>
       <div class="section" style="margin-bottom:1.2rem">
         <div class="section-header"><div class="section-title"><i class="bi bi-broadcast-pin"></i> Live Right Now</div></div>
@@ -733,6 +737,125 @@ tr:hover td { background: rgba(27,107,69,.02); }
           </select>
         </div>
         <div class="table-wrap"><table><thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="payments-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ==================== AGENTS NETWORK ==================== -->
+    <div id="tab-agents" class="tab-content">
+      <div class="page-head">
+        <div><h1>Agents Network</h1><p>Field agents who post jobs &amp; recruit workers on commission</p></div>
+        <button class="btn btn-secondary btn-sm" onclick="loadAll()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-vcard"></i> Total Agents</div><div class="stat-value" id="agstat-total">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-check"></i> Active</div><div class="stat-value green" id="agstat-active">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-hourglass-split"></i> Pending Approval</div><div class="stat-value amber" id="agstat-pending">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-wallet2"></i> Wallet Balances (Ksh)</div><div class="stat-value sky" id="agstat-balance">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-stack"></i> Total Commissions Earned (Ksh)</div><div class="stat-value accent" id="agstat-earned">0</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-bank"></i> Pending Withdrawals</div><div class="stat-value rose" id="agstat-wd-pending">0</div></div>
+      </div>
+
+      <div class="sub-tabs">
+        <button class="tab-btn active" onclick="switchAgentsTab(event,'roster')"><i class="bi bi-person-badge"></i> Agents</button>
+        <button class="tab-btn" onclick="switchAgentsTab(event,'wallets')"><i class="bi bi-wallet2"></i> Wallets</button>
+        <button class="tab-btn" onclick="switchAgentsTab(event,'commissions')"><i class="bi bi-cash-coin"></i> Commissions</button>
+        <button class="tab-btn" onclick="switchAgentsTab(event,'withdrawals')"><i class="bi bi-bank"></i> Withdrawals</button>
+        <button class="tab-btn" onclick="switchAgentsTab(event,'activity')"><i class="bi bi-graph-up-arrow"></i> Jobs &amp; Hires</button>
+        <button class="tab-btn" onclick="switchAgentsTab(event,'settings')"><i class="bi bi-sliders"></i> Commission Rates</button>
+      </div>
+
+      <!-- AGENTS ROSTER -->
+      <div id="agents-tab-roster" class="tab-content active">
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="agents-search" placeholder="🔍 Search by name, phone, email, county, referral code…" oninput="filterAgents()">
+            <select class="filter-select" id="agents-status-filter" onchange="filterAgents()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Contact</th><th>County</th><th>Referral Code</th><th>Status</th><th>Wallet</th><th>Jobs Posted</th><th>Hires</th><th>Joined</th><th>Actions</th></tr></thead><tbody id="agents-tbody"><tr><td colspan="10" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- AGENT WALLETS -->
+      <div id="agents-tab-wallets" class="tab-content">
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="agwallets-search" placeholder="🔍 Search by agent name…" oninput="renderAgentWallets()">
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Balance</th><th>Total Earned</th><th>Total Withdrawn</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="agwallets-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- AGENT COMMISSIONS LEDGER -->
+      <div id="agents-tab-commissions" class="tab-content">
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="agcomm-search" placeholder="🔍 Search by agent name…" oninput="renderAgentCommissions()">
+            <select class="filter-select" id="agcomm-type-filter" onchange="renderAgentCommissions()">
+              <option value="">All Types</option>
+              <option value="job_post">Job Post</option>
+              <option value="hire">Hire</option>
+              <option value="adjustment">Adjustment</option>
+            </select>
+            <select class="filter-select" id="agcomm-status-filter" onchange="renderAgentCommissions()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="reversed">Reversed</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="openAgentAdjustModal()"><i class="bi bi-plus-lg"></i> Manual Adjustment</button>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Type</th><th>Amount (Ksh)</th><th>Reference</th><th>Description</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="agcomm-tbody"><tr><td colspan="8" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- AGENT WITHDRAWALS -->
+      <div id="agents-tab-withdrawals" class="tab-content">
+        <div class="section">
+          <div class="search-bar">
+            <select class="filter-select" id="agwd-status-filter" onchange="renderAgentWithdrawals()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Agent</th><th>Amount (Ksh)</th><th>Method</th><th>Phone</th><th>Status</th><th>Requested</th><th>Processed</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="agwd-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- AGENT ACTIVITY: JOBS & HIRES -->
+      <div id="agents-tab-activity" class="tab-content">
+        <div class="section" style="margin-bottom:1.2rem">
+          <div class="section-header"><div class="section-title"><i class="bi bi-briefcase"></i> Jobs Posted via Agents</div></div>
+          <div class="table-wrap"><table><thead><tr><th>Job Title</th><th>Agent</th><th>Company</th><th>Status</th><th>Posted</th><th>Commission (Ksh)</th></tr></thead><tbody id="agjobs-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+        <div class="section">
+          <div class="section-header"><div class="section-title"><i class="bi bi-person-check-fill"></i> Hires Facilitated by Agents</div></div>
+          <div class="table-wrap"><table><thead><tr><th>Worker</th><th>Job</th><th>Agent</th><th>Hired Date</th><th>Commission (Ksh)</th></tr></thead><tbody id="aghires-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- COMMISSION RATE SETTINGS -->
+      <div id="agents-tab-settings" class="tab-content">
+        <div class="section">
+          <div class="section-header"><div class="section-title"><i class="bi bi-sliders"></i> Commission Rates</div></div>
+          <div class="section-body">
+            <p style="color:var(--muted);font-size:12px;margin-bottom:1rem">These rates apply platform-wide the moment they're saved. An agent is credited automatically the instant they post a job or a worker they referred gets hired.</p>
+            <div class="form-row">
+              <div class="form-group"><label>Commission per Job Posted</label><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px">Ksh</span><input id="agset-jobpost" type="number" step="1"></div></div>
+              <div class="form-group"><label>Commission per Confirmed Hire</label><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--muted);font-size:12px">Ksh</span><input id="agset-hire" type="number" step="1"></div></div>
+            </div>
+            <small style="color:var(--muted);font-size:11px" id="agset-updated-note"></small>
+            <div style="margin-top:1rem"><button class="btn btn-primary" onclick="saveAgentCommissionSettings()"><i class="bi bi-check-lg"></i> Save Rates</button></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1227,6 +1350,52 @@ tr:hover td { background: rgba(27,107,69,.02); }
   </div>
 </div>
 
+<!-- AGENT PROFILE MODAL -->
+<div id="agent-profile-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-person-vcard"></i> Agent Profile</h2><button class="modal-close" onclick="closeModal('agent-profile-modal')">×</button></div>
+    <div class="modal-body" id="agent-profile-body">Loading…</div>
+    <div class="modal-footer" id="agent-profile-footer">
+      <button class="btn btn-secondary" onclick="closeModal('agent-profile-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGENT REJECT / SUSPEND REASON MODAL -->
+<div id="agent-reason-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2 id="agent-reason-title"><i class="bi bi-x-circle"></i> Reason</h2><button class="modal-close" onclick="closeModal('agent-reason-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label id="agent-reason-label">Reason</label><textarea id="agent-reason-text" rows="3" style="width:100%;font-family:inherit;padding:10px;border-radius:8px;border:1px solid var(--border)"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('agent-reason-modal')">Cancel</button>
+      <button class="btn btn-danger" id="agent-reason-confirm-btn" onclick="">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGENT MANUAL COMMISSION ADJUSTMENT MODAL -->
+<div id="agent-adjust-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-cash-coin"></i> Manual Commission Adjustment</h2><button class="modal-close" onclick="closeModal('agent-adjust-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Agent</label>
+        <select id="agadj-agent" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);font-family:inherit"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Amount (Ksh)</label><input id="agadj-amount" type="number" step="1" placeholder="e.g. 500 or -200"></div>
+      </div>
+      <div class="form-group"><label>Reason / description</label><textarea id="agadj-desc" rows="3" style="width:100%;font-family:inherit;padding:10px;border-radius:8px;border:1px solid var(--border)" placeholder="Shown in the commissions ledger"></textarea></div>
+      <small style="color:var(--muted);font-size:11px">Positive amounts credit the agent's wallet, negative amounts debit it. This is logged as an "adjustment" entry in the commissions ledger.</small>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('agent-adjust-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAgentAdjustment()"><i class="bi bi-check-lg"></i> Apply Adjustment</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD ADMIN MODAL -->
 <div id="add-admin-modal" class="modal-overlay">
   <div class="modal">
@@ -1493,6 +1662,7 @@ let currentUser = null;
 let allWorkers = [], allEmployers = [], allUsers = [], allConversations = [], allNotifications = [], allJobs = [], allApplications = [], allTrash = [], allEmailLogs = [], allSmsLogs = [], allJobReqs = [], allProfileReqs = [];
 let allCalls = [], allWallets = [], allTariffs = null, allConnectsLedger = [], allPaymentProviders = [], allAdmins = [], allTicketMacros = [], allSiteSettings = null, liveLogsAutoTimer = null, currentLiveLogTab = 'all';
 let allVerificationReqs = [], allPayments = [], allNewsletterSubs = [], allNewslettersSent = [], allTickets = [];
+let allAgents = [], allAgentWallets = [], allAgentCommissions = [], allAgentWithdrawals = [], allAgentSettings = null;
 let activeConvId = null;
 let maintenanceMode = false;
 let currentConvTab = 'all';
@@ -1713,7 +1883,7 @@ function teardownRealtimeSubscriptions(){
 // ============================================================
 async function loadAll(){
   try{
-    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk,calls,wal,tariff,ledger,provs,adms,macros,setts]=await Promise.all([
+    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk,calls,wal,tariff,ledger,provs,adms,macros,setts,agts,agwal,agcomm,agwd,agset]=await Promise.all([
       sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
@@ -1739,6 +1909,11 @@ async function loadAll(){
       sb.from('admin_users').select('*'),
       sb.from('ticket_macros').select('*').order('created_at',{ascending:false}),
       sb.from('settings').select('*').limit(1).maybeSingle(),
+      sb.from('agents').select('*').order('created_at',{ascending:false}),
+      sb.from('agent_wallets').select('*'),
+      sb.from('agent_commissions').select('*').order('created_at',{ascending:false}).limit(500),
+      sb.from('agent_withdrawals').select('*').order('requested_at',{ascending:false}),
+      sb.from('agent_commission_settings').select('*').eq('id',1).single(),
     ]);
     allWorkers=w.data||[];
     allEmployers=ep.data||[];
@@ -1765,6 +1940,11 @@ async function loadAll(){
     allAdmins=adms.data||[];
     allTicketMacros=macros.data||[];
     allSiteSettings=setts.data||null;
+    allAgents=agts.data||[];
+    allAgentWallets=agwal.data||[];
+    allAgentCommissions=agcomm.data||[];
+    allAgentWithdrawals=agwd.data||[];
+    allAgentSettings=agset.data||{job_post_commission:100,hire_commission:500,currency:'KES'};
 
     renderDashboard();renderUsers();renderEmployees();renderEmployers();
     renderConversations();renderNotifications();renderJobs();
@@ -1772,6 +1952,7 @@ async function loadAll(){
     renderEmailLogs();renderSmsLogs();
     renderPayments();renderNewsletterSubs();renderNewslettersSent();renderTickets();
     renderCalls();renderTariffs();renderWallets();renderLedger();renderPaymentProviders();
+    renderAgents();renderAgentWallets();renderAgentCommissions();renderAgentWithdrawals();renderAgentActivity();renderAgentSettings();renderAgentStats();
     loadLiveLogs();
     updateBadges();
   }catch(err){showToast('err','Error loading data: '+err.message);}
@@ -1798,6 +1979,8 @@ function renderDashboard(){
   setEl('stat-calls-today',allCalls.filter(c=>new Date(c.started_at||c.call_initiated_at).toDateString()===today).length);
   setEl('stat-connects-total',allWallets.reduce((s,w)=>s+Number(w.connects_balance||0),0).toLocaleString());
   setEl('stat-tickets-open',allTickets.filter(t=>t.status==='open'||t.status==='in_progress').length);
+  setEl('stat-agents-active',allAgents.filter(a=>a.status==='active').length);
+  setEl('stat-agent-commissions','Ksh '+allAgentCommissions.filter(c=>c.status==='approved').reduce((s,c)=>s+Number(c.amount||0),0).toLocaleString());
   setEl('live-calls-count',allCalls.filter(c=>c.status==='active'||c.status==='ringing').length);
 
   const all=[
@@ -3694,6 +3877,12 @@ function switchConnectsTab(e,tab){
   document.querySelectorAll('#tab-connects > .tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('connects-tab-'+tab).classList.add('active');
 }
+function switchAgentsTab(e,tab){
+  document.querySelectorAll('#tab-agents .sub-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(e)e.target.classList.add('active');
+  document.querySelectorAll('#tab-agents > .tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('agents-tab-'+tab).classList.add('active');
+}
 function renderTariffs(){
   const t=allTariffs;if(!t)return;
   setEl2('tariff-message',t.message_cost);
@@ -3836,6 +4025,303 @@ async function saveProviderConfig(provider,btn){
   if(error){showToast('err',error.message);return;}
   const p=allPaymentProviders.find(p=>p.provider===provider);if(p)p.config=cfg;
   showToast('ok','Provider credentials saved. Actual charge/STK-push calls still need the matching Edge Function deployed for '+provider+'.');
+}
+
+// ============================================================
+// AGENTS NETWORK
+// ============================================================
+function agentWallet(agentId){ return allAgentWallets.find(w=>w.agent_id===agentId)||{balance:0,total_earned:0,total_withdrawn:0}; }
+function agentName(agentId){ const a=allAgents.find(a=>a.id===agentId); return a?a.full_name:'Unknown Agent'; }
+function agentStatusBadge(status){
+  const map={pending:'amber',active:'green',suspended:'rose',rejected:'muted'};
+  return `<span class="badge badge-${map[status]||'muted'}">${status}</span>`;
+}
+function renderAgentStats(){
+  setEl('agstat-total',allAgents.length);
+  setEl('agstat-active',allAgents.filter(a=>a.status==='active').length);
+  setEl('agstat-pending',allAgents.filter(a=>a.status==='pending').length);
+  setEl('agstat-balance','Ksh '+allAgentWallets.reduce((s,w)=>s+Number(w.balance||0),0).toLocaleString());
+  setEl('agstat-earned','Ksh '+allAgentWallets.reduce((s,w)=>s+Number(w.total_earned||0),0).toLocaleString());
+  setEl('agstat-wd-pending',allAgentWithdrawals.filter(w=>w.status==='pending').length);
+}
+
+function renderAgents(){
+  const q=(document.getElementById('agents-search')?.value||'').toLowerCase();
+  const sf=document.getElementById('agents-status-filter')?.value||'';
+  let data=allAgents.filter(a=>{
+    const matchQ=!q||[a.full_name,a.phone,a.email,a.county,a.referral_code].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return matchQ&&(!sf||a.status===sf);
+  });
+  document.getElementById('agents-tbody').innerHTML=data.map(a=>{
+    const w=agentWallet(a.id);
+    const jobsPosted=allJobs.filter(j=>j.posted_by_agent_id===a.id).length;
+    const hires=allApplications.filter(ap=>ap.hired_by_agent_id===a.id).length;
+    let actions=`<button class="btn btn-sm btn-secondary" onclick="viewAgent('${a.id}')"><i class="bi bi-eye"></i> View</button>`;
+    if(a.status==='pending'){
+      actions+=`<button class="btn btn-sm btn-primary" onclick="approveAgent('${a.id}')"><i class="bi bi-check-lg"></i> Approve</button>`;
+      actions+=`<button class="btn btn-sm btn-danger" onclick="openAgentReasonModal('${a.id}','reject')"><i class="bi bi-x-lg"></i> Reject</button>`;
+    } else if(a.status==='active'){
+      actions+=`<button class="btn btn-sm btn-amber" onclick="openAgentReasonModal('${a.id}','suspend')"><i class="bi bi-pause-circle"></i> Suspend</button>`;
+    } else if(a.status==='suspended'||a.status==='rejected'){
+      actions+=`<button class="btn btn-sm btn-primary" onclick="approveAgent('${a.id}')"><i class="bi bi-arrow-counterclockwise"></i> Reactivate</button>`;
+    }
+    return `<tr>
+      <td><strong>${esc(a.full_name||'—')}</strong>${a.id_number?`<div style="font-size:11px;color:var(--muted)">ID: ${esc(a.id_number)}</div>`:''}</td>
+      <td>${esc(a.phone||'—')}<div style="font-size:11px;color:var(--muted)">${esc(a.email||'')}</div></td>
+      <td>${esc(a.county||'—')}</td>
+      <td style="font-family:monospace">${esc(a.referral_code||'—')}</td>
+      <td>${agentStatusBadge(a.status)}</td>
+      <td><strong>Ksh ${Number(w.balance||0).toLocaleString()}</strong></td>
+      <td>${jobsPosted}</td>
+      <td>${hires}</td>
+      <td>${fmtDate(a.created_at)}</td>
+      <td><div class="actions-cell">${actions}</div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">No agents found</td></tr>';
+}
+function filterAgents(){renderAgents();}
+
+async function approveAgent(id){
+  const {error}=await sb.from('agents').update({status:'active',approved_at:new Date().toISOString(),approved_by:currentUser?.id||null,rejection_reason:null}).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  const a=allAgents.find(a=>a.id===id);if(a){a.status='active';a.approved_at=new Date().toISOString();}
+  await sb.from('notifications').insert({user_id:a?.user_id,type:'success',title:'Agent account approved',message:'Your agent account has been approved. You can now post jobs and refer workers for commission.',source_type:'admin'}).catch(()=>{});
+  renderAgents();renderAgentStats();updateBadges();
+  showToast('ok','Agent approved');
+}
+let _agentReasonCtx=null;
+function openAgentReasonModal(id,action){
+  _agentReasonCtx={id,action};
+  document.getElementById('agent-reason-title').innerHTML=action==='reject'?'<i class="bi bi-x-circle"></i> Reject Agent':'<i class="bi bi-pause-circle"></i> Suspend Agent';
+  document.getElementById('agent-reason-label').textContent=action==='reject'?'Reason for rejection':'Reason for suspension';
+  document.getElementById('agent-reason-text').value='';
+  document.getElementById('agent-reason-confirm-btn').onclick=confirmAgentReason;
+  openModal('agent-reason-modal');
+}
+async function confirmAgentReason(){
+  if(!_agentReasonCtx)return;
+  const {id,action}=_agentReasonCtx;
+  const reason=document.getElementById('agent-reason-text').value.trim();
+  if(!reason){showToast('err','Please provide a reason');return;}
+  const status=action==='reject'?'rejected':'suspended';
+  const {error}=await sb.from('agents').update({status,rejection_reason:reason}).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  const a=allAgents.find(a=>a.id===id);if(a){a.status=status;a.rejection_reason=reason;}
+  await sb.from('notifications').insert({user_id:a?.user_id,type:'warning',title:action==='reject'?'Agent application rejected':'Agent account suspended',message:reason,source_type:'admin'}).catch(()=>{});
+  closeModal('agent-reason-modal');
+  renderAgents();renderAgentStats();updateBadges();
+  showToast('ok',`Agent ${status}`);
+}
+
+function viewAgent(id){
+  const a=allAgents.find(a=>a.id===id);if(!a)return;
+  const w=agentWallet(a.id);
+  const jobs=allJobs.filter(j=>j.posted_by_agent_id===a.id);
+  const hires=allApplications.filter(ap=>ap.hired_by_agent_id===a.id);
+  const commissions=allAgentCommissions.filter(c=>c.agent_id===a.id).slice(0,20);
+  const withdrawals=allAgentWithdrawals.filter(wd=>wd.agent_id===a.id);
+  document.getElementById('agent-profile-body').innerHTML=`
+    <div class="form-row">
+      <div><h4 style="margin-bottom:4px">${esc(a.full_name)}</h4><p style="color:var(--muted);font-size:12px">${esc(a.phone||'—')} · ${esc(a.email||'—')}</p></div>
+      <div style="margin-left:auto">${agentStatusBadge(a.status)}</div>
+    </div>
+    <div class="stats-grid" style="margin:1rem 0">
+      <div class="stat-card"><div class="stat-label">Wallet Balance</div><div class="stat-value sky">Ksh ${Number(w.balance||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Earned</div><div class="stat-value green">Ksh ${Number(w.total_earned||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Withdrawn</div><div class="stat-value">Ksh ${Number(w.total_withdrawn||0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Jobs Posted</div><div class="stat-value">${jobs.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Hires</div><div class="stat-value">${hires.length}</div></div>
+    </div>
+    <p style="font-size:12px;color:var(--muted)"><strong>County:</strong> ${esc(a.county||'—')} &nbsp; <strong>ID Number:</strong> ${esc(a.id_number||'—')} &nbsp; <strong>Referral Code:</strong> ${esc(a.referral_code||'—')} &nbsp; <strong>Joined:</strong> ${fmtDate(a.created_at)}</p>
+    ${a.bio?`<p style="font-size:12px;margin-top:6px"><strong>Bio:</strong> ${esc(a.bio)}</p>`:''}
+    ${a.rejection_reason?`<p style="font-size:12px;color:var(--rose);margin-top:6px"><strong>Rejection/suspension note:</strong> ${esc(a.rejection_reason)}</p>`:''}
+    <h4 style="margin:1rem 0 .4rem">Recent Commissions</h4>
+    <div class="table-wrap"><table><thead><tr><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>
+      ${commissions.map(c=>`<tr><td><span class="badge badge-muted">${c.type}</span></td><td>Ksh ${Number(c.amount||0).toLocaleString()}</td><td><span class="badge badge-${c.status==='approved'?'green':c.status==='reversed'?'rose':'amber'}">${c.status}</span></td><td>${fmtDate(c.created_at)}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No commissions yet</td></tr>'}
+    </tbody></table></div>
+    <h4 style="margin:1rem 0 .4rem">Withdrawal History</h4>
+    <div class="table-wrap"><table><thead><tr><th>Amount</th><th>Method</th><th>Status</th><th>Requested</th></tr></thead><tbody>
+      ${withdrawals.map(wd=>`<tr><td>Ksh ${Number(wd.amount||0).toLocaleString()}</td><td>${esc(wd.method||'—')}</td><td><span class="badge badge-${wd.status==='paid'?'green':wd.status==='rejected'?'rose':'amber'}">${wd.status}</span></td><td>${fmtDate(wd.requested_at)}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>'}
+    </tbody></table></div>
+  `;
+  openModal('agent-profile-modal');
+}
+
+function renderAgentWallets(){
+  const q=(document.getElementById('agwallets-search')?.value||'').toLowerCase();
+  let data=allAgentWallets.filter(w=>!q||agentName(w.agent_id).toLowerCase().includes(q));
+  document.getElementById('agwallets-tbody').innerHTML=data.map(w=>`
+    <tr>
+      <td>${esc(agentName(w.agent_id))}</td>
+      <td><strong>Ksh ${Number(w.balance||0).toLocaleString()}</strong></td>
+      <td>Ksh ${Number(w.total_earned||0).toLocaleString()}</td>
+      <td>Ksh ${Number(w.total_withdrawn||0).toLocaleString()}</td>
+      <td>${fmtDate(w.updated_at)}</td>
+      <td><div class="actions-cell"><button class="btn btn-sm btn-secondary" onclick="viewAgent('${w.agent_id}')"><i class="bi bi-eye"></i> View</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No agent wallets yet</td></tr>';
+}
+
+function renderAgentCommissions(){
+  const q=(document.getElementById('agcomm-search')?.value||'').toLowerCase();
+  const typeF=document.getElementById('agcomm-type-filter')?.value||'';
+  const statusF=document.getElementById('agcomm-status-filter')?.value||'';
+  let data=allAgentCommissions.filter(c=>(!q||agentName(c.agent_id).toLowerCase().includes(q))&&(!typeF||c.type===typeF)&&(!statusF||c.status===statusF));
+  document.getElementById('agcomm-tbody').innerHTML=data.slice(0,300).map(c=>`
+    <tr>
+      <td>${esc(agentName(c.agent_id))}</td>
+      <td><span class="badge badge-muted">${c.type.replace('_',' ')}</span></td>
+      <td style="color:${c.amount>=0?'var(--green)':'var(--rose)'}">${c.amount>=0?'+':''}${Number(c.amount).toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--muted)">${c.reference_type?esc(c.reference_type):'—'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.description||'—')}</td>
+      <td><span class="badge badge-${c.status==='approved'?'green':c.status==='reversed'?'rose':'amber'}">${c.status}</span></td>
+      <td>${fmtDate(c.created_at)}</td>
+      <td><div class="actions-cell">${c.status==='approved'&&c.type==='adjustment'?`<button class="btn btn-sm btn-danger" onclick="reverseAgentCommission('${c.id}')"><i class="bi bi-arrow-counterclockwise"></i> Reverse</button>`:''}</div></td>
+    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">No commission entries yet</td></tr>';
+}
+
+function openAgentAdjustModal(){
+  const sel=document.getElementById('agadj-agent');
+  sel.innerHTML=allAgents.filter(a=>a.status==='active').map(a=>`<option value="${a.id}">${escAttr(a.full_name)} — ${escAttr(a.county||'')}</option>`).join('')||'<option value="">No active agents</option>';
+  document.getElementById('agadj-amount').value='';
+  document.getElementById('agadj-desc').value='';
+  openModal('agent-adjust-modal');
+}
+async function submitAgentAdjustment(){
+  const agentId=document.getElementById('agadj-agent').value;
+  const amount=parseFloat(document.getElementById('agadj-amount').value);
+  const desc=document.getElementById('agadj-desc').value.trim();
+  if(!agentId){showToast('err','Select an agent');return;}
+  if(!amount||isNaN(amount)){showToast('err','Enter a valid, non-zero amount');return;}
+  if(!desc){showToast('err','Please describe the reason for this adjustment');return;}
+  const {data:row,error:e1}=await sb.from('agent_commissions').insert({agent_id:agentId,type:'adjustment',amount,reference_type:'manual',description:desc,status:'approved'}).select().single();
+  if(e1){showToast('err',e1.message);return;}
+  const w=agentWallet(agentId);
+  const newBalance=Math.max(0,Number(w.balance||0)+amount);
+  const {error:e2}=await sb.from('agent_wallets').upsert({agent_id:agentId,balance:newBalance,total_earned:Number(w.total_earned||0)+(amount>0?amount:0),total_withdrawn:Number(w.total_withdrawn||0),updated_at:new Date().toISOString()},{onConflict:'agent_id'});
+  if(e2){showToast('err',e2.message);return;}
+  allAgentCommissions.unshift(row);
+  const idx=allAgentWallets.findIndex(aw=>aw.agent_id===agentId);
+  const newWallet={agent_id:agentId,balance:newBalance,total_earned:Number(w.total_earned||0)+(amount>0?amount:0),total_withdrawn:Number(w.total_withdrawn||0),updated_at:new Date().toISOString()};
+  if(idx>=0)allAgentWallets[idx]=newWallet;else allAgentWallets.push(newWallet);
+  const a=allAgents.find(a=>a.id===agentId);
+  await sb.from('notifications').insert({user_id:a?.user_id,type:amount>0?'success':'info',title:'Wallet adjustment',message:`Your agent wallet was adjusted by an admin: ${amount>0?'+':''}${amount}. ${desc}`,source_type:'admin'}).catch(()=>{});
+  closeModal('agent-adjust-modal');
+  renderAgentCommissions();renderAgentWallets();renderAgents();renderAgentStats();
+  showToast('ok','Commission adjustment applied');
+}
+async function reverseAgentCommission(id){
+  if(!confirm('Reverse this adjustment? This will refund/debit the agent wallet by the opposite amount.'))return;
+  const c=allAgentCommissions.find(c=>c.id===id);if(!c)return;
+  const {error:e1}=await sb.from('agent_commissions').update({status:'reversed'}).eq('id',id);
+  if(e1){showToast('err',e1.message);return;}
+  const w=agentWallet(c.agent_id);
+  const newBalance=Math.max(0,Number(w.balance||0)-Number(c.amount||0));
+  const {error:e2}=await sb.from('agent_wallets').update({balance:newBalance,updated_at:new Date().toISOString()}).eq('agent_id',c.agent_id);
+  if(e2){showToast('err',e2.message);return;}
+  c.status='reversed';
+  const idx=allAgentWallets.findIndex(aw=>aw.agent_id===c.agent_id);
+  if(idx>=0)allAgentWallets[idx]={...allAgentWallets[idx],balance:newBalance};
+  renderAgentCommissions();renderAgentWallets();renderAgents();renderAgentStats();
+  showToast('ok','Adjustment reversed');
+}
+
+function renderAgentWithdrawals(){
+  const sf=document.getElementById('agwd-status-filter')?.value||'';
+  let data=allAgentWithdrawals.filter(w=>!sf||w.status===sf);
+  document.getElementById('agwd-tbody').innerHTML=data.map(w=>{
+    let actions='';
+    if(w.status==='pending'){
+      actions=`<button class="btn btn-sm btn-primary" onclick="processAgentWithdrawal('${w.id}','approved')"><i class="bi bi-check-lg"></i> Approve</button><button class="btn btn-sm btn-danger" onclick="processAgentWithdrawal('${w.id}','rejected')"><i class="bi bi-x-lg"></i> Reject</button>`;
+    } else if(w.status==='approved'){
+      actions=`<button class="btn btn-sm btn-primary" onclick="processAgentWithdrawal('${w.id}','paid')"><i class="bi bi-cash-coin"></i> Mark Paid</button><button class="btn btn-sm btn-danger" onclick="processAgentWithdrawal('${w.id}','rejected')"><i class="bi bi-x-lg"></i> Reject</button>`;
+    }
+    return `<tr>
+      <td>${esc(agentName(w.agent_id))}</td>
+      <td><strong>Ksh ${Number(w.amount||0).toLocaleString()}</strong></td>
+      <td>${esc(w.method||'mpesa')}</td>
+      <td>${esc(w.phone_number||'—')}</td>
+      <td><span class="badge badge-${w.status==='paid'?'green':w.status==='rejected'?'rose':w.status==='approved'?'sky':'amber'}">${w.status}</span></td>
+      <td>${fmtDate(w.requested_at)}</td>
+      <td>${w.processed_at?fmtDate(w.processed_at):'—'}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(w.admin_notes||'—')}</td>
+      <td><div class="actions-cell">${actions}</div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No withdrawal requests yet</td></tr>';
+}
+async function processAgentWithdrawal(id,status){
+  const w=allAgentWithdrawals.find(w=>w.id===id);if(!w)return;
+  let notes=w.admin_notes||'';
+  if(status==='rejected'){
+    notes=prompt('Reason for rejecting this withdrawal (the amount will be refunded to the agent wallet):',notes)||'';
+    if(notes===null)return;
+  } else if(status==='paid'){
+    if(!confirm(`Confirm you have sent Ksh ${Number(w.amount).toLocaleString()} to ${w.phone_number} via ${w.method}?`))return;
+  }
+  const update={status,processed_at:new Date().toISOString(),processed_by:currentUser?.id||null};
+  if(notes)update.admin_notes=notes;
+  const {error}=await sb.from('agent_withdrawals').update(update).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  Object.assign(w,update);
+  // wallet balance/total_withdrawn is handled automatically by DB triggers on this status change
+  const {data:freshWallet}=await sb.from('agent_wallets').select('*').eq('agent_id',w.agent_id).maybeSingle();
+  if(freshWallet){
+    const idx=allAgentWallets.findIndex(aw=>aw.agent_id===w.agent_id);
+    if(idx>=0)allAgentWallets[idx]=freshWallet;else allAgentWallets.push(freshWallet);
+  }
+  const a=allAgents.find(a=>a.id===w.agent_id);
+  const msgMap={approved:'Your withdrawal request has been approved and is being processed.',paid:`Ksh ${Number(w.amount).toLocaleString()} has been sent to ${w.phone_number}.`,rejected:`Your withdrawal request was rejected.${notes?' Reason: '+notes:''} The amount has been returned to your wallet.`};
+  await sb.from('notifications').insert({user_id:a?.user_id,type:status==='rejected'?'warning':'success',title:'Withdrawal '+status,message:msgMap[status]||'Withdrawal status updated',source_type:'admin'}).catch(()=>{});
+  renderAgentWithdrawals();renderAgentWallets();renderAgents();renderAgentStats();updateBadges();
+  showToast('ok','Withdrawal marked as '+status);
+}
+
+function renderAgentActivity(){
+  const jobs=allJobs.filter(j=>j.posted_by_agent_id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  document.getElementById('agjobs-tbody').innerHTML=jobs.map(j=>{
+    const commission=allAgentCommissions.find(c=>c.reference_type==='job_posting'&&c.reference_id===j.id);
+    return `<tr>
+      <td><strong>${esc(j.title||'—')}</strong></td>
+      <td>${esc(agentName(j.posted_by_agent_id))}</td>
+      <td>${esc(j.company_name||'—')}</td>
+      <td><span class="badge badge-${j.status==='active'?'green':j.status==='draft'?'amber':'rose'}">${j.status}</span></td>
+      <td>${fmtDate(j.created_at)}</td>
+      <td>${commission?'Ksh '+Number(commission.amount).toLocaleString():'—'}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No agent-posted jobs yet</td></tr>';
+
+  const hires=allApplications.filter(a=>a.hired_by_agent_id).sort((a,b)=>new Date(b.hired_at||b.applied_at)-new Date(a.hired_at||a.applied_at));
+  document.getElementById('aghires-tbody').innerHTML=hires.map(a=>{
+    const job=allJobs.find(j=>j.id===a.job_id);
+    const commission=allAgentCommissions.find(c=>c.reference_type==='job_application'&&c.reference_id===a.id);
+    return `<tr>
+      <td>${esc(a.worker_name||'—')}</td>
+      <td>${esc(job?.title||'—')}</td>
+      <td>${esc(agentName(a.hired_by_agent_id))}</td>
+      <td>${a.hired_at?fmtDate(a.hired_at):'—'}</td>
+      <td>${commission?'Ksh '+Number(commission.amount).toLocaleString():'—'}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">No agent-facilitated hires yet</td></tr>';
+}
+
+function renderAgentSettings(){
+  const s=allAgentSettings;if(!s)return;
+  setEl2('agset-jobpost',s.job_post_commission);
+  setEl2('agset-hire',s.hire_commission);
+  const note=document.getElementById('agset-updated-note');
+  if(note)note.textContent=s.updated_at?`Last updated ${fmtDate(s.updated_at)}${s.updated_by?' by '+s.updated_by:''}`:'';
+}
+async function saveAgentCommissionSettings(){
+  const update={
+    job_post_commission:parseFloat(document.getElementById('agset-jobpost').value)||0,
+    hire_commission:parseFloat(document.getElementById('agset-hire').value)||0,
+    updated_by:currentUser?.username||'admin',
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('agent_commission_settings').update(update).eq('id',1);
+  if(error){showToast('err',error.message);return;}
+  allAgentSettings={...allAgentSettings,...update};
+  renderAgentSettings();
+  showToast('ok','Commission rates updated — new rates apply to future job posts and hires immediately');
 }
 
 // ============================================================
@@ -4009,6 +4495,7 @@ function updateBadges(){
   setEl('badge-newsletter',allNewsletterSubs.filter(s=>s.status==='subscribed').length);
   setEl('badge-tickets',allTickets.filter(t=>t.status==='open').length);
   setEl('badge-calls',allCalls.filter(c=>c.status==='ringing'||c.status==='active').length);
+  setEl('badge-agents',allAgents.filter(a=>a.status==='pending').length+allAgentWithdrawals.filter(w=>w.status==='pending').length);
   const hasNotif=allNotifications.some(n=>!n.is_read);
   document.getElementById('notif-indicator').style.display=hasNotif?'block':'none';
 }
@@ -4022,7 +4509,7 @@ function switchTab(e,name){
   document.getElementById('tab-'+name)?.classList.add('active');
   document.querySelectorAll('.sb-link').forEach(l=>l.classList.remove('active'));
   if(e)e.target.closest('.sb-link')?.classList.add('active');
-  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings',payments:'Payments',newsletter:'Newsletter',tickets:'Support Tickets',calls:'Voice & Video Calls',connects:'Connects & Payments',livelogs:'Live Activity'};
+  const titles={dashboard:'Dashboard',users:'All Users',employees:'Employees',employers:'Employers',conversations:'Messaging',inbox:'Inbox',notifications:'Notifications',jobs:'Jobs',jobreqs:'Job Post Requests',profilereqs:'Profile Post Requests',trash:'Trash',comms:'Email & SMS',settings:'Settings',payments:'Payments',newsletter:'Newsletter',tickets:'Support Tickets',calls:'Voice & Video Calls',connects:'Connects & Payments',livelogs:'Live Activity',agents:'Agents Network'};
   document.getElementById('nav-title').textContent=titles[name]||name;
   if(name==='db')loadDBStats();
   if(name==='livelogs')loadLiveLogs();
