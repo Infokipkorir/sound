@@ -180,6 +180,23 @@ tr:hover td{background:rgba(27,107,69,.02);}
 .badge-sky{background:rgba(14,165,233,.12);color:#0369a1;}
 .badge-muted{background:var(--bg);color:var(--muted);}
 .badge-violet{background:rgba(139,92,246,.12);color:#5b21b6;}
+.badge-blue{background:rgba(37,99,235,.12);color:#1d4ed8;}
+
+/* ─── MAMA FUA DIGITAL / ESCROW ─── */
+.category-toggle{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;}
+.category-opt{flex:1;min-width:180px;border:1.5px solid var(--border);border-radius:12px;padding:.85rem .9rem;cursor:pointer;transition:.15s;position:relative;}
+.category-opt:hover{border-color:var(--brand);}
+.category-opt.active{border-color:var(--brand);background:var(--brand-soft);}
+.category-opt .co-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;}
+.category-opt .co-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.mamafua-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1rem;margin:.6rem 0 1rem;}
+.fee-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;color:var(--muted);}
+.fee-row.total{border-top:1px dashed var(--border);margin-top:4px;padding-top:9px;font-weight:700;color:var(--ink);font-size:13.5px;}
+.fee-row .fv{font-weight:600;color:var(--ink);}
+.escrow-note{display:flex;gap:8px;background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.6;color:#1e3a5f;margin-top:.8rem;}
+.escrow-note i{color:#1d4ed8;flex-shrink:0;margin-top:1px;}
+.escrow-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);align-items:center;}
+.escrow-row .er-icon{width:36px;height:36px;border-radius:10px;background:rgba(37,99,235,.1);color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ─── FORMS ─── */
 .form-group{margin-bottom:.9rem;}
@@ -912,8 +929,20 @@ tr:hover td{background:rgba(27,107,69,.02);}
   <div class="modal modal-wide">
     <div class="modal-header"><h2><i class="bi bi-briefcase-fill"></i> Post a Job</h2><button class="modal-close" onclick="closeModal('post-job-modal')">×</button></div>
     <div class="modal-body">
+      <div class="form-group"><label>Job Category</label>
+        <div class="category-toggle">
+          <div class="category-opt active" id="cat-standard" onclick="setJobCategory('standard')">
+            <div class="co-title"><i class="bi bi-briefcase-fill"></i> Standard Job</div>
+            <div class="co-desc">Ongoing hire — full-time, part-time or contract role.</div>
+          </div>
+          <div class="category-opt" id="cat-mamafua" onclick="setJobCategory('mama_fua_digital')">
+            <div class="co-title"><i class="bi bi-droplet-fill" style="color:#1d4ed8"></i> Mama Fua Digital <span class="badge badge-blue" style="margin-left:2px">Beta</span></div>
+            <div class="co-desc">One-time cloth washing task. Payment is held in escrow until the job is done.</div>
+          </div>
+        </div>
+      </div>
       <div class="form-group"><label>Job Title</label><input type="text" id="jb-title" placeholder="e.g. House Help Needed in Karen"></div>
-      <div class="form-row">
+      <div class="form-row" id="jb-role-type-row">
         <div class="form-group"><label>Job Role</label>
           <select id="jb-role">
             <option>House Help</option><option>Cook</option><option>Nanny / Childcare</option>
@@ -928,6 +957,23 @@ tr:hover td{background:rgba(27,107,69,.02);}
           </select>
         </div>
       </div>
+
+      <!-- ── MAMA FUA DIGITAL / ONE-TIME TASK PAYMENT ── -->
+      <div id="mamafua-fields" style="display:none">
+        <div class="mamafua-box">
+          <div class="form-group" style="margin-bottom:.7rem"><label>Task Amount (<span id="mf-currency-lbl">KES</span>)</label>
+            <input type="number" id="mf-amount" placeholder="e.g. 1500" min="0" oninput="updateFeeBreakdown()">
+          </div>
+          <div class="fee-row"><span>Service fee (10%)</span><span class="fv" id="mf-fee-val">KES 0</span></div>
+          <div class="fee-row"><span>Tax on fee (16% VAT)</span><span class="fv" id="mf-tax-val">KES 0</span></div>
+          <div class="fee-row total"><span>Worker receives</span><span id="mf-net-val">KES 0</span></div>
+          <div class="escrow-note">
+            <i class="bi bi-shield-lock-fill"></i>
+            <span>This amount is held in escrow, not paid directly — it's released to the worker once the job is confirmed done. You can reject unsatisfactory work, but held funds can't be withdrawn or reused; a rejection puts the payment under Support review.</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group"><label>Location / Town</label><input type="text" id="jb-location" placeholder="e.g. Westlands, Nairobi"></div>
         <div class="form-group"><label>County</label><input type="text" id="jb-county" placeholder="e.g. Nairobi"></div>
@@ -955,7 +1001,60 @@ tr:hover td{background:rgba(27,107,69,.02);}
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('post-job-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="postJob()"><i class="bi bi-send-fill"></i> Post Job</button>
+      <button class="btn btn-primary" id="jb-submit-btn" onclick="postJob()"><i class="bi bi-send-fill"></i> Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ESCROW PAYMENT MODAL (Mama Fua Digital / one-time task hold) ── -->
+<div class="modal-overlay" id="escrow-pay-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><i class="bi bi-shield-lock-fill"></i> Hold Task Payment</h2>
+      <button class="modal-close" onclick="closeModal('escrow-pay-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="mamafua-box" style="margin-top:0">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px" id="ep-job-title">—</div>
+        <div class="fee-row"><span>Task amount</span><span class="fv" id="ep-gross">—</span></div>
+        <div class="fee-row"><span>Service fee (10%)</span><span class="fv" id="ep-fee">—</span></div>
+        <div class="fee-row"><span>Tax on fee (16% VAT)</span><span class="fv" id="ep-tax">—</span></div>
+        <div class="fee-row total"><span>Worker receives on release</span><span id="ep-net">—</span></div>
+      </div>
+      <div class="form-group"><label>Payment Method</label>
+        <select id="ep-method" onchange="updateEscrowPayUI()">
+          <option value="">Choose method…</option>
+          <option value="mpesa">📱 M-Pesa STK Push</option>
+          <option value="airtel">📞 Airtel Money</option>
+          <option value="card">💳 Debit / Credit Card</option>
+        </select>
+      </div>
+      <div id="epf-mpesa" style="display:none">
+        <div class="form-group"><label>Phone Number</label>
+          <div class="mpesa-wrap"><span class="mpesa-prefix">+254</span><input type="tel" id="ep-mpesa-phone" placeholder="7XX XXX XXX" maxlength="9"></div>
+        </div>
+      </div>
+      <div id="epf-airtel" style="display:none">
+        <div class="form-group"><label>Airtel Phone</label>
+          <div class="mpesa-wrap"><span class="mpesa-prefix">+254</span><input type="tel" id="ep-airtel-phone" placeholder="7XX XXX XXX" maxlength="9"></div>
+        </div>
+      </div>
+      <div id="epf-card" style="display:none">
+        <div class="form-group"><label>Card Number</label><input type="text" id="ep-card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Expiry (MM/YY)</label><input type="text" id="ep-card-expiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)"></div>
+          <div class="form-group"><label>CVV</label><input type="password" id="ep-card-cvv" placeholder="•••" maxlength="3"></div>
+        </div>
+      </div>
+      <div id="ep-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:12px;color:#991b1b;margin-top:.4rem;"></div>
+      <div class="escrow-note">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Your job stays in <strong>Awaiting Payment</strong> until this hold is confirmed. Once confirmed, it shows a blue <strong>Payment Held</strong> badge — visible to both you and the worker — and is only released by Admin once the task is done.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('escrow-pay-modal')">I'll pay later</button>
+      <button class="btn btn-primary" onclick="submitEscrowPayment()"><i class="bi bi-shield-lock-fill"></i> Hold Payment</button>
     </div>
   </div>
 </div>
@@ -1023,7 +1122,7 @@ const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 
 let sb, currentUser, employerProfile, employerProfileId;
-let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [];
+let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [], allEscrowPayments = [];
 let connectsTariffs = null; // loaded once in loadAll(); { message_cost, voice_cost_per_min, video_cost_per_min, daily_free_connects, reset_hour_local }
 let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {};
 let allCalls = [], callHistoryFilter = 'all';
@@ -1142,6 +1241,15 @@ async function loadAll() {
     .select('id,transaction_id,amount,fee_type,payment_method,status,mpesa_ref,created_at')
     .eq('user_id', currentUser.id).order('created_at', { ascending: false });
   allPayments = pays || [];
+
+  // escrow payments (Mama Fua Digital / one-time task holds) — safeFire so this
+  // degrades gracefully until the job_escrow_payments table/migration is applied.
+  if (employerProfileId) {
+    const escRes = await safeFire(sb.from('job_escrow_payments')
+      .select('id,job_id,employer_id,gross_amount,service_fee,tax,net_amount,currency,payment_method,status,dispute_reason,created_at,released_at')
+      .eq('employer_id', employerProfileId).order('created_at', { ascending: false }));
+    allEscrowPayments = escRes?.data || [];
+  }
 
   // wallet + connects tariffs — same Connects system as the employee side.
   // connects_tariffs is readable by any authenticated user; wallets is
@@ -1667,6 +1775,20 @@ async function hireWorker(workerSessionId, convId) {
 }
 
 // ── JOBS ──
+// Escrow badge for a job: only Mama Fua Digital / one-time jobs carry a hold.
+function escrowBadgeFor(job) {
+  if (!job.is_one_time && job.category !== 'mama_fua_digital') return '—';
+  const esc_ = allEscrowPayments.find(e => e.job_id === job.id);
+  if (!esc_) return '<span class="badge badge-muted"><i class="bi bi-hourglass"></i> Awaiting Payment</span>';
+  const map = {
+    pending:   '<span class="badge badge-amber"><i class="bi bi-hourglass-split"></i> Verifying</span>',
+    held:      '<span class="badge badge-blue"><i class="bi bi-patch-check-fill"></i> Payment Held</span>',
+    released:  '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Released</span>',
+    disputed:  '<span class="badge badge-rose"><i class="bi bi-flag-fill"></i> Under Review</span>',
+  };
+  return map[esc_.status] || `<span class="badge badge-muted">${esc_.status}</span>`;
+}
+
 function renderJobsTable() {
   const targets = ['dash-jobs-table','jobs-table-wrap'];
   targets.forEach(id => {
@@ -1674,18 +1796,23 @@ function renderJobsTable() {
     if (!el) return;
     if (!allJobs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'post-job-modal\')">Post a Job</button></p></div>'; return; }
     el.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Insights</th><th>Posted</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Payment</th><th>Insights</th><th>Posted</th><th>Actions</th></tr></thead>
       <tbody>${allJobs.map(j => {
         const isClosed = j.status === 'closed' || j.is_closed;
         const apps  = jobAppCounts[j.id] || 0;
         const saves = jobSaveCounts[j.id] || 0;
         const loves = j.loves_count || 0;
         const views = j.views || 0;
+        const escRow = allEscrowPayments.find(e => e.job_id === j.id);
+        const isMamaFua = j.is_one_time || j.category === 'mama_fua_digital';
+        const canPayNow = isMamaFua && !escRow;
+        const canReject = isMamaFua && escRow && escRow.status === 'held';
         return `<tr>
-        <td><strong>${esc(j.title)}</strong>${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}${j.is_featured?'<span class="badge badge-amber" style="margin-left:6px">Featured</span>':''}</td>
+        <td><strong>${esc(j.title)}</strong>${isMamaFua?'<span class="badge badge-blue" style="margin-left:6px"><i class="bi bi-droplet-fill"></i> Mama Fua</span>':''}${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}${j.is_featured?'<span class="badge badge-amber" style="margin-left:6px">Featured</span>':''}</td>
         <td>${j.job_type||'—'}</td>
         <td>${j.location||'—'}</td>
         <td><span class="badge badge-${j.status==='active'?'green':isClosed?'rose':'amber'}">${isClosed?'Closed':(j.status||'Active')}</span></td>
+        <td>${escrowBadgeFor(j)}</td>
         <td>
           <div style="display:flex;flex-wrap:wrap;gap:9px;">
             <span class="job-insight views" title="Views"><i class="bi bi-eye-fill"></i> ${views}</span>
@@ -1697,6 +1824,8 @@ function renderJobsTable() {
         <td>${fmtDate(j.created_at)}</td>
         <td>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${canPayNow ? `<button class="btn btn-primary btn-sm" onclick='openEscrowPaymentModal("${j.id}", ${JSON.stringify(j.title)}, mamaFuaFees(${j.salary_min||0}))'><i class="bi bi-shield-lock-fill"></i> Hold Payment</button>` : ''}
+            ${canReject ? `<button class="btn btn-danger btn-sm" onclick="rejectEscrowWork('${escRow.id}','${j.id}')"><i class="bi bi-flag-fill"></i> Reject Work</button>` : ''}
             ${isClosed
               ? `<button class="btn btn-primary btn-sm" onclick="repostJob('${j.id}')"><i class="bi bi-arrow-repeat"></i> Repost</button>`
               : `<button class="btn btn-danger btn-sm" onclick="closeJob('${j.id}')"><i class="bi bi-x-circle"></i> Close</button>`}
@@ -1759,20 +1888,79 @@ async function updateApplicationStatus(appId, jobId, status) {
   await viewJobApplicants(jobId);
 }
 
+// ── JOB CATEGORY (Standard vs Mama Fua Digital / one-time task) ──
+let jobCategory = 'standard';
+const MAMAFUA_SERVICE_FEE_PCT = 0.10; // deducted from the amount the employer allocates
+const MAMAFUA_TAX_PCT = 0.16;         // VAT, applied on the service fee
+
+function setJobCategory(cat) {
+  jobCategory = cat;
+  document.getElementById('cat-standard').classList.toggle('active', cat === 'standard');
+  document.getElementById('cat-mamafua').classList.toggle('active', cat === 'mama_fua_digital');
+  document.getElementById('mamafua-fields').style.display = cat === 'mama_fua_digital' ? 'block' : 'none';
+  document.getElementById('jb-role-type-row').style.display = cat === 'mama_fua_digital' ? 'none' : 'flex';
+  const btn = document.getElementById('jb-submit-btn');
+  btn.innerHTML = cat === 'mama_fua_digital'
+    ? '<i class="bi bi-shield-lock-fill"></i> Post &amp; Hold Payment'
+    : '<i class="bi bi-send-fill"></i> Post Job';
+  if (cat === 'mama_fua_digital') {
+    document.getElementById('mf-currency-lbl').textContent = getUserCurrency();
+    updateFeeBreakdown();
+  }
+}
+
+function mamaFuaFees(gross) {
+  const serviceFee = Math.round(gross * MAMAFUA_SERVICE_FEE_PCT);
+  const tax = Math.round(serviceFee * MAMAFUA_TAX_PCT);
+  const net = Math.max(0, gross - serviceFee - tax);
+  return { gross, serviceFee, tax, net };
+}
+
+function updateFeeBreakdown() {
+  const gross = parseFloat(document.getElementById('mf-amount').value) || 0;
+  const { serviceFee, tax, net } = mamaFuaFees(gross);
+  const cur = getUserCurrency();
+  document.getElementById('mf-fee-val').textContent = cur + ' ' + serviceFee.toLocaleString();
+  document.getElementById('mf-tax-val').textContent = cur + ' ' + tax.toLocaleString();
+  document.getElementById('mf-net-val').textContent = cur + ' ' + net.toLocaleString();
+}
+
+// Best-effort currency label from the browser locale — the actual charge still
+// runs over KES rails (M-Pesa / Airtel Money), so this only affects display.
+function getUserCurrency() {
+  try {
+    const region = (new Intl.Locale(navigator.language)).region
+      || navigator.language.split('-')[1];
+    const map = { KE:'KES', UG:'UGX', TZ:'TZS', RW:'RWF', ET:'ETB', US:'USD', GB:'GBP' };
+    return map[region] || 'KES';
+  } catch (e) { return 'KES'; }
+}
+
 async function postJob() {
   const title = document.getElementById('jb-title').value.trim();
   if (!title) { showToast('err','bi-x-circle','Required','Job title is required.'); return; }
   if (!employerProfileId) { showToast('err','bi-x-circle','Error','Employer profile not found.'); return; }
+
+  const isMamaFua = jobCategory === 'mama_fua_digital';
+  let mfAmount = 0, mfFees = null;
+  if (isMamaFua) {
+    mfAmount = parseFloat(document.getElementById('mf-amount').value) || 0;
+    if (mfAmount <= 0) { showToast('err','bi-x-circle','Required','Enter a task amount to hold in escrow.'); return; }
+    mfFees = mamaFuaFees(mfAmount);
+  }
+
   const data = {
     title, employer_id: employerProfileId, posted_by: currentUser.id,
-    job_role: document.getElementById('jb-role').value,
-    job_type: document.getElementById('jb-type').value,
+    job_role: isMamaFua ? 'Mama Fua' : document.getElementById('jb-role').value,
+    job_type: isMamaFua ? 'one-time' : document.getElementById('jb-type').value,
+    category: isMamaFua ? 'mama_fua_digital' : 'standard',
+    is_one_time: isMamaFua,
     location: document.getElementById('jb-location').value,
     county: document.getElementById('jb-county').value,
-    work_type: document.getElementById('jb-work-type').value,
-    salary_min: parseInt(document.getElementById('jb-sal-min').value)||null,
-    salary_max: parseInt(document.getElementById('jb-sal-max').value)||null,
-    salary_range: [document.getElementById('jb-sal-min').value, document.getElementById('jb-sal-max').value].filter(Boolean).join('-'),
+    work_type: isMamaFua ? 'One-Time Task' : document.getElementById('jb-work-type').value,
+    salary_min: isMamaFua ? mfAmount : (parseInt(document.getElementById('jb-sal-min').value)||null),
+    salary_max: isMamaFua ? mfAmount : (parseInt(document.getElementById('jb-sal-max').value)||null),
+    salary_range: isMamaFua ? '' : [document.getElementById('jb-sal-min').value, document.getElementById('jb-sal-max').value].filter(Boolean).join('-'),
     description: document.getElementById('jb-desc').value,
     requirements: document.getElementById('jb-reqs').value,
     deadline: document.getElementById('jb-deadline').value || null,
@@ -1780,12 +1968,33 @@ async function postJob() {
     is_urgent: document.getElementById('jb-urgent').checked,
     is_featured: document.getElementById('jb-featured').checked,
     status: 'active', posting_type: 'individual',
+    payment_status: isMamaFua ? 'awaiting_payment' : null,
   };
-  const { error } = await sb.from('job_postings').insert(data);
+
+  const { data: inserted, error } = await sb.from('job_postings').insert(data).select('id').single();
   if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
+
   closeModal('post-job-modal');
-  showToast('ok','bi-briefcase-fill','Job Posted','Your job listing is now live!');
+
+  if (isMamaFua && inserted?.id) {
+    // Job is live but flagged "awaiting payment" — kick off the escrow hold immediately.
+    showToast('ok','bi-briefcase-fill','Job Posted','Now let\'s hold the payment in escrow.');
+    openEscrowPaymentModal(inserted.id, title, mfFees);
+  } else {
+    showToast('ok','bi-briefcase-fill','Job Posted','Your job listing is now live!');
+  }
+  resetPostJobForm();
   await loadAll();
+}
+
+function resetPostJobForm() {
+  setJobCategory('standard');
+  ['jb-title','jb-location','jb-county','jb-sal-min','jb-sal-max','jb-desc','jb-reqs','jb-deadline','mf-amount'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('jb-slots').value = 1;
+  document.getElementById('jb-urgent').checked = false;
+  document.getElementById('jb-featured').checked = false;
 }
 
 async function closeJob(jobId) {
