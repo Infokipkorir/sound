@@ -249,6 +249,18 @@ let job = null;
 let currentUser = null;
 let workerProfile = null;
 
+/* ── JOBS THAT REQUIRE A FULL ACCOUNT ──
+   Roles paid out directly through SoundsCare (e.g. Mama Fua / pay-per-visit
+   cleaning) need a verified account before applying, since payment runs
+   through the platform. Other roles (regular employer-paid jobs) can be
+   applied to as a guest — no account needed, though logging in still saves
+   the application to a reusable profile. Add more matches here as needed. */
+const ACCOUNT_REQUIRED_ROLES = ['mama fua'];
+function jobRequiresAccount(j){
+  const role = (j.job_role || '').toLowerCase();
+  return ACCOUNT_REQUIRED_ROLES.some(r => role.includes(r));
+}
+
 /* ── LOAD JOB ── */
 async function loadJob(){
   const summaryEl = document.getElementById('job-summary');
@@ -297,24 +309,41 @@ function renderJobSummary(j){
       </div>
     </div>
     <div class="js-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range)}</div>
+    ${jobRequiresAccount(j)
+      ? `<div class="js-salary" style="color:var(--blue-dark)"><i class="bi bi-shield-lock-fill"></i> Paid through SoundsCare — account required to apply</div>`
+      : `<div class="js-salary" style="color:var(--text-muted)"><i class="bi bi-lightning-charge-fill"></i> Quick apply — no account needed</div>`}
     <div class="js-body">
       <h4>Description</h4><p>${esc(j.description||'No description provided.')}</p>
       ${j.requirements?`<h4>Requirements</h4><p>${esc(j.requirements)}</p>`:''}
     </div>`;
 }
 
-/* ── RESOLVE APPLICANT (auth session → worker_profiles) AND RENDER THE RIGHT PANEL ── */
+/* ── RESOLVE APPLICANT (auth session → worker_profiles) AND RENDER THE RIGHT PANEL ──
+   Jobs in ACCOUNT_REQUIRED_ROLES (e.g. Mama Fua) always need a logged-in user
+   with a completed worker profile, since payment runs through the platform.
+   Every other job can be applied to as a guest — logging in is optional and
+   just saves the application to a reusable profile for next time. */
 async function resolveApplicantAndRender(){
   const panel = document.getElementById('apply-panel');
   panel.innerHTML = `<div class="loading-block"><i class="bi bi-hourglass-split"></i>Checking your account…</div>`;
 
+  const needsAccount = jobRequiresAccount(job);
   const { data: { session } } = await sb.auth.getSession();
-  if(!session?.user){ renderLoginRequired(); return; }
-  currentUser = session.user;
+  currentUser = session?.user || null;
+
+  if(!currentUser){
+    if(needsAccount){ renderLoginRequired(); return; }
+    renderGuestApplyForm();
+    return;
+  }
 
   // worker_profiles link is via session_id (= auth.uid()) — mirrors the dashboard's lookup
   const { data: wp } = await sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle();
-  if(!wp){ renderProfileRequired(); return; }
+  if(!wp){
+    if(needsAccount){ renderProfileRequired(); return; }
+    renderGuestApplyForm();
+    return;
+  }
   workerProfile = wp;
 
   const { data: existing } = await sb.from('job_applications')
@@ -335,7 +364,7 @@ function renderLoginRequired(){
     <div class="state-block">
       <div class="state-icon blue"><i class="bi bi-person-lock"></i></div>
       <h3>Log In to Apply</h3>
-      <p>You'll need a free SoundsCare worker account to apply. It only takes a minute, and your profile is reused for every job. We'll bring you right back here once you're in.</p>
+      <p>This job is paid out directly through SoundsCare, so we need a verified worker account before you can apply — it's how we make sure your payments reach you. It only takes a minute, and your profile is reused for every job. We'll bring you right back here once you're in.</p>
       <div class="state-actions">
         <button class="btn-apply" onclick="location.href='login.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-box-arrow-in-right"></i> Log In</button>
         <button class="btn-outline" onclick="location.href='post-my-profile.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-person-plus"></i> Create a Free Account</button>
@@ -413,6 +442,80 @@ function renderApplyForm(){
     <button class="btn-apply" id="submit-apply-btn" onclick="submitApplication()"><i class="bi bi-send-fill"></i> Submit Application</button>
   `;
   if(resumed) showToast("Welcome back! You're logged in — just hit submit to finish applying.", 'success');
+}
+
+/* ── GUEST APPLY (no account needed for this job) ──
+   Applicant fills in their own name/phone and applies directly. We still
+   offer login/register as an optional path — choosing it saves this job as
+   a pending intent (savePendingApply) so they're dropped right back into
+   the job with their profile-backed application ready to submit. */
+function renderGuestApplyForm(){
+  document.getElementById('apply-panel').innerHTML = `
+    <h2>Submit Your Application</h2>
+    <p class="sub">No account needed for this job — just fill in your details below. Prefer to save your info for next time? Log in or create a free account instead.</p>
+    <label for="guest-name">Your full name</label>
+    <textarea id="guest-name" maxlength="120" style="min-height:auto;resize:none" rows="1" placeholder="E.g. Jane Wanjiru"></textarea>
+    <label for="guest-phone" style="margin-top:.8rem">Phone number</label>
+    <textarea id="guest-phone" maxlength="20" style="min-height:auto;resize:none" rows="1" placeholder="E.g. 07XX XXX XXX"></textarea>
+    <label for="cover-letter" style="margin-top:.8rem">Message to employer (optional)</label>
+    <textarea id="cover-letter" maxlength="800" placeholder="E.g. why you're a great fit, your availability, relevant experience…" oninput="document.getElementById('cc').textContent = this.value.length"></textarea>
+    <div class="char-count"><span id="cc">0</span>/800</div>
+    <button class="btn-apply" id="submit-apply-btn" onclick="submitGuestApplication()"><i class="bi bi-send-fill"></i> Submit Application</button>
+    <div style="text-align:center;margin:1.1rem 0 .2rem;font-size:11.5px;color:var(--text-muted)">— or save this application to a profile —</div>
+    <button class="btn-outline" onclick="location.href='login.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-box-arrow-in-right"></i> Log In</button>
+    <button class="btn-outline" style="margin-top:.6rem" onclick="location.href='post-my-profile.html?redirect=${encodeURIComponent(currentUrl)}'"><i class="bi bi-person-plus"></i> Create a Free Account</button>
+  `;
+  document.querySelectorAll('#guest-name,#guest-phone').forEach(el => savePendingApplyOnInput(el));
+}
+function savePendingApplyOnInput(el){
+  el.addEventListener('input', savePendingApply);
+}
+async function submitGuestApplication(){
+  const btn = document.getElementById('submit-apply-btn');
+  const name = document.getElementById('guest-name').value.trim();
+  const phone = document.getElementById('guest-phone').value.trim();
+  const coverLetter = document.getElementById('cover-letter').value.trim();
+
+  if(!name || !phone){
+    showToast('Please add your name and phone number.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+
+  const { error } = await sb.from('job_applications').insert({
+    job_id: jobId,
+    worker_id: workerProfile ? workerProfile.id : null,
+    worker_name: name,
+    worker_phone: phone,
+    cover_letter: coverLetter || null,
+    status: 'pending',
+    applied_at: new Date().toISOString(),
+  });
+
+  if(error){
+    showToast(error.message || 'Could not submit — try again.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Application';
+    return;
+  }
+
+  clearPendingApply();
+  showToast('Application submitted!', 'success');
+  renderGuestApplied(name);
+}
+function renderGuestApplied(name){
+  document.getElementById('apply-panel').innerHTML = `
+    <div class="state-block">
+      <div class="state-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <h3>Application Submitted</h3>
+      <p>Thanks${name?`, ${esc(name)}`:''} — the employer will reach out directly if you're shortlisted.</p>
+      <div class="state-actions" style="margin-top:1.2rem">
+        <button class="btn-apply" onclick="location.href='post-my-profile.html'"><i class="bi bi-person-plus"></i> Create a Free Account to Track Applications</button>
+        <button class="btn-outline" onclick="location.href='jobs.html'"><i class="bi bi-search"></i> Browse More Jobs</button>
+      </div>
+    </div>`;
 }
 
 /* ── SUBMIT APPLICATION ── */
