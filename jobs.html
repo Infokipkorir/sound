@@ -124,6 +124,9 @@
   .filter-bar input[type=text]{flex:2;min-width:200px}
   .filter-bar button{border:none;border-radius:9px;background:var(--green);color:#fff;font-weight:600;font-size:13px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:.4rem;white-space:nowrap}
   .filter-bar button:hover{background:var(--green-dark)}
+  .filter-bar button.btn-loc{background:var(--blue)}
+  .filter-bar button.btn-loc:hover{background:var(--blue-dark)}
+  .filter-bar button.btn-loc.active{background:var(--green-mid)}
 
   /* ── RESULTS BAR ── */
   .container{max-width:1200px;margin:0 auto;padding:2.2rem 1.5rem}
@@ -164,6 +167,14 @@
   .tag.urgent{background:#FFF0EB;color:#C04A1A}
   .tag.deadline{background:var(--surface-alt);color:var(--text-muted)}
   .tag.deadline.soon{background:#FEE2E2;color:#B91C1C;font-weight:700}
+  .tag.mamafua{background:#FFF3E0;color:#B5720F}
+  .tag.match{background:var(--green-light);color:var(--green-dark)}
+
+  .card-distance{display:inline-flex;align-items:center;gap:.3rem;font-size:11px;color:var(--blue-dark);font-weight:600}
+  .payment-badge{display:inline-flex;align-items:center;gap:.3rem;background:var(--blue-light);color:var(--blue-dark);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+  .payment-badge i{font-size:10px}
+  .escrow-note{display:flex;align-items:center;gap:.4rem;font-size:11.5px;color:#B5720F;background:#FFF8EC;border:1px dashed #E9C27D;border-radius:8px;padding:.4rem .6rem;margin:.4rem 0}
+  .modal-map{width:100%;height:180px;border:1px solid var(--border);border-radius:10px;margin-top:.4rem}
 
   .card-salary{font-size:12px;color:var(--text-muted);margin:.4rem 0;display:flex;align-items:center;gap:.35rem}
   .card-jobstats{display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;font-size:11.5px;color:var(--text-muted);margin:.5rem 0;padding:.55rem .7rem;background:var(--surface-alt);border-radius:8px}
@@ -285,6 +296,7 @@
     <option value="Housekeeper">Housekeeper</option>
     <option value="Cook">Cook</option>
     <option value="Caregiver">Caregiver</option>
+    <option value="Mama Fua">🧺 Mama Fua (Cloth Washing)</option>
   </select>
   <select id="f-county"><option value="">All Counties</option></select>
   <select id="f-type">
@@ -294,16 +306,24 @@
     <option value="Live-in">Live-in</option>
     <option value="Live-out">Live-out</option>
   </select>
+  <button class="btn-loc" id="near-me-btn" onclick="useMyLocation()" title="Sort jobs by distance from you"><i class="bi bi-geo-alt-fill"></i> Near Me</button>
   <button onclick="applyFilters()"><i class="bi bi-funnel-fill"></i> Filter</button>
 </div>
 
 <div class="container">
+  <div class="external-section" id="recommended-section" style="display:none">
+    <h2><i class="bi bi-geo-alt-fill" style="color:var(--blue)"></i> Recommended Near You</h2>
+    <p class="sub">Closest jobs to your location, ranked higher when they match your profile.</p>
+    <div class="jobs-grid" id="recommended-jobs"></div>
+  </div>
+
   <div class="results-bar">
     <div class="results-count"><strong id="results-total">0</strong> open jobs found</div>
     <select class="sort-select" id="f-sort" onchange="applyFilters()">
       <option value="newest">Newest first</option>
       <option value="deadline">Deadline soonest</option>
       <option value="salary_high">Salary: high to low</option>
+      <option value="nearest">Nearest to me</option>
     </select>
   </div>
 
@@ -379,8 +399,51 @@ const KE_COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu
 function initials(n){ return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function go(url){ window.location.href = url; }
-function salary(a,b,range){
-  const f=n=>'KES '+Number(n).toLocaleString();
+/* ── COUNTRIES / CURRENCY (East Africa + Gulf) ── */
+const COUNTRIES = [
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪', currency: 'KES' },
+  { code: 'TZ', name: 'Tanzania', flag: '🇹🇿', currency: 'TZS' },
+  { code: 'UG', name: 'Uganda', flag: '🇺🇬', currency: 'UGX' },
+  { code: 'RW', name: 'Rwanda', flag: '🇷🇼', currency: 'RWF' },
+  { code: 'BI', name: 'Burundi', flag: '🇧🇮', currency: 'BIF' },
+  { code: 'SS', name: 'South Sudan', flag: '🇸🇸', currency: 'SSP' },
+  { code: 'ET', name: 'Ethiopia', flag: '🇪🇹', currency: 'ETB' },
+  { code: 'SO', name: 'Somalia', flag: '🇸🇴', currency: 'SOS' },
+  { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR' },
+  { code: 'QA', name: 'Qatar', flag: '🇶🇦', currency: 'QAR' }
+];
+const getCountry = (code) => COUNTRIES.find(c => c.code === code) || COUNTRIES[0];
+
+/* ── HAVERSINE DISTANCE (km) ── */
+function distanceKm(lat1, lon1, lat2, lon2){
+  if([lat1,lon1,lat2,lon2].some(v => v===null || v===undefined || isNaN(v))) return null;
+  const R = 6371, toRad = d => d*Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function fmtDistance(km){
+  if(km===null) return '';
+  return km<1 ? Math.round(km*1000)+'m away' : km.toFixed(1)+'km away';
+}
+
+/* ── BROWSING USER LOCATION (for distance + nearest-first sort) ── */
+let USER_LAT = null, USER_LNG = null, USER_LOCATION_READY = false;
+function requestUserLocation(){
+  return new Promise(resolve => {
+    if(!navigator.geolocation){ resolve(false); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { USER_LAT = pos.coords.latitude; USER_LNG = pos.coords.longitude; USER_LOCATION_READY = true; resolve(true); },
+      () => resolve(false),
+      { timeout: 6000, maximumAge: 600000 }
+    );
+  });
+}
+
+function salary(a,b,range,countryCode){
+  const cur = getCountry(countryCode).currency;
+  const f=n=>cur+' '+Number(n).toLocaleString();
   if(a&&b) return f(a)+' – '+f(b)+'/mo';
   if(a) return 'From '+f(a)+'/mo';
   if(b) return 'Up to '+f(b)+'/mo';
@@ -435,6 +498,46 @@ function debounceSearch(){ clearTimeout(searchDebounce); searchDebounce=setTimeo
 function applyFilters(){ currentPage = 0; loadJobs(); }
 function changePage(delta){ currentPage = Math.max(0, currentPage+delta); loadJobs(); }
 
+async function useMyLocation(){
+  const btn = document.getElementById('near-me-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Locating…';
+  const ok = await requestUserLocation();
+  btn.disabled = false;
+  if(ok){
+    btn.classList.add('active');
+    btn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Near Me ✓';
+    document.getElementById('f-sort').value = 'nearest';
+    showToast('Using your location to sort jobs by distance.', 'success');
+  } else {
+    btn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Near Me';
+    showToast('Could not get your location. Check browser permissions.', 'error');
+  }
+  applyFilters();
+  loadRecommended();
+}
+
+/* ── WORKER PROFILE MATCH % (house-help roles only) ── */
+const HOUSE_HELP_ROLES = ['Nanny','Housekeeper','Cook','Caregiver','Mama Fua'];
+let WORKER_PROFILE = null, WORKER_PROFILE_FETCHED = false;
+async function getWorkerProfile(){
+  if(WORKER_PROFILE_FETCHED) return WORKER_PROFILE;
+  WORKER_PROFILE_FETCHED = true;
+  const workerId = getWorkerId();
+  if(!workerId) return null;
+  const { data } = await sb.from('worker_profiles').select('id, preferred_role, job_title, skills, work_type').eq('id', workerId).maybeSingle();
+  WORKER_PROFILE = data || null;
+  return WORKER_PROFILE;
+}
+function profileMatchPct(job, worker){
+  if(!worker || !HOUSE_HELP_ROLES.includes(job.job_role)) return null;
+  let score = 40; // base score for any house-help job when a profile exists
+  const role = (worker.preferred_role || worker.job_title || '').toLowerCase();
+  if(role && job.job_role && role.includes(job.job_role.toLowerCase())) score += 40;
+  if(worker.work_type && job.work_type && worker.work_type===job.work_type) score += 20;
+  else if(worker.skills && job.job_role && String(worker.skills).toLowerCase().includes(job.job_role.toLowerCase())) score += 15;
+  return Math.min(98, score);
+}
+
 /* ── DB FETCH + RENDER: JOBS ── */
 async function loadJobs(){
   const grid = document.getElementById('jobs-grid');
@@ -455,44 +558,75 @@ async function loadJobs(){
     .or(`deadline.is.null,deadline.gte.${todayISO}`); // hide expired jobs entirely
 
   if(search) q = q.or(`title.ilike.%${search}%,company_name.ilike.%${search}%`);
-  if(role) q = q.eq('job_role', role);
+  if(role==='Mama Fua') q = q.eq('is_mama_fua', true);
+  else if(role) q = q.eq('job_role', role);
   if(county) q = q.eq('county', county);
   if(type) q = q.eq('work_type', type);
 
   if(sort==='deadline') q = q.order('deadline', {ascending:true, nullsFirst:false});
   else if(sort==='salary_high') q = q.order('salary_max', {ascending:false, nullsFirst:false});
-  else q = q.order('created_at', {ascending:false});
+  else if(sort!=='nearest') q = q.order('created_at', {ascending:false});
+  // 'nearest' is sorted client-side below, after fetch, since it depends on the browser's live GPS position
 
   q = q.range(currentPage*PAGE_SIZE, currentPage*PAGE_SIZE + PAGE_SIZE - 1);
 
-  const { data: jobs, count, error } = await q;
+  const { data: jobsRaw, count, error } = await q;
   if(error){ console.error('Jobs load error:', error); grid.innerHTML = '<div class="feed-empty"><i class="bi bi-exclamation-triangle"></i>Could not load jobs right now.</div>'; return; }
 
   document.getElementById('results-total').textContent = count || 0;
   renderPagination(count||0);
 
-  if(!jobs || !jobs.length){
+  if(!jobsRaw || !jobsRaw.length){
     grid.innerHTML = '<div class="feed-empty"><i class="bi bi-inboxes"></i>No jobs match your filters right now.</div>';
     updateJobPostingSchema([]);
     return;
   }
 
+  let jobs = jobsRaw;
+  if(sort==='nearest' && USER_LOCATION_READY){
+    jobs = [...jobsRaw].sort((a,b) => {
+      const da = distanceKm(USER_LAT,USER_LNG,a.latitude,a.longitude);
+      const db = distanceKm(USER_LAT,USER_LNG,b.latitude,b.longitude);
+      if(da===null) return 1; if(db===null) return -1;
+      return da-db;
+    });
+  }
+
   const jobIds = jobs.map(j=>j.id);
-  const [appsRes, interviewsRes, lovesRes] = await Promise.all([
+  const [appsRes, interviewsRes, lovesRes, escrowRes, worker] = await Promise.all([
     sb.from('job_applications').select('job_id').in('job_id', jobIds),
     sb.from('interviews').select('job_id').in('job_id', jobIds),
-    sb.from('job_loves').select('job_id').in('job_id', jobIds)
+    sb.from('job_loves').select('job_id').in('job_id', jobIds),
+    sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
+    getWorkerProfile()
   ]);
   const appCounts = {}; (appsRes.data||[]).forEach(a=>{ appCounts[a.job_id]=(appCounts[a.job_id]||0)+1; });
   const ivCounts = {}; (interviewsRes.data||[]).forEach(i=>{ ivCounts[i.job_id]=(ivCounts[i.job_id]||0)+1; });
   const lovedSet = new Set(getLovedJobIds());
+  const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
 
-  grid.innerHTML = jobs.map(j=>{
-    const company = j.company_name || 'Employer';
-    const applicationCount = appCounts[j.id]||0;
-    const interviewCount = ivCounts[j.id]||0;
-    const loved = lovedSet.has(j.id);
-    return `
+  grid.innerHTML = jobs.map(j=>jobCardHTML(j, {
+    applicationCount: appCounts[j.id]||0,
+    interviewCount: ivCounts[j.id]||0,
+    loved: lovedSet.has(j.id),
+    paymentVerified: paidMap[j.id]==='held' || paidMap[j.id]==='released',
+    matchPct: profileMatchPct(j, worker)
+  })).join('');
+
+  updateJobPostingSchema(jobs);
+}
+
+/* ── SHARED JOB CARD TEMPLATE (used by main grid + Recommended Near You) ── */
+function jobCardHTML(j, opts){
+  opts = opts || {};
+  const company = j.company_name || 'Employer';
+  const applicationCount = opts.applicationCount||0;
+  const interviewCount = opts.interviewCount||0;
+  const loved = !!opts.loved;
+  const paymentVerified = !!opts.paymentVerified;
+  const matchPct = opts.matchPct!==undefined ? opts.matchPct : null;
+  const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
+  return `
     <div class="job-card" onclick="openJobDetail('${j.id}')">
       <button class="job-love${loved?' loved':''}" onclick="event.stopPropagation();toggleLoveJob('${j.id}', this)" aria-label="Save job">
         <i class="bi bi-heart${loved?'-fill':''}"></i>
@@ -504,17 +638,21 @@ async function loadJobs(){
           <div class="card-subtitle">
             ${j.company_verified?'<span class="verified-dot"><i class="bi bi-check-lg"></i></span>':''}
             ${esc(company)} &middot; ${esc(j.county||j.location||'East Africa')}
+            ${km!==null?` &middot; <span class="card-distance"><i class="bi bi-signpost-2-fill"></i> ${fmtDistance(km)}</span>`:''}
           </div>
         </div>
       </div>
       <div class="card-tags">
         ${j.job_role?`<span class="tag blue">${esc(j.job_role)}</span>`:''}
+        ${j.is_mama_fua?'<span class="tag mamafua">🧺 Mama Fua</span>':''}
         ${j.work_type?`<span class="tag">${esc(j.work_type)}</span>`:''}
         ${j.is_urgent?'<span class="tag urgent">🔥 Urgent</span>':''}
+        ${matchPct!==null?`<span class="tag match"><i class="bi bi-person-check-fill"></i> ${matchPct}% match</span>`:''}
         ${j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
         ${deadlineTag(j.deadline)}
       </div>
-      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range)}<span style="margin-left:auto;opacity:.6">${timeAgo(j.created_at)}</span></div>
+      <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range,j.country_code)}${paymentVerified?' <span class="payment-badge"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>':''}<span style="margin-left:auto;opacity:.6">${timeAgo(j.created_at)}</span></div>
+      ${(j.is_mama_fua || j.payment_mode==='escrow') && !paymentVerified ? '<div class="escrow-note"><i class="bi bi-shield-lock-fill"></i> Payment held in escrow until job is marked done</div>' : ''}
       <div class="card-jobstats">
         <span class="stat-apps"><i class="bi bi-send-check-fill"></i> ${applicationCount} application${applicationCount===1?'':'s'}</span>
         <span class="stat-interview"><i class="bi bi-camera-video-fill"></i> ${interviewCount} interview${interviewCount===1?'':'s'}</span>
@@ -524,9 +662,45 @@ async function loadJobs(){
         <button class="btn-small outline" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="bi bi-eye-fill"></i> View</button>
       </div>
     </div>`;
-  }).join('');
+}
 
-  updateJobPostingSchema(jobs);
+/* ── RECOMMENDED NEAR YOU ── shows once the browser location is available:
+   nearest active jobs, boosted by worker profile role match when logged in. */
+async function loadRecommended(){
+  if(!USER_LOCATION_READY) return;
+  const section = document.getElementById('recommended-section');
+  const grid = document.getElementById('recommended-jobs');
+  const todayISO = new Date().toISOString().slice(0,10);
+  const { data: jobsRaw, error } = await sb.from('job_postings')
+    .select('*, agent:posted_by_agent_id(id,full_name,status)')
+    .eq('status','active').eq('is_paused', false).eq('is_closed', false)
+    .not('latitude', 'is', null).not('longitude', 'is', null)
+    .or(`deadline.is.null,deadline.gte.${todayISO}`)
+    .limit(60);
+  if(error || !jobsRaw || !jobsRaw.length){ section.style.display='none'; return; }
+
+  const worker = await getWorkerProfile();
+  const ranked = jobsRaw
+    .map(j=>({ j, km: distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude), match: profileMatchPct(j, worker) }))
+    .filter(r=>r.km!==null && r.km<=100)
+    .sort((a,b)=> (b.match||0)-(a.match||0) || a.km-b.km)
+    .slice(0,3);
+  if(!ranked.length){ section.style.display='none'; return; }
+
+  const jobIds = ranked.map(r=>r.j.id);
+  const [escrowRes, lovesRes] = await Promise.all([
+    sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
+    Promise.resolve({data: null}) // placeholder for symmetry, loves read via localStorage below
+  ]);
+  const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
+  const lovedSet = new Set(getLovedJobIds());
+
+  grid.innerHTML = ranked.map(r=>jobCardHTML(r.j, {
+    loved: lovedSet.has(r.j.id),
+    paymentVerified: paidMap[r.j.id]==='held' || paidMap[r.j.id]==='released',
+    matchPct: r.match
+  })).join('');
+  section.style.display = 'block';
 }
 
 function renderPagination(total){
@@ -539,16 +713,35 @@ function renderPagination(total){
   document.getElementById('p-next').disabled = currentPage>=totalPages-1;
 }
 
+/* ── STATIC MAP EMBED (no API key — OpenStreetMap iframe) ── */
+function mapEmbed(lat, lon){
+  if(lat===null||lat===undefined||lon===null||lon===undefined||isNaN(lat)||isNaN(lon)) return '';
+  const d = 0.02;
+  const bbox = `${lon-d}%2C${lat-d}%2C${lon+d}%2C${lat+d}`;
+  return `<iframe class="modal-map" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lon}"></iframe>`;
+}
+
 /* ── JOB DETAIL MODAL + DEEP LINK (?job=ID from index.html card clicks) ── */
 async function openJobDetail(id){
-  const { data: j, error } = await sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status)').eq('id', id).single();
+  const [{ data: j, error }, { data: escrowRow }] = await Promise.all([
+    sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status)').eq('id', id).single(),
+    sb.from('job_payment_status').select('status').eq('job_id', id).maybeSingle()
+  ]);
   if(error || !j){ showToast('Could not load that job.', 'error'); return; }
   document.getElementById('jd-title').textContent = j.title||'Job';
   document.getElementById('jd-subtitle').textContent = (j.company_name||'Employer')+' · '+(j.county||j.location||'East Africa');
   const days = daysUntil(j.deadline);
+  const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
+  const paymentVerified = escrowRow && (escrowRow.status==='held' || escrowRow.status==='released');
+  const postedDate = j.created_at ? new Date(j.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—';
   document.getElementById('jd-body').innerHTML = `
     ${j.posted_by_agent_id?`<h4>Posted Via</h4><p class="agent-tag" style="display:inline-flex">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}${j.agent&&j.agent.status==='active'?' · Verified Agent':''}</p>`:''}
-    <h4>Salary</h4><p>${salary(j.salary_min,j.salary_max,j.salary_range)}</p>
+    <h4>Location</h4>
+    <p><i class="bi bi-geo-alt-fill"></i> ${esc(j.county||j.location||'East Africa')}${km!==null?` &middot; <span class="card-distance">${fmtDistance(km)} from you</span>`:''}</p>
+    ${mapEmbed(j.latitude, j.longitude)}
+    <h4>Date Posted</h4><p>${postedDate} &middot; ${timeAgo(j.created_at)}</p>
+    <h4>Salary</h4><p>${salary(j.salary_min,j.salary_max,j.salary_range,j.country_code)}${paymentVerified?' <span class="payment-badge"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>':''}</p>
+    ${(j.is_mama_fua || j.payment_mode==='escrow') && !paymentVerified ? '<div class="escrow-note"><i class="bi bi-shield-lock-fill"></i> Payment held in escrow until job is marked done</div>' : ''}
     <h4>Job Type</h4><p>${esc(j.work_type||j.job_type||'—')}${j.job_role?' · '+esc(j.job_role):''}</p>
     ${j.deadline?`<h4>Deadline</h4><p style="${days!==null&&days<=DEADLINE_SOON_DAYS?'color:var(--red);font-weight:700':''}">${new Date(j.deadline).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'})}${days!==null?` (${days<=0?'closes today':days+' day'+(days===1?'':'s')+' left'})`:''}</p>`:''}
     <h4>Description</h4><p>${esc(j.description||'No description provided.')}</p>
