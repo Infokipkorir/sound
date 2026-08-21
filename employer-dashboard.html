@@ -694,6 +694,23 @@ tr:hover td{background:rgba(27,107,69,.02);}
         <div class="sec-title"><i class="bi bi-briefcase-fill"></i> My Posted Jobs</div>
         <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
       </div>
+
+      <!-- Wallet / escrow summary strip -->
+      <div class="balance-box" style="margin-bottom:.9rem;">
+        <div class="balance-grid">
+          <div class="balance-item"><div class="bal-lbl"><i class="bi bi-wallet2"></i> Wallet Balance</div><div class="bal-val" id="jobs-wallet-balance" style="color:var(--brand);">—</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Available to spend</div></div>
+          <div class="balance-item"><div class="bal-lbl"><i class="bi bi-shield-lock-fill"></i> On Hold (Escrow)</div><div class="bal-val warn" id="jobs-onhold-balance">—</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Held for ongoing Mama Fua jobs</div></div>
+        </div>
+      </div>
+
+      <!-- Job filter tabs: All / Ongoing / Payment Held / Bids Accepted -->
+      <div class="pay-tabs" id="jobs-filter-tabs" style="margin-bottom:.7rem;">
+        <button class="ptab active" data-filter="all" onclick="setJobsFilter('all',this)">All Jobs</button>
+        <button class="ptab" data-filter="ongoing" onclick="setJobsFilter('ongoing',this)">Ongoing</button>
+        <button class="ptab" data-filter="held" onclick="setJobsFilter('held',this)">Payment Held</button>
+        <button class="ptab" data-filter="bids" onclick="setJobsFilter('bids',this)">Bids Accepted</button>
+      </div>
+
       <div class="table-wrap" id="jobs-table-wrap">
         <div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet</p></div>
       </div>
@@ -958,24 +975,70 @@ tr:hover td{background:rgba(27,107,69,.02);}
         </div>
       </div>
 
-      <!-- ── MAMA FUA DIGITAL / ONE-TIME TASK PAYMENT ── -->
+      <!-- ── MAMA FUA DIGITAL / ONE-TIME LAUNDRY & CLEANING TASK ── -->
       <div id="mamafua-fields" style="display:none">
         <div class="mamafua-box">
-          <div class="form-group" style="margin-bottom:.7rem"><label>Task Amount (<span id="mf-currency-lbl">KES</span>)</label>
-            <input type="number" id="mf-amount" placeholder="e.g. 1500" min="0" oninput="updateFeeBreakdown()">
+          <div style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.7rem;display:flex;justify-content:space-between;align-items:center;">
+            <span><i class="bi bi-basket-fill"></i> Select Services &amp; Pricing</span>
+            <span style="text-transform:none;font-weight:600;letter-spacing:0;">Amounts in <span id="mf-currency-lbl">KES</span></span>
           </div>
+
+          <!-- Basins of washing -->
+          <div class="mf-item-row" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <div style="flex:1;min-width:0;"><i class="bi bi-basket2-fill" style="color:var(--brand);margin-right:6px;"></i><strong>Basins of Washing</strong></div>
+            <input type="number" id="mf-basins-qty" value="0" min="0" placeholder="Qty" oninput="updateFeeBreakdown()" style="width:64px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+            <span style="font-size:11px;color:var(--muted);">basins ×</span>
+            <input type="number" id="mf-basins-price" value="300" min="0" oninput="updateFeeBreakdown()" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+            <span style="font-size:11px;color:var(--muted);">/basin</span>
+          </div>
+
+          <!-- Bedroom cleaning -->
+          <div class="mf-item-row" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
+              <input type="checkbox" id="mf-bedroom" onchange="toggleMfItem('bedroom')"> <i class="bi bi-door-closed-fill" style="color:var(--brand);"></i> <strong>Bedroom Cleaning</strong>
+            </label>
+            <input type="number" id="mf-bedroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+          </div>
+
+          <!-- Kitchen cleaning -->
+          <div class="mf-item-row" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
+              <input type="checkbox" id="mf-kitchen" onchange="toggleMfItem('kitchen')"> <i class="bi bi-cup-hot-fill" style="color:var(--brand);"></i> <strong>Kitchen Cleaning</strong>
+            </label>
+            <input type="number" id="mf-kitchen-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+          </div>
+
+          <!-- Living room cleaning -->
+          <div class="mf-item-row" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
+              <input type="checkbox" id="mf-livingroom" onchange="toggleMfItem('livingroom')"> <i class="bi bi-house-door-fill" style="color:var(--brand);"></i> <strong>Living Room Cleaning</strong>
+            </label>
+            <input type="number" id="mf-livingroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+          </div>
+
+          <div class="fee-row" style="margin-top:8px;"><span>Services subtotal</span><span class="fv" id="mf-subtotal-val">KES 0</span></div>
           <div class="fee-row"><span>Service fee (10%)</span><span class="fv" id="mf-fee-val">KES 0</span></div>
           <div class="fee-row"><span>Tax on fee (16% VAT)</span><span class="fv" id="mf-tax-val">KES 0</span></div>
           <div class="fee-row total"><span>Worker receives</span><span id="mf-net-val">KES 0</span></div>
+          <!-- hidden field: keeps the rest of the posting logic (postJob, etc.) unchanged -->
+          <input type="hidden" id="mf-amount" value="0">
           <div class="escrow-note">
             <i class="bi bi-shield-lock-fill"></i>
-            <span>This amount is held in escrow, not paid directly — it's released to the worker once the job is confirmed done. You can reject unsatisfactory work, but held funds can't be withdrawn or reused; a rejection puts the payment under Support review.</span>
+            <span>The total above is held in escrow, not paid directly to the worker — it's released once the job is confirmed done. You choose how much to release when the task is complete. Rejected or partially released work is never refunded to your payment method; any unreleased balance is credited to your Wallet.</span>
           </div>
         </div>
       </div>
 
       <div class="form-row">
-        <div class="form-group"><label>Location / Town</label><input type="text" id="jb-location" placeholder="e.g. Westlands, Nairobi"></div>
+        <div class="form-group">
+          <label>Location / Town</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="jb-location" placeholder="e.g. Westlands, Nairobi" style="flex:1;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="useExactLocation()" title="Use my exact location so nearby workers can find this job" style="white-space:nowrap;"><i class="bi bi-geo-alt-fill"></i> Use My Location</button>
+          </div>
+          <div id="jb-location-hint" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+          <input type="hidden" id="jb-lat"><input type="hidden" id="jb-lng">
+        </div>
         <div class="form-group"><label>County</label><input type="text" id="jb-county" placeholder="e.g. Nairobi"></div>
       </div>
       <div class="form-row">
