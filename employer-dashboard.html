@@ -1315,7 +1315,7 @@ async function loadAll() {
     const jobIds = allJobs.map(j => j.id);
     if (jobIds.length) {
       const [appsRes, savesRes] = await Promise.all([
-        safeFire(sb.from('job_applications').select('job_id,status').in('job_id', jobIds)),
+        safeFire(sb.from('job_applications').select('job_id,status,bid_amount').in('job_id', jobIds)),
         safeFire(sb.from('saved_jobs').select('job_id').in('job_id', jobIds)),
       ]);
       jobAppsByJob = {};
@@ -1872,7 +1872,7 @@ async function hireWorker(workerSessionId, convId) {
 
 // ── JOBS ──
 function isMamaFuaJob(job) { return !!(job.is_mama_fua || job.is_one_time || job.category === 'mama_fua_digital'); }
-function isNegotiableJob(job) { return (job.requirements || '').includes('[[pricing:negotiable]]'); }
+function isNegotiableJob(job) { return job.pricing_mode === 'negotiable'; }
 
 // Escrow badge for a job: only Mama Fua Mtaani / one-time jobs carry a hold.
 function escrowBadgeFor(job) {
@@ -2006,6 +2006,7 @@ async function viewJobApplicants(jobId) {
         <div class="applicant-name">${esc(a.worker_name || 'Worker')}</div>
         <div class="applicant-meta">${esc(a.worker_phone || '—')} · Applied ${fmtDate(a.applied_at)}</div>
       </div>
+      ${a.bid_amount ? `<span class="badge badge-blue" style="margin-right:6px"><i class="bi bi-tag-fill"></i> ${getUserCurrency()} ${(+a.bid_amount).toLocaleString()}</span>` : ''}
       <span class="badge ${statusMap[a.status]||'badge-muted'}">${a.status||'pending'}</span>
       <select class="form-group" style="padding:6px 8px;font-size:12px;border-radius:8px;border:1px solid var(--border);margin-left:8px;" onchange="updateApplicationStatus('${a.id}','${jobId}',this.value)">
         ${['pending','reviewed','shortlisted','hired','rejected'].map(s=>`<option value="${s}" ${a.status===s?'selected':''}>${s}</option>`).join('')}
@@ -2022,7 +2023,9 @@ async function updateApplicationStatus(appId, jobId, status) {
   // Accepting a bid on a Negotiable Mama Fua Mtaani task: ask for the agreed
   // price, then take the employer straight into the escrow hold flow for it.
   if (status === 'hired' && isMamaFua && negotiable && !alreadyHeld) {
-    const raw = prompt(`Enter the price you agreed with this worker (${getUserCurrency()}) to hold in escrow:`);
+    const app = (jobApplicantsCache[jobId] || []).find(a => a.id === appId);
+    const suggested = app?.bid_amount ? String(app.bid_amount) : '';
+    const raw = prompt(`Enter the price agreed with this worker (${getUserCurrency()}) to hold in escrow:`, suggested);
     const amount = parseFloat(raw);
     if (!raw || isNaN(amount) || amount <= 0) { showToast('err','bi-x-circle','Cancelled','Enter a valid amount to accept this bid.'); return; }
     const updates = { status, hired_at: new Date().toISOString() };
@@ -2245,6 +2248,7 @@ async function postJob() {
     is_one_time: isMamaFua,
     is_mama_fua: isMamaFua,
     payment_mode: isMamaFua ? 'escrow_prepaid' : 'direct',
+    pricing_mode: isNegotiable ? 'negotiable' : 'fixed',
     location: document.getElementById('jb-location').value,
     county: document.getElementById('jb-county').value,
     work_type: isMamaFua ? 'One-Time Task' : document.getElementById('jb-work-type').value,
@@ -2252,9 +2256,8 @@ async function postJob() {
     salary_max: isMamaFua ? (isNegotiable ? null : mfAmount) : (parseInt(document.getElementById('jb-sal-max').value)||null),
     salary_range: isMamaFua ? '' : [document.getElementById('jb-sal-min').value, document.getElementById('jb-sal-max').value].filter(Boolean).join('-'),
     description: descVal,
-    // Requirements/experience don't apply to Mama Fua Mtaani tasks. The field is
-    // reused to tag pricing mode until a dedicated column is migrated.
-    requirements: isMamaFua ? (isNegotiable ? '[[pricing:negotiable]]' : '[[pricing:fixed]]') : document.getElementById('jb-reqs').value,
+    // Requirements/experience don't apply to Mama Fua Mtaani tasks.
+    requirements: isMamaFua ? null : document.getElementById('jb-reqs').value,
     deadline: document.getElementById('jb-deadline').value || null,
     slots: parseInt(document.getElementById('jb-slots').value)||1,
     is_urgent: document.getElementById('jb-urgent').checked,
