@@ -706,9 +706,10 @@ tr:hover td{background:rgba(27,107,69,.02);}
       <!-- Job filter tabs: All / Ongoing / Payment Held / Bids Accepted -->
       <div class="pay-tabs" id="jobs-filter-tabs" style="margin-bottom:.7rem;">
         <button class="ptab active" data-filter="all" onclick="setJobsFilter('all',this)">All Jobs</button>
+        <button class="ptab" data-filter="mamafua" onclick="setJobsFilter('mamafua',this)"><i class="bi bi-droplet-fill"></i> Mama Fua Mtaani</button>
         <button class="ptab" data-filter="ongoing" onclick="setJobsFilter('ongoing',this)">Ongoing</button>
         <button class="ptab" data-filter="held" onclick="setJobsFilter('held',this)">Payment Held</button>
-        <button class="ptab" data-filter="bids" onclick="setJobsFilter('bids',this)">Bids Accepted</button>
+        <button class="ptab" data-filter="bids" onclick="setJobsFilter('bids',this)">Bids</button>
       </div>
 
       <div class="table-wrap" id="jobs-table-wrap">
@@ -958,6 +959,9 @@ tr:hover td{background:rgba(27,107,69,.02);}
           </div>
         </div>
       </div>
+      <div class="form-group" id="mamafua-name-note" style="display:none;font-size:11px;color:var(--muted);margin-top:-.6rem;margin-bottom:.8rem;">
+        <i class="bi bi-info-circle"></i> Also known as <strong>Mama Fua Mtaani</strong> — one-off washing/cleaning tasks for local workers.
+      </div>
       <div class="form-group"><label>Job Title</label><input type="text" id="jb-title" placeholder="e.g. House Help Needed in Karen"></div>
       <div class="form-row" id="jb-role-type-row">
         <div class="form-group"><label>Job Role</label>
@@ -983,13 +987,27 @@ tr:hover td{background:rgba(27,107,69,.02);}
             <span style="text-transform:none;font-weight:600;letter-spacing:0;">Amounts in <span id="mf-currency-lbl">KES</span></span>
           </div>
 
+          <!-- Fixed Price vs Negotiable -->
+          <div class="category-toggle" style="margin-bottom:.9rem;">
+            <div class="category-opt active" id="mfprice-fixed" onclick="setMfPricingMode('fixed')" style="min-width:120px;padding:.6rem .7rem;">
+              <div class="co-title" style="font-size:12px;"><i class="bi bi-tag-fill"></i> Fixed Price</div>
+              <div class="co-desc">You set the exact amount now.</div>
+            </div>
+            <div class="category-opt" id="mfprice-negotiable" onclick="setMfPricingMode('negotiable')" style="min-width:120px;padding:.6rem .7rem;">
+              <div class="co-title" style="font-size:12px;"><i class="bi bi-chat-left-text-fill"></i> Negotiable</div>
+              <div class="co-desc">Workers send you a price offer.</div>
+            </div>
+          </div>
+
           <!-- Basins of washing -->
           <div class="mf-item-row" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
             <div style="flex:1;min-width:0;"><i class="bi bi-basket2-fill" style="color:var(--brand);margin-right:6px;"></i><strong>Basins of Washing</strong></div>
             <input type="number" id="mf-basins-qty" value="0" min="0" placeholder="Qty" oninput="updateFeeBreakdown()" style="width:64px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
-            <span style="font-size:11px;color:var(--muted);">basins ×</span>
-            <input type="number" id="mf-basins-price" value="300" min="0" oninput="updateFeeBreakdown()" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
-            <span style="font-size:11px;color:var(--muted);">/basin</span>
+            <span class="mf-price-part" style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--muted);">basins ×</span>
+              <input type="number" id="mf-basins-price" value="300" min="0" oninput="updateFeeBreakdown()" style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+              <span style="font-size:11px;color:var(--muted);">/basin</span>
+            </span>
           </div>
 
           <!-- Bedroom cleaning -->
@@ -997,7 +1015,7 @@ tr:hover td{background:rgba(27,107,69,.02);}
             <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
               <input type="checkbox" id="mf-bedroom" onchange="toggleMfItem('bedroom')"> <i class="bi bi-door-closed-fill" style="color:var(--brand);"></i> <strong>Bedroom Cleaning</strong>
             </label>
-            <input type="number" id="mf-bedroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+            <span class="mf-price-part"><input type="number" id="mf-bedroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;"></span>
           </div>
 
           <!-- Kitchen cleaning -->
@@ -1005,7 +1023,7 @@ tr:hover td{background:rgba(27,107,69,.02);}
             <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
               <input type="checkbox" id="mf-kitchen" onchange="toggleMfItem('kitchen')"> <i class="bi bi-cup-hot-fill" style="color:var(--brand);"></i> <strong>Kitchen Cleaning</strong>
             </label>
-            <input type="number" id="mf-kitchen-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+            <span class="mf-price-part"><input type="number" id="mf-kitchen-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;"></span>
           </div>
 
           <!-- Living room cleaning -->
@@ -1013,19 +1031,25 @@ tr:hover td{background:rgba(27,107,69,.02);}
             <label style="flex:1;display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;">
               <input type="checkbox" id="mf-livingroom" onchange="toggleMfItem('livingroom')"> <i class="bi bi-house-door-fill" style="color:var(--brand);"></i> <strong>Living Room Cleaning</strong>
             </label>
-            <input type="number" id="mf-livingroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+            <span class="mf-price-part"><input type="number" id="mf-livingroom-price" value="500" min="0" disabled oninput="updateFeeBreakdown()" style="width:96px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;"></span>
           </div>
 
-          <div class="fee-row" style="margin-top:8px;"><span>Services subtotal</span><span class="fv" id="mf-subtotal-val">KES 0</span></div>
-          <div class="fee-row"><span>Service fee (10%)</span><span class="fv" id="mf-fee-val">KES 0</span></div>
-          <div class="fee-row"><span>Tax on fee (16% VAT)</span><span class="fv" id="mf-tax-val">KES 0</span></div>
-          <div class="fee-row total"><span>Worker receives</span><span id="mf-net-val">KES 0</span></div>
+          <div id="mf-fixed-summary">
+            <div class="fee-row" style="margin-top:8px;"><span>Services subtotal</span><span class="fv" id="mf-subtotal-val">KES 0</span></div>
+            <div class="fee-row"><span>Service fee (10%)</span><span class="fv" id="mf-fee-val">KES 0</span></div>
+            <div class="fee-row"><span>Tax on fee (16% VAT)</span><span class="fv" id="mf-tax-val">KES 0</span></div>
+            <div class="fee-row total"><span>Worker receives</span><span id="mf-net-val">KES 0</span></div>
+            <div class="escrow-note">
+              <i class="bi bi-shield-lock-fill"></i>
+              <span>The total above is held in escrow, not paid directly to the worker — it's released once the job is confirmed done. You choose how much to release when the task is complete. Rejected or partially released work is never refunded to your payment method; any unreleased balance is credited to your Wallet.</span>
+            </div>
+          </div>
+          <div class="escrow-note" id="mf-negotiable-note" style="display:none;">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <span>This task posts as <strong>Negotiable</strong> — no amount is charged now. Workers will send you their price offer under Bids; once you accept one, you'll hold that agreed amount in escrow before the task begins.</span>
+          </div>
           <!-- hidden field: keeps the rest of the posting logic (postJob, etc.) unchanged -->
           <input type="hidden" id="mf-amount" value="0">
-          <div class="escrow-note">
-            <i class="bi bi-shield-lock-fill"></i>
-            <span>The total above is held in escrow, not paid directly to the worker — it's released once the job is confirmed done. You choose how much to release when the task is complete. Rejected or partially released work is never refunded to your payment method; any unreleased balance is credited to your Wallet.</span>
-          </div>
         </div>
       </div>
 
@@ -1041,18 +1065,22 @@ tr:hover td{background:rgba(27,107,69,.02);}
         </div>
         <div class="form-group"><label>County</label><input type="text" id="jb-county" placeholder="e.g. Nairobi"></div>
       </div>
-      <div class="form-row">
+      <div class="form-row" id="standard-salary-row">
         <div class="form-group"><label>Min. Salary (KES)</label><input type="number" id="jb-sal-min" placeholder="e.g. 8000"></div>
         <div class="form-group"><label>Max. Salary (KES)</label><input type="number" id="jb-sal-max" placeholder="e.g. 15000"></div>
       </div>
-      <div class="form-group"><label>Work Arrangement</label>
+      <div class="form-group" id="standard-worktype-group"><label>Work Arrangement</label>
         <select id="jb-work-type">
           <option value="Live-In">Live-In</option><option value="Live-Out">Live-Out</option>
           <option value="Part-Time">Part-Time</option><option value="Flexible">Flexible</option>
         </select>
       </div>
-      <div class="form-group"><label>Description</label><textarea id="jb-desc" rows="4" placeholder="Describe duties, schedule, expectations…"></textarea></div>
-      <div class="form-group"><label>Requirements</label><textarea id="jb-reqs" rows="3" placeholder="Experience, qualifications, certifications…"></textarea></div>
+      <div class="form-group"><label id="jb-desc-label">Description</label><textarea id="jb-desc" rows="4" placeholder="Describe duties, schedule, expectations…"></textarea>
+        <div id="jb-desc-safety-note" style="display:none;font-size:11px;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;margin-top:6px;">
+          <i class="bi bi-shield-exclamation"></i> Describe the cleaning task only — clothes, basins, rooms, timing. Do not mention sex or anything sexual in this description; accounts that do will be permanently disabled.
+        </div>
+      </div>
+      <div class="form-group" id="standard-reqs-group"><label>Requirements</label><textarea id="jb-reqs" rows="3" placeholder="Experience, qualifications, certifications…"></textarea></div>
       <div class="form-row">
         <div class="form-group"><label>Deadline</label><input type="date" id="jb-deadline"></div>
         <div class="form-group"><label>Slots / Positions</label><input type="number" id="jb-slots" placeholder="1" min="1" value="1"></div>
@@ -1187,7 +1215,8 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 let sb, currentUser, employerProfile, employerProfileId;
 let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [], allEscrowPayments = [];
 let connectsTariffs = null; // loaded once in loadAll(); { message_cost, voice_cost_per_min, video_cost_per_min, daily_free_connects, reset_hour_local }
-let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {};
+let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {}, jobAppsByJob = {};
+let jobsFilter = 'all';
 let allCalls = [], callHistoryFilter = 'all';
 let presenceMap = {}, workerMap = {};
 let activeConvId = null;
@@ -1286,10 +1315,14 @@ async function loadAll() {
     const jobIds = allJobs.map(j => j.id);
     if (jobIds.length) {
       const [appsRes, savesRes] = await Promise.all([
-        safeFire(sb.from('job_applications').select('job_id').in('job_id', jobIds)),
+        safeFire(sb.from('job_applications').select('job_id,status').in('job_id', jobIds)),
         safeFire(sb.from('saved_jobs').select('job_id').in('job_id', jobIds)),
       ]);
-      (appsRes?.data || []).forEach(a => { jobAppCounts[a.job_id] = (jobAppCounts[a.job_id] || 0) + 1; });
+      jobAppsByJob = {};
+      (appsRes?.data || []).forEach(a => {
+        jobAppCounts[a.job_id] = (jobAppCounts[a.job_id] || 0) + 1;
+        (jobAppsByJob[a.job_id] ||= []).push(a);
+      });
       (savesRes?.data || []).forEach(s => { jobSaveCounts[s.job_id] = (jobSaveCounts[s.job_id] || 0) + 1; });
     }
   }
@@ -1309,7 +1342,7 @@ async function loadAll() {
   // degrades gracefully until the job_escrow_payments table/migration is applied.
   if (employerProfileId) {
     const escRes = await safeFire(sb.from('job_escrow_payments')
-      .select('id,job_id,employer_id,gross_amount,service_fee,tax,net_amount,currency,payment_method,status,dispute_reason,created_at,released_at')
+      .select('id,job_id,employer_id,worker_id,amount,service_fee,tax_amount,net_amount,currency,payment_method,status,rejection_reason,created_at,released_at')
       .eq('employer_id', employerProfileId).order('created_at', { ascending: false }));
     allEscrowPayments = escRes?.data || [];
   }
@@ -1838,40 +1871,78 @@ async function hireWorker(workerSessionId, convId) {
 }
 
 // ── JOBS ──
-// Escrow badge for a job: only Mama Fua Digital / one-time jobs carry a hold.
+function isMamaFuaJob(job) { return !!(job.is_mama_fua || job.is_one_time || job.category === 'mama_fua_digital'); }
+function isNegotiableJob(job) { return (job.requirements || '').includes('[[pricing:negotiable]]'); }
+
+// Escrow badge for a job: only Mama Fua Mtaani / one-time jobs carry a hold.
 function escrowBadgeFor(job) {
-  if (!job.is_one_time && job.category !== 'mama_fua_digital') return '—';
+  if (!isMamaFuaJob(job)) return '—';
   const esc_ = allEscrowPayments.find(e => e.job_id === job.id);
-  if (!esc_) return '<span class="badge badge-muted"><i class="bi bi-hourglass"></i> Awaiting Payment</span>';
+  if (!esc_) {
+    return isNegotiableJob(job)
+      ? '<span class="badge badge-muted"><i class="bi bi-chat-left-text-fill"></i> Awaiting Bids</span>'
+      : '<span class="badge badge-muted"><i class="bi bi-hourglass"></i> Awaiting Payment</span>';
+  }
   const map = {
-    pending:   '<span class="badge badge-amber"><i class="bi bi-hourglass-split"></i> Verifying</span>',
-    held:      '<span class="badge badge-blue"><i class="bi bi-patch-check-fill"></i> Payment Held</span>',
-    released:  '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Released</span>',
-    disputed:  '<span class="badge badge-rose"><i class="bi bi-flag-fill"></i> Under Review</span>',
+    pending:                         '<span class="badge badge-amber"><i class="bi bi-hourglass-split"></i> Verifying</span>',
+    held:                            '<span class="badge badge-blue"><i class="bi bi-patch-check-fill"></i> Payment Held</span>',
+    released:                        '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Released</span>',
+    rejected_pending_investigation:  '<span class="badge badge-rose"><i class="bi bi-flag-fill"></i> Under Review</span>',
+    refunded:                        '<span class="badge badge-muted"><i class="bi bi-arrow-counterclockwise"></i> Refunded</span>',
+    cancelled:                       '<span class="badge badge-muted"><i class="bi bi-x-circle"></i> Cancelled</span>',
   };
   return map[esc_.status] || `<span class="badge badge-muted">${esc_.status}</span>`;
 }
 
+// Wires up the "All / Mama Fua Mtaani / Ongoing / Payment Held / Bids" tabs above the jobs table.
+function setJobsFilter(filter, btn) {
+  jobsFilter = filter;
+  document.querySelectorAll('#jobs-filter-tabs .ptab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderJobsTable();
+}
+
+function getFilteredJobs() {
+  return allJobs.filter(j => {
+    const isClosed = j.status === 'closed' || j.is_closed;
+    const mf = isMamaFuaJob(j);
+    const escRow = allEscrowPayments.find(e => e.job_id === j.id);
+    switch (jobsFilter) {
+      case 'mamafua': return mf;
+      case 'ongoing': return !isClosed && !j.is_paused;
+      case 'held':    return mf && escRow && escRow.status === 'held';
+      case 'bids':    return mf && isNegotiableJob(j) && (jobAppsByJob[j.id]||[]).length > 0;
+      default:        return true;
+    }
+  });
+}
+
 function renderJobsTable() {
   const targets = ['dash-jobs-table','jobs-table-wrap'];
+  const jobsToShow = getFilteredJobs();
   targets.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     if (!allJobs.length) { el.innerHTML = '<div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'post-job-modal\')">Post a Job</button></p></div>'; return; }
+    if (!jobsToShow.length) { el.innerHTML = '<div class="empty"><i class="bi bi-funnel"></i><p>No jobs match this filter.</p></div>'; return; }
     el.innerHTML = `<div class="table-wrap"><table>
       <thead><tr><th>Title</th><th>Type</th><th>Location</th><th>Status</th><th>Payment</th><th>Insights</th><th>Posted</th><th>Actions</th></tr></thead>
-      <tbody>${allJobs.map(j => {
+      <tbody>${jobsToShow.map(j => {
         const isClosed = j.status === 'closed' || j.is_closed;
         const apps  = jobAppCounts[j.id] || 0;
         const saves = jobSaveCounts[j.id] || 0;
         const loves = j.loves_count || 0;
         const views = j.views || 0;
         const escRow = allEscrowPayments.find(e => e.job_id === j.id);
-        const isMamaFua = j.is_one_time || j.category === 'mama_fua_digital';
-        const canPayNow = isMamaFua && !escRow;
+        const isMamaFua = isMamaFuaJob(j);
+        const negotiable = isNegotiableJob(j);
+        // Fixed-price tasks can hold payment right away; negotiable tasks only
+        // hold payment once a worker's bid has been accepted (see updateApplicationStatus).
+        const hiredApp = (jobAppsByJob[j.id]||[]).some(a => a.status === 'hired');
+        const canPayNow = isMamaFua && !escRow && (!negotiable || hiredApp);
         const canReject = isMamaFua && escRow && escRow.status === 'held';
         return `<tr>
-        <td><strong>${esc(j.title)}</strong>${isMamaFua?'<span class="badge badge-blue" style="margin-left:6px"><i class="bi bi-droplet-fill"></i> Mama Fua</span>':''}${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}${j.is_featured?'<span class="badge badge-amber" style="margin-left:6px">Featured</span>':''}</td>
+        <td><strong>${esc(j.title)}</strong>${isMamaFua?'<span class="badge badge-blue" style="margin-left:6px"><i class="bi bi-droplet-fill"></i> Mama Fua Mtaani</span>':''}${negotiable?'<span class="badge badge-sky" style="margin-left:6px">Negotiable</span>':''}${j.is_urgent?'<span class="badge badge-rose" style="margin-left:6px">Urgent</span>':''}${j.is_featured?'<span class="badge badge-amber" style="margin-left:6px">Featured</span>':''}</td>
         <td>${j.job_type||'—'}</td>
         <td>${j.location||'—'}</td>
         <td><span class="badge badge-${j.status==='active'?'green':isClosed?'rose':'amber'}">${isClosed?'Closed':(j.status||'Active')}</span></td>
@@ -1881,7 +1952,7 @@ function renderJobsTable() {
             <span class="job-insight views" title="Views"><i class="bi bi-eye-fill"></i> ${views}</span>
             <span class="job-insight saved" title="Saved by workers"><i class="bi bi-bookmark-fill"></i> ${saves}</span>
             <span class="job-insight loved" title="Loved by workers"><i class="bi bi-heart-fill"></i> ${loves}</span>
-            <span class="job-insight apps" title="View applicants" onclick="viewJobApplicants('${j.id}')"><i class="bi bi-people-fill"></i> ${apps}</span>
+            <span class="job-insight apps" title="${isMamaFua?'View bids':'View applicants'}" onclick="viewJobApplicants('${j.id}')"><i class="bi bi-people-fill"></i> ${apps}</span>
           </div>
         </td>
         <td>${fmtDate(j.created_at)}</td>
@@ -1943,6 +2014,28 @@ async function viewJobApplicants(jobId) {
 }
 
 async function updateApplicationStatus(appId, jobId, status) {
+  const job = allJobs.find(j => j.id === jobId);
+  const isMamaFua = job && isMamaFuaJob(job);
+  const negotiable = job && isNegotiableJob(job);
+  const alreadyHeld = allEscrowPayments.some(e => e.job_id === jobId);
+
+  // Accepting a bid on a Negotiable Mama Fua Mtaani task: ask for the agreed
+  // price, then take the employer straight into the escrow hold flow for it.
+  if (status === 'hired' && isMamaFua && negotiable && !alreadyHeld) {
+    const raw = prompt(`Enter the price you agreed with this worker (${getUserCurrency()}) to hold in escrow:`);
+    const amount = parseFloat(raw);
+    if (!raw || isNaN(amount) || amount <= 0) { showToast('err','bi-x-circle','Cancelled','Enter a valid amount to accept this bid.'); return; }
+    const updates = { status, hired_at: new Date().toISOString() };
+    const { error } = await sb.from('job_applications').update(updates).eq('id', appId);
+    if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
+    await sb.from('job_postings').update({ salary_min: amount, salary_max: amount }).eq('id', jobId);
+    showToast('ok','bi-check-circle-fill','Bid Accepted','Now hold the agreed amount in escrow.');
+    closeModal('job-applicants-modal');
+    openEscrowPaymentModal(jobId, job.title, mamaFuaFees(amount));
+    await loadAll();
+    return;
+  }
+
   const updates = { status };
   if (status === 'hired') updates.hired_at = new Date().toISOString();
   const { error } = await sb.from('job_applications').update(updates).eq('id', appId);
@@ -1951,25 +2044,132 @@ async function updateApplicationStatus(appId, jobId, status) {
   await viewJobApplicants(jobId);
 }
 
-// ── JOB CATEGORY (Standard vs Mama Fua Digital / one-time task) ──
+// ── ESCROW PAYMENT MODAL (Mama Fua Mtaani task hold) ──
+let escrowCtx = { jobId: null, title: '', fees: null };
+
+function openEscrowPaymentModal(jobId, title, fees) {
+  escrowCtx = { jobId, title, fees };
+  document.getElementById('ep-job-title').textContent = title || '';
+  const cur = getUserCurrency();
+  document.getElementById('ep-gross').textContent = cur + ' ' + (fees.gross||0).toLocaleString();
+  document.getElementById('ep-fee').textContent = cur + ' ' + (fees.serviceFee||0).toLocaleString();
+  document.getElementById('ep-tax').textContent = cur + ' ' + (fees.tax||0).toLocaleString();
+  document.getElementById('ep-net').textContent = cur + ' ' + (fees.net||0).toLocaleString();
+  document.getElementById('ep-method').value = '';
+  ['epf-mpesa','epf-airtel','epf-card'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('ep-error').style.display = 'none';
+  openModal('escrow-pay-modal');
+}
+
+function updateEscrowPayUI() {
+  const m = document.getElementById('ep-method').value;
+  ['mpesa','airtel','card'].forEach(k => document.getElementById('epf-'+k).style.display = m===k ? 'block' : 'none');
+}
+
+async function submitEscrowPayment() {
+  const errEl = document.getElementById('ep-error');
+  errEl.style.display = 'none';
+  const method = document.getElementById('ep-method').value;
+  if (!method) { errEl.textContent = 'Choose a payment method.'; errEl.style.display = 'block'; return; }
+
+  let phoneUsed = null, ref = '';
+  if (method === 'mpesa') {
+    const phone = document.getElementById('ep-mpesa-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 9-digit M-Pesa number.'; errEl.style.display = 'block'; return; }
+    phoneUsed = '+254' + phone;
+    ref = 'MPE-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'airtel') {
+    const phone = document.getElementById('ep-airtel-phone').value.trim();
+    if (!/^[0-9]{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 9-digit Airtel number.'; errEl.style.display = 'block'; return; }
+    phoneUsed = '+254' + phone;
+    ref = 'AIR-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'card') {
+    const num = document.getElementById('ep-card-number').value.replace(/\s/g,'');
+    if (num.length < 16) { errEl.textContent = 'Enter a valid 16-digit card number.'; errEl.style.display = 'block'; return; }
+    ref = 'CRD-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  }
+
+  const { fees, jobId } = escrowCtx;
+  const { error } = await sb.from('job_escrow_payments').insert({
+    job_id: jobId, employer_id: employerProfileId,
+    amount: fees.gross, service_fee: fees.serviceFee, tax_amount: fees.tax, net_amount: fees.net,
+    currency: getUserCurrency(), payment_method: method, status: 'held',
+    transaction_id: ref, mpesa_ref: method==='mpesa' ? ref : null, phone_used: phoneUsed,
+    paid_at: new Date().toISOString(), verified_at: new Date().toISOString(),
+  });
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+
+  closeModal('escrow-pay-modal');
+  showToast('ok','bi-shield-lock-fill','Payment Held', `${getUserCurrency()} ${fees.gross.toLocaleString()} is now held in escrow for this task.`);
+  await loadAll();
+}
+
+async function rejectEscrowWork(escrowId, jobId) {
+  const reason = prompt('Why are you rejecting this completed work? (sent to Admin for review)');
+  if (!reason) return;
+  const { error } = await sb.from('job_escrow_payments').update({
+    status: 'rejected_pending_investigation', rejected_at: new Date().toISOString(),
+    rejected_by: currentUser.id, rejection_reason: reason,
+  }).eq('id', escrowId);
+  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
+  showToast('ok','bi-flag-fill','Sent to Admin','This task is now under review — funds stay held until Admin resolves it.');
+  await loadAll();
+}
+
+// ── JOB CATEGORY (Standard vs Mama Fua Mtaani / one-time task) ──
 let jobCategory = 'standard';
+let mfPricingMode = 'fixed';
 const MAMAFUA_SERVICE_FEE_PCT = 0.10; // deducted from the amount the employer allocates
 const MAMAFUA_TAX_PCT = 0.16;         // VAT, applied on the service fee
 
+// Basic client-side content filter — the platform never allows sexual content
+// in a task post; accounts that post it are disabled. This is a first line of
+// defence only; real moderation still happens server-side / by Admin review.
+const MF_BANNED_TERMS = ['sex','sexual','nude','naked','intimate massage','hookup','send nudes'];
+function containsBannedContent(text) {
+  const t = (text || '').toLowerCase();
+  return MF_BANNED_TERMS.some(w => t.includes(w));
+}
+
 function setJobCategory(cat) {
   jobCategory = cat;
-  document.getElementById('cat-standard').classList.toggle('active', cat === 'standard');
-  document.getElementById('cat-mamafua').classList.toggle('active', cat === 'mama_fua_digital');
-  document.getElementById('mamafua-fields').style.display = cat === 'mama_fua_digital' ? 'block' : 'none';
-  document.getElementById('jb-role-type-row').style.display = cat === 'mama_fua_digital' ? 'none' : 'flex';
+  const isMF = cat === 'mama_fua_digital';
+  document.getElementById('cat-standard').classList.toggle('active', !isMF);
+  document.getElementById('cat-mamafua').classList.toggle('active', isMF);
+  document.getElementById('mamafua-fields').style.display = isMF ? 'block' : 'none';
+  document.getElementById('mamafua-name-note').style.display = isMF ? 'block' : 'none';
+  document.getElementById('jb-role-type-row').style.display = isMF ? 'none' : 'flex';
+  // Mama Fua Mtaani tasks skip experience requirements and salary ranges —
+  // pricing is set per-task (fixed or negotiable) instead.
+  document.getElementById('standard-salary-row').style.display = isMF ? 'none' : 'flex';
+  document.getElementById('standard-reqs-group').style.display = isMF ? 'none' : 'block';
+  document.getElementById('standard-worktype-group').style.display = isMF ? 'none' : 'block';
+  document.getElementById('jb-desc-label').textContent = isMF ? 'Describe your task' : 'Description';
+  document.getElementById('jb-desc').placeholder = isMF
+    ? 'e.g. 2 basins of clothes to wash + kitchen cleaning, need it done by 5pm today'
+    : 'Describe duties, schedule, expectations…';
+  document.getElementById('jb-desc-safety-note').style.display = isMF ? 'block' : 'none';
   const btn = document.getElementById('jb-submit-btn');
-  btn.innerHTML = cat === 'mama_fua_digital'
-    ? '<i class="bi bi-shield-lock-fill"></i> Post &amp; Hold Payment'
-    : '<i class="bi bi-send-fill"></i> Post Job';
-  if (cat === 'mama_fua_digital') {
+  if (isMF) {
     document.getElementById('mf-currency-lbl').textContent = getUserCurrency();
-    updateFeeBreakdown();
+    setMfPricingMode('fixed');
+  } else {
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Post Job';
   }
+}
+
+function setMfPricingMode(mode) {
+  mfPricingMode = mode;
+  document.getElementById('mfprice-fixed').classList.toggle('active', mode === 'fixed');
+  document.getElementById('mfprice-negotiable').classList.toggle('active', mode === 'negotiable');
+  document.querySelectorAll('.mf-price-part').forEach(el => el.style.display = mode === 'negotiable' ? 'none' : '');
+  document.getElementById('mf-fixed-summary').style.display = mode === 'negotiable' ? 'none' : 'block';
+  document.getElementById('mf-negotiable-note').style.display = mode === 'negotiable' ? 'flex' : 'none';
+  const btn = document.getElementById('jb-submit-btn');
+  btn.innerHTML = mode === 'negotiable'
+    ? '<i class="bi bi-send-fill"></i> Post &amp; Open for Bids'
+    : '<i class="bi bi-shield-lock-fill"></i> Post &amp; Hold Payment';
+  updateFeeBreakdown();
 }
 
 function mamaFuaFees(gross) {
@@ -1980,12 +2180,28 @@ function mamaFuaFees(gross) {
 }
 
 function updateFeeBreakdown() {
-  const gross = parseFloat(document.getElementById('mf-amount').value) || 0;
+  const basinsQty = parseFloat(document.getElementById('mf-basins-qty')?.value) || 0;
+  const basinsPrice = parseFloat(document.getElementById('mf-basins-price')?.value) || 0;
+  const bedroom = document.getElementById('mf-bedroom')?.checked ? (parseFloat(document.getElementById('mf-bedroom-price').value)||0) : 0;
+  const kitchen = document.getElementById('mf-kitchen')?.checked ? (parseFloat(document.getElementById('mf-kitchen-price').value)||0) : 0;
+  const livingroom = document.getElementById('mf-livingroom')?.checked ? (parseFloat(document.getElementById('mf-livingroom-price').value)||0) : 0;
+  const subtotal = (basinsQty * basinsPrice) + bedroom + kitchen + livingroom;
+  document.getElementById('mf-amount').value = mfPricingMode === 'negotiable' ? 0 : subtotal;
+  const gross = mfPricingMode === 'negotiable' ? 0 : subtotal;
   const { serviceFee, tax, net } = mamaFuaFees(gross);
   const cur = getUserCurrency();
+  if (document.getElementById('mf-subtotal-val')) document.getElementById('mf-subtotal-val').textContent = cur + ' ' + subtotal.toLocaleString();
   document.getElementById('mf-fee-val').textContent = cur + ' ' + serviceFee.toLocaleString();
   document.getElementById('mf-tax-val').textContent = cur + ' ' + tax.toLocaleString();
   document.getElementById('mf-net-val').textContent = cur + ' ' + net.toLocaleString();
+}
+
+// Bedroom/Kitchen/Living-room checkboxes enable their price input (fixed mode only)
+function toggleMfItem(key) {
+  const cb = document.getElementById('mf-'+key);
+  const priceInput = document.getElementById('mf-'+key+'-price');
+  if (priceInput) priceInput.disabled = !cb.checked;
+  updateFeeBreakdown();
 }
 
 // Best-effort currency label from the browser locale — the actual charge still
@@ -2005,10 +2221,19 @@ async function postJob() {
   if (!employerProfileId) { showToast('err','bi-x-circle','Error','Employer profile not found.'); return; }
 
   const isMamaFua = jobCategory === 'mama_fua_digital';
+  const isNegotiable = isMamaFua && mfPricingMode === 'negotiable';
+  const descVal = document.getElementById('jb-desc').value;
+
+  // Never allow sexual content in a task post — enforced client-side first.
+  if (isMamaFua && (containsBannedContent(descVal) || containsBannedContent(title))) {
+    showToast('err','bi-shield-exclamation','Not Allowed','This task description isn\'t allowed. Accounts that post sexual content are permanently disabled.');
+    return;
+  }
+
   let mfAmount = 0, mfFees = null;
-  if (isMamaFua) {
+  if (isMamaFua && !isNegotiable) {
     mfAmount = parseFloat(document.getElementById('mf-amount').value) || 0;
-    if (mfAmount <= 0) { showToast('err','bi-x-circle','Required','Enter a task amount to hold in escrow.'); return; }
+    if (mfAmount <= 0) { showToast('err','bi-x-circle','Required','Add at least one basin or service to price this task.'); return; }
     mfFees = mamaFuaFees(mfAmount);
   }
 
@@ -2018,20 +2243,23 @@ async function postJob() {
     job_type: isMamaFua ? 'one-time' : document.getElementById('jb-type').value,
     category: isMamaFua ? 'mama_fua_digital' : 'standard',
     is_one_time: isMamaFua,
+    is_mama_fua: isMamaFua,
+    payment_mode: isMamaFua ? 'escrow_prepaid' : 'direct',
     location: document.getElementById('jb-location').value,
     county: document.getElementById('jb-county').value,
     work_type: isMamaFua ? 'One-Time Task' : document.getElementById('jb-work-type').value,
-    salary_min: isMamaFua ? mfAmount : (parseInt(document.getElementById('jb-sal-min').value)||null),
-    salary_max: isMamaFua ? mfAmount : (parseInt(document.getElementById('jb-sal-max').value)||null),
+    salary_min: isMamaFua ? (isNegotiable ? null : mfAmount) : (parseInt(document.getElementById('jb-sal-min').value)||null),
+    salary_max: isMamaFua ? (isNegotiable ? null : mfAmount) : (parseInt(document.getElementById('jb-sal-max').value)||null),
     salary_range: isMamaFua ? '' : [document.getElementById('jb-sal-min').value, document.getElementById('jb-sal-max').value].filter(Boolean).join('-'),
-    description: document.getElementById('jb-desc').value,
-    requirements: document.getElementById('jb-reqs').value,
+    description: descVal,
+    // Requirements/experience don't apply to Mama Fua Mtaani tasks. The field is
+    // reused to tag pricing mode until a dedicated column is migrated.
+    requirements: isMamaFua ? (isNegotiable ? '[[pricing:negotiable]]' : '[[pricing:fixed]]') : document.getElementById('jb-reqs').value,
     deadline: document.getElementById('jb-deadline').value || null,
     slots: parseInt(document.getElementById('jb-slots').value)||1,
     is_urgent: document.getElementById('jb-urgent').checked,
     is_featured: document.getElementById('jb-featured').checked,
     status: 'active', posting_type: 'individual',
-    payment_status: isMamaFua ? 'awaiting_payment' : null,
   };
 
   const { data: inserted, error } = await sb.from('job_postings').insert(data).select('id').single();
@@ -2039,10 +2267,12 @@ async function postJob() {
 
   closeModal('post-job-modal');
 
-  if (isMamaFua && inserted?.id) {
-    // Job is live but flagged "awaiting payment" — kick off the escrow hold immediately.
+  if (isMamaFua && !isNegotiable && inserted?.id) {
+    // Fixed-price task — kick off the escrow hold immediately.
     showToast('ok','bi-briefcase-fill','Job Posted','Now let\'s hold the payment in escrow.');
     openEscrowPaymentModal(inserted.id, title, mfFees);
+  } else if (isNegotiable) {
+    showToast('ok','bi-briefcase-fill','Posted — Open for Bids','Workers can now send you their price offer for this task.');
   } else {
     showToast('ok','bi-briefcase-fill','Job Posted','Your job listing is now live!');
   }
@@ -2052,8 +2282,14 @@ async function postJob() {
 
 function resetPostJobForm() {
   setJobCategory('standard');
-  ['jb-title','jb-location','jb-county','jb-sal-min','jb-sal-max','jb-desc','jb-reqs','jb-deadline','mf-amount'].forEach(id=>{
+  ['jb-title','jb-location','jb-county','jb-sal-min','jb-sal-max','jb-desc','jb-reqs','jb-deadline','mf-amount','mf-basins-qty'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['mf-bedroom','mf-kitchen','mf-livingroom'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.checked = false;
+  });
+  ['mf-bedroom-price','mf-kitchen-price','mf-livingroom-price'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.disabled = true;
   });
   document.getElementById('jb-slots').value = 1;
   document.getElementById('jb-urgent').checked = false;
