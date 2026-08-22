@@ -984,7 +984,17 @@ tr:hover td{background:rgba(27,107,69,.02);}
         <div class="mamafua-box">
           <div style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.7rem;display:flex;justify-content:space-between;align-items:center;">
             <span><i class="bi bi-basket-fill"></i> Select Services &amp; Pricing</span>
-            <span style="text-transform:none;font-weight:600;letter-spacing:0;">Amounts in <span id="mf-currency-lbl">KES</span></span>
+            <span style="text-transform:none;font-weight:600;letter-spacing:0;display:flex;align-items:center;gap:6px;">Amounts in
+              <select id="mf-currency-select" onchange="updateFeeBreakdown()" style="font-size:11px;font-weight:700;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-family:inherit;">
+                <option value="KES" selected>KES — Kenya</option>
+                <option value="UGX">UGX — Uganda</option>
+                <option value="TZS">TZS — Tanzania</option>
+                <option value="RWF">RWF — Rwanda</option>
+                <option value="ETB">ETB — Ethiopia</option>
+                <option value="BIF">BIF — Burundi</option>
+                <option value="SSP">SSP — South Sudan</option>
+              </select>
+            </span>
           </div>
 
           <!-- Fixed Price vs Negotiable -->
@@ -1115,10 +1125,17 @@ tr:hover td{background:rgba(27,107,69,.02);}
       <div class="form-group"><label>Payment Method</label>
         <select id="ep-method" onchange="updateEscrowPayUI()">
           <option value="">Choose method…</option>
+          <option value="wallet">👛 Pay from Wallet</option>
           <option value="mpesa">📱 M-Pesa STK Push</option>
           <option value="airtel">📞 Airtel Money</option>
           <option value="card">💳 Debit / Credit Card</option>
         </select>
+      </div>
+      <div id="epf-wallet" style="display:none">
+        <div class="fee-row"><span>Wallet balance</span><span class="fv" id="epf-wallet-balance">—</span></div>
+        <div id="epf-wallet-warning" style="display:none;font-size:11.5px;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;margin-top:6px;">
+          <i class="bi bi-exclamation-triangle-fill"></i> Not enough wallet balance for this amount. Top up your wallet or choose another method.
+        </div>
       </div>
       <div id="epf-mpesa" style="display:none">
         <div class="form-group"><label>Phone Number</label>
@@ -1215,7 +1232,7 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 let sb, currentUser, employerProfile, employerProfileId;
 let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [], allEscrowPayments = [];
 let connectsTariffs = null; // loaded once in loadAll(); { message_cost, voice_cost_per_min, video_cost_per_min, daily_free_connects, reset_hour_local }
-let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {}, jobAppsByJob = {};
+let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {}, jobAppsByJob = {}, employerWallet = null;
 let jobsFilter = 'all';
 let allCalls = [], callHistoryFilter = 'all';
 let presenceMap = {}, workerMap = {};
@@ -1352,17 +1369,19 @@ async function loadAll() {
   // connects_tariffs is readable by any authenticated user; wallets is
   // scoped to the caller's own row via RLS.
   const { data: walletRow } = await sb.from('wallets')
-    .select('connects_balance, connects_reset_date')
+    .select('connects_balance, connects_reset_date, balance, outstanding_balance')
     .eq('user_id', currentUser.id).maybeSingle();
   const { data: tariffData, error: tErr } = await sb.from('connects_tariffs').select('*').eq('id', 1).maybeSingle();
   if (tErr) console.warn('⚠️ connects_tariffs load failed:', tErr.message);
   connectsTariffs = tariffData || null;
+  employerWallet = walletRow || null;
   if (walletRow) {
     renderConnectsWidget(walletRow);
   } else {
     updateConnectsWidget(0);
     updateConnectsPricingHint();
   }
+  updateJobsWalletStrip();
 
   // notifications
   const { data: notifs } = await sb.from('notifications')
@@ -1872,6 +1891,17 @@ async function hireWorker(workerSessionId, convId) {
 }
 
 // ── JOBS ──
+// Wallet Balance / On Hold (Escrow) strip at the top of the Jobs panel.
+function updateJobsWalletStrip() {
+  const cur = getUserCurrency();
+  const walletEl = document.getElementById('jobs-wallet-balance');
+  const holdEl = document.getElementById('jobs-onhold-balance');
+  if (walletEl) walletEl.textContent = cur + ' ' + (+(employerWallet?.balance || 0)).toLocaleString();
+  if (holdEl) {
+    const held = allEscrowPayments.filter(e => e.status === 'held').reduce((sum, e) => sum + (+e.amount || 0), 0);
+    holdEl.textContent = cur + ' ' + held.toLocaleString();
+  }
+}
 function isMamaFuaJob(job) { return !!(job.is_mama_fua || job.category === 'mama_fua_digital'); }
 function isNegotiableJob(job) { return job.pricing_mode === 'negotiable'; }
 
@@ -2060,14 +2090,21 @@ function openEscrowPaymentModal(jobId, title, fees) {
   document.getElementById('ep-tax').textContent = cur + ' ' + (fees.tax||0).toLocaleString();
   document.getElementById('ep-net').textContent = cur + ' ' + (fees.net||0).toLocaleString();
   document.getElementById('ep-method').value = '';
-  ['epf-mpesa','epf-airtel','epf-card'].forEach(id => document.getElementById(id).style.display = 'none');
+  ['epf-mpesa','epf-airtel','epf-card','epf-wallet'].forEach(id => document.getElementById(id).style.display = 'none');
   document.getElementById('ep-error').style.display = 'none';
   openModal('escrow-pay-modal');
 }
 
 function updateEscrowPayUI() {
   const m = document.getElementById('ep-method').value;
-  ['mpesa','airtel','card'].forEach(k => document.getElementById('epf-'+k).style.display = m===k ? 'block' : 'none');
+  ['mpesa','airtel','card','wallet'].forEach(k => document.getElementById('epf-'+k).style.display = m===k ? 'block' : 'none');
+  if (m === 'wallet') {
+    const cur = getUserCurrency();
+    const bal = +(employerWallet?.balance || 0);
+    document.getElementById('epf-wallet-balance').textContent = cur + ' ' + bal.toLocaleString();
+    const short = bal < (escrowCtx.fees?.gross || 0);
+    document.getElementById('epf-wallet-warning').style.display = short ? 'block' : 'none';
+  }
 }
 
 async function submitEscrowPayment() {
@@ -2077,7 +2114,11 @@ async function submitEscrowPayment() {
   if (!method) { errEl.textContent = 'Choose a payment method.'; errEl.style.display = 'block'; return; }
 
   let phoneUsed = null, ref = '';
-  if (method === 'mpesa') {
+  if (method === 'wallet') {
+    const bal = +(employerWallet?.balance || 0);
+    if (bal < escrowCtx.fees.gross) { errEl.textContent = 'Not enough wallet balance for this amount.'; errEl.style.display = 'block'; return; }
+    ref = 'WAL-'+Math.random().toString(36).substr(2,8).toUpperCase();
+  } else if (method === 'mpesa') {
     const phone = document.getElementById('ep-mpesa-phone').value.trim();
     if (!/^[0-9]{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 9-digit M-Pesa number.'; errEl.style.display = 'block'; return; }
     phoneUsed = '+254' + phone;
@@ -2094,6 +2135,15 @@ async function submitEscrowPayment() {
   }
 
   const { fees, jobId } = escrowCtx;
+
+  // Paying from Wallet deducts the held amount from the employer's cash balance first.
+  if (method === 'wallet') {
+    const newBalance = +(employerWallet?.balance || 0) - fees.gross;
+    const { error: walletErr } = await sb.from('wallets').update({ balance: newBalance }).eq('user_id', currentUser.id);
+    if (walletErr) { errEl.textContent = walletErr.message; errEl.style.display = 'block'; return; }
+    employerWallet = { ...employerWallet, balance: newBalance };
+  }
+
   const { error } = await sb.from('job_escrow_payments').insert({
     job_id: jobId, employer_id: currentUser.id,
     amount: fees.gross, service_fee: fees.serviceFee, tax_amount: fees.tax, net_amount: fees.net,
@@ -2155,7 +2205,6 @@ function setJobCategory(cat) {
   document.getElementById('jb-desc-safety-note').style.display = isMF ? 'block' : 'none';
   const btn = document.getElementById('jb-submit-btn');
   if (isMF) {
-    document.getElementById('mf-currency-lbl').textContent = getUserCurrency();
     setMfPricingMode('fixed');
   } else {
     btn.innerHTML = '<i class="bi bi-send-fill"></i> Post Job';
@@ -2208,15 +2257,13 @@ function toggleMfItem(key) {
   updateFeeBreakdown();
 }
 
-// Best-effort currency label from the browser locale — the actual charge still
-// runs over KES rails (M-Pesa / Airtel Money), so this only affects display.
+// Currency for this task — explicit choice via the East-Africa selector in the
+// Mama Fua pricing panel, not a guess from the browser locale (which is
+// unreliable — e.g. an en-US browser locale doesn't mean a US-based payer).
+// Actual charges still run over KES rails regardless of the label shown.
 function getUserCurrency() {
-  try {
-    const region = (new Intl.Locale(navigator.language)).region
-      || navigator.language.split('-')[1];
-    const map = { KE:'KES', UG:'UGX', TZ:'TZS', RW:'RWF', ET:'ETB', US:'USD', GB:'GBP' };
-    return map[region] || 'KES';
-  } catch (e) { return 'KES'; }
+  const sel = document.getElementById('mf-currency-select');
+  return sel ? sel.value : 'KES';
 }
 
 async function postJob() {
@@ -2294,6 +2341,7 @@ function resetPostJobForm() {
   ['mf-bedroom-price','mf-kitchen-price','mf-livingroom-price'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.disabled = true;
   });
+  const curSel = document.getElementById('mf-currency-select'); if (curSel) curSel.value = 'KES';
   document.getElementById('jb-slots').value = 1;
   document.getElementById('jb-urgent').checked = false;
   document.getElementById('jb-featured').checked = false;
