@@ -6,6 +6,11 @@
   <title>My Dashboard – SoundsCare</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Bootstrap (loaded before the page's own <style> block so the page's custom
+       .btn / .modal / .card rules — which share the same class names — keep
+       winning the cascade; Bootstrap fills in everything the custom CSS doesn't
+       define, e.g. .badge, .list-group, .input-group, .table, .form-control). -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
     :root {
@@ -1238,6 +1243,16 @@
       <div class="stat-value" id="stat-applications">—</div>
       <div class="stat-label">Applications</div>
     </div>
+    <div class="stat-card" onclick="openModal('modal-bids')">
+      <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-tag"></i></div>
+      <div class="stat-value" id="stat-bids">—</div>
+      <div class="stat-label">Bided Jobs</div>
+    </div>
+    <div class="stat-card" onclick="openModal('modal-wallet')">
+      <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-shield-lock"></i></div>
+      <div class="stat-value" id="stat-held">—</div>
+      <div class="stat-label">Held Funds</div>
+    </div>
     <div class="stat-card" onclick="openModal('modal-interviews'); loadRecentInterviews()">
       <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-calendar-check"></i></div>
       <div class="stat-value" id="stat-interviewed">—</div>
@@ -1317,6 +1332,20 @@
     </div>
     <div id="recent-interviews">
       <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
+    </div>
+  </div>
+
+  <!-- BIDED JOBS PREVIEW -->
+  <div class="section">
+    <div class="section-title">
+      <i class="bi bi-tag" style="color: var(--sky);"></i>
+      Bided Jobs
+      <span style="margin-left: auto;">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-bids')">View All</button>
+      </span>
+    </div>
+    <div id="bided-jobs-preview">
+      <div class="empty-state"><i class="bi bi-tag"></i><p>Loading bids…</p></div>
     </div>
   </div>
 
@@ -1582,6 +1611,21 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════ BIDED JOBS MODAL ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-bids">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2><i class="bi bi-tag-fill"></i> Bided Jobs</h2>
+      <button class="modal-close" onclick="closeModal('modal-bids')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="bided-jobs-list">
+        <div class="empty-state"><i class="bi bi-tag"></i><p>Loading bids…</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════ APPLICATION DETAIL MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-application-detail">
   <div class="modal" style="max-width:520px;">
@@ -1664,6 +1708,51 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════ BID ON JOB MODAL (replaces plain "Apply") ═══════════════════════════ -->
+<div class="modal-overlay" id="modal-bid">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h2><i class="bi bi-tag-fill"></i> Place a Bid</h2>
+      <button class="modal-close" onclick="closeModal('modal-bid')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-3">
+        <div style="font-weight:700; font-size:15px;" id="bid-job-title">—</div>
+        <div style="font-size:12px; color:var(--muted);" id="bid-job-sub">—</div>
+        <div class="mt-2"><span class="badge text-bg-secondary" id="bid-type-badge">—</span></div>
+      </div>
+
+      <!-- Fixed-price job: worker just confirms the posted price -->
+      <div id="bid-fixed-wrap" style="display:none;">
+        <div class="alert alert-secondary py-2 px-3 mb-0" role="alert">
+          <div class="d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-shield-lock-fill"></i> Fixed price for this job</span>
+            <strong id="bid-fixed-amount">KES 0</strong>
+          </div>
+          <div class="small mt-1" style="color:var(--muted);">This amount is held in escrow by the employer and released to you once the job is confirmed done.</div>
+        </div>
+      </div>
+
+      <!-- Negotiable job: worker enters their own asking price -->
+      <div id="bid-negotiable-wrap" style="display:none;">
+        <label class="form-label small fw-semibold">Enter your price (KES)</label>
+        <div class="input-group mb-2">
+          <span class="input-group-text">KES</span>
+          <input type="number" class="form-control" id="bid-price-input" placeholder="e.g. 2500" min="1">
+        </div>
+        <div class="small" style="color:var(--muted);">The employer will review your offer. If accepted, that amount is held in escrow before work begins.</div>
+      </div>
+
+      <div class="alert alert-danger py-2 px-3 mt-3 mb-0" id="bid-error" style="display:none;"></div>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-secondary flex-fill" onclick="closeModal('modal-bid')">Cancel</button>
+        <button class="btn btn-primary flex-fill" id="bid-submit-btn" onclick="submitBid()"><i class="bi bi-send-fill"></i> Submit Bid</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════ WALLET & PAYMENTS MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-wallet">
   <div class="modal wide">
@@ -1703,6 +1792,21 @@
         <button class="btn btn-secondary btn-full" style="margin-top:10px;" onclick="openBuyConnects()">
           <i class="bi bi-plus-circle"></i> Buy More Connects
         </button>
+      </div>
+
+      <!-- HELD FUNDS (escrow) — money employers have already committed to a
+           Mama Fua Mtaani / fixed-price job, held until the job is confirmed done -->
+      <div class="card mt-2 border-info-subtle">
+        <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between">
+          <div>
+            <div class="small fw-semibold text-uppercase" style="color:var(--muted); letter-spacing:.03em;"><i class="bi bi-shield-lock-fill text-info"></i> Held Funds (Escrow)</div>
+            <div class="small" style="color:var(--muted);">Payment employers have committed to your ongoing jobs</div>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold fs-5" id="wallet-held" style="color:var(--sky);">KES 0</div>
+            <button class="btn btn-sm btn-outline-info mt-1" onclick="closeModal('modal-wallet'); openModal('modal-ongoing-jobs');">View Ongoing</button>
+          </div>
+        </div>
       </div>
 
       <div class="tabs">
@@ -2468,6 +2572,9 @@ s0.parentNode.insertBefore(s1,s0);
 </script>
 <!--End of Tawk.to Script-->
 
+<!-- BOOTSTRAP (JS bundle incl. Popper — needed for any Bootstrap components used in the markup) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -2510,6 +2617,9 @@ let savedJobIds = new Set();
 let lovedJobIds = new Set();
 let myApplications = [];
 let reportingJobId = null;
+let jobEscrowStatus = {}; // job_id -> 'held' | 'released' | ... — payment-verified badge on job cards
+let allOngoingJobs = [];  // { application, job, escrow } — set in loadDashboard(), rendered by renderOngoingJobs()
+let bidCtx = { jobId: null, title: '', pricingMode: 'fixed', fixedAmount: 0 }; // active job in the Bid modal
 let callAudioCtx = null; // for voice message recording audio ctx (separate from ringtone)
 
 // ════════════════════════════════════════════════════════
@@ -2708,7 +2818,7 @@ async function loadDashboard() {
     // 3. job_postings (public read policy on status='active')
     console.log('🔍 Loading active job_postings');
     const { data: jobs, error: jobErr } = await sb.from('job_postings')
-      .select('id, title, description, location, county, salary_range, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, employer_id')
+      .select('id, title, description, location, county, salary_range, salary_min, salary_max, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, applications_count, employer_id, pricing_mode, is_mama_fua, category')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
@@ -2721,6 +2831,30 @@ async function loadDashboard() {
     allJobs = jobs || [];
     document.getElementById('stat-jobs').textContent = allJobs.length;
 
+    // 3a. Payment-verified badge — has the employer already funded escrow for
+    // this job? Best-effort: some RLS setups may not let a worker read escrow
+    // rows for jobs they haven't applied to yet, so this fails soft.
+    jobEscrowStatus = {};
+    try {
+      const visibleJobIds = allJobs.map(j => j.id);
+      if (visibleJobIds.length) {
+        const { data: escRows, error: escErr } = await sb.from('job_escrow_payments')
+          .select('job_id, status')
+          .in('job_id', visibleJobIds);
+        if (escErr) throw escErr;
+        (escRows || []).forEach(r => {
+          // A job can have more than one escrow row over its life (e.g. a
+          // rejected hold followed by a new one) — 'held' always wins so the
+          // badge reflects money that is actually sitting in escrow right now.
+          if (r.status === 'held' || jobEscrowStatus[r.job_id] === undefined) {
+            jobEscrowStatus[r.job_id] = r.status;
+          }
+        });
+      }
+    } catch (escLoadErr) {
+      console.warn('⚠️ Could not load employer payment-verification status:', escLoadErr.message);
+    }
+
     // 3b. saved_jobs + job_loves + applications + interviews for this worker
     //     (fetched BEFORE renderJobs so love/save/applied states are correct on first paint)
     if (workerProfile?.id) {
@@ -2728,7 +2862,7 @@ async function loadDashboard() {
         const [{ data: saved }, { data: loved }, { data: apps }, { count: interviewCount }] = await Promise.all([
           sb.from('saved_jobs').select('job_id').eq('worker_id', workerProfile.id),
           sb.from('job_loves').select('job_id').eq('worker_id', workerProfile.id),
-          sb.from('job_applications').select('id, job_id, status, applied_at').eq('worker_id', workerProfile.id),
+          sb.from('job_applications').select('id, job_id, status, applied_at, bid_amount').eq('worker_id', workerProfile.id),
           sb.from('interviews').select('id', { count: 'exact', head: true }).eq('worker_id', workerProfile.id),
         ]);
         savedJobIds = new Set((saved || []).map(r => r.job_id));
@@ -2741,9 +2875,13 @@ async function loadDashboard() {
         document.getElementById('welcome-loves-count').textContent = lovedJobIds.size;
         // Saved Jobs dashboard section preview
         loadSavedJobs();
+        // Bided Jobs dashboard section preview
+        renderBidedJobs();
       } catch (statErr) {
         console.error('❌ Could not load saved/loved/applications/interview stats:', statErr.message);
       }
+    } else {
+      renderBidedJobs();
     }
 
     try {
@@ -4496,27 +4634,6 @@ function renderStars(avg, count) {
   return `<span class="job-rating-stars">${stars}<span class="job-rating-count">${count ? `(${count})` : 'No ratings yet'}</span></span>`;
 }
 
-function populateCountyFilter(jobs) {
-  const counties = [...new Set(jobs.map(j => j.county).filter(Boolean))].sort();
-  const sel = document.getElementById('job-county');
-  counties.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    sel.appendChild(opt);
-  });
-}
-
-function filterJobs() {
-  const q = document.getElementById('job-search').value.toLowerCase();
-  const county = document.getElementById('job-county').value;
-  const filtered = allJobs.filter(j => {
-    const matchQ = !q || (j.title + j.description + j.job_role).toLowerCase().includes(q);
-    const matchC = !county || j.county === county;
-    return matchQ && matchC;
-  });
-  renderJobs(filtered);
-}
-
 function renderJobs(jobs) {
   const el = document.getElementById('jobs-list');
   if (!jobs.length) {
@@ -4526,17 +4643,70 @@ function renderJobs(jobs) {
   el.innerHTML = jobs.map(j => jobCardHtml(j)).join('');
 }
 
-async function applyJob(jobId, btn) {
+// ════════════════════════════════════════════════════════
+//  BID ON A JOB (replaces the old plain "Apply Now" flow)
+//  Fixed-price jobs: worker just confirms the posted price.
+//  Negotiable jobs: worker enters their own asking price.
+// ════════════════════════════════════════════════════════
+function openBidModal(jobId) {
   if (!workerProfile?.id) {
-    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first to apply for jobs.');
+    showToast('err', 'bi-exclamation-circle', 'Profile Required', 'Complete your profile first to bid on jobs.');
+    return;
+  }
+  const job = allJobs.find(j => j.id === jobId);
+  if (!job) { showToast('err', 'bi-exclamation-circle', 'Not Found', 'Could not find that job.'); return; }
+  if (myApplications.some(a => a.job_id === jobId)) {
+    showToast('info', 'bi-info-circle', 'Already Bid', 'You have already placed a bid on this job.');
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Applying…';
+  const negotiable = job.pricing_mode === 'negotiable';
+  const fixedAmount = +job.salary_min || 0;
+  bidCtx = { jobId, title: job.title || 'Job', pricingMode: negotiable ? 'negotiable' : 'fixed', fixedAmount };
 
-  // Check for existing application
-  // RLS on job_applications uses worker_id = auth.uid() so we check against currentUser.id
+  document.getElementById('bid-job-title').textContent = job.title || 'Job';
+  document.getElementById('bid-job-sub').textContent = [job.company_name, job.county].filter(Boolean).join(' · ') || '—';
+
+  const typeBadge = document.getElementById('bid-type-badge');
+  typeBadge.className = 'badge ' + (negotiable ? 'text-bg-info' : 'text-bg-secondary');
+  typeBadge.innerHTML = `<i class="bi ${negotiable ? 'bi-chat-left-text-fill' : 'bi-tag-fill'}"></i> ${negotiable ? 'Negotiable' : 'Fixed Price'}`;
+
+  document.getElementById('bid-fixed-wrap').style.display = negotiable ? 'none' : 'block';
+  document.getElementById('bid-negotiable-wrap').style.display = negotiable ? 'block' : 'none';
+  if (!negotiable) {
+    document.getElementById('bid-fixed-amount').textContent = 'KES ' + fixedAmount.toLocaleString('en-KE');
+  } else {
+    document.getElementById('bid-price-input').value = job.salary_min ? job.salary_min : '';
+  }
+  document.getElementById('bid-error').style.display = 'none';
+  document.getElementById('bid-submit-btn').disabled = false;
+  document.getElementById('bid-submit-btn').innerHTML = '<i class="bi bi-send-fill"></i> Submit Bid';
+
+  openModal('modal-bid');
+}
+
+async function submitBid() {
+  const errEl = document.getElementById('bid-error');
+  errEl.style.display = 'none';
+  const { jobId, pricingMode, fixedAmount } = bidCtx;
+  if (!jobId) return;
+
+  let bidAmount = fixedAmount;
+  if (pricingMode === 'negotiable') {
+    const raw = document.getElementById('bid-price-input').value;
+    bidAmount = parseFloat(raw);
+    if (!raw || isNaN(bidAmount) || bidAmount <= 0) {
+      errEl.textContent = 'Enter a valid price for your bid.';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  const btn = document.getElementById('bid-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Submitting…';
+
+  // Re-check for an existing application — RLS uses worker_id = auth.uid()
   const { data: existing } = await sb.from('job_applications')
     .select('id')
     .eq('job_id', jobId)
@@ -4544,34 +4714,36 @@ async function applyJob(jobId, btn) {
     .maybeSingle();
 
   if (existing) {
-    showToast('info', 'bi-info-circle', 'Already Applied', 'You have already applied for this job.');
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-check"></i> Applied';
+    showToast('info', 'bi-info-circle', 'Already Bid', 'You have already placed a bid on this job.');
+    closeModal('modal-bid');
     return;
   }
 
-  // job_applications INSERT: RLS requires worker_id = auth.uid()
   const { error } = await sb.from('job_applications').insert({
     job_id: jobId,
     worker_id: workerProfile.id,
     worker_name: workerProfile.full_name || '',
     worker_phone: workerProfile.phone || workerProfile.phone_number || '',
     status: 'pending',
+    bid_amount: bidAmount,
     applied_at: new Date().toISOString(),
   });
 
   if (error) {
-    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
     btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-send"></i> Apply Now';
-  } else {
-    showToast('ok', 'bi-check-circle', 'Applied!', 'Your application has been submitted.');
-    btn.innerHTML = '<i class="bi bi-check"></i> Applied';
-    btn.disabled = true;
-    myApplications.push({ job_id: jobId, status: 'pending', applied_at: new Date().toISOString() });
-    const statEl = document.getElementById('stat-applications');
-    if (statEl) statEl.textContent = (parseInt(statEl.textContent) || 0) + 1;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Bid';
+    return;
   }
+
+  showToast('ok', 'bi-check-circle', 'Bid Submitted!', `Your ${pricingMode === 'negotiable' ? 'offer of KES ' + bidAmount.toLocaleString('en-KE') : 'bid'} has been sent to the employer.`);
+  myApplications.push({ job_id: jobId, status: 'pending', bid_amount: bidAmount, applied_at: new Date().toISOString() });
+  const statEl = document.getElementById('stat-applications');
+  if (statEl) statEl.textContent = (parseInt(statEl.textContent) || 0) + 1;
+  closeModal('modal-bid');
+  renderJobs(allJobs);
+  renderBidedJobs();
 }
 
 // ════════════════════════════════════════════════════════
@@ -4643,7 +4815,15 @@ async function loadSavedJobs() {
 function jobCardHtml(j) {
   const isSaved = savedJobIds.has(j.id);
   const isLoved = lovedJobIds.has(j.id);
-  const applied = myApplications.some(a => a.job_id === j.id);
+  const myApp = myApplications.find(a => a.job_id === j.id);
+  const applied = !!myApp;
+  const negotiable = j.pricing_mode === 'negotiable';
+  const paymentVerified = jobEscrowStatus[j.id] === 'held' || jobEscrowStatus[j.id] === 'released';
+  const appsCount = j.applications_count || 0;
+  const priceLabel = negotiable
+    ? 'Open to offers'
+    : (j.salary_range || (j.salary_min ? `KES ${(+j.salary_min).toLocaleString('en-KE')}` : ''));
+
   return `
     <div class="job-card" data-job-id="${j.id}">
       <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
@@ -4654,19 +4834,30 @@ function jobCardHtml(j) {
           </div>
           ${j.company_name ? `<div style="font-size:12px; color:var(--muted); margin-bottom:4px;">${esc(j.company_name)}</div>` : ''}
           <div style="margin-bottom:4px;">${renderStars(j.employer_avg_rating, j.employer_rating_count)}</div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
             ${j.is_urgent ? '<span class="job-chip urgent"><i class="bi bi-lightning-fill"></i> Urgent</span>' : ''}
             ${j.job_type ? `<span class="job-chip">${esc(j.job_type)}</span>` : ''}
             ${workTypeChip(j.work_type)}
             ${durationChip(j)}
             ${j.county ? `<span class="job-chip"><i class="bi bi-geo-alt"></i> ${esc(j.county)}</span>` : ''}
           </div>
+          <!-- Bootstrap badges: pricing mode / employer payment verification / applicant count -->
+          <div class="d-flex gap-1 flex-wrap">
+            <span class="badge ${negotiable ? 'text-bg-info' : 'text-bg-secondary'}">
+              <i class="bi ${negotiable ? 'bi-chat-left-text-fill' : 'bi-tag-fill'}"></i> ${negotiable ? 'Negotiable' : 'Fixed Price'}
+            </span>
+            ${paymentVerified ? `<span class="badge text-bg-success"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>` : ''}
+            <span class="badge text-bg-light border text-dark"><i class="bi bi-people-fill"></i> ${appsCount} Applicant${appsCount === 1 ? '' : 's'}</span>
+          </div>
         </div>
-        ${j.salary_range ? `<div style="font-size:12px; color:var(--brand); font-weight:700; white-space:nowrap;">${esc(j.salary_range)}</div>` : ''}
+        ${priceLabel ? `<div style="font-size:12px; color:var(--brand); font-weight:700; white-space:nowrap;">${esc(priceLabel)}</div>` : ''}
       </div>
       <div style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:10px;">${esc((j.description || '').substring(0, 160))}${j.description?.length > 160 ? '…' : ''}</div>
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-        <div style="font-size:11px; color:var(--muted);">${j.created_at ? timeAgo(new Date(j.created_at)) + ' ago' : ''}</div>
+        <div style="font-size:11px; color:var(--muted);">
+          ${j.created_at ? timeAgo(new Date(j.created_at)) + ' ago' : ''}
+          ${applied && myApp?.status ? ` · <span class="badge text-bg-warning-subtle text-warning-emphasis text-capitalize">${esc(myApp.status)}</span>` : ''}
+        </div>
         <div class="job-action-row">
           <span class="job-love-count">${j.loves_count || 0}</span>
           <button class="job-action-icon-btn love ${isLoved ? 'active' : ''}" title="Love this job" onclick="toggleLoveJob('${j.id}', this)">
@@ -4681,8 +4872,8 @@ function jobCardHtml(j) {
           <button class="job-action-icon-btn report" title="Report job" onclick="openReportModal('${j.id}', ${JSON.stringify(j.title || 'this job').replace(/"/g, '&quot;')})">
             <i class="bi bi-flag"></i>
           </button>
-          <button class="btn btn-primary btn-sm" onclick="applyJob('${j.id}', this)" ${applied ? 'disabled' : ''}>
-            <i class="bi ${applied ? 'bi-check' : 'bi-send'}"></i> ${applied ? 'Applied' : 'Apply Now'}
+          <button class="btn btn-primary btn-sm" onclick='openBidModal(${JSON.stringify(j.id)})' ${applied ? 'disabled' : ''}>
+            <i class="bi ${applied ? 'bi-check' : 'bi-tag'}"></i> ${applied ? 'Bid Placed' : 'Bid'}
           </button>
         </div>
       </div>
@@ -4851,7 +5042,7 @@ async function loadApplications() {
   el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>';
 
   const { data, error } = await sb.from('job_applications')
-    .select('id, job_id, status, applied_at, updated_at, job_postings(id, title, company_name, county, salary_range, employer_id)')
+    .select('id, job_id, status, applied_at, updated_at, bid_amount, job_postings(id, title, company_name, county, salary_range, pricing_mode, is_mama_fua, employer_id)')
     .eq('worker_id', workerProfile.id)
     .order('applied_at', { ascending: false });
 
@@ -4885,6 +5076,131 @@ async function loadApplications() {
       <div style="font-size:11px; color:var(--muted); margin-top:8px;">Applied ${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''} · <i class="bi bi-eye"></i> View details</div>
     </div>`;
   }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  BIDED JOBS — applications where the worker submitted a price
+//  (negotiable-job bids, or a confirmed bid on a fixed-price job)
+// ════════════════════════════════════════════════════════
+function bidCardHtml(a) {
+  // myApplications entries can come from either the lightweight dashboard
+  // load (job info looked up in allJobs) or loadApplications() (job info
+  // already joined as a.job_postings) — support both shapes.
+  const job = a.job_postings || allJobs.find(j => j.id === a.job_id) || {};
+  const negotiable = job.pricing_mode === 'negotiable';
+  const statusMap = {
+    pending: 'text-bg-warning-subtle text-warning-emphasis',
+    reviewed: 'text-bg-info-subtle text-info-emphasis',
+    shortlisted: 'text-bg-primary-subtle text-primary-emphasis',
+    hired: 'text-bg-success-subtle text-success-emphasis',
+    rejected: 'text-bg-danger-subtle text-danger-emphasis',
+  };
+  const statusCls = statusMap[a.status] || 'text-bg-secondary-subtle';
+  return `
+    <div class="card mb-2" onclick="openApplicationDetail('${a.id}')" style="cursor:pointer;" role="button">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-bold" style="font-size:14px;">${esc(job.title || 'Job')}</div>
+            <div class="small" style="color:var(--muted);">${esc(job.company_name || '')}${job.county ? ' · ' + esc(job.county) : ''}</div>
+          </div>
+          <span class="badge ${statusCls} text-capitalize">${esc(a.status || 'pending')}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+          <span class="badge ${negotiable ? 'text-bg-info' : 'text-bg-secondary'}">
+            <i class="bi ${negotiable ? 'bi-chat-left-text-fill' : 'bi-tag-fill'}"></i> ${negotiable ? 'Negotiable' : 'Fixed Price'}
+          </span>
+          <span class="badge text-bg-light border text-dark"><i class="bi bi-cash-coin"></i> KES ${(+a.bid_amount || 0).toLocaleString('en-KE')}</span>
+          <span class="small ms-auto" style="color:var(--muted);">${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderBidedJobs() {
+  const el = document.getElementById('bided-jobs-list');
+  const previewEl = document.getElementById('bided-jobs-preview');
+  if (!workerProfile?.id) {
+    const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>Complete your profile to place bids.</p></div>';
+    if (el) el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
+    return;
+  }
+  const bids = (myApplications || []).filter(a => a.bid_amount != null).sort((x, y) => new Date(y.applied_at) - new Date(x.applied_at));
+  document.getElementById('stat-bids').textContent = bids.length;
+  if (!bids.length) {
+    const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>You haven\'t placed any bids yet.</p></div>';
+    if (el) el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
+    return;
+  }
+  if (el) el.innerHTML = bids.map(bidCardHtml).join('');
+  if (previewEl) previewEl.innerHTML = bids.slice(0, 3).map(bidCardHtml).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  ONGOING JOBS — hired applications + their escrow (Payment Held) status
+//  allOngoingJobs is populated in loadDashboard() as:
+//    { application, job, escrow } where escrow may be null
+// ════════════════════════════════════════════════════════
+function ongoingJobCardHtml(o) {
+  const { application: a, job, escrow } = o;
+  const escMap = {
+    pending: { cls: 'text-bg-warning', icon: 'bi-hourglass-split', label: 'Verifying Payment' },
+    held: { cls: 'text-bg-info', icon: 'bi-shield-lock-fill', label: 'Payment Held' },
+    released: { cls: 'text-bg-success', icon: 'bi-check-circle-fill', label: 'Released' },
+    rejected_pending_investigation: { cls: 'text-bg-danger', icon: 'bi-flag-fill', label: 'Under Review' },
+    refunded: { cls: 'text-bg-secondary', icon: 'bi-arrow-counterclockwise', label: 'Refunded' },
+    cancelled: { cls: 'text-bg-secondary', icon: 'bi-x-circle', label: 'Cancelled' },
+  };
+  const badge = escrow ? (escMap[escrow.status] || { cls: 'text-bg-secondary', icon: 'bi-question-circle', label: escrow.status })
+                       : { cls: 'text-bg-secondary', icon: 'bi-hourglass', label: 'Awaiting Payment' };
+  const amount = escrow ? (+escrow.net_amount || +escrow.amount || 0) : 0;
+  return `
+    <div class="card mb-2">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="fw-bold" style="font-size:14px;">${esc(job.title || 'Job')}${job.is_mama_fua ? ' <span class="badge text-bg-primary ms-1">Mama Fua Mtaani</span>' : ''}</div>
+            <div class="small" style="color:var(--muted);">${esc(job.company_name || '')}${job.county ? ' · ' + esc(job.county) : ''}</div>
+          </div>
+          <span class="badge ${badge.cls}"><i class="bi ${badge.icon}"></i> ${badge.label}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+          ${amount ? `<span class="badge text-bg-light border text-dark"><i class="bi bi-cash-coin"></i> KES ${amount.toLocaleString('en-KE')}</span>` : ''}
+          <span class="small ms-auto" style="color:var(--muted);">Hired ${a.hired_at ? timeAgo(new Date(a.hired_at)) + ' ago' : (a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : '')}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderOngoingJobs() {
+  const el = document.getElementById('ongoing-jobs-list');
+  const previewEl = document.getElementById('ongoing-jobs-preview');
+  if (!allOngoingJobs.length) {
+    const msg = '<div class="empty-state"><i class="bi bi-activity"></i><p>No ongoing jobs right now.</p></div>';
+    if (el) el.innerHTML = msg;
+    if (previewEl) previewEl.innerHTML = msg;
+  } else {
+    if (el) el.innerHTML = allOngoingJobs.map(ongoingJobCardHtml).join('');
+    if (previewEl) previewEl.innerHTML = allOngoingJobs.slice(0, 3).map(ongoingJobCardHtml).join('');
+  }
+  updateHeldFundsUI();
+}
+
+// ════════════════════════════════════════════════════════
+//  HELD FUNDS — total currently sitting in escrow for this worker
+//  across all ongoing jobs (shown as a stat card + in the Wallet modal)
+// ════════════════════════════════════════════════════════
+function updateHeldFundsUI() {
+  const held = (allOngoingJobs || [])
+    .filter(o => o.escrow && o.escrow.status === 'held')
+    .reduce((sum, o) => sum + (+o.escrow.net_amount || +o.escrow.amount || 0), 0);
+  const text = 'KES ' + held.toLocaleString('en-KE');
+  const statEl = document.getElementById('stat-held');
+  if (statEl) statEl.textContent = text;
+  const walletEl = document.getElementById('wallet-held');
+  if (walletEl) walletEl.textContent = text;
 }
 
 // ════════════════════════════════════════════════════════
@@ -5668,6 +5984,8 @@ function openModal(id) {
   if (id === 'modal-applications') loadApplications();
   if (id === 'modal-saved-jobs') loadSavedJobs();
   if (id === 'modal-notifications') updatePushBanner();
+  if (id === 'modal-bids') renderBidedJobs();
+  if (id === 'modal-ongoing-jobs') renderOngoingJobs();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
