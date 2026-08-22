@@ -1338,12 +1338,13 @@ async function loadAll() {
     .eq('user_id', currentUser.id).order('created_at', { ascending: false });
   allPayments = pays || [];
 
-  // escrow payments (Mama Fua Digital / one-time task holds) — safeFire so this
-  // degrades gracefully until the job_escrow_payments table/migration is applied.
-  if (employerProfileId) {
+  // escrow payments (Mama Fua Mtaani one-time task holds). employer_id here
+  // references profiles.id (= auth.uid()), unlike job_postings.employer_id
+  // which references employer_profiles.id — the RLS policy checks auth.uid().
+  {
     const escRes = await safeFire(sb.from('job_escrow_payments')
       .select('id,job_id,employer_id,worker_id,amount,service_fee,tax_amount,net_amount,currency,payment_method,status,rejection_reason,created_at,released_at')
-      .eq('employer_id', employerProfileId).order('created_at', { ascending: false }));
+      .eq('employer_id', currentUser.id).order('created_at', { ascending: false }));
     allEscrowPayments = escRes?.data || [];
   }
 
@@ -2094,7 +2095,7 @@ async function submitEscrowPayment() {
 
   const { fees, jobId } = escrowCtx;
   const { error } = await sb.from('job_escrow_payments').insert({
-    job_id: jobId, employer_id: employerProfileId,
+    job_id: jobId, employer_id: currentUser.id,
     amount: fees.gross, service_fee: fees.serviceFee, tax_amount: fees.tax, net_amount: fees.net,
     currency: getUserCurrency(), payment_method: method, status: 'held',
     transaction_id: ref, mpesa_ref: method==='mpesa' ? ref : null, phone_used: phoneUsed,
