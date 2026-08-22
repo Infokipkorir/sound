@@ -1886,28 +1886,28 @@
 
           <div class="pay-method-grid" id="pay-method-grid">
 
+            <!-- M-Pesa STK -->
+            <div class="pay-method-card" data-method="mpesa" onclick="selectPayMethod('mpesa')">
+              <img src="mpesalogo.jpeg" alt="M-Pesa" class="pay-logo">
+              <span class="pay-method-label">M-Pesa STK</span>
+            </div>
+
+            <!-- Airtel Money STK -->
+            <div class="pay-method-card" data-method="airtel" onclick="selectPayMethod('airtel')">
+              <img src="airtellogo.jpeg" alt="Airtel Money" class="pay-logo">
+              <span class="pay-method-label">Airtel Money STK</span>
+            </div>
+
             <!-- Wallet -->
             <div class="pay-method-card" data-method="wallet" onclick="selectPayMethod('wallet')">
               <img src="download.png" alt="Wallet" class="pay-logo">
               <span class="pay-method-label">Wallet</span>
             </div>
 
-            <!-- M-Pesa -->
-            <div class="pay-method-card" data-method="mpesa" onclick="selectPayMethod('mpesa')">
-              <img src="mpesalogo.jpeg" alt="M-Pesa" class="pay-logo">
-              <span class="pay-method-label">M-Pesa</span>
-            </div>
-
-            <!-- Airtel Money -->
-            <div class="pay-method-card" data-method="airtel" onclick="selectPayMethod('airtel')">
-              <img src="airtellogo.jpeg" alt="Airtel Money" class="pay-logo">
-              <span class="pay-method-label">Airtel Money</span>
-            </div>
-
-            <!-- Card / Paybill -->
-            <div class="pay-method-card" data-method="manual" onclick="selectPayMethod('manual')">
-              <img src="card.png" alt="Card / Paybill" class="pay-logo">
-              <span class="pay-method-label">Card / Paybill</span>
+            <!-- Card -->
+            <div class="pay-method-card" data-method="card" onclick="selectPayMethod('card')">
+              <img src="card.png" alt="Card" class="pay-logo">
+              <span class="pay-method-label">Card</span>
             </div>
 
           </div>
@@ -1916,12 +1916,13 @@
                that reads #pay-method.value continues to work unchanged. -->
           <select id="pay-method" onchange="updatePaymentUI()" style="display:none;">
             <option value="">Choose…</option>
+            <option value="mpesa">M-Pesa STK</option>
+            <option value="airtel">Airtel Money STK</option>
             <option value="wallet">Wallet</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="airtel">Airtel Money</option>
-            <option value="manual">Card / Paybill</option>
+            <option value="card">Card</option>
           </select>
         </div>
+
 
         <div class="form-group">
           <label>Amount (KES)</label>
@@ -2618,6 +2619,7 @@ let lovedJobIds = new Set();
 let myApplications = [];
 let reportingJobId = null;
 let jobEscrowStatus = {}; // job_id -> 'held' | 'released' | ... — payment-verified badge on job cards
+let jobApplicantCounts = {}; // job_id -> number of applications — best-effort, see loadDashboard() 3a-ii
 let allOngoingJobs = [];  // { application, job, escrow } — set in loadDashboard(), rendered by renderOngoingJobs()
 let bidCtx = { jobId: null, title: '', pricingMode: 'fixed', fixedAmount: 0 }; // active job in the Bid modal
 let callAudioCtx = null; // for voice message recording audio ctx (separate from ringtone)
@@ -2818,7 +2820,7 @@ async function loadDashboard() {
     // 3. job_postings (public read policy on status='active')
     console.log('🔍 Loading active job_postings');
     const { data: jobs, error: jobErr } = await sb.from('job_postings')
-      .select('id, title, description, location, county, salary_range, salary_min, salary_max, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, applications_count, employer_id, pricing_mode, is_mama_fua, category')
+      .select('id, title, description, location, county, salary_range, salary_min, salary_max, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, employer_id, pricing_mode, is_mama_fua, category')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
@@ -2853,6 +2855,27 @@ async function loadDashboard() {
       }
     } catch (escLoadErr) {
       console.warn('⚠️ Could not load employer payment-verification status:', escLoadErr.message);
+    }
+
+    // 3a-ii. Applicant counts per job — fetched separately (not selected as a
+    // column on job_postings, since that column doesn't exist in this schema;
+    // pulling it into the main select above previously broke the ENTIRE jobs
+    // query for everyone whenever Postgrest rejected the unknown column, which
+    // is why jobs stopped loading). Best-effort + fails soft to 0 per job.
+    jobApplicantCounts = {};
+    try {
+      const visibleJobIds = allJobs.map(j => j.id);
+      if (visibleJobIds.length) {
+        const { data: appRows, error: appCountErr } = await sb.from('job_applications')
+          .select('job_id')
+          .in('job_id', visibleJobIds);
+        if (appCountErr) throw appCountErr;
+        (appRows || []).forEach(r => {
+          jobApplicantCounts[r.job_id] = (jobApplicantCounts[r.job_id] || 0) + 1;
+        });
+      }
+    } catch (appCountLoadErr) {
+      console.warn('⚠️ Could not load applicant counts (RLS likely restricts this to the job owner):', appCountLoadErr.message);
     }
 
     // 3b. saved_jobs + job_loves + applications + interviews for this worker
@@ -4819,7 +4842,7 @@ function jobCardHtml(j) {
   const applied = !!myApp;
   const negotiable = j.pricing_mode === 'negotiable';
   const paymentVerified = jobEscrowStatus[j.id] === 'held' || jobEscrowStatus[j.id] === 'released';
-  const appsCount = j.applications_count || 0;
+  const appsCount = jobApplicantCounts[j.id] || 0;
   const priceLabel = negotiable
     ? 'Open to offers'
     : (j.salary_range || (j.salary_min ? `KES ${(+j.salary_min).toLocaleString('en-KE')}` : ''));
