@@ -220,6 +220,29 @@
   .modal-body p{font-size:13px;line-height:1.7;color:var(--text)}
   .modal-footer{padding:1rem 1.5rem 1.4rem;display:flex;gap:.7rem;border-top:1px solid var(--border)}
 
+  /* ── BID MODAL ── */
+  .bid-job-title{font-weight:700;font-size:15px;color:var(--text)}
+  .bid-job-sub{font-size:12px;color:var(--text-muted);margin-top:.15rem}
+  .bid-type-badge{display:inline-flex;align-items:center;gap:.35rem;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;margin-top:.5rem}
+  .bid-type-badge.fixed{background:var(--surface-alt);color:var(--text-muted)}
+  .bid-type-badge.negotiable{background:var(--blue-light);color:var(--blue-dark)}
+  .bid-fixed-box{background:var(--surface-alt);border-radius:10px;padding:.8rem .9rem;margin-top:1rem}
+  .bid-fixed-box .row-top{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--text)}
+  .bid-fixed-box .row-top strong{font-size:14px;color:var(--green-dark)}
+  .bid-fixed-box .hint{font-size:11.5px;color:var(--text-muted);margin-top:.4rem;line-height:1.5}
+  .bid-negotiable-box{margin-top:1rem}
+  .bid-negotiable-box label{display:block;font-size:12.5px;font-weight:600;margin-bottom:.4rem}
+  .bid-price-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:9px;overflow:hidden}
+  .bid-price-wrap span{padding:10px 12px;background:var(--surface-alt);font-size:12.5px;font-weight:700;color:var(--text-muted)}
+  .bid-price-wrap input{flex:1;border:none;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text)}
+  .bid-price-wrap input:focus{outline:none}
+  .bid-price-wrap:focus-within{border-color:var(--green)}
+  .bid-hint{font-size:11.5px;color:var(--text-muted);margin-top:.4rem;line-height:1.5}
+  .bid-error{font-size:12px;color:var(--red);background:#FEE2E2;border-radius:8px;padding:.6rem .8rem;margin-top:.9rem;display:none}
+  .profile-gate-box{text-align:center;padding:1.2rem .5rem}
+  .profile-gate-box i{font-size:2rem;color:var(--amber);display:block;margin-bottom:.7rem}
+  .profile-gate-box p{font-size:13px;color:var(--text-muted);margin-bottom:1.1rem}
+
   /* ── TOAST ── */
   #toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
   .toast{display:flex;align-items:center;gap:.7rem;background:#1e2a23;color:#fff;padding:.8rem 1.1rem;border-radius:10px;font-size:13px;font-weight:500;min-width:220px;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,.25);animation:toastIn .3s ease;pointer-events:all}
@@ -373,7 +396,53 @@
     <div class="modal-body" id="jd-body"></div>
     <div class="modal-footer">
       <button class="btn-small outline" onclick="closeModal('job-detail-modal')">Close</button>
-      <button class="btn-small blue" id="jd-apply-btn"><i class="bi bi-send-fill"></i> Apply Now</button>
+      <button class="btn-small blue" id="jd-apply-btn"><i class="bi bi-tag-fill"></i> Place Bid</button>
+    </div>
+  </div>
+</div>
+
+<!-- BID MODAL (worker must be logged in + have a completed profile) -->
+<div class="modal-overlay" id="bid-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title"><i class="bi bi-tag-fill"></i> Place a Bid</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('bid-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Shown when the visitor doesn't have a worker profile yet -->
+      <div id="bid-gate" style="display:none">
+        <div class="profile-gate-box">
+          <i class="bi bi-person-fill-exclamation"></i>
+          <p id="bid-gate-msg">You need a worker profile to place bids on jobs.</p>
+          <button class="btn-small blue" style="width:100%" id="bid-gate-btn" onclick="goToProfileGate()">Complete My Profile</button>
+        </div>
+      </div>
+
+      <!-- Shown once the worker is eligible to bid -->
+      <div id="bid-form-wrap" style="display:none">
+        <div class="bid-job-title" id="bid-job-title">—</div>
+        <div class="bid-job-sub" id="bid-job-sub">—</div>
+        <span class="bid-type-badge" id="bid-type-badge">—</span>
+
+        <div class="bid-fixed-box" id="bid-fixed-wrap" style="display:none">
+          <div class="row-top"><span><i class="bi bi-shield-lock-fill"></i> Fixed price for this job</span><strong id="bid-fixed-amount">KES 0</strong></div>
+          <div class="hint">This amount is held in escrow by the employer and released to you once the job is confirmed done.</div>
+        </div>
+
+        <div class="bid-negotiable-box" id="bid-negotiable-wrap" style="display:none">
+          <label>Enter your price (KES)</label>
+          <div class="bid-price-wrap"><span>KES</span><input type="number" id="bid-price-input" placeholder="e.g. 2500" min="1"></div>
+          <div class="bid-hint">The employer will review your offer. If accepted, that amount is held in escrow before work begins.</div>
+        </div>
+
+        <div class="bid-error" id="bid-error"></div>
+      </div>
+    </div>
+    <div class="modal-footer" id="bid-form-footer" style="display:none">
+      <button class="btn-small outline" onclick="closeModal('bid-modal')">Cancel</button>
+      <button class="btn-small blue" id="bid-submit-btn" onclick="submitBid()"><i class="bi bi-send-fill"></i> Submit Bid</button>
     </div>
   </div>
 </div>
@@ -524,7 +593,7 @@ async function getWorkerProfile(){
   WORKER_PROFILE_FETCHED = true;
   const workerId = getWorkerId();
   if(!workerId) return null;
-  const { data } = await sb.from('worker_profiles').select('id, preferred_role, job_title, skills, work_type').eq('id', workerId).maybeSingle();
+  const { data } = await sb.from('worker_profiles').select('id, preferred_role, job_title, skills, work_type, full_name, phone, phone_number, profile_setup_completed').eq('id', workerId).maybeSingle();
   WORKER_PROFILE = data || null;
   return WORKER_PROFILE;
 }
@@ -658,7 +727,7 @@ function jobCardHTML(j, opts){
         <span class="stat-interview"><i class="bi bi-camera-video-fill"></i> ${interviewCount} interview${interviewCount===1?'':'s'}</span>
       </div>
       <div class="card-footer">
-        <button class="btn-small blue" onclick="event.stopPropagation();goToApply('${j.id}')"><i class="bi bi-send-fill"></i> Apply Now</button>
+        <button class="btn-small blue" onclick="event.stopPropagation();openBidModal('${j.id}')"><i class="bi bi-tag-fill"></i> Place Bid</button>
         <button class="btn-small outline" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="bi bi-eye-fill"></i> View</button>
       </div>
     </div>`;
@@ -747,13 +816,12 @@ async function openJobDetail(id){
     <h4>Description</h4><p>${esc(j.description||'No description provided.')}</p>
     ${j.requirements?`<h4>Requirements</h4><p>${esc(j.requirements)}</p>`:''}
   `;
-  document.getElementById('jd-apply-btn').onclick = ()=>goToApply(j.id);
+  document.getElementById('jd-apply-btn').onclick = ()=>openBidModal(j.id);
   openModal('job-detail-modal');
   // reflect deep link in URL without reloading
   const url = new URL(window.location); url.searchParams.set('job', id);
   window.history.replaceState({}, '', url);
 }
-function goToApply(id){ window.location.href = 'job-apply.html?job=' + encodeURIComponent(id); }
 
 /* ── LOVE / SAVE (requires a logged-in worker session) ── */
 function getLovedJobIds(){
@@ -783,6 +851,135 @@ async function toggleLoveJob(jobId, btnEl){
     }
     setLovedJobIds([...ids]);
   }catch(e){ console.warn('Love toggle failed:', e.message); showToast('Could not update — try again.', 'error'); }
+}
+
+/* ── PLACE A BID (replaces the old plain "Apply Now" flow) ──
+   Fixed-price jobs: worker just confirms the posted price.
+   Negotiable jobs: worker enters their own asking price.
+   Gated: visitor must be a logged-in worker with a completed profile. */
+let bidCtx = { jobId: null, title: '', pricingMode: 'fixed', fixedAmount: 0 };
+let bidGateReason = null; // 'login' | 'profile' — remembered for the gate button's link
+
+async function openBidModal(jobId){
+  document.getElementById('bid-gate').style.display = 'none';
+  document.getElementById('bid-form-wrap').style.display = 'none';
+  document.getElementById('bid-form-footer').style.display = 'none';
+  openModal('bid-modal');
+
+  const workerId = getWorkerId();
+  if(!workerId){
+    bidGateReason = 'login';
+    document.getElementById('bid-gate-msg').textContent = 'Log in as a worker to place a bid on this job.';
+    document.getElementById('bid-gate-btn').textContent = 'Log In';
+    document.getElementById('bid-gate').style.display = 'block';
+    return;
+  }
+
+  const worker = await getWorkerProfile();
+  if(!worker || !worker.profile_setup_completed){
+    bidGateReason = 'profile';
+    document.getElementById('bid-gate-msg').textContent = 'Complete your worker profile before you can bid on jobs.';
+    document.getElementById('bid-gate-btn').textContent = 'Complete My Profile';
+    document.getElementById('bid-gate').style.display = 'block';
+    return;
+  }
+
+  // Already bid on this job?
+  const { data: existing } = await sb.from('job_applications').select('id').eq('job_id', jobId).eq('worker_id', worker.id).maybeSingle();
+  if(existing){
+    closeModal('bid-modal');
+    showToast('You have already placed a bid on this job.', 'info');
+    return;
+  }
+
+  const { data: job, error } = await sb.from('job_postings').select('*').eq('id', jobId).single();
+  if(error || !job){ closeModal('bid-modal'); showToast('Could not load that job.', 'error'); return; }
+
+  const negotiable = job.pricing_mode === 'negotiable';
+  const fixedAmount = +job.salary_min || 0;
+  bidCtx = { jobId, title: job.title||'Job', pricingMode: negotiable?'negotiable':'fixed', fixedAmount };
+
+  document.getElementById('bid-job-title').textContent = job.title||'Job';
+  document.getElementById('bid-job-sub').textContent = [job.company_name, job.county||job.location].filter(Boolean).join(' · ') || '—';
+
+  const badge = document.getElementById('bid-type-badge');
+  badge.className = 'bid-type-badge ' + (negotiable?'negotiable':'fixed');
+  badge.innerHTML = `<i class="bi ${negotiable?'bi-chat-left-text-fill':'bi-shield-lock-fill'}"></i> ${negotiable?'Negotiable':'Fixed Price'}`;
+
+  document.getElementById('bid-fixed-wrap').style.display = negotiable?'none':'block';
+  document.getElementById('bid-negotiable-wrap').style.display = negotiable?'block':'none';
+  if(!negotiable){
+    document.getElementById('bid-fixed-amount').textContent = 'KES ' + fixedAmount.toLocaleString('en-KE');
+  } else {
+    document.getElementById('bid-price-input').value = job.salary_min || '';
+  }
+  document.getElementById('bid-error').style.display = 'none';
+  const submitBtn = document.getElementById('bid-submit-btn');
+  submitBtn.disabled = false;
+  submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Bid';
+
+  document.getElementById('bid-form-wrap').style.display = 'block';
+  document.getElementById('bid-form-footer').style.display = 'flex';
+}
+
+function goToProfileGate(){
+  // 'login' → send to the worker login page; 'profile' → send to the profile setup flow.
+  window.location.href = bidGateReason === 'login' ? 'employee-login.html' : 'post-my-profile.html';
+}
+
+async function submitBid(){
+  const errEl = document.getElementById('bid-error');
+  errEl.style.display = 'none';
+  const { jobId, pricingMode, fixedAmount } = bidCtx;
+  if(!jobId) return;
+
+  let bidAmount = fixedAmount;
+  if(pricingMode === 'negotiable'){
+    const raw = document.getElementById('bid-price-input').value;
+    bidAmount = parseFloat(raw);
+    if(!raw || isNaN(bidAmount) || bidAmount<=0){
+      errEl.textContent = 'Enter a valid price for your bid.';
+      errEl.style.display = 'block';
+      return;
+    }
+  }
+
+  const btn = document.getElementById('bid-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+
+  const worker = await getWorkerProfile();
+  if(!worker){ closeModal('bid-modal'); showToast('Could not verify your profile — please try again.', 'error'); return; }
+
+  // Re-check right before insert in case a bid was placed from another tab/device.
+  const { data: existing } = await sb.from('job_applications').select('id').eq('job_id', jobId).eq('worker_id', worker.id).maybeSingle();
+  if(existing){
+    closeModal('bid-modal');
+    showToast('You have already placed a bid on this job.', 'info');
+    return;
+  }
+
+  const { error } = await sb.from('job_applications').insert({
+    job_id: jobId,
+    worker_id: worker.id,
+    worker_name: worker.full_name || '',
+    worker_phone: worker.phone || worker.phone_number || '',
+    status: 'pending',
+    bid_amount: bidAmount,
+    applied_at: new Date().toISOString()
+  });
+
+  if(error){
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Submit Bid';
+    return;
+  }
+
+  showToast(pricingMode==='negotiable' ? `Your offer of KES ${bidAmount.toLocaleString('en-KE')} has been sent to the employer.` : 'Bid submitted! The employer has been notified.', 'success');
+  closeModal('bid-modal');
+  applyFilters();
 }
 
 /* ── FUTURE: EXTERNAL JOB BOARDS (Fuzu, BrightMonday, etc.) ──

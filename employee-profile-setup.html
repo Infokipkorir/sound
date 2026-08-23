@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -140,6 +141,43 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
 .center-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center}
 .center-loader .spinner{display:block;width:32px;height:32px;border-width:3px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:14px}
 .center-loader p{font-size:14px;color:var(--text-muted)}
+
+/* ============================================================
+   CV UPLOAD + AI AUTO-FILL
+   ============================================================ */
+.cv-dropzone{border:1.5px dashed var(--green-mid);border-radius:var(--radius-sm);padding:2.2rem 1.4rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--green-light)}
+.cv-dropzone:hover{border-color:var(--green);background:#E4F3EA}
+.cv-dropzone i{font-size:30px;color:var(--green);display:block;margin-bottom:10px}
+.cv-dropzone .cv-title{font-size:14.5px;font-weight:700;color:var(--text)}
+.cv-dropzone .cv-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+.cv-dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.cv-skip{display:block;text-align:center;font-size:12.5px;color:var(--text-muted);margin-top:14px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit}
+.cv-skip:hover{color:var(--green-dark)}
+.cv-or{text-align:center;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0}
+
+.cv-reading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.6rem 1rem;text-align:center}
+.cv-reading .spinner{display:block;width:34px;height:34px;border-width:3px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:16px}
+.cv-reading p{font-size:14px;font-weight:600;color:var(--text)}
+.cv-reading .cv-reading-sub{font-size:12.5px;color:var(--text-muted);margin-top:5px;font-weight:400}
+
+.cv-found-banner{display:flex;gap:10px;align-items:flex-start;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.2rem}
+.cv-found-banner i{color:var(--green);font-size:17px;margin-top:1px}
+.cv-found-banner .cfb-title{font-size:13.5px;font-weight:700;color:var(--green-dark)}
+.cv-found-banner .cfb-body{font-size:12px;color:var(--text-mid);margin-top:2px;line-height:1.5}
+
+.cv-warnings{background:var(--accent-light);border:1px solid #F5D9A8;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:1.2rem;font-size:12px;color:#92620E;line-height:1.5}
+.cv-warnings ul{margin:4px 0 0 16px}
+
+.low-conf{position:relative}
+.low-conf label{color:var(--amber)!important}
+.low-conf input,.low-conf select{border-color:#F0C77E!important;background:#FFFBF3}
+.low-conf .conf-tag{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--amber);background:var(--accent-light);border-radius:10px;padding:1px 7px;margin-left:6px}
+
+.cv-summary-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-size:12.5px;color:var(--text-mid);margin-top:.6rem}
+.cv-summary-row strong{color:var(--text)}
+
+.cv-readonly-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.2rem;font-size:12.5px;color:var(--text-mid);line-height:1.7}
+.cv-readonly-box b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -170,6 +208,117 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
     <div class="center-loader" id="sessionLoader">
       <div class="spinner"></div>
       <p>Checking your session…</p>
+    </div>
+
+    <!-- ============================================================
+         CV UPLOAD + AI AUTO-FILL (shown before the wizard, once, for
+         profiles that haven't been through this yet). Reading and
+         Review are separate sub-screens toggled by cvStage.
+         ============================================================ -->
+    <div id="cvGate" style="display:none">
+
+      <!-- STAGE: upload -->
+      <div id="cvStageUpload">
+        <div class="step-badge"><i class="bi bi-magic"></i> FASTER SETUP</div>
+        <h1 class="step-title">Complete your profile faster</h1>
+        <p class="step-sub">Upload your CV and we'll fill in your details automatically — you'll get a chance to review and correct everything before it's saved.</p>
+
+        <div class="cv-dropzone" id="cvDropzone" onclick="document.getElementById('cvFileInput').click()">
+          <input type="file" id="cvFileInput" accept=".pdf,.docx" onchange="handleCvFileSelect(this)">
+          <i class="bi bi-file-earmark-arrow-up"></i>
+          <div class="cv-title">Tap to upload your CV</div>
+          <div class="cv-sub">PDF or DOCX &middot; up to 8MB</div>
+        </div>
+
+        <div class="alert error" id="cvError"><i class="bi bi-exclamation-circle-fill"></i><span id="cvErrorText"></span></div>
+
+        <div class="cv-or">or</div>
+        <button type="button" class="cv-skip" onclick="skipCvUpload()">Skip — I'll fill in the form manually</button>
+      </div>
+
+      <!-- STAGE: reading (AI is parsing the CV) -->
+      <div id="cvStageReading" style="display:none">
+        <div class="cv-reading">
+          <div class="spinner"></div>
+          <p>Reading your CV…</p>
+          <div class="cv-reading-sub">This usually takes a few seconds.</div>
+        </div>
+      </div>
+
+      <!-- STAGE: review (editable extracted fields before anything is saved) -->
+      <div id="cvStageReview" style="display:none">
+        <div class="step-badge"><i class="bi bi-search"></i> WE FOUND YOUR INFORMATION</div>
+        <h1 class="step-title">Review &amp; correct</h1>
+        <p class="step-sub">Check the details below — fields marked <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span> are ones we're less sure about. Anything left blank you can fill in on the next steps.</p>
+
+        <div class="cv-warnings" id="cvWarningsBox" style="display:none">
+          <strong><i class="bi bi-info-circle-fill"></i> A few notes from the CV reader:</strong>
+          <ul id="cvWarningsList"></ul>
+        </div>
+
+        <div class="cv-readonly-box" id="cvContactBox"></div>
+
+        <div class="sec-lbl no-border">About you</div>
+        <div class="fg" id="cvfg-preferredRole"><label>Preferred role</label>
+          <select id="cv-preferredRole">
+            <option value="">Select a role</option>
+            <option>House Manager / Nanny</option><option>Nanny / Babysitter</option><option>Housekeeper</option>
+            <option>Cook / Chef</option><option>Cleaner</option><option>Gardener</option><option>Driver</option>
+            <option>Elderly Caregiver</option><option>Security Guard</option><option>General Domestic Worker</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="fg" id="cvfg-experienceLevel"><label>Experience</label>
+            <select id="cv-experienceLevel"><option value="">Select</option>
+              <option value="0-1">Less than 1 year</option><option value="1-3">1 – 3 years</option>
+              <option value="3-5">3 – 5 years</option><option value="5-10">5 – 10 years</option><option value="10+">10+ years</option>
+            </select>
+          </div>
+          <div class="fg" id="cvfg-workArrangement"><label>Work arrangement</label>
+            <select id="cv-workArrangement"><option value="">Select</option>
+              <option>Live-In</option><option>Live-Out</option><option>Part-Time</option><option>Contract</option><option>Flexible</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg" id="cvfg-keySkills"><label>Key skills</label><input type="text" id="cv-keySkills" placeholder="e.g., cooking, childcare, laundry"></div>
+        <div class="fg" id="cvfg-languages"><label>Languages spoken</label><input type="text" id="cv-languages" placeholder="e.g., Swahili, English"></div>
+        <div class="fg" id="cvfg-aboutText"><label>Short bio</label><textarea id="cv-aboutText" maxlength="500"></textarea></div>
+
+        <div class="sec-lbl">Location</div>
+        <div class="row2">
+          <div class="fg" id="cvfg-currentTown"><label>Current town/area</label><input type="text" id="cv-currentTown"></div>
+          <div class="fg" id="cvfg-county"><label>County</label><input type="text" id="cv-county"></div>
+        </div>
+
+        <div class="sec-lbl">Education</div>
+        <div class="fg" id="cvfg-eduLevel"><label>Highest education level</label>
+          <select id="cv-eduLevel"><option value="">Select</option>
+            <option>None</option><option>Primary</option><option>Secondary (KCSE)</option><option>Certificate</option><option>Diploma</option><option>Degree</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="fg" id="cvfg-eduInstitution"><label>Institution</label><input type="text" id="cv-eduInstitution"></div>
+          <div class="fg" id="cvfg-eduYear"><label>Year completed</label><input type="number" id="cv-eduYear" min="1970" max="2030"></div>
+        </div>
+
+        <div class="sec-lbl">Identity</div>
+        <div class="row2">
+          <div class="fg" id="cvfg-dob"><label>Date of birth</label><input type="date" id="cv-dob"></div>
+          <div class="fg" id="cvfg-gender"><label>Gender</label>
+            <select id="cv-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
+          </div>
+        </div>
+
+        <div class="cv-summary-row"><span><i class="bi bi-briefcase"></i> Work experience found</span><strong id="cvExpCount">0 entries</strong></div>
+        <div class="cv-summary-row"><span><i class="bi bi-people"></i> Referees found</span><strong id="cvRefCount">0 entries</strong></div>
+        <p class="fg" style="margin-top:.6rem;font-size:11.5px;color:var(--text-muted)">You'll be able to review, edit or add to these in the next steps.</p>
+
+        <div class="step-nav">
+          <button class="btn btn-secondary" type="button" onclick="skipCvUpload()">Fill Manually Instead</button>
+          <button class="btn btn-primary" type="button" onclick="applyCvToWizard()"><i class="bi bi-check-circle"></i> Use These Details</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- MAIN WIZARD (hidden until session confirmed) -->
@@ -539,8 +688,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     prefillFromExisting();
 
     document.getElementById('sessionLoader').style.display = 'none';
-    document.getElementById('wizard').style.display = 'block';
-    document.getElementById('progressWrap').style.display = 'block';
 
     if (existingProfile) {
       document.getElementById('contextBox').style.display = 'flex';
@@ -551,7 +698,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (workExperiences.length === 0) addExperienceRow();
     if (referees.length === 0) { addRefereeRow(); addRefereeRow(); }
 
-    renderStep();
+    // Already went through CV upload (or a prior manual save) in an
+    // earlier visit — no need to show the CV gate again, go straight
+    // into the wizard where prefillFromExisting() has already loaded
+    // whatever was saved.
+    if (existingProfile && existingProfile.cv_parsed_at) {
+      startWizard();
+    } else {
+      document.getElementById('cvGate').style.display = 'block';
+    }
   } catch (e) {
     console.error('[SoundsCare] Session check failed:', e);
     window.location.href = 'register.html?msg=session_required';
@@ -626,6 +781,257 @@ function markUploadFilled(col) {
   document.getElementById(m[0]).classList.add('filled');
   document.getElementById(m[1]).textContent = m[2];
 }
+
+// ============================================================
+// CV UPLOAD + AI AUTO-FILL
+// ============================================================
+let cvExtracted = null; // last parse-cv result, kept for applyCvToWizard()
+
+function startWizard() {
+  document.getElementById('cvGate').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+  document.getElementById('progressWrap').style.display = 'block';
+  renderStep();
+}
+
+function skipCvUpload() {
+  startWizard();
+}
+
+function setCvStage(stage) {
+  document.getElementById('cvStageUpload').style.display = stage === 'upload' ? 'block' : 'none';
+  document.getElementById('cvStageReading').style.display = stage === 'reading' ? 'block' : 'none';
+  document.getElementById('cvStageReview').style.display = stage === 'review' ? 'block' : 'none';
+}
+
+function showCvError(msg) {
+  document.getElementById('cvErrorText').textContent = msg;
+  document.getElementById('cvError').classList.add('show');
+}
+
+async function handleCvFileSelect(inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  document.getElementById('cvError').classList.remove('show');
+
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ext !== 'pdf' && ext !== 'docx') {
+    showCvError('Please upload a PDF or DOCX file.');
+    inputEl.value = '';
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    showCvError('That file is larger than 8MB — please upload a smaller version of your CV.');
+    inputEl.value = '';
+    return;
+  }
+
+  setCvStage('reading');
+
+  try {
+    let requestBody;
+    if (ext === 'pdf') {
+      const base64 = await fileToBase64(file);
+      requestBody = { kind: 'pdf', fileBase64: base64, fileName: file.name };
+    } else {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const text = (result.value || '').trim();
+      if (!text) {
+        showCvError("We couldn't read any text from that DOCX file. Try a different file, or fill the form manually.");
+        setCvStage('upload');
+        return;
+      }
+      requestBody = { kind: 'text', text, fileName: file.name };
+    }
+
+    const { data, error } = await dbClient.functions.invoke('parse-cv', { body: requestBody });
+
+    if (error || !data || data.error) {
+      console.error('[SoundsCare] CV parse failed:', error || data);
+      showCvError('We had trouble reading that CV. You can try again, or fill the form manually.');
+      setCvStage('upload');
+      return;
+    }
+
+    cvExtracted = data.extracted || {};
+    renderCvReview();
+    setCvStage('review');
+
+    // Best-effort: store the raw CV + extraction result, non-blocking.
+    // Doesn't stop the flow if either step fails.
+    uploadCvFileAndSaveMeta(file, ext, cvExtracted).catch(function (e) {
+      console.warn('[SoundsCare] CV storage/meta save failed (non-fatal):', e);
+    });
+  } catch (e) {
+    console.error('[SoundsCare] CV read/parse error:', e);
+    showCvError('Something went wrong reading that file. You can try again, or fill the form manually.');
+    setCvStage('upload');
+  } finally {
+    inputEl.value = '';
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
+    reader.onerror = function () { reject(new Error('Could not read file')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadCvFileAndSaveMeta(file, ext, extracted) {
+  const path = currentUser.id + '/cv-' + Date.now() + '.' + ext;
+  const { error: upErr } = await dbClient.storage.from('cv-uploads').upload(path, file, { upsert: true });
+  if (upErr) throw upErr;
+
+  const nowIso = new Date().toISOString();
+  const { error: dbErr } = await dbClient.from('worker_profiles').upsert({
+    session_id: currentUser.id,
+    email: currentUser.email,
+    cv_url: path,
+    cv_file_name: file.name,
+    cv_uploaded_at: nowIso,
+    cv_parsed_data: extracted,
+    cv_parsed_at: nowIso
+  }, { onConflict: 'session_id' });
+  if (dbErr) throw dbErr;
+}
+
+function cvSet(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== null && val !== undefined && val !== '') el.value = val;
+}
+
+function cvFlagLowConfidence(fgId, isLow) {
+  const el = document.getElementById(fgId);
+  if (!el) return;
+  el.classList.toggle('low-conf', !!isLow);
+  const label = el.querySelector('label');
+  if (label) {
+    const existingTag = label.querySelector('.conf-tag');
+    if (isLow && !existingTag) {
+      label.insertAdjacentHTML('beforeend', ' <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span>');
+    } else if (!isLow && existingTag) {
+      existingTag.remove();
+    }
+  }
+}
+
+function renderCvReview() {
+  const d = cvExtracted || {};
+  const personal = d.personal || {};
+  const about = d.about || {};
+  const education = d.education || {};
+  const identity = d.identity || {};
+  const confidence = d.confidence || {};
+  const workExp = Array.isArray(d.work_experience) ? d.work_experience : [];
+  const refs = Array.isArray(d.referees) ? d.referees : [];
+  const warnings = Array.isArray(d.warnings) ? d.warnings : [];
+
+  // Read-only contact summary — these aren't wizard fields (name/phone/
+  // email come from registration), shown for the worker's own review;
+  // saved alongside cv_parsed_data and picked up in submitProfile() only
+  // if the account doesn't already have them.
+  const contactParts = [];
+  if (personal.full_name) contactParts.push('<b>Name:</b> ' + escapeHtml(personal.full_name));
+  if (personal.phone) contactParts.push('<b>Phone:</b> ' + escapeHtml(personal.phone));
+  if (personal.email) contactParts.push('<b>Email:</b> ' + escapeHtml(personal.email));
+  const contactBox = document.getElementById('cvContactBox');
+  if (contactParts.length) {
+    contactBox.style.display = 'block';
+    contactBox.innerHTML = contactParts.join('<br>');
+  } else {
+    contactBox.style.display = 'none';
+  }
+
+  cvSet('cv-preferredRole', about.preferred_role);
+  cvSet('cv-experienceLevel', about.experience_level);
+  cvSet('cv-workArrangement', about.work_arrangement);
+  cvSet('cv-keySkills', about.key_skills);
+  cvSet('cv-languages', about.languages);
+  cvSet('cv-aboutText', about.about_text);
+  cvSet('cv-currentTown', personal.current_town);
+  cvSet('cv-county', personal.county);
+  cvSet('cv-eduLevel', education.edu_level);
+  cvSet('cv-eduInstitution', education.edu_institution);
+  cvSet('cv-eduYear', education.edu_year);
+  cvSet('cv-dob', identity.date_of_birth);
+  cvSet('cv-gender', identity.gender);
+
+  cvFlagLowConfidence('cvfg-preferredRole', confidence.preferred_role === 'low');
+  cvFlagLowConfidence('cvfg-dob', confidence.date_of_birth === 'low');
+
+  document.getElementById('cvExpCount').textContent = workExp.length + (workExp.length === 1 ? ' entry' : ' entries');
+  document.getElementById('cvRefCount').textContent = refs.length + (refs.length === 1 ? ' entry' : ' entries');
+
+  const warnBox = document.getElementById('cvWarningsBox');
+  if (warnings.length) {
+    warnBox.style.display = 'block';
+    document.getElementById('cvWarningsList').innerHTML = warnings.map(function (w) { return '<li>' + escapeHtml(w) + '</li>'; }).join('');
+  } else {
+    warnBox.style.display = 'none';
+  }
+}
+
+function applyCvToWizard() {
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+
+  set('preferredRole', val('cv-preferredRole'));
+  set('experienceLevel', val('cv-experienceLevel'));
+  set('workArrangement', val('cv-workArrangement'));
+  set('keySkills', val('cv-keySkills'));
+  set('languages', val('cv-languages'));
+  set('aboutText', val('cv-aboutText'));
+  set('currentTown', val('cv-currentTown'));
+  set('county', val('cv-county'));
+  set('eduLevel', val('cv-eduLevel'));
+  set('eduInstitution', val('cv-eduInstitution'));
+  set('eduYear', val('cv-eduYear'));
+  set('dob', val('cv-dob'));
+  set('gender', val('cv-gender'));
+  updateCharCount();
+
+  function set(id, v) { const el = document.getElementById(id); if (el && v) el.value = v; }
+
+  const d = cvExtracted || {};
+  const workExp = Array.isArray(d.work_experience) ? d.work_experience : [];
+  const refs = Array.isArray(d.referees) ? d.referees : [];
+
+  if (workExp.length) {
+    workExperiences = workExp
+      .filter(function (e) { return e && e.employer_name; })
+      .map(function (e) { return { employer_name: e.employer_name || '', years_worked: e.years_worked || '', job_description: e.job_description || '' }; });
+    if (!workExperiences.length) workExperiences = [{ employer_name: '', years_worked: '', job_description: '' }];
+    renderExperienceRows();
+  }
+  if (refs.length) {
+    referees = refs
+      .slice(0, 3)
+      .filter(function (r) { return r && r.full_name; })
+      .map(function (r) { return { full_name: r.full_name || '', relationship: r.relationship || '', phone: r.phone || '' }; });
+    if (referees.length) {
+      renderRefereeRows();
+      document.getElementById('addRefBtn').style.display = referees.length >= 3 ? 'none' : 'flex';
+    }
+  }
+
+  // Contact details the wizard doesn't have fields for (name/phone) —
+  // fill in silently on the account record only where it's currently
+  // blank, never overwriting anything the worker already has saved.
+  const personal = d.personal || {};
+  if (personal.full_name || personal.phone) {
+    cvContactToSave = {
+      full_name: (!existingProfile || !existingProfile.full_name) ? personal.full_name : null,
+      phone: (!existingProfile || !existingProfile.phone) ? personal.phone : null
+    };
+  }
+
+  startWizard();
+}
+
+let cvContactToSave = null;
 
 // ============================================================
 // STEP RENDERING / NAVIGATION
@@ -933,6 +1339,12 @@ async function submitProfile() {
   const payload = {
     session_id: currentUser.id,
     email: currentUser.email,
+
+    // Filled in from an uploaded CV only when the account didn't
+    // already have these (see applyCvToWizard) — never overwrites
+    // data the worker already saved or entered at registration.
+    ...(cvContactToSave && cvContactToSave.full_name ? { full_name: cvContactToSave.full_name } : {}),
+    ...(cvContactToSave && cvContactToSave.phone ? { phone: cvContactToSave.phone, phone_number: cvContactToSave.phone } : {}),
 
     preferred_role: val('preferredRole') || null,
     job_title: val('preferredRole') || null,
