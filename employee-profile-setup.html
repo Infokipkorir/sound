@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -221,7 +222,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
       <div id="cvStageUpload">
         <div class="step-badge"><i class="bi bi-magic"></i> FASTER SETUP</div>
         <h1 class="step-title">Complete your profile faster</h1>
-        <p class="step-sub">Upload your CV and we'll fill in your details automatically — you'll get a chance to review and correct everything before it's saved.</p>
+        <p class="step-sub">Upload your CV and we'll try to pick out a few details (phone, email, skills, etc.) — you'll get a chance to review and fill in the rest before it's saved.</p>
 
         <div class="cv-dropzone" id="cvDropzone" onclick="document.getElementById('cvFileInput').click()">
           <input type="file" id="cvFileInput" accept=".pdf,.docx" onchange="handleCvFileSelect(this)">
@@ -829,33 +830,22 @@ async function handleCvFileSelect(inputEl) {
   setCvStage('reading');
 
   try {
-    let requestBody;
+    let text;
     if (ext === 'pdf') {
-      const base64 = await fileToBase64(file);
-      requestBody = { kind: 'pdf', fileBase64: base64, fileName: file.name };
+      text = await extractTextFromPdf(file);
     } else {
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
-      const text = (result.value || '').trim();
-      if (!text) {
-        showCvError("We couldn't read any text from that DOCX file. Try a different file, or fill the form manually.");
-        setCvStage('upload');
-        return;
-      }
-      requestBody = { kind: 'text', text, fileName: file.name };
+      text = (result.value || '').trim();
     }
 
-    const { data, error } = await dbClient.functions.invoke('parse-cv', { body: requestBody });
-
-    if (error || !data || data.error) {
-      console.error('[SoundsCare] CV parse failed:', error || data);
-      const detail = (data && (data.detail || data.error)) || (error && error.message) || '';
-      showCvError('We had trouble reading that CV' + (detail ? ' (' + detail + ')' : '') + '. You can try again, or fill the form manually.');
+    if (!text) {
+      showCvError("We couldn't read any text from that file. Try a different file, or fill the form manually.");
       setCvStage('upload');
       return;
     }
 
-    cvExtracted = data.extracted || {};
+    cvExtracted = extractCvWithPatterns(text);
     renderCvReview();
     setCvStage('review');
 
@@ -873,13 +863,144 @@ async function handleCvFileSelect(inputEl) {
   }
 }
 
-function fileToBase64(file) {
-  return new Promise(function (resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
-    reader.onerror = function () { reject(new Error('Could not read file')); };
-    reader.readAsDataURL(file);
-  });
+// ============================================================
+// PDF TEXT EXTRACTION (pdf.js) — client-side only, no API call
+// ============================================================
+async function extractTextFromPdf(file) {
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    fullText += content.items.map(function (it) { return it.str; }).join(' ') + '\n';
+  }
+  return fullText.trim();
+}
+
+// ============================================================
+// REGEX / KEYWORD-BASED CV EXTRACTION — no AI, no external API.
+// Deliberately conservative: only fills a field when a pattern
+// clearly matches, everything else is left null for the worker
+// to fill in manually on the review screen. All confidence is
+// marked "low" since this is naive pattern matching, not
+// contextual understanding — the review step is not optional.
+// ============================================================
+const CV_ROLE_KEYWORDS = [
+  { role: 'House Manager / Nanny', patterns: [/house\s*manager/i] },
+  { role: 'Nanny / Babysitter', patterns: [/\bnanny\b/i, /babysit/i] },
+  { role: 'Housekeeper', patterns: [/housekeep/i] },
+  { role: 'Cook / Chef', patterns: [/\bchef\b/i, /\bcook(ing)?\b/i] },
+  { role: 'Elderly Caregiver', patterns: [/elderly/i, /care\s*giver/i, /caregiver/i] },
+  { role: 'Security Guard', patterns: [/security guard/i, /watchman/i, /\bguard\b/i] },
+  { role: 'Driver', patterns: [/\bdriver\b/i, /driving/i] },
+  { role: 'Gardener', patterns: [/garden/i] },
+  { role: 'Cleaner', patterns: [/\bcleaner\b/i, /\bcleaning\b/i] },
+  { role: 'General Domestic Worker', patterns: [/domestic work/i, /house\s*help/i, /\bmaid\b/i] }
+];
+const CV_ARRANGEMENT_KEYWORDS = [
+  { val: 'Live-In', patterns: [/live[\s-]?in/i] },
+  { val: 'Live-Out', patterns: [/live[\s-]?out/i] },
+  { val: 'Part-Time', patterns: [/part[\s-]?time/i] },
+  { val: 'Contract', patterns: [/\bcontract\b/i] },
+  { val: 'Flexible', patterns: [/flexible/i] }
+];
+const CV_EDU_KEYWORDS = [
+  { val: 'Degree', patterns: [/\bdegree\b/i, /bachelor/i] },
+  { val: 'Diploma', patterns: [/\bdiploma\b/i] },
+  { val: 'Certificate', patterns: [/certificate/i] },
+  { val: 'Secondary (KCSE)', patterns: [/\bkcse\b/i, /secondary school/i] },
+  { val: 'Primary', patterns: [/\bkcpe\b/i, /primary school/i] }
+];
+const CV_SKILL_KEYWORDS = [
+  'cooking', 'cleaning', 'childcare', 'laundry', 'ironing', 'gardening',
+  'driving', 'babysitting', 'housekeeping', 'elderly care', 'first aid',
+  'meal preparation', 'grocery shopping'
+];
+const CV_LANGUAGE_KEYWORDS = [
+  'English', 'Swahili', 'Kikuyu', 'Luo', 'Kamba', 'Kalenjin', 'Luhya',
+  'Kisii', 'Meru', 'Somali', 'French', 'Arabic'
+];
+// Not exhaustive — covers common counties/towns likely to appear on a CV.
+const CV_KENYA_LOCATIONS = [
+  'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Kiambu', 'Machakos',
+  'Meru', 'Nyeri', 'Kakamega', 'Kericho', 'Thika', 'Naivasha', 'Kitui',
+  'Bungoma', 'Garissa', 'Malindi', 'Kajiado', 'Murang\'a', 'Embu'
+];
+
+function extractCvWithPatterns(text) {
+  const warnings = ["This is a basic pattern-matching reader (no AI) — please double-check every field below carefully."];
+  const findFirst = function (list) {
+    for (const item of list) {
+      if (item.patterns.some(function (p) { return p.test(text); })) return item.role || item.val;
+    }
+    return null;
+  };
+  const matchAll = function (words) {
+    const found = words.filter(function (w) { return new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text); });
+    return found.length ? found.join(', ') : null;
+  };
+
+  const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  const phoneMatch = text.match(/(?:\+254|254|0)7\d{8}|(?:\+254|254|0)1\d{8}/);
+  const dobMatch = text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
+  let dob = null;
+  if (dobMatch) {
+    const d = dobMatch[1].padStart(2, '0'), m = dobMatch[2].padStart(2, '0'), y = dobMatch[3];
+    if (Number(m) <= 12 && Number(d) <= 31) dob = y + '-' + m + '-' + d;
+  }
+  const genderMatch = text.match(/\b(Female|Male)\b/i);
+  const yearsMatch = text.match(/(\d{1,2})\s*\+?\s*years?\s*(of\s*)?experience/i);
+  let experienceLevel = null;
+  if (yearsMatch) {
+    const yrs = Number(yearsMatch[1]);
+    experienceLevel = yrs <= 1 ? '0-1' : yrs <= 3 ? '1-3' : yrs <= 5 ? '3-5' : yrs <= 10 ? '5-10' : '10+';
+  }
+  const location = CV_KENYA_LOCATIONS.find(function (loc) { return new RegExp('\\b' + loc + '\\b', 'i').test(text); }) || null;
+
+  if (!emailMatch) warnings.push('Could not find an email address.');
+  if (!phoneMatch) warnings.push('Could not find a phone number.');
+  if (!dob) warnings.push('Could not find a date of birth.');
+
+  return {
+    personal: {
+      full_name: null, // names aren't reliably distinguishable by pattern alone — left for manual entry
+      phone: phoneMatch ? phoneMatch[0] : null,
+      email: emailMatch ? emailMatch[0] : null,
+      current_town: location,
+      county: location,
+      home_address: null,
+      home_village: null,
+      home_county: null
+    },
+    about: {
+      preferred_role: findFirst(CV_ROLE_KEYWORDS),
+      experience_level: experienceLevel,
+      work_arrangement: findFirst(CV_ARRANGEMENT_KEYWORDS),
+      key_skills: matchAll(CV_SKILL_KEYWORDS),
+      languages: matchAll(CV_LANGUAGE_KEYWORDS),
+      about_text: null // synthesizing a bio needs actual comprehension, not just pattern matching
+    },
+    education: {
+      edu_level: findFirst(CV_EDU_KEYWORDS),
+      edu_institution: null,
+      edu_year: null,
+      edu_field: null
+    },
+    work_experience: [], // unstructured employer/role/date parsing isn't reliable without AI
+    identity: {
+      date_of_birth: dob,
+      gender: genderMatch ? (genderMatch[1][0].toUpperCase() + genderMatch[1].slice(1).toLowerCase()) : null
+    },
+    referees: [],
+    confidence: {
+      full_name: 'low', phone: 'low', email: 'low', preferred_role: 'low', date_of_birth: 'low'
+    },
+    warnings: warnings
+  };
 }
 
 async function uploadCvFileAndSaveMeta(file, ext, extracted) {
