@@ -849,7 +849,8 @@ async function handleCvFileSelect(inputEl) {
 
     if (error || !data || data.error) {
       console.error('[SoundsCare] CV parse failed:', error || data);
-      showCvError('We had trouble reading that CV. You can try again, or fill the form manually.');
+      const detail = (data && (data.detail || data.error)) || (error && error.message) || '';
+      showCvError('We had trouble reading that CV' + (detail ? ' (' + detail + ')' : '') + '. You can try again, or fill the form manually.');
       setCvStage('upload');
       return;
     }
