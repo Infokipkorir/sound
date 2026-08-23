@@ -1930,21 +1930,6 @@
           <span class="form-hint">Interview: 300 | First Salary: 1000</span>
         </div>
 
-        <!-- WALLET BALANCE -->
-        <div id="wallet-form" style="display:none;">
-          <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
-            <strong style="color:var(--brand); display:flex; align-items:center; gap:6px;">
-              <img src="images/wallet.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-              <span style="display:none;"></span> Pay from Wallet Balance
-            </strong><br>
-            Your available balance: <strong id="wallet-pay-balance">KES 0</strong><br>
-            Funds will be deducted instantly from your wallet.
-          </div>
-          <button class="btn btn-primary btn-full" onclick="payFromWallet()">
-            <i class="bi bi-wallet2"></i> Pay from Balance
-          </button>
-        </div>
-
         <!-- M-PESA -->
         <div id="mpesa-form" style="display:none;">
           <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
@@ -1977,23 +1962,49 @@
           <button class="btn btn-primary btn-full" onclick="sendAirtelRequest()">Request Payment</button>
         </div>
 
-        <!-- MANUAL PAYBILL -->
-        <div id="manual-form" style="display:none;">
-          <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:1rem; font-size:12px; line-height:1.8;">
-            <strong style="display:flex; align-items:center; gap:6px;">
-              <img src="images/card.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-              <span style="display:none;"></span> Paybill Details
+        <!-- WALLET BALANCE -->
+        <div id="wallet-form" style="display:none;">
+          <div style="background:rgba(27,107,69,.08); border:1px solid rgba(27,107,69,.2); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:var(--brand); display:flex; align-items:center; gap:6px;">
+              <img src="images/wallet.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <span style="display:none;"></span> Pay from Wallet Balance
             </strong><br>
-            Paybill: <strong style="font-family:monospace;">400200</strong><br>
-            Account: <strong style="font-family:monospace;" id="paybill-account">—</strong><br>
-            Amount: <strong style="font-family:monospace;" id="paybill-amount">KES 0</strong>
+            Your available balance: <strong id="wallet-pay-balance">KES 0</strong><br>
+            Funds will be deducted instantly from your wallet.
+          </div>
+          <button class="btn btn-primary btn-full" onclick="payFromWallet()">
+            <i class="bi bi-wallet2"></i> Pay from Balance
+          </button>
+        </div>
+
+        <!-- CARD -->
+        <div id="card-form" style="display:none;">
+          <div style="background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.25); border-radius:10px; padding:12px; margin-bottom:1rem; font-size:12px;">
+            <strong style="color:#7c3aed; display:flex; align-items:center; gap:6px;">
+              <img src="images/card.png" alt="" style="width:18px;height:18px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <span style="display:none;"></span> Card Payment
+            </strong><br>
+            Pay securely using Visa, Mastercard or any debit/credit card.
           </div>
           <div class="form-group">
-            <label>Receipt / Confirmation Code</label>
-            <input type="text" id="receipt-code" placeholder="e.g. QJG3XYZABC" style="text-transform:uppercase;">
-            <span class="form-hint">Enter M-Pesa or bank receipt after paying via Paybill</span>
+            <label>Card Number</label>
+            <input type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)">
           </div>
-          <button class="btn btn-primary btn-full" onclick="confirmReceipt()">Verify Receipt</button>
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+              <label>Expiry (MM/YY)</label>
+              <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>CVV</label>
+              <input type="password" id="card-cvv" placeholder="•••" maxlength="3">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Cardholder Name</label>
+            <input type="text" id="card-name" placeholder="As on card">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitCardPayment()"><i class="bi bi-credit-card"></i> Pay Now</button>
         </div>
 
         <div style="background:var(--accent-soft); border:1px solid rgba(232,160,64,.3); border-radius:10px; padding:12px; margin-top:1.5rem; font-size:11px; color:var(--muted); line-height:1.7;">
@@ -2956,10 +2967,9 @@ async function loadDashboard() {
       document.getElementById('stat-wallet').textContent = 'KES ' + bal.toLocaleString('en-KE');
       document.getElementById('stat-outstanding').textContent = 'KES ' + out.toLocaleString('en-KE');
       document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
-      document.getElementById('paybill-account').textContent = wallet.account_number || '—';
       updateFeeStatus(wallet);
       if (!wallet.account_number) {
-        // Every user needs an account number to pay via Paybill — generate one now.
+        // Every user needs an account number for wallet/reconciliation purposes — generate one now.
         ensureAccountNumber();
       }
     } else {
@@ -5386,25 +5396,57 @@ function selectPayMethod(method) {
     card.classList.toggle('active', card.dataset.method === method);
   });
   updatePaymentUI();
-  if (method === 'manual') ensureAccountNumber();
 }
 
 function updatePaymentUI() {
   const method = document.getElementById('pay-method').value;
-  document.getElementById('wallet-form').style.display = method === 'wallet' ? 'block' : 'none';
   document.getElementById('mpesa-form').style.display = method === 'mpesa' ? 'block' : 'none';
   document.getElementById('airtel-form').style.display = method === 'airtel' ? 'block' : 'none';
-  document.getElementById('manual-form').style.display = method === 'manual' ? 'block' : 'none';
+  document.getElementById('wallet-form').style.display = method === 'wallet' ? 'block' : 'none';
+  document.getElementById('card-form').style.display = method === 'card' ? 'block' : 'none';
 
   if (method === 'wallet') {
     // Show current balance so user can confirm they have enough
     const balText = document.getElementById('wallet-balance').textContent;
     document.getElementById('wallet-pay-balance').textContent = balText;
   }
-  if (method === 'manual') {
-    const amt = document.getElementById('pay-amount').value || 0;
-    document.getElementById('paybill-amount').textContent = 'KES ' + parseInt(amt || 0).toLocaleString('en-KE');
-  }
+}
+
+function formatCard(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 16);
+  el.value = v.replace(/(.{4})/g, '$1 ').trim();
+}
+function formatExpiry(el) {
+  let v = el.value.replace(/\D/g, '');
+  if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
+  el.value = v;
+}
+
+async function submitCardPayment() {
+  const amount = document.getElementById('pay-amount').value;
+  const feeType = document.getElementById('fee-type').value;
+  const num = document.getElementById('card-number').value.replace(/\s/g, '');
+  const expiry = document.getElementById('card-expiry').value.trim();
+  const cvv = document.getElementById('card-cvv').value.trim();
+  const name = document.getElementById('card-name').value.trim();
+
+  if (!amount || amount <= 0) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Select a fee type and enter an amount'); return; }
+  if (num.length < 16) { showToast('err', 'bi-exclamation-circle', 'Invalid Card', 'Enter a valid 16-digit card number.'); return; }
+  if (!/^\d{2}\/\d{2}$/.test(expiry)) { showToast('err', 'bi-exclamation-circle', 'Invalid Expiry', 'Enter expiry as MM/YY.'); return; }
+  if (cvv.length < 3) { showToast('err', 'bi-exclamation-circle', 'Invalid CVV', 'Enter a valid CVV.'); return; }
+  if (!name) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter the cardholder name.'); return; }
+
+  const btn = document.querySelector('#card-form .btn-primary');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
+
+  const ref = await createPayment(parseFloat(amount), 'card', feeType);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-credit-card"></i> Pay Now';
+
+  showToast('ok', 'bi-check-circle', 'Payment Submitted', `Ref: ${ref || '—'}`);
+  closeModal('modal-wallet');
 }
 
 async function payFromWallet() {
@@ -5468,7 +5510,6 @@ async function payFromWallet() {
       payment_method: 'wallet',
       status: 'completed',
       account_number: acctNumber || null,
-      paybill_number: '400200',
       transaction_id: txnRef,
     });
 
@@ -5566,19 +5607,8 @@ async function sendAirtelRequest() {
   }, 1200);
 }
 
-async function confirmReceipt() {
-  const receipt = document.getElementById('receipt-code').value.trim().toUpperCase();
-  const amount = document.getElementById('pay-amount').value;
-  const feeType = document.getElementById('fee-type').value;
-  if (!receipt || !amount) { showToast('err', 'bi-exclamation-circle', 'Missing', 'Enter receipt code and amount'); return; }
-
-  const ref = await createPayment(parseFloat(amount), 'manual', feeType, { bank_account: receipt });
-  showToast('ok', 'bi-check-circle', 'Submitted', `Admin will verify within 24 hours. Ref: ${ref || '—'}`);
-  closeModal('modal-wallet');
-}
-
 // Generates a unique, human-readable reference number for every transaction so
-// each payment (wallet / M-Pesa / Airtel / Paybill) can be tracked and reconciled.
+// each payment (wallet / M-Pesa / Airtel / Card) can be tracked and reconciled.
 function generateTransactionRef() {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -5691,7 +5721,7 @@ async function canAffordConnects(costPerUnit) {
   return (wallet.connects_balance || 0) >= costPerUnit;
 }
 
-// Every user needs a Paybill account number before they can be asked to pay.
+// Every user gets an account number for wallet identification/reconciliation.
 // If the wallet doesn't have one yet, generate one deterministically from their
 // user id, save it to both `wallets` and `worker_profiles`, and reflect it in the UI.
 function generateAccountNumber(userId) {
@@ -5719,9 +5749,7 @@ async function ensureAccountNumber() {
     }
 
     const acctEl = document.getElementById('wallet-acct');
-    const paybillEl = document.getElementById('paybill-account');
     if (acctEl) acctEl.textContent = 'Acct: ' + newAcct;
-    if (paybillEl) paybillEl.textContent = newAcct;
 
     return newAcct;
   } catch (e) {
@@ -5732,8 +5760,7 @@ async function ensureAccountNumber() {
 
 async function createPayment(amount, method, feeType, extra = {}) {
   try {
-    // Fetch account_number from wallet first — auto-generate one if missing so
-    // every user always has an account number to quote when paying via Paybill.
+    // Fetch account_number from wallet first — auto-generate one if missing.
     const { data: wallet } = await sb.from('wallets')
       .select('account_number')
       .eq('user_id', currentUser.id)
@@ -5747,9 +5774,8 @@ async function createPayment(amount, method, feeType, extra = {}) {
       amount,
       fee_type: feeType,
       payment_method: method,
-      status: method === 'manual' ? 'processing' : 'pending',
+      status: 'pending',
       account_number: acctNumber || null,
-      paybill_number: '400200',
       transaction_id: txnRef,
       ...extra,
     };
