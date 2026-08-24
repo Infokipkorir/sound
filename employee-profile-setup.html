@@ -1352,6 +1352,52 @@ function escapeAttr(str) {
 }
 
 // ============================================================
+// IMAGE COMPRESSION — downscale + re-encode before upload so a
+// full-resolution phone camera capture (ID front/back, selfie,
+// profile photo) doesn't exhaust memory on lower-end devices.
+// Falls back to the original, untouched file if anything here
+// fails, so a compression problem never blocks the upload.
+// ============================================================
+async function decodeImageBitmap(file) {
+  try {
+    return await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch (e) {
+    try { return await createImageBitmap(file); } catch (e2) { return null; }
+  }
+}
+
+async function compressImageFile(file, maxDimension, quality) {
+  if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml') return file;
+
+  const bitmap = await decodeImageBitmap(file);
+  if (!bitmap) return file;
+
+  try {
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    if (bitmap.close) bitmap.close();
+
+    const blob = await new Promise(function (resolve) {
+      canvas.toBlob(function (b) { resolve(b); }, 'image/jpeg', quality);
+    });
+
+    if (!blob || blob.size >= file.size) return file; // didn't actually help — keep the original
+    blob.name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+    return blob;
+  } catch (e) {
+    if (bitmap && bitmap.close) bitmap.close();
+    return file;
+  }
+}
+
+// ============================================================
 // FILE UPLOAD
 // ============================================================
 async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
@@ -1370,13 +1416,19 @@ async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
   const textEl = document.getElementById(textId);
   const originalText = textEl.textContent;
 
-  textEl.textContent = 'Uploading…';
+  textEl.textContent = 'Preparing…';
 
   try {
-    const ext = file.name.split('.').pop();
+    // Shrink large camera photos before upload — this is what avoids
+    // the "low memory" failures on full-resolution ID/selfie captures.
+    const uploadFile = await compressImageFile(file, 1600, 0.82);
+
+    textEl.textContent = 'Uploading…';
+
+    const ext = ((uploadFile && uploadFile.name) || file.name).split('.').pop();
     const path = currentUser.id + '/' + column + '-' + Date.now() + '.' + ext;
 
-    const { error: upErr } = await dbClient.storage.from(bucket).upload(path, file, { upsert: true });
+    const { error: upErr } = await dbClient.storage.from(bucket).upload(path, uploadFile, { upsert: true, contentType: uploadFile.type || file.type });
     if (upErr) throw upErr;
 
     let storedValue = path;
