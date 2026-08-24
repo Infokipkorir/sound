@@ -196,10 +196,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
 
   <!-- PROGRESS -->
   <div class="progress-wrap" id="progressWrap" style="display:none">
-    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:14.28%"></div></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:12.5%"></div></div>
     <div class="progress-label">
-      <span>Step <span class="cur" id="progressStepNum">1</span> of 7</span>
-      <span id="progressStepName">About You</span>
+      <span>Step <span class="cur" id="progressStepNum">1</span> of 8</span>
+      <span id="progressStepName">Upload CV</span>
     </div>
   </div>
 
@@ -211,119 +211,110 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
       <p>Checking your session…</p>
     </div>
 
-    <!-- ============================================================
-         CV UPLOAD + AI AUTO-FILL (shown before the wizard, once, for
-         profiles that haven't been through this yet). Reading and
-         Review are separate sub-screens toggled by cvStage.
-         ============================================================ -->
-    <div id="cvGate" style="display:none">
-
-      <!-- STAGE: upload -->
-      <div id="cvStageUpload">
-        <div class="step-badge"><i class="bi bi-magic"></i> FASTER SETUP</div>
-        <h1 class="step-title">Complete your profile faster</h1>
-        <p class="step-sub">Upload your CV and we'll try to pick out a few details (phone, email, skills, etc.) — you'll get a chance to review and fill in the rest before it's saved.</p>
-
-        <div class="cv-dropzone" id="cvDropzone" onclick="document.getElementById('cvFileInput').click()">
-          <input type="file" id="cvFileInput" accept=".pdf,.docx" onchange="handleCvFileSelect(this)">
-          <i class="bi bi-file-earmark-arrow-up"></i>
-          <div class="cv-title">Tap to upload your CV</div>
-          <div class="cv-sub">PDF or DOCX &middot; up to 8MB</div>
-        </div>
-
-        <div class="alert error" id="cvError"><i class="bi bi-exclamation-circle-fill"></i><span id="cvErrorText"></span></div>
-
-        <div class="cv-or">or</div>
-        <button type="button" class="cv-skip" onclick="skipCvUpload()">Skip — I'll fill in the form manually</button>
-      </div>
-
-      <!-- STAGE: reading (AI is parsing the CV) -->
-      <div id="cvStageReading" style="display:none">
-        <div class="cv-reading">
-          <div class="spinner"></div>
-          <p>Reading your CV…</p>
-          <div class="cv-reading-sub">This usually takes a few seconds.</div>
-        </div>
-      </div>
-
-      <!-- STAGE: review (editable extracted fields before anything is saved) -->
-      <div id="cvStageReview" style="display:none">
-        <div class="step-badge"><i class="bi bi-search"></i> WE FOUND YOUR INFORMATION</div>
-        <h1 class="step-title">Review &amp; correct</h1>
-        <p class="step-sub">Check the details below — fields marked <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span> are ones we're less sure about. Anything left blank you can fill in on the next steps.</p>
-
-        <div class="cv-warnings" id="cvWarningsBox" style="display:none">
-          <strong><i class="bi bi-info-circle-fill"></i> A few notes from the CV reader:</strong>
-          <ul id="cvWarningsList"></ul>
-        </div>
-
-        <div class="cv-readonly-box" id="cvContactBox"></div>
-
-        <div class="sec-lbl no-border">About you</div>
-        <div class="fg" id="cvfg-preferredRole"><label>Preferred role</label>
-          <select id="cv-preferredRole">
-            <option value="">Select a role</option>
-            <option>House Manager / Nanny</option><option>Nanny / Babysitter</option><option>Housekeeper</option>
-            <option>Cook / Chef</option><option>Cleaner</option><option>Gardener</option><option>Driver</option>
-            <option>Elderly Caregiver</option><option>Security Guard</option><option>General Domestic Worker</option>
-          </select>
-        </div>
-        <div class="row2">
-          <div class="fg" id="cvfg-experienceLevel"><label>Experience</label>
-            <select id="cv-experienceLevel"><option value="">Select</option>
-              <option value="0-1">Less than 1 year</option><option value="1-3">1 – 3 years</option>
-              <option value="3-5">3 – 5 years</option><option value="5-10">5 – 10 years</option><option value="10+">10+ years</option>
-            </select>
-          </div>
-          <div class="fg" id="cvfg-workArrangement"><label>Work arrangement</label>
-            <select id="cv-workArrangement"><option value="">Select</option>
-              <option>Live-In</option><option>Live-Out</option><option>Part-Time</option><option>Contract</option><option>Flexible</option>
-            </select>
-          </div>
-        </div>
-        <div class="fg" id="cvfg-keySkills"><label>Key skills</label><input type="text" id="cv-keySkills" placeholder="e.g., cooking, childcare, laundry"></div>
-        <div class="fg" id="cvfg-languages"><label>Languages spoken</label><input type="text" id="cv-languages" placeholder="e.g., Swahili, English"></div>
-        <div class="fg" id="cvfg-aboutText"><label>Short bio</label><textarea id="cv-aboutText" maxlength="500"></textarea></div>
-
-        <div class="sec-lbl">Location</div>
-        <div class="row2">
-          <div class="fg" id="cvfg-currentTown"><label>Current town/area</label><input type="text" id="cv-currentTown"></div>
-          <div class="fg" id="cvfg-county"><label>County</label><input type="text" id="cv-county"></div>
-        </div>
-
-        <div class="sec-lbl">Education</div>
-        <div class="fg" id="cvfg-eduLevel"><label>Highest education level</label>
-          <select id="cv-eduLevel"><option value="">Select</option>
-            <option>None</option><option>Primary</option><option>Secondary (KCSE)</option><option>Certificate</option><option>Diploma</option><option>Degree</option>
-          </select>
-        </div>
-        <div class="row2">
-          <div class="fg" id="cvfg-eduInstitution"><label>Institution</label><input type="text" id="cv-eduInstitution"></div>
-          <div class="fg" id="cvfg-eduYear"><label>Year completed</label><input type="number" id="cv-eduYear" min="1970" max="2030"></div>
-        </div>
-
-        <div class="sec-lbl">Identity</div>
-        <div class="row2">
-          <div class="fg" id="cvfg-dob"><label>Date of birth</label><input type="date" id="cv-dob"></div>
-          <div class="fg" id="cvfg-gender"><label>Gender</label>
-            <select id="cv-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
-          </div>
-        </div>
-
-        <div class="cv-summary-row"><span><i class="bi bi-briefcase"></i> Work experience found</span><strong id="cvExpCount">0 entries</strong></div>
-        <div class="cv-summary-row"><span><i class="bi bi-people"></i> Referees found</span><strong id="cvRefCount">0 entries</strong></div>
-        <p class="fg" style="margin-top:.6rem;font-size:11.5px;color:var(--text-muted)">You'll be able to review, edit or add to these in the next steps.</p>
-
-        <div class="step-nav">
-          <button class="btn btn-secondary" type="button" onclick="skipCvUpload()">Fill Manually Instead</button>
-          <button class="btn btn-primary" type="button" onclick="applyCvToWizard()"><i class="bi bi-check-circle"></i> Use These Details</button>
-        </div>
-      </div>
-
-    </div>
-
     <!-- MAIN WIZARD (hidden until session confirmed) -->
     <div id="wizard" style="display:none">
+
+      <!-- ============ STEP 1: UPLOAD CV (required) ============ -->
+      <div class="wizard-step" data-step="1">
+
+        <!-- STAGE: upload -->
+        <div id="cvStageUpload">
+          <div class="step-badge"><i class="bi bi-magic"></i> STEP 1 OF 8</div>
+          <h1 class="step-title">Upload your CV</h1>
+          <p class="step-sub">Required to continue. We'll try to pick out a few details (phone, email, skills, etc.) — you'll get a chance to review and correct them before anything is saved.</p>
+
+          <div class="cv-dropzone" id="cvDropzone" onclick="document.getElementById('cvFileInput').click()">
+            <input type="file" id="cvFileInput" accept=".pdf,.docx" onchange="handleCvFileSelect(this)">
+            <i class="bi bi-file-earmark-arrow-up"></i>
+            <div class="cv-title">Tap to upload your CV</div>
+            <div class="cv-sub">PDF or DOCX &middot; up to 8MB &middot; required</div>
+          </div>
+
+          <div class="alert error" id="cvError"><i class="bi bi-exclamation-circle-fill"></i><span id="cvErrorText"></span></div>
+        </div>
+
+        <!-- STAGE: reading (parsing the CV) -->
+        <div id="cvStageReading" style="display:none">
+          <div class="step-badge"><i class="bi bi-magic"></i> STEP 1 OF 8</div>
+          <div class="cv-reading">
+            <div class="spinner"></div>
+            <p>Reading your CV…</p>
+            <div class="cv-reading-sub">This usually takes a few seconds.</div>
+          </div>
+        </div>
+
+        <!-- STAGE: review (editable extracted fields before anything is saved) -->
+        <div id="cvStageReview" style="display:none">
+          <div class="step-badge"><i class="bi bi-search"></i> WE FOUND YOUR INFORMATION</div>
+          <h1 class="step-title">Review &amp; correct</h1>
+          <p class="step-sub">Check the details below — fields marked <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span> are ones we're less sure about. Anything left blank you can fill in on the next steps.</p>
+
+          <div class="cv-warnings" id="cvWarningsBox" style="display:none">
+            <strong><i class="bi bi-info-circle-fill"></i> A few notes from the CV reader:</strong>
+            <ul id="cvWarningsList"></ul>
+          </div>
+
+          <div class="cv-readonly-box" id="cvContactBox"></div>
+
+          <div class="sec-lbl no-border">About you</div>
+          <div class="fg" id="cvfg-preferredRole"><label>Preferred role</label>
+            <select id="cv-preferredRole">
+              <option value="">Select a role</option>
+              <option>House Manager / Nanny</option><option>Nanny / Babysitter</option><option>Housekeeper</option>
+              <option>Cook / Chef</option><option>Cleaner</option><option>Gardener</option><option>Driver</option>
+              <option>Elderly Caregiver</option><option>Security Guard</option><option>General Domestic Worker</option>
+            </select>
+          </div>
+          <div class="row2">
+            <div class="fg" id="cvfg-experienceLevel"><label>Experience</label>
+              <select id="cv-experienceLevel"><option value="">Select</option>
+                <option value="0-1">Less than 1 year</option><option value="1-3">1 – 3 years</option>
+                <option value="3-5">3 – 5 years</option><option value="5-10">5 – 10 years</option><option value="10+">10+ years</option>
+              </select>
+            </div>
+            <div class="fg" id="cvfg-workArrangement"><label>Work arrangement</label>
+              <select id="cv-workArrangement"><option value="">Select</option>
+                <option>Live-In</option><option>Live-Out</option><option>Part-Time</option><option>Contract</option><option>Flexible</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg" id="cvfg-keySkills"><label>Key skills</label><input type="text" id="cv-keySkills" placeholder="e.g., cooking, childcare, laundry"></div>
+          <div class="fg" id="cvfg-languages"><label>Languages spoken</label><input type="text" id="cv-languages" placeholder="e.g., Swahili, English"></div>
+          <div class="fg" id="cvfg-aboutText"><label>Short bio</label><textarea id="cv-aboutText" maxlength="500"></textarea></div>
+
+          <div class="sec-lbl">Location</div>
+          <div class="row2">
+            <div class="fg" id="cvfg-currentTown"><label>Current town/area</label><input type="text" id="cv-currentTown"></div>
+            <div class="fg" id="cvfg-county"><label>County</label><input type="text" id="cv-county"></div>
+          </div>
+
+          <div class="sec-lbl">Education</div>
+          <div class="fg" id="cvfg-eduLevel"><label>Highest education level</label>
+            <select id="cv-eduLevel"><option value="">Select</option>
+              <option>None</option><option>Primary</option><option>Secondary (KCSE)</option><option>Certificate</option><option>Diploma</option><option>Degree</option>
+            </select>
+          </div>
+          <div class="row2">
+            <div class="fg" id="cvfg-eduInstitution"><label>Institution</label><input type="text" id="cv-eduInstitution"></div>
+            <div class="fg" id="cvfg-eduYear"><label>Year completed</label><input type="number" id="cv-eduYear" min="1970" max="2030"></div>
+          </div>
+
+          <div class="sec-lbl">Identity</div>
+          <div class="row2">
+            <div class="fg" id="cvfg-dob"><label>Date of birth</label><input type="date" id="cv-dob"></div>
+            <div class="fg" id="cvfg-gender"><label>Gender</label>
+              <select id="cv-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
+            </div>
+          </div>
+
+          <div class="cv-summary-row"><span><i class="bi bi-briefcase"></i> Work experience found</span><strong id="cvExpCount">0 entries</strong></div>
+          <div class="cv-summary-row"><span><i class="bi bi-people"></i> Referees found</span><strong id="cvRefCount">0 entries</strong></div>
+          <p class="fg" style="margin-top:.6rem;font-size:11.5px;color:var(--text-muted)">You'll be able to review, edit or add to these in the next steps.</p>
+
+          <button type="button" class="cv-skip" onclick="setCvStage('upload')"><i class="bi bi-arrow-repeat"></i> Upload a different CV</button>
+        </div>
+
+      </div>
 
       <div class="alert error" id="alertError"><i class="bi bi-exclamation-circle-fill"></i><span id="alertErrorText"></span></div>
       <div class="alert success" id="alertSuccess"><i class="bi bi-check-circle-fill"></i><span id="alertSuccessText"></span></div>
@@ -336,9 +327,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </div>
       </div>
 
-      <!-- ============ STEP 1: ABOUT YOU ============ -->
-      <div class="wizard-step" data-step="1">
-        <div class="step-badge"><i class="bi bi-person-badge"></i> STEP 1 OF 7</div>
+      <!-- ============ STEP 2: ABOUT YOU ============ -->
+      <div class="wizard-step" data-step="2" style="display:none">
+        <div class="step-badge"><i class="bi bi-person-badge"></i> STEP 2 OF 8</div>
         <h1 class="step-title">About You</h1>
         <p class="step-sub">Tell employers what kind of work you're looking for.</p>
 
@@ -421,9 +412,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </div>
       </div>
 
-      <!-- ============ STEP 2: LOCATION ============ -->
-      <div class="wizard-step" data-step="2" style="display:none">
-        <div class="step-badge"><i class="bi bi-geo-alt-fill"></i> STEP 2 OF 7</div>
+      <!-- ============ STEP 3: LOCATION ============ -->
+      <div class="wizard-step" data-step="3" style="display:none">
+        <div class="step-badge"><i class="bi bi-geo-alt-fill"></i> STEP 3 OF 8</div>
         <h1 class="step-title">Where You're Based</h1>
         <p class="step-sub">Helps us match you with nearby jobs.</p>
 
@@ -463,9 +454,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </div>
       </div>
 
-      <!-- ============ STEP 3: EDUCATION ============ -->
-      <div class="wizard-step" data-step="3" style="display:none">
-        <div class="step-badge"><i class="bi bi-mortarboard-fill"></i> STEP 3 OF 7</div>
+      <!-- ============ STEP 4: EDUCATION ============ -->
+      <div class="wizard-step" data-step="4" style="display:none">
+        <div class="step-badge"><i class="bi bi-mortarboard-fill"></i> STEP 4 OF 8</div>
         <h1 class="step-title">Education</h1>
         <p class="step-sub">Optional, but it helps build trust with employers.</p>
 
@@ -508,9 +499,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </div>
       </div>
 
-      <!-- ============ STEP 4: WORK EXPERIENCE ============ -->
-      <div class="wizard-step" data-step="4" style="display:none">
-        <div class="step-badge"><i class="bi bi-briefcase-fill"></i> STEP 4 OF 7</div>
+      <!-- ============ STEP 5: WORK EXPERIENCE ============ -->
+      <div class="wizard-step" data-step="5" style="display:none">
+        <div class="step-badge"><i class="bi bi-briefcase-fill"></i> STEP 5 OF 8</div>
         <h1 class="step-title">Work Experience</h1>
         <p class="step-sub">Add past employers, most recent first. Optional but boosts your profile.</p>
 
@@ -520,9 +511,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </button>
       </div>
 
-      <!-- ============ STEP 5: IDENTITY VERIFICATION ============ -->
-      <div class="wizard-step" data-step="5" style="display:none">
-        <div class="step-badge"><i class="bi bi-shield-check"></i> STEP 5 OF 7</div>
+      <!-- ============ STEP 6: IDENTITY VERIFICATION ============ -->
+      <div class="wizard-step" data-step="6" style="display:none">
+        <div class="step-badge"><i class="bi bi-shield-check"></i> STEP 6 OF 8</div>
         <h1 class="step-title">Identity Verification</h1>
         <p class="step-sub">Verified profiles get shortlisted more often. Your documents are kept private and only reviewed by our admin team.</p>
 
@@ -593,9 +584,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </div>
       </div>
 
-      <!-- ============ STEP 6: REFEREES ============ -->
-      <div class="wizard-step" data-step="6" style="display:none">
-        <div class="step-badge"><i class="bi bi-people-fill"></i> STEP 6 OF 7</div>
+      <!-- ============ STEP 7: REFEREES ============ -->
+      <div class="wizard-step" data-step="7" style="display:none">
+        <div class="step-badge"><i class="bi bi-people-fill"></i> STEP 7 OF 8</div>
         <h1 class="step-title">Referees</h1>
         <p class="step-sub">People who can vouch for your work. Optional but strongly recommended.</p>
 
@@ -605,9 +596,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
         </button>
       </div>
 
-      <!-- ============ STEP 7: REVIEW & SUBMIT ============ -->
-      <div class="wizard-step" data-step="7" style="display:none">
-        <div class="step-badge"><i class="bi bi-clipboard-check"></i> STEP 7 OF 7</div>
+      <!-- ============ STEP 8: REVIEW & SUBMIT ============ -->
+      <div class="wizard-step" data-step="8" style="display:none">
+        <div class="step-badge"><i class="bi bi-clipboard-check"></i> STEP 8 OF 8</div>
         <h1 class="step-title">Review &amp; Submit</h1>
         <p class="step-sub">Quick check before we save your profile.</p>
         <div id="reviewContent"></div>
@@ -642,8 +633,8 @@ var dbClient = window._sbClient || (window._sbClient = supabase.createClient(SUP
 // ============================================================
 // STATE
 // ============================================================
-const TOTAL_STEPS = 7;
-const STEP_NAMES = ['About You','Location','Education','Work Experience','Identity Verification','Referees','Review & Submit'];
+const TOTAL_STEPS = 8;
+const STEP_NAMES = ['Upload CV','About You','Location','Education','Work Experience','Identity Verification','Referees','Review & Submit'];
 let currentStep = 1;
 let currentUser = null;
 let existingProfile = null;
@@ -689,6 +680,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     prefillFromExisting();
 
     document.getElementById('sessionLoader').style.display = 'none';
+    document.getElementById('wizard').style.display = 'block';
+    document.getElementById('progressWrap').style.display = 'block';
 
     if (existingProfile) {
       document.getElementById('contextBox').style.display = 'flex';
@@ -699,15 +692,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (workExperiences.length === 0) addExperienceRow();
     if (referees.length === 0) { addRefereeRow(); addRefereeRow(); }
 
-    // Already went through CV upload (or a prior manual save) in an
-    // earlier visit — no need to show the CV gate again, go straight
-    // into the wizard where prefillFromExisting() has already loaded
-    // whatever was saved.
-    if (existingProfile && existingProfile.cv_parsed_at) {
-      startWizard();
+    // CV upload is required for every worker profile. If a CV was
+    // already uploaded and parsed on a prior visit, preload that
+    // extraction into the review stage so the person isn't forced
+    // to re-upload — they can still replace it if they want to.
+    if (existingProfile && existingProfile.cv_parsed_at && existingProfile.cv_parsed_data) {
+      cvExtracted = existingProfile.cv_parsed_data;
+      renderCvReview();
+      setCvStage('review');
     } else {
-      document.getElementById('cvGate').style.display = 'block';
+      setCvStage('upload');
     }
+
+    renderStep();
   } catch (e) {
     console.error('[SoundsCare] Session check failed:', e);
     window.location.href = 'register.html?msg=session_required';
@@ -786,20 +783,12 @@ function markUploadFilled(col) {
 // ============================================================
 // CV UPLOAD + AI AUTO-FILL
 // ============================================================
-let cvExtracted = null; // last parse-cv result, kept for applyCvToWizard()
+let cvExtracted = null; // last parse-cv result, kept for applyCvDataToFields()
 
-function startWizard() {
-  document.getElementById('cvGate').style.display = 'none';
-  document.getElementById('wizard').style.display = 'block';
-  document.getElementById('progressWrap').style.display = 'block';
-  renderStep();
-}
-
-function skipCvUpload() {
-  startWizard();
-}
+let cvStage = 'upload';
 
 function setCvStage(stage) {
+  cvStage = stage;
   document.getElementById('cvStageUpload').style.display = stage === 'upload' ? 'block' : 'none';
   document.getElementById('cvStageReading').style.display = stage === 'reading' ? 'block' : 'none';
   document.getElementById('cvStageReview').style.display = stage === 'review' ? 'block' : 'none';
@@ -1097,7 +1086,7 @@ function renderCvReview() {
   }
 }
 
-function applyCvToWizard() {
+function applyCvDataToFields() {
   const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
 
   set('preferredRole', val('cv-preferredRole'));
@@ -1149,8 +1138,6 @@ function applyCvToWizard() {
       phone: (!existingProfile || !existingProfile.phone) ? personal.phone : null
     };
   }
-
-  startWizard();
 }
 
 let cvContactToSave = null;
@@ -1195,6 +1182,10 @@ function prevStep() {
 async function nextStep() {
   if (!validateStep(currentStep)) return;
 
+  if (currentStep === 1) {
+    applyCvDataToFields();
+  }
+
   if (currentStep < TOTAL_STEPS) {
     currentStep++;
     renderStep();
@@ -1209,6 +1200,11 @@ function validateStep(step) {
   hideAllAlerts();
 
   if (step === 1) {
+    if (cvStage === 'reading') { showCvError('Still reading your CV — one moment.'); return false; }
+    if (!cvExtracted) { showCvError('Please upload your CV to continue — it\'s required.'); return false; }
+  }
+
+  if (step === 2) {
     const role = document.getElementById('preferredRole').value;
     const about = document.getElementById('aboutText').value.trim();
     if (!role) { showAlert('error', 'Please select the role you\'re looking for.'); return false; }
@@ -1218,13 +1214,13 @@ function validateStep(step) {
     if (min && max && parseInt(min, 10) > parseInt(max, 10)) { showAlert('error', 'Minimum salary can\'t be higher than maximum salary.'); return false; }
   }
 
-  if (step === 2) {
+  if (step === 3) {
     const town = document.getElementById('currentTown').value.trim();
     const county = document.getElementById('county').value.trim();
     if (!town || !county) { showAlert('error', 'Please tell us your current town and county.'); return false; }
   }
 
-  if (step === 5) {
+  if (step === 6) {
     const dob = document.getElementById('dob').value;
     const gender = document.getElementById('gender').value;
     if (!dob) { showAlert('error', 'Please enter your date of birth.'); return false; }
@@ -1463,7 +1459,7 @@ async function submitProfile() {
     email: currentUser.email,
 
     // Filled in from an uploaded CV only when the account didn't
-    // already have these (see applyCvToWizard) — never overwrites
+    // already have these (see applyCvDataToFields) — never overwrites
     // data the worker already saved or entered at registration.
     ...(cvContactToSave && cvContactToSave.full_name ? { full_name: cvContactToSave.full_name } : {}),
     ...(cvContactToSave && cvContactToSave.phone ? { phone: cvContactToSave.phone, phone_number: cvContactToSave.phone } : {}),
