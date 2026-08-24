@@ -1354,46 +1354,189 @@ function escapeAttr(str) {
 // ============================================================
 // IMAGE COMPRESSION — downscale + re-encode before upload so a
 // full-resolution phone camera capture (ID front/back, selfie,
-// profile photo) doesn't exhaust memory on lower-end devices.
-// Falls back to the original, untouched file if anything here
-// fails, so a compression problem never blocks the upload.
+// profile photo) doesn't exhaust memory on lower-end Android
+// devices ("Unable to complete previous operation due to low
+// memory"). Used by ID front/back, selfie, and profile photo
+// uploads alike — same pipeline for all of them.
+//
+// Design notes (why it's structured this way):
+//  - The source file is decoded exactly ONCE, via a plain
+//    HTMLImageElement + object URL. We never call
+//    createImageBitmap() on the raw file at full resolution —
+//    that's the single biggest cause of the low-memory crash,
+//    because it forces the browser to allocate a full decoded
+//    raster of a 12MP+ camera photo in one shot.
+//  - Downscaling happens by drawing that already-decoded <img>
+//    onto a small canvas sized to the target dimensions. If we
+//    need to retry at a smaller size/quality (to hit the byte
+//    budget), we redraw from the SAME decoded <img> — we never
+//    re-decode the original file bytes.
+//  - Every temporary object (object URL, <img>, canvas, bitmap)
+//    is released as soon as we're done with it, in a finally
+//    block, so nothing lingers in memory across uploads.
 // ============================================================
-async function decodeImageBitmap(file) {
-  try {
-    return await createImageBitmap(file, { imageOrientation: 'from-image' });
-  } catch (e) {
-    try { return await createImageBitmap(file); } catch (e2) { return null; }
+
+const IMAGE_MAX_SOURCE_BYTES = 25 * 1024 * 1024; // reject outright above this — decoding a file this size is itself what triggers low-memory failures
+const IMAGE_TARGET_MAX_DIMENSION = 1600;         // longest side, first attempt
+const IMAGE_TARGET_MIN_DIMENSION = 1200;         // longest side, smallest we'll fall back to
+const IMAGE_TARGET_BYTES = 900 * 1024;           // ~0.9MB soft budget we try to land under
+const IMAGE_HARD_MAX_BYTES = 1024 * 1024;        // 1MB hard ceiling we keep retrying against
+const IMAGE_QUALITY_STEPS = [0.8, 0.72, 0.6, 0.5]; // tried in order until under budget or steps exhausted
+
+// Validates the raw file BEFORE any decoding is attempted, so an
+// obviously-too-large or wrong-type file never reaches the decode step.
+function validateImageFile(file) {
+  if (!file) return { ok: false, message: 'No file selected.' };
+  if (!file.type || !file.type.startsWith('image/')) {
+    return { ok: false, message: 'Please choose an image file (JPG, PNG, etc.).' };
   }
+  if (file.size <= 0) {
+    return { ok: false, message: 'That file looks empty — please try again.' };
+  }
+  if (file.size > IMAGE_MAX_SOURCE_BYTES) {
+    return { ok: false, message: 'That image is too large (' + Math.round(file.size / (1024 * 1024)) + 'MB). Please retake the photo at a lower resolution, or choose a smaller file.' };
+  }
+  return { ok: true };
 }
 
+// Decodes `file` into an HTMLImageElement via an object URL (cheaper on
+// low-memory Android WebViews than createImageBitmap on the raw file)
+// and resolves with the element plus its natural dimensions. Caller is
+// responsible for calling the returned `release()` to revoke the URL.
+function loadImageElement(file) {
+  return new Promise(function (resolve, reject) {
+    let objectUrl;
+    try {
+      objectUrl = URL.createObjectURL(file);
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    const img = new Image();
+    const release = function () {
+      try { URL.revokeObjectURL(objectUrl); } catch (e) { /* ignore */ }
+      img.src = '';
+    };
+    img.onload = function () {
+      if (!img.naturalWidth || !img.naturalHeight) {
+        release();
+        reject(new Error('Decoded image has no dimensions'));
+        return;
+      }
+      resolve({ img: img, width: img.naturalWidth, height: img.naturalHeight, release: release });
+    };
+    img.onerror = function (e) {
+      release();
+      reject(e instanceof Error ? e : new Error('Image failed to decode'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+// Draws `img` at (targetW x targetH) onto a fresh canvas and returns a
+// JPEG blob at the given quality. Fully releases the canvas afterwards
+// (width/height reset to 0) so its backing buffer isn't held onto.
+function drawAndEncode(img, targetW, targetH, quality) {
+  return new Promise(function (resolve, reject) {
+    let canvas;
+    try {
+      canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('2D canvas context unavailable');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      canvas.toBlob(function (blob) {
+        canvas.width = 0;
+        canvas.height = 0;
+        canvas = null;
+        if (!blob) {
+          reject(new Error('canvas.toBlob returned null'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    } catch (e) {
+      if (canvas) { canvas.width = 0; canvas.height = 0; }
+      reject(e);
+    }
+  });
+}
+
+// Main entry point used by handleFileSelect(). Always resolves — on any
+// failure it logs the reason via console.error and falls back to the
+// original file so a compression problem never blocks the upload
+// outright (validateImageFile() is what handles the "reject" case for
+// files that are unsafe to even attempt decoding).
 async function compressImageFile(file, maxDimension, quality) {
   if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml') return file;
 
-  const bitmap = await decodeImageBitmap(file);
-  if (!bitmap) return file;
+  const targetMaxDim = maxDimension || IMAGE_TARGET_MAX_DIMENSION;
+  let loaded = null;
 
   try {
-    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    if (bitmap.close) bitmap.close();
-
-    const blob = await new Promise(function (resolve) {
-      canvas.toBlob(function (b) { resolve(b); }, 'image/jpeg', quality);
-    });
-
-    if (!blob || blob.size >= file.size) return file; // didn't actually help — keep the original
-    blob.name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
-    return blob;
+    loaded = await loadImageElement(file);
   } catch (e) {
-    if (bitmap && bitmap.close) bitmap.close();
+    console.error('[SoundsCare] Image decode failed — uploading original file instead:', file.name, e);
+    return file; // graceful fallback: don't crash, just skip compression
+  }
+
+  try {
+    const longestSide = Math.max(loaded.width, loaded.height);
+    let dim = Math.min(targetMaxDim, longestSide);
+    if (dim < 1) dim = targetMaxDim;
+
+    let bestBlob = null;
+
+    // Outer loop: shrink the target dimension if we can't hit the byte
+    // budget on quality alone. Inner loop: step quality down. Both loops
+    // redraw from the SAME already-decoded <img> — no re-decoding of the
+    // original file happens at any point here.
+    outer:
+    for (let dimAttempt = 0; dimAttempt < 3; dimAttempt++) {
+      const scale = Math.min(1, dim / longestSide);
+      const w = Math.max(1, Math.round(loaded.width * scale));
+      const h = Math.max(1, Math.round(loaded.height * scale));
+
+      for (let i = 0; i < IMAGE_QUALITY_STEPS.length; i++) {
+        const q = (dimAttempt === 0 && i === 0 && typeof quality === 'number') ? quality : IMAGE_QUALITY_STEPS[i];
+        let blob;
+        try {
+          blob = await drawAndEncode(loaded.img, w, h, q);
+        } catch (e) {
+          console.error('[SoundsCare] Canvas encode failed for', file.name, 'at', w + 'x' + h, 'quality', q, e);
+          continue; // try the next quality step
+        }
+        if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
+        if (blob.size <= IMAGE_HARD_MAX_BYTES) break outer; // good enough, stop
+      }
+
+      if (dim <= IMAGE_TARGET_MIN_DIMENSION) break;
+      dim = Math.max(IMAGE_TARGET_MIN_DIMENSION, Math.round(dim * 0.8));
+    }
+
+    if (!bestBlob) {
+      console.error('[SoundsCare] All compression attempts failed for', file.name, '— uploading original file instead.');
+      return file;
+    }
+    if (bestBlob.size >= file.size) {
+      // Compression didn't actually help (e.g. already a small/efficient
+      // JPEG) — keep the original rather than uploading a larger file.
+      return file;
+    }
+    if (bestBlob.size > IMAGE_TARGET_BYTES) {
+      console.error('[SoundsCare] Compressed image still above target size for', file.name, '(' + Math.round(bestBlob.size / 1024) + 'KB) — uploading best effort anyway.');
+    }
+
+    bestBlob.name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+    return bestBlob;
+  } catch (e) {
+    console.error('[SoundsCare] Unexpected error while compressing image — uploading original file instead:', file.name, e);
     return file;
+  } finally {
+    // Always release the decoded <img> / object URL, even on the
+    // success path, so nothing from this capture lingers in memory.
+    if (loaded && loaded.release) loaded.release();
   }
 }
 
@@ -1416,12 +1559,36 @@ async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
   const textEl = document.getElementById(textId);
   const originalText = textEl.textContent;
 
+  // Only images (profile photo, ID front/back, selfie) go through the
+  // memory-safe compression pipeline and its pre-checks below. The
+  // certificate field also accepts PDFs, which pass straight through —
+  // compressImageFile() already no-ops on non-image types.
+  if (file.type && file.type.startsWith('image/')) {
+    const check = validateImageFile(file);
+    if (!check.ok) {
+      console.error('[SoundsCare] Image rejected before processing:', column, file.name, file.size, check.message);
+      textEl.textContent = originalText;
+      showAlert('error', check.message);
+      inputEl.value = '';
+      return;
+    }
+  }
+
   textEl.textContent = 'Preparing…';
 
   try {
     // Shrink large camera photos before upload — this is what avoids
     // the "low memory" failures on full-resolution ID/selfie captures.
-    const uploadFile = await compressImageFile(file, 1600, 0.82);
+    let uploadFile;
+    try {
+      uploadFile = await compressImageFile(file, 1600, 0.8);
+    } catch (compressErr) {
+      // compressImageFile() is designed to swallow its own errors and
+      // fall back to `file`, but guard here too in case of an
+      // unexpected throw so the upload can still proceed.
+      console.error('[SoundsCare] Image compression threw unexpectedly — falling back to original file:', column, file.name, compressErr);
+      uploadFile = file;
+    }
 
     textEl.textContent = 'Uploading…';
 
@@ -1429,7 +1596,10 @@ async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
     const path = currentUser.id + '/' + column + '-' + Date.now() + '.' + ext;
 
     const { error: upErr } = await dbClient.storage.from(bucket).upload(path, uploadFile, { upsert: true, contentType: uploadFile.type || file.type });
-    if (upErr) throw upErr;
+    if (upErr) {
+      console.error('[SoundsCare] Supabase upload failed:', column, path, 'size:', uploadFile.size, upErr);
+      throw upErr;
+    }
 
     let storedValue = path;
     if (isPublicBucket) {
@@ -1442,7 +1612,7 @@ async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
     textEl.textContent = originalText.replace('Tap to upload', '').trim() ? '✓ Uploaded' : '✓ Uploaded';
     textEl.textContent = '✓ ' + file.name.slice(0, 24) + (file.name.length > 24 ? '…' : '');
   } catch (e) {
-    console.error('[SoundsCare] Upload failed:', column, e);
+    console.error('[SoundsCare] Upload failed:', column, file.name, e);
     textEl.textContent = originalText;
     showAlert('error', 'Upload failed for ' + column.replace(/_/g, ' ') + '. Please try again.');
   }
