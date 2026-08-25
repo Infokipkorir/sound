@@ -5328,6 +5328,22 @@ async function toggleVisibility() {
   if (visibilityUpdating) return;
   const checkbox = document.getElementById('visibility-toggle');
   const newVal = checkbox.checked; // onclick fires AFTER checked changes — reliable
+
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why toggling this could appear to do nothing even
+  // though no error was returned.
+  if (!workerProfile?.id) {
+    checkbox.checked = !newVal; // revert the checkbox — we're not going to save this
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
+
   visibilityUpdating = true;
 
   // Optimistic UI update
@@ -5335,11 +5351,6 @@ async function toggleVisibility() {
   document.getElementById('visibility-sub').textContent = newVal
     ? 'Employers can find you in search results'
     : 'You are not appearing in employer searches';
-
-  // Use workerProfile.id for a guaranteed single-row update; RLS is satisfied because
-  // the row was already fetched under the user's session (session_id or email match).
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
 
   const { error } = await sb.from('worker_profiles')
     .update({ profile_visible: newVal })
@@ -6294,12 +6305,23 @@ async function executeConfirmAction() {
     }
   }
 
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
+
   const btn = document.getElementById('confirm-action-btn');
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing…';
-
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
 
   if (_pendingAction === 'deactivate') {
     const reason = document.getElementById('as-deact-reason').value || 'User requested';
@@ -6539,8 +6561,19 @@ async function savePersonalInfo() {
   if (!fullName) { showToast('err', 'bi-exclamation-circle', 'Required', 'Please enter your full name.'); return; }
 
   const update = { full_name: fullName, phone, phone_number: phone, location, bio, skills_summary: bio, job_seeking: jobSeeking };
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   const { error } = await sb.from('worker_profiles').update(update).eq(matchCol, matchVal);
   if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
@@ -6576,8 +6609,19 @@ async function savePreferences() {
   const notifPref = document.getElementById('ep-notif-pref').value;
   const jobTypePref = document.getElementById('ep-job-type-pref').value;
 
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   const { error } = await sb.from('worker_profiles').update({
     profile_visible: visible,
@@ -6601,8 +6645,19 @@ async function toggleHiredStatus() {
   const newStatus = hired ? 'hired' : 'approved';
   const newVisible = !hired; // Hide from public pages when hired
 
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   const { error } = await sb.from('worker_profiles').update({
     status: newStatus,
@@ -6622,8 +6677,19 @@ async function saveAvailability() {
   const workHours = document.getElementById('ep-work-hours').value;
   const salary = document.getElementById('ep-salary').value;
 
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   const { error } = await sb.from('worker_profiles').update({
     availability_status: selectedAvailability,
@@ -6645,8 +6711,19 @@ async function uploadProfilePhoto(input) {
   const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
   if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
   const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
   await sb.from('worker_profiles').update({ profile_photo_url: pub.publicUrl }).eq(matchCol, matchVal);
   workerProfile.profile_photo_url = pub.publicUrl;
   showToast('ok', 'bi-check-circle', 'Photo Updated', '');
@@ -6657,8 +6734,19 @@ async function deactivateAccount() {
   if (reason === null) return;
   if (!confirm('Deactivate your account? Your profile will be hidden until you reactivate.')) return;
 
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   const { error } = await sb.from('worker_profiles').update({
     account_deactivated: true,
@@ -6677,8 +6765,19 @@ async function deleteAccount() {
   const confirm1 = prompt('This will permanently delete your account. Type DELETE to confirm:');
   if (confirm1 !== 'DELETE') { showToast('info', 'bi-info-circle', 'Cancelled', 'Account deletion cancelled.'); return; }
 
-  const matchCol = workerProfile?.session_id === currentUser.id ? 'id' : 'email';
-  const matchVal = matchCol === 'id' ? workerProfile.id : currentUser.email;
+  // Always update by the row's own primary key (id) — this is the row we
+  // already fetched for this session (via session_id or email lookup in
+  // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
+  // because that row belongs to the signed-in user. Matching by email here
+  // used to silently update zero rows whenever email lookup failed to line
+  // up exactly, which is why saves/deactivate/delete could appear to do
+  // nothing even though no error was returned.
+  if (!workerProfile?.id) {
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
+    return;
+  }
+  const matchCol = 'id';
+  const matchVal = workerProfile.id;
 
   // Mark as deleted in DB (actual row deletion requires admin/service role)
   await sb.from('worker_profiles').update({
