@@ -952,6 +952,10 @@ tr:hover td { background: rgba(27,107,69,.02); }
         <button class="tab-btn" onclick="switchConnectsTab(event,'wallets')"><i class="bi bi-wallet2"></i> User Wallets</button>
         <button class="tab-btn" onclick="switchConnectsTab(event,'ledger')"><i class="bi bi-list-columns-reverse"></i> Transaction Ledger</button>
         <button class="tab-btn" onclick="switchConnectsTab(event,'providers')"><i class="bi bi-credit-card"></i> Payment Providers</button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'escrow')"><i class="bi bi-lock"></i> Escrow <span class="sb-badge" id="badge-escrow-sub" style="display:none"></span></button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'workerwd')"><i class="bi bi-bank"></i> Employee Withdrawals <span class="sb-badge" id="badge-workerwd-sub" style="display:none"></span></button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'adminwallet')"><i class="bi bi-safe"></i> Admin Wallet</button>
+        <button class="tab-btn" onclick="switchConnectsTab(event,'disbursements')"><i class="bi bi-calendar3"></i> Disbursement History</button>
       </div>
 
       <div id="connects-tab-tariffs" class="tab-content active">
@@ -1007,6 +1011,106 @@ tr:hover td { background: rgba(27,107,69,.02); }
           <p style="color:var(--muted);font-size:12px;margin:1rem 1.2rem 0">Connects can be topped up via any enabled provider below. Toggle a provider on once its API credentials are filled in — disabled providers are hidden from users at checkout.</p>
         </div>
         <div id="providers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:0 1.2rem 1.2rem"></div>
+      </div>
+
+      <!-- ESCROW HOLD PAYMENTS -->
+      <div id="connects-tab-escrow" class="tab-content">
+        <div class="stats-grid" style="margin-top:1rem">
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-lock"></i> Held (Ksh)</div><div class="stat-value amber" id="escrow-stat-held">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-check-circle"></i> Released (Ksh)</div><div class="stat-value green" id="escrow-stat-released">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-exclamation-triangle"></i> Under Investigation</div><div class="stat-value rose" id="escrow-stat-investigation">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-arrow-counterclockwise"></i> Refunded (Ksh)</div><div class="stat-value sky" id="escrow-stat-refunded">0</div></div>
+        </div>
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="escrow-search" placeholder="🔍 Search by employer, worker, transaction ref…" oninput="renderEscrow()">
+            <select class="filter-select" id="escrow-status-filter" onchange="renderEscrow()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="held">Held</option>
+              <option value="released">Released</option>
+              <option value="rejected_pending_investigation">Rejected — Investigating</option>
+              <option value="refunded">Refunded</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Employer</th><th>Worker</th><th>Amount</th><th>Service Fee</th><th>Net to Worker</th><th>Status</th><th>Paid</th><th>Actions</th></tr></thead><tbody id="escrow-tbody"><tr><td colspan="8" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE (WORKER) WITHDRAWALS -->
+      <div id="connects-tab-workerwd" class="tab-content">
+        <div class="stats-grid" style="margin-top:1rem">
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-hourglass-split"></i> Pending</div><div class="stat-value amber" id="wwd-stat-pending">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-check-circle"></i> Approved</div><div class="stat-value sky" id="wwd-stat-approved">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-stack"></i> Paid Out (Ksh)</div><div class="stat-value green" id="wwd-stat-paid">0</div></div>
+        </div>
+        <div class="section">
+          <div class="search-bar">
+            <input class="search-input" id="wwd-search" placeholder="🔍 Search by worker, phone…" oninput="renderWorkerWithdrawals()">
+            <select class="filter-select" id="wwd-source-filter" onchange="renderWorkerWithdrawals()">
+              <option value="">All Sources</option>
+              <option value="escrow_release">From Escrow</option>
+              <option value="wallet_balance">From Wallet Balance</option>
+            </select>
+            <select class="filter-select" id="wwd-status-filter" onchange="renderWorkerWithdrawals()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Worker</th><th>Source</th><th>Amount</th><th>Net</th><th>Method</th><th>Phone</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="wwd-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ADMIN WALLET -->
+      <div id="connects-tab-adminwallet" class="tab-content">
+        <div class="stats-grid" style="margin-top:1rem">
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-safe"></i> Current Balance (Ksh)</div><div class="stat-value accent" id="aw-stat-balance">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-arrow-down-circle"></i> Total Credited (Ksh)</div><div class="stat-value green" id="aw-stat-credited">0</div></div>
+          <div class="stat-card"><div class="stat-label"><i class="bi bi-arrow-up-circle"></i> Total Debited (Ksh)</div><div class="stat-value rose" id="aw-stat-debited">0</div></div>
+        </div>
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><i class="bi bi-safe"></i> General Admin Wallet</div>
+            <div class="actions-cell">
+              <button class="btn btn-sm btn-green" onclick="openAdminWalletAdjust(1)"><i class="bi bi-plus-lg"></i> Manual Credit</button>
+              <button class="btn btn-sm btn-amber" onclick="openAdminWalletAdjust(-1)"><i class="bi bi-dash-lg"></i> Manual Debit</button>
+            </div>
+          </div>
+          <div class="search-bar">
+            <select class="filter-select" id="aw-category-filter" onchange="renderAdminWalletLedger()">
+              <option value="">All Categories</option>
+              <option value="connects_purchase">Connects Purchase</option>
+              <option value="interview_fee">Interview Fee</option>
+              <option value="escrow_service_fee">Escrow Service Fee</option>
+              <option value="system_commission_employer">System Commission (Employer)</option>
+              <option value="agent_commission_expense">Agent Commission Expense</option>
+              <option value="worker_withdrawal_expense">Worker Withdrawal Expense</option>
+              <option value="agent_withdrawal_expense">Agent Withdrawal Expense</option>
+              <option value="escrow_release_expense">Escrow Release Expense</option>
+              <option value="manual_credit">Manual Credit</option>
+              <option value="manual_debit">Manual Debit</option>
+              <option value="refund_expense">Refund Expense</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Category</th><th>Direction</th><th>Amount</th><th>Balance After</th><th>Description</th><th>Date</th></tr></thead><tbody id="aw-ledger-tbody"><tr><td colspan="6" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DISBURSEMENT DAILY HISTORY -->
+      <div id="connects-tab-disbursements" class="tab-content">
+        <div class="section" style="margin-top:1rem">
+          <div class="section-header">
+            <div class="section-title"><i class="bi bi-calendar3"></i> Disbursement Daily History</div>
+            <button class="btn btn-secondary btn-sm" onclick="loadAll()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+          <p style="color:var(--muted);font-size:12px;margin:0 1.2rem 1rem">All money paid out to employees and agents, grouped by day — sourced from completed withdrawals.</p>
+          <div class="table-wrap"><table><thead><tr><th>Date</th><th>Recipient Type</th><th>Payout Count</th><th>Gross (Ksh)</th><th>Net (Ksh)</th></tr></thead><tbody id="disbursements-tbody"><tr><td colspan="5" style="text-align:center">Loading…</td></tr></tbody></table></div>
+        </div>
       </div>
     </div>
 
@@ -1663,6 +1767,7 @@ let allWorkers = [], allEmployers = [], allUsers = [], allConversations = [], al
 let allCalls = [], allWallets = [], allTariffs = null, allConnectsLedger = [], allPaymentProviders = [], allAdmins = [], allTicketMacros = [], allSiteSettings = null, liveLogsAutoTimer = null, currentLiveLogTab = 'all';
 let allVerificationReqs = [], allPayments = [], allNewsletterSubs = [], allNewslettersSent = [], allTickets = [];
 let allAgents = [], allAgentWallets = [], allAgentCommissions = [], allAgentWithdrawals = [], allAgentSettings = null;
+let allEscrow = [], allWorkerWithdrawals = [], allAdminWallet = null, allAdminWalletLedger = [], allDisbursements = [];
 let activeConvId = null;
 let maintenanceMode = false;
 let currentConvTab = 'all';
@@ -1883,7 +1988,7 @@ function teardownRealtimeSubscriptions(){
 // ============================================================
 async function loadAll(){
   try{
-    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk,calls,wal,tariff,ledger,provs,adms,macros,setts,agts,agwal,agcomm,agwd,agset]=await Promise.all([
+    const [w,ep,u,c,n,j,a,tr,el,sl,jr,pr,vr,pay,nls,nlsent,tk,calls,wal,tariff,ledger,provs,adms,macros,setts,agts,agwal,agcomm,agwd,agset,escrow,wwd,awal,awledger,disb]=await Promise.all([
       sb.from('worker_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('employer_profiles').select('*').eq('is_deleted',false).order('created_at',{ascending:false}),
       sb.from('users').select('*').order('created_at',{ascending:false}),
@@ -1914,6 +2019,11 @@ async function loadAll(){
       sb.from('agent_commissions').select('*').order('created_at',{ascending:false}).limit(500),
       sb.from('agent_withdrawals').select('*').order('requested_at',{ascending:false}),
       sb.from('agent_commission_settings').select('*').eq('id',1).single(),
+      sb.from('job_escrow_payments').select('*').order('created_at',{ascending:false}),
+      sb.from('worker_withdrawals').select('*').order('requested_at',{ascending:false}),
+      sb.from('admin_wallet').select('*').eq('id',1).single(),
+      sb.from('admin_wallet_ledger').select('*').order('created_at',{ascending:false}).limit(300),
+      sb.from('v_daily_disbursement_history').select('*').limit(90),
     ]);
     allWorkers=w.data||[];
     allEmployers=ep.data||[];
@@ -1945,6 +2055,11 @@ async function loadAll(){
     allAgentCommissions=agcomm.data||[];
     allAgentWithdrawals=agwd.data||[];
     allAgentSettings=agset.data||{job_post_commission:100,hire_commission:500,currency:'KES'};
+    allEscrow=escrow.data||[];
+    allWorkerWithdrawals=wwd.data||[];
+    allAdminWallet=awal.data||{balance:0,total_credited:0,total_debited:0};
+    allAdminWalletLedger=awledger.data||[];
+    allDisbursements=disb.data||[];
 
     renderDashboard();renderUsers();renderEmployees();renderEmployers();
     renderConversations();renderNotifications();renderJobs();
@@ -1953,6 +2068,7 @@ async function loadAll(){
     renderPayments();renderNewsletterSubs();renderNewslettersSent();renderTickets();
     renderCalls();renderTariffs();renderWallets();renderLedger();renderPaymentProviders();
     renderAgents();renderAgentWallets();renderAgentCommissions();renderAgentWithdrawals();renderAgentActivity();renderAgentSettings();renderAgentStats();
+    renderEscrow();renderWorkerWithdrawals();renderAdminWallet();renderAdminWalletLedger();renderDisbursements();
     loadLiveLogs();
     updateBadges();
   }catch(err){showToast('err','Error loading data: '+err.message);}
@@ -4025,6 +4141,189 @@ async function saveProviderConfig(provider,btn){
   if(error){showToast('err',error.message);return;}
   const p=allPaymentProviders.find(p=>p.provider===provider);if(p)p.config=cfg;
   showToast('ok','Provider credentials saved. Actual charge/STK-push calls still need the matching Edge Function deployed for '+provider+'.');
+}
+
+// ============================================================
+// ESCROW HOLD PAYMENTS
+// ============================================================
+function escrowStatusBadge(status){
+  const map={pending:'amber',held:'sky',released:'green',rejected_pending_investigation:'rose',refunded:'muted',cancelled:'muted'};
+  return `<span class="badge badge-${map[status]||'muted'}">${(status||'').replace(/_/g,' ')}</span>`;
+}
+function renderEscrow(){
+  const q=(document.getElementById('escrow-search')?.value||'').toLowerCase();
+  const sf=document.getElementById('escrow-status-filter')?.value||'';
+  let data=allEscrow.filter(e=>{
+    if(sf&&e.status!==sf)return false;
+    if(!q)return true;
+    const emp=allUsers.find(u=>u.id===e.employer_id),wk=allUsers.find(u=>u.id===e.worker_id);
+    return [(emp?.full_name||''),(wk?.full_name||''),(e.transaction_id||''),(e.mpesa_ref||'')].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('escrow-tbody').innerHTML=data.map(e=>{
+    const emp=allUsers.find(u=>u.id===e.employer_id),wk=allUsers.find(u=>u.id===e.worker_id);
+    let actions='';
+    if(e.status==='pending')actions+=`<button class="btn btn-sm btn-secondary" onclick="setEscrowStatus('${e.id}','held')"><i class="bi bi-lock"></i> Mark Held</button>`;
+    if(e.status==='held'){
+      actions+=`<button class="btn btn-sm btn-primary" onclick="setEscrowStatus('${e.id}','released')"><i class="bi bi-check-lg"></i> Release</button>`;
+      actions+=`<button class="btn btn-sm btn-danger" onclick="setEscrowStatus('${e.id}','rejected_pending_investigation')"><i class="bi bi-exclamation-triangle"></i> Reject</button>`;
+    }
+    if(e.status==='rejected_pending_investigation'){
+      actions+=`<button class="btn btn-sm btn-primary" onclick="setEscrowStatus('${e.id}','released')"><i class="bi bi-check-lg"></i> Release Anyway</button>`;
+      actions+=`<button class="btn btn-sm btn-amber" onclick="setEscrowStatus('${e.id}','refunded')"><i class="bi bi-arrow-counterclockwise"></i> Refund Employer</button>`;
+    }
+    return `<tr>
+      <td>${esc(emp?.full_name||emp?.email||'—')}</td>
+      <td>${esc(wk?.full_name||wk?.email||'—')}</td>
+      <td><strong>Ksh ${Number(e.amount||0).toLocaleString()}</strong></td>
+      <td>Ksh ${Number(e.service_fee||0).toLocaleString()}</td>
+      <td>Ksh ${Number(e.net_amount||0).toLocaleString()}</td>
+      <td>${escrowStatusBadge(e.status)}</td>
+      <td>${e.paid_at?fmtDate(e.paid_at):'—'}</td>
+      <td><div class="actions-cell">${actions||'—'}</div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">No escrow payments yet</td></tr>';
+  setEl('escrow-stat-held','Ksh '+allEscrow.filter(e=>e.status==='held').reduce((s,e)=>s+Number(e.amount||0),0).toLocaleString());
+  setEl('escrow-stat-released','Ksh '+allEscrow.filter(e=>e.status==='released').reduce((s,e)=>s+Number(e.amount||0),0).toLocaleString());
+  setEl('escrow-stat-investigation',allEscrow.filter(e=>e.status==='rejected_pending_investigation').length);
+  setEl('escrow-stat-refunded','Ksh '+allEscrow.filter(e=>e.status==='refunded').reduce((s,e)=>s+Number(e.amount||0),0).toLocaleString());
+  const pending=allEscrow.filter(e=>e.status==='pending'||e.status==='held'||e.status==='rejected_pending_investigation').length;
+  const b=document.getElementById('badge-escrow-sub');if(b){b.style.display=pending?'inline-block':'none';b.textContent=pending;}
+}
+async function setEscrowStatus(id,status){
+  const e=allEscrow.find(e=>e.id===id);if(!e)return;
+  let reason=null;
+  if(status==='rejected_pending_investigation'){
+    reason=prompt('Reason for rejecting / flagging this escrow payment for investigation:');
+    if(reason===null)return;
+  }
+  if(status==='released'&&!confirm(`Release Ksh ${Number(e.net_amount||e.amount).toLocaleString()} to the worker? This lets the worker request a withdrawal against this escrow payment.`))return;
+  if(status==='refunded'&&!confirm(`Refund Ksh ${Number(e.amount).toLocaleString()} back to the employer? This cannot be released to the worker afterwards.`))return;
+  const update={status,updated_at:new Date().toISOString()};
+  if(status==='held')update.verified_at=new Date().toISOString();
+  if(status==='released'){update.released_at=new Date().toISOString();update.released_by=currentUser?.id||null;}
+  if(status==='rejected_pending_investigation'){update.rejected_at=new Date().toISOString();update.rejected_by=currentUser?.id||null;update.rejection_reason=reason;}
+  const {error}=await sb.from('job_escrow_payments').update(update).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  Object.assign(e,update);
+  const msgMap={held:'Your payment has been confirmed and is now held in escrow.',released:'Funds have been released — the worker can now request a withdrawal.',rejected_pending_investigation:'This job payment has been flagged for investigation.'+(reason?' Reason: '+reason:''),refunded:'This escrow payment has been refunded to you.'};
+  if(msgMap[status]){
+    await sb.from('notifications').insert({user_id:e.employer_id,type:status==='rejected_pending_investigation'?'warning':'info',title:'Escrow payment '+status.replace(/_/g,' '),message:msgMap[status],source_type:'admin',source_id:e.id}).catch(()=>{});
+    if(status==='released')await sb.from('notifications').insert({user_id:e.worker_id,type:'success',title:'Payment released',message:'The employer\'s payment has been released — you can now request a withdrawal.',source_type:'admin',source_id:e.id}).catch(()=>{});
+  }
+  renderEscrow();updateBadges();
+  showToast('ok','Escrow payment updated to '+status.replace(/_/g,' '));
+}
+
+// ============================================================
+// EMPLOYEE (WORKER) WITHDRAWALS
+// ============================================================
+function renderWorkerWithdrawals(){
+  const q=(document.getElementById('wwd-search')?.value||'').toLowerCase();
+  const srcF=document.getElementById('wwd-source-filter')?.value||'';
+  const sf=document.getElementById('wwd-status-filter')?.value||'';
+  let data=allWorkerWithdrawals.filter(w=>{
+    if(srcF&&w.withdrawal_source!==srcF)return false;
+    if(sf&&w.status!==sf)return false;
+    if(!q)return true;
+    const u=allUsers.find(u=>u.id===w.worker_id);
+    return [(u?.full_name||''),(u?.email||''),(w.phone_number||'')].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('wwd-tbody').innerHTML=data.map(w=>{
+    const u=allUsers.find(u=>u.id===w.worker_id);
+    let actions='';
+    if(w.status==='pending')actions=`<button class="btn btn-sm btn-primary" onclick="processWorkerWithdrawal('${w.id}','approved')"><i class="bi bi-check-lg"></i> Approve</button><button class="btn btn-sm btn-danger" onclick="processWorkerWithdrawal('${w.id}','rejected')"><i class="bi bi-x-lg"></i> Reject</button>`;
+    else if(w.status==='approved')actions=`<button class="btn btn-sm btn-primary" onclick="processWorkerWithdrawal('${w.id}','paid')"><i class="bi bi-cash-coin"></i> Mark Paid</button><button class="btn btn-sm btn-danger" onclick="processWorkerWithdrawal('${w.id}','rejected')"><i class="bi bi-x-lg"></i> Reject</button>`;
+    return `<tr>
+      <td>${esc(u?.full_name||u?.email||w.worker_id?.slice(0,8)||'—')}</td>
+      <td><span class="badge badge-muted">${w.withdrawal_source==='escrow_release'?'Escrow':'Wallet'}</span></td>
+      <td><strong>Ksh ${Number(w.amount||0).toLocaleString()}</strong></td>
+      <td>Ksh ${Number(w.net_amount??w.amount??0).toLocaleString()}</td>
+      <td>${esc(w.method||'mpesa')}</td>
+      <td>${esc(w.phone_number||'—')}</td>
+      <td><span class="badge badge-${w.status==='paid'?'green':w.status==='rejected'?'rose':w.status==='approved'?'sky':'amber'}">${w.status}</span></td>
+      <td>${fmtDate(w.requested_at)}</td>
+      <td><div class="actions-cell">${actions||'—'}</div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No employee withdrawal requests yet</td></tr>';
+  setEl('wwd-stat-pending',allWorkerWithdrawals.filter(w=>w.status==='pending').length);
+  setEl('wwd-stat-approved',allWorkerWithdrawals.filter(w=>w.status==='approved').length);
+  setEl('wwd-stat-paid','Ksh '+allWorkerWithdrawals.filter(w=>w.status==='paid').reduce((s,w)=>s+Number(w.amount||0),0).toLocaleString());
+  const pending=allWorkerWithdrawals.filter(w=>w.status==='pending').length;
+  const b=document.getElementById('badge-workerwd-sub');if(b){b.style.display=pending?'inline-block':'none';b.textContent=pending;}
+}
+async function processWorkerWithdrawal(id,status){
+  const w=allWorkerWithdrawals.find(w=>w.id===id);if(!w)return;
+  let notes=w.admin_notes||'';
+  if(status==='rejected'){
+    notes=prompt('Reason for rejecting this withdrawal:',notes)||'';
+    if(notes===null)return;
+  } else if(status==='paid'){
+    if(!confirm(`Confirm you have sent Ksh ${Number(w.net_amount??w.amount).toLocaleString()} to ${w.phone_number} via ${w.method}?`))return;
+  }
+  const update={status,processed_at:new Date().toISOString(),processed_by:currentUser?.id||null};
+  if(notes)update.admin_notes=notes;
+  const {error}=await sb.from('worker_withdrawals').update(update).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  Object.assign(w,update);
+  const msgMap={approved:'Your withdrawal request has been approved and is being processed.',paid:`Ksh ${Number(w.net_amount??w.amount).toLocaleString()} has been sent to ${w.phone_number}.`,rejected:`Your withdrawal request was rejected.${notes?' Reason: '+notes:''}`};
+  await sb.from('notifications').insert({user_id:w.worker_id,type:status==='rejected'?'warning':'success',title:'Withdrawal '+status,message:msgMap[status]||'Withdrawal status updated',source_type:'admin',source_id:w.id}).catch(()=>{});
+  renderWorkerWithdrawals();updateBadges();
+  showToast('ok','Withdrawal marked as '+status);
+}
+
+// ============================================================
+// GENERAL ADMIN WALLET
+// ============================================================
+function renderAdminWallet(){
+  const aw=allAdminWallet||{balance:0,total_credited:0,total_debited:0};
+  setEl('aw-stat-balance','Ksh '+Number(aw.balance||0).toLocaleString());
+  setEl('aw-stat-credited','Ksh '+Number(aw.total_credited||0).toLocaleString());
+  setEl('aw-stat-debited','Ksh '+Number(aw.total_debited||0).toLocaleString());
+}
+function renderAdminWalletLedger(){
+  const cf=document.getElementById('aw-category-filter')?.value||'';
+  let data=allAdminWalletLedger.filter(l=>!cf||l.category===cf);
+  document.getElementById('aw-ledger-tbody').innerHTML=data.slice(0,300).map(l=>`<tr>
+      <td><span class="badge badge-muted">${(l.category||'').replace(/_/g,' ')}</span></td>
+      <td style="color:${l.direction==='credit'?'var(--green)':'var(--rose)'}">${l.direction==='credit'?'Credit':'Debit'}</td>
+      <td>${l.direction==='credit'?'+':'-'}Ksh ${Number(l.amount||0).toLocaleString()}</td>
+      <td>Ksh ${Number(l.balance_after||0).toLocaleString()}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.description||'—')}</td>
+      <td>${fmtDate(l.created_at)}</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">No ledger entries yet</td></tr>';
+}
+async function openAdminWalletAdjust(sign){
+  const amountStr=prompt(sign>0?'How much to credit the admin wallet (Ksh)?':'How much to debit from the admin wallet (Ksh)?');
+  if(!amountStr)return;
+  const amount=Math.abs(parseFloat(amountStr));
+  if(!amount||isNaN(amount)){showToast('err','Enter a valid number');return;}
+  const description=prompt('Reason / note for this manual adjustment (shown in ledger):')||(sign>0?'Manual admin wallet credit':'Manual admin wallet debit');
+  const {error}=await sb.from('admin_wallet_ledger').insert({
+    category:sign>0?'manual_credit':'manual_debit',
+    direction:sign>0?'credit':'debit',
+    amount, description,
+    created_by:currentUser?.id||null
+  });
+  if(error){showToast('err',error.message);return;}
+  const {data:freshWallet}=await sb.from('admin_wallet').select('*').eq('id',1).single();
+  if(freshWallet)allAdminWallet=freshWallet;
+  const {data:freshLedger}=await sb.from('admin_wallet_ledger').select('*').order('created_at',{ascending:false}).limit(300);
+  allAdminWalletLedger=freshLedger||allAdminWalletLedger;
+  renderAdminWallet();renderAdminWalletLedger();
+  showToast('ok',`Admin wallet ${sign>0?'credited':'debited'} Ksh ${amount.toLocaleString()}`);
+}
+
+// ============================================================
+// DISBURSEMENT DAILY HISTORY
+// ============================================================
+function renderDisbursements(){
+  document.getElementById('disbursements-tbody').innerHTML=allDisbursements.map(d=>`<tr>
+      <td>${d.disbursement_date}</td>
+      <td><span class="badge badge-muted">${d.recipient_type==='agent'?'Agent':'Employee'}</span></td>
+      <td>${d.payout_count}</td>
+      <td>Ksh ${Number(d.gross_amount||0).toLocaleString()}</td>
+      <td>Ksh ${Number(d.net_amount||0).toLocaleString()}</td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">No payouts recorded yet</td></tr>';
 }
 
 // ============================================================
