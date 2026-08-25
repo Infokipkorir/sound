@@ -1132,9 +1132,9 @@
     .reply-preview-text { flex: 1; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .reply-preview-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; }
 
-    /* ── SUPPORT WIDGET (woman icon) — placed bottom-left since Tawk's
-       live bubble stays active bottom-right for the existing application
-       support handoff (Tawk_API.maximize() elsewhere in this file) ── */
+    /* ── SUPPORT WIDGET (woman icon) — bottom-left, opens support.html in
+       an iframe panel. This is the main support channel on this page
+       (see sendApplicationToSupport() for the application-handoff flow) ── */
     #ssc-support-fab{
       position:fixed;bottom:1.5rem;left:1.5rem;z-index:9995;
       width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
@@ -2556,23 +2556,13 @@
   window.addEventListener('message', function(e){
     if (e.data === 'soundscare-support:close') closePanel();
   });
+
+  // Exposed so other flows on this page (e.g. sendApplicationToSupport())
+  // can open the support.html panel — this is the main support channel.
+  window.sscOpenSupportPanel = openPanel;
 })();
 </script>
 
-<!-- TAWK.TO LIVE SUPPORT -->
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<!--End of Tawk.to Script-->
 
 <!-- BOOTSTRAP (JS bundle incl. Popper — needed for any Bootstrap components used in the markup) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -5309,15 +5299,14 @@ function sendApplicationToSupport() {
   const job = activeApplication.job_postings || {};
   const summary = `Application support — Job: ${job.title || activeApplication.job_id} | Job ID: ${activeApplication.job_id} | Application ID: ${activeApplication.id} | Status: ${activeApplication.status}`;
 
-  try {
-    if (typeof Tawk_API !== 'undefined') {
-      Tawk_API.addEvent?.('application_support_request', { summary }, () => {});
-      Tawk_API.maximize?.();
-    }
-  } catch (e) { console.warn('Tawk support handoff error:', e); }
-
+  // Copy the application summary so it's easy to paste into the support
+  // chat, then open support.html — the main support channel on this page.
   navigator.clipboard?.writeText(summary).catch(() => {});
-  showToast('info', 'bi-headset', 'Support Chat Opened', 'Application details were sent to our support agent — feel free to add more.');
+  try {
+    window.sscOpenSupportPanel?.();
+  } catch (e) { console.warn('Could not open support panel:', e); }
+
+  showToast('info', 'bi-headset', 'Support Chat Opened', 'Application details were copied — paste them in to give our support agent context.');
 }
 
 // ════════════════════════════════════════════════════════
