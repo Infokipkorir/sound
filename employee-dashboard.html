@@ -3005,7 +3005,13 @@ async function loadDashboard() {
     }
 
     // 4d. withdrawal history (worker_withdrawals)
-    loadWithdrawalHistory();
+    try {
+      await loadWithdrawalHistory();
+      console.log('✅ Withdrawal history loaded');
+    } catch (wdErr) {
+      console.error('❌ loadWithdrawalHistory failed:', wdErr.message);
+      document.getElementById('withdrawal-history-list').innerHTML = '<div class="empty-state"><i class="bi bi-cash-coin"></i><p>Could not load withdrawals</p></div>';
+    }
 
     // 5. payments (RLS: user_id = auth.uid())
     console.log('🔍 5️⃣ Loading payments for user_id =', currentUser.id);
@@ -5594,6 +5600,149 @@ function generateTransactionRef() {
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `SC-${ts}-${rand}`;
+}
+
+// ────────────────────────────────────────────────────────
+//  WITHDRAWALS — worker_withdrawals table.
+//  RLS: user_id = auth.uid(). Columns used: id, user_id, amount, method,
+//  phone, status ('pending' | 'processing' | 'paid' | 'rejected'),
+//  transaction_id, created_at.
+// ────────────────────────────────────────────────────────
+function showWithdrawError(msg) {
+  const el = document.getElementById('wd-error');
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function requestWithdrawal() {
+  showWithdrawError(null);
+
+  const amount = parseFloat(document.getElementById('wd-amount').value);
+  const method = document.getElementById('wd-method').value;
+  const phoneDigits = document.getElementById('wd-phone').value.trim().replace(/\D/g, '');
+
+  if (!amount || amount <= 0) {
+    showWithdrawError('Enter a valid amount to withdraw.');
+    return;
+  }
+  if (!phoneDigits || phoneDigits.length !== 9) {
+    showWithdrawError('Enter a valid phone number (e.g. 712345678).');
+    return;
+  }
+  const fullPhone = '254' + phoneDigits;
+
+  const btn = document.getElementById('wd-submit-btn');
+  const originalBtnHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
+
+  try {
+    // Fetch a live balance right before withdrawing — the balance shown on
+    // screen may be stale if it changed since the dashboard last loaded.
+    console.log('📍 Fetching wallet for requestWithdrawal…');
+    const { data: walletRows, error: wErr } = await sb.from('wallets')
+      .select('balance')
+      .eq('user_id', currentUser.id)
+      .limit(1);
+    const walletRow = walletRows?.[0] || null;
+
+    if (wErr || !walletRow) {
+      console.error('❌ requestWithdrawal: could not read wallet:', wErr?.message);
+      showWithdrawError('Could not read your wallet balance. Please try again.');
+      return;
+    }
+
+    const balance = parseFloat(walletRow.balance || 0);
+    if (amount > balance) {
+      showWithdrawError(`Insufficient balance. You have KES ${balance.toLocaleString('en-KE')} available.`);
+      return;
+    }
+
+    const txnRef = generateTransactionRef();
+
+    // 1. Hold the funds immediately so the same balance can't be withdrawn twice.
+    const newBalance = balance - amount;
+    const { error: balErr } = await sb.from('wallets')
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id);
+    if (balErr) {
+      console.error('❌ requestWithdrawal: wallet deduction failed:', balErr.message);
+      showWithdrawError('Could not process your request. Please try again.');
+      return;
+    }
+
+    // 2. Record the withdrawal request.
+    const { error: wdErr } = await sb.from('worker_withdrawals').insert({
+      user_id: currentUser.id,
+      amount,
+      method,
+      phone: fullPhone,
+      status: 'pending',
+      transaction_id: txnRef,
+    });
+
+    if (wdErr) {
+      // Rollback the wallet deduction if the request couldn't be recorded.
+      console.error('❌ requestWithdrawal: insert failed, rolling back wallet deduction:', wdErr.message);
+      await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
+      showWithdrawError('Could not submit your withdrawal request. Please try again.');
+      return;
+    }
+
+    // 3. Reflect the new balance across the UI (wallet modal, stat tile, withdraw form).
+    document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    document.getElementById('wd-avail-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+
+    document.getElementById('wd-amount').value = '';
+    document.getElementById('wd-phone').value = '';
+
+    showToast('ok', 'bi-check-circle', 'Withdrawal Requested', `KES ${amount.toLocaleString('en-KE')} · Ref: ${txnRef}`);
+    await loadWithdrawalHistory();
+  } catch (e) {
+    console.error('❌ requestWithdrawal crashed:', e.message);
+    showWithdrawError('Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHtml;
+  }
+}
+
+async function loadWithdrawalHistory() {
+  const el = document.getElementById('withdrawal-history-list');
+  console.log('📍 Loading withdrawal history for user_id =', currentUser.id);
+  const { data: withdrawals, error } = await sb.from('worker_withdrawals')
+    .select('id, amount, method, phone, status, transaction_id, created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('❌ WITHDRAWALS ERROR:', error.message, '—', error.code);
+    console.error('   worker_withdrawals table may not exist or RLS blocks access.');
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-cash-coin"></i><p>Could not load withdrawals</p></div>';
+    return;
+  }
+
+  if (!withdrawals?.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-cash-coin"></i><p>No withdrawal requests yet</p></div>';
+    return;
+  }
+
+  const statusColors = { paid: 'var(--green)', processing: 'var(--sky)', pending: 'var(--accent)', rejected: 'var(--rose)' };
+  el.innerHTML = withdrawals.map(w => `
+    <div style="background:var(--surface); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:700; font-size:13px; margin-bottom:2px;">KES ${parseFloat(w.amount || 0).toLocaleString('en-KE')}</div>
+        <div style="font-size:11px; color:var(--muted);">${(w.method || '').toUpperCase()}${w.phone ? ' · ' + w.phone : ''}</div>
+        <div style="font-size:10px; color:var(--muted);">${w.transaction_id ? 'Ref: ' + w.transaction_id : ''}</div>
+      </div>
+      <div>
+        <div style="font-size:12px; font-weight:700; color:${statusColors[w.status] || 'var(--muted)'}; text-transform:capitalize;">${w.status || '—'}</div>
+        <div style="font-size:10px; color:var(--muted); text-align:right;">${w.created_at ? new Date(w.created_at).toLocaleDateString('en-KE') : ''}</div>
+      </div>
+    </div>`).join('');
 }
 
 // ────────────────────────────────────────────────────────
