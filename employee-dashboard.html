@@ -1268,11 +1268,6 @@
       <div class="stat-value" id="stat-wallet">—</div>
       <div class="stat-label">Balance</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-wallet')">
-      <div class="stat-icon" style="background: rgba(244,63,94,0.1); color: var(--rose);"><i class="bi bi-exclamation-circle"></i></div>
-      <div class="stat-value" id="stat-outstanding">—</div>
-      <div class="stat-label">Outstanding</div>
-    </div>
   </div>
 
   <!-- PROFILE VISIBILITY -->
@@ -1762,16 +1757,11 @@
     </div>
     <div class="modal-body">
       <div class="balance-box">
-        <div class="balance-grid">
+        <div class="balance-grid" style="grid-template-columns:1fr;">
           <div class="balance-item">
             <div class="balance-label">Available Balance</div>
             <div class="balance-amount" id="wallet-balance">KES 0</div>
             <div class="balance-sub" id="wallet-acct">Acct: —</div>
-          </div>
-          <div class="balance-item">
-            <div class="balance-label">Outstanding</div>
-            <div class="balance-amount warning" id="wallet-outstanding">KES 0</div>
-            <div class="balance-sub">Requires payment</div>
           </div>
         </div>
       </div>
@@ -2603,7 +2593,8 @@ let sb, currentUser;
 // messages: id, conversation_id, sender_id, body, content, is_read, is_from_admin, sender_type,
 //   receiver_id, created_at, msg_type, is_deleted
 // conversations: id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status
-// wallets: user_id, balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance
+// wallets: user_id, balance, account_number, interview_fee_paid, first_salary_fee_paid, refund_balance
+//   (outstanding_balance exists on this table but is intentionally not read/written from this page — employees never owe a balance)
 // payments: id, user_id, amount, fee_type, payment_method, status, mpesa_phone, airtel_phone,
 //   bank_account, phone_used, paybill_number, created_at, transaction_id, account_number
 // job_postings: id, title, description, location, county, salary_range, job_type, work_type (Onsite/Remote/Hybrid),
@@ -2931,7 +2922,7 @@ async function loadDashboard() {
     // 4. wallets (RLS: user_id = auth.uid())
     console.log('🔍 4️⃣ Loading wallet for user_id =', currentUser.id);
     const { data: walletData, error: wErr } = await sb.from('wallets')
-      .select('balance, outstanding_balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance, connects_balance, connects_reset_date')
+      .select('balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance, connects_balance, connects_reset_date')
       .eq('user_id', currentUser.id)
       .limit(1);
     const wallet = walletData?.[0] || null;
@@ -2961,11 +2952,8 @@ async function loadDashboard() {
     }
     if (wallet) {
       const bal = (wallet.balance || 0);
-      const out = (wallet.outstanding_balance || 0);
       document.getElementById('wallet-balance').textContent = 'KES ' + bal.toLocaleString('en-KE');
-      document.getElementById('wallet-outstanding').textContent = 'KES ' + out.toLocaleString('en-KE');
       document.getElementById('stat-wallet').textContent = 'KES ' + bal.toLocaleString('en-KE');
-      document.getElementById('stat-outstanding').textContent = 'KES ' + out.toLocaleString('en-KE');
       document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
       updateFeeStatus(wallet);
       if (!wallet.account_number) {
@@ -2975,7 +2963,7 @@ async function loadDashboard() {
     } else {
       // Try worker_profiles for fee status fallback
       if (workerProfile) updateFeeStatus(workerProfile);
-      ['stat-wallet','stat-outstanding'].forEach(id => document.getElementById(id).textContent = 'KES 0');
+      document.getElementById('stat-wallet').textContent = 'KES 0';
     }
     document.getElementById('wd-avail-balance').textContent = 'KES ' + ((wallet?.balance || 0)).toLocaleString('en-KE');
 
@@ -5458,10 +5446,10 @@ async function payFromWallet() {
     return;
   }
 
-  // Fetch live wallet balance + outstanding_balance first
+  // Fetch live wallet balance first
   console.log("📍 4️⃣ Fetching wallet for payFromWallet…");
   const { data: wallet, error: wErr } = await sb.from('wallets')
-    .select('balance, outstanding_balance, account_number')
+    .select('balance, account_number')
     .eq('user_id', currentUser.id)
     .limit(1);
   const walletRow = wallet?.[0] || null;
@@ -5472,7 +5460,6 @@ async function payFromWallet() {
   }
 
   const balance = parseFloat(walletRow.balance || 0);
-  const outstandingBefore = parseFloat(walletRow.outstanding_balance || 0);
   if (balance < amount) {
     showToast('err', 'bi-exclamation-circle', 'Insufficient Balance',
       `Your wallet has KES ${balance.toLocaleString('en-KE')} but KES ${amount.toLocaleString('en-KE')} is required.`);
@@ -5488,14 +5475,10 @@ async function payFromWallet() {
   btn.innerHTML = '<i class="bi bi-hourglass-split spin"></i> Processing…';
 
   try {
-    // 1. Deduct from wallet AND bring down outstanding_balance by the amount paid.
-    //    (BUG FIX: previously only `balance` was updated here — `outstanding_balance`
-    //    was never touched anywhere in the front end, so it stayed stuck at whatever
-    //    value admin/DB last set it to, no matter how much a user paid.)
+    // 1. Deduct from wallet.
     const newBalance = balance - amount;
-    const newOutstanding = Math.max(0, outstandingBefore - amount);
     const { error: updateErr } = await sb.from('wallets')
-      .update({ balance: newBalance, outstanding_balance: newOutstanding, updated_at: new Date().toISOString() })
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
       .eq('user_id', currentUser.id);
 
     if (updateErr) throw new Error(updateErr.message);
@@ -5515,7 +5498,7 @@ async function payFromWallet() {
 
     if (payErr) {
       // Rollback wallet deduction on payment insert failure
-      await sb.from('wallets').update({ balance, outstanding_balance: outstandingBefore }).eq('user_id', currentUser.id);
+      await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
       throw new Error(payErr.message);
     }
 
@@ -5544,9 +5527,7 @@ async function payFromWallet() {
 
     // 4. Update local UI
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    document.getElementById('wallet-outstanding').textContent = 'KES ' + newOutstanding.toLocaleString('en-KE');
     document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    document.getElementById('stat-outstanding').textContent = 'KES ' + newOutstanding.toLocaleString('en-KE');
     document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
     updateFeeStatus({
       interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid,
@@ -5987,9 +5968,7 @@ function subscribeToRealtime() {
       filter: `user_id=eq.${currentUser.id}` }, (payload) => {
       const w = payload.new;
       document.getElementById('wallet-balance').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
-      document.getElementById('wallet-outstanding').textContent = 'KES ' + (w.outstanding_balance || 0).toLocaleString('en-KE');
       document.getElementById('stat-wallet').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
-      document.getElementById('stat-outstanding').textContent = 'KES ' + (w.outstanding_balance || 0).toLocaleString('en-KE');
       updateFeeStatus(w);
     })
     .subscribe();
