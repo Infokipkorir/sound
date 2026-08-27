@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundsCare Support Room</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --ink: #0f1923;
+  --brand: #1B6B45;
+  --brand-dark: #134f33;
+  --brand-soft: rgba(27,107,69,0.10);
+  --accent: #E8A040;
+  --accent-soft: rgba(232,160,64,0.12);
+  --accent-ink: #a15a1f;
+  --sky: #0ea5e9;
+  --sky-ink: #0369a1;
+  --rose: #f43f5e;
+  --rose-ink: #be123c;
+  --violet: #8b5cf6;
+  --violet-ink: #6d28d9;
+  --green: #22c55e;
+  --green-ink: #15803d;
+  --amber: #f59e0b;
+  --amber-ink: #b45309;
+  --gray: #9ca3af;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+  --sidebar-w: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; min-height: 100vh; display: flex; }
+
+/* AUTH */
+#auth-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 15% 10%, rgba(139,92,246,.10), transparent 40%), radial-gradient(circle at 88% 88%, rgba(232,160,64,.09), transparent 40%), var(--bg); }
+#auth-overlay.hidden { display: none; }
+.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 2.6rem 2.2rem 2rem; box-shadow: 0 20px 60px rgba(15,25,35,.13), 0 2px 8px rgba(15,25,35,.06); max-width: 420px; width: 90%; position: relative; overflow: hidden; text-align: center; }
+.auth-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--violet), var(--accent)); }
+.auth-logo { width: 64px; height: 64px; background: var(--violet); border-radius: 18px; display: flex; align-items: center; justify-content: center; color:#fff; font-size:28px; margin: 0 auto 1rem; box-shadow: 0 6px 20px rgba(139,92,246,.25); }
+.auth-card h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: .3rem; }
+.auth-card p.auth-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 1.6rem; line-height: 1.5; }
+.auth-error { color: var(--rose); font-size: 12.5px; margin-bottom: .8rem; text-align: center; background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.18); border-radius: 8px; padding: 8px 12px; display: none; }
+.auth-error.show { display: block; }
+.auth-sso-loading { padding: 2rem 0; }
+.auth-sso-loading .spinner-lg { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--violet); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* FORM */
+.form-group { margin-bottom: 1rem; text-align: left; }
+.form-group label { display: block; font-weight: 600; font-size: 11px; margin-bottom: 5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; color: var(--ink); background: var(--surface); }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139,92,246,.1); }
+.pw-wrap { position: relative; }
+.pw-eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; }
+
+/* BUTTONS */
+.btn { padding: 10px 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; transition: .18s; display: inline-flex; align-items: center; justify-content:center; gap: 6px; font-family: inherit; }
+.btn-primary { background: var(--violet); color: #fff; width:100%; }
+.btn-primary:hover { background: #7c3aed; }
+.btn-secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-danger { background: rgba(244,63,94,.1); color: var(--rose); border: 1px solid rgba(244,63,94,.2); }
+.btn-danger:hover { background: rgba(244,63,94,.2); }
+.btn-green { background: rgba(34,197,94,.12); color: var(--green-ink); border: 1px solid rgba(34,197,94,.25); }
+.btn-green:hover { background: rgba(34,197,94,.22); }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+
+/* SIDEBAR */
+.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; }
+.sb-header { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.sb-logo-icon { width: 34px; height: 34px; background: var(--violet); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; flex-shrink:0; }
+.sb-logo-text { font-weight: 800; font-size: 14px; line-height:1.2; }
+.sb-logo-text small { display:block; font-weight:500; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.sb-user { padding: .9rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.sb-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--violet); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.sb-user-text h3 { font-size: 12.5px; font-weight: 700; }
+.sb-user-text p { font-size: 10.5px; color: var(--muted); text-transform:capitalize; }
+.sb-nav { flex: 1; padding: .8rem 0; }
+.sb-link { display: flex; align-items: center; gap: 10px; padding: .75rem 1.2rem; color: var(--muted); text-decoration: none; cursor: pointer; border: none; background: none; width: 100%; font-size: 13px; font-family: inherit; transition: .15s; position:relative; }
+.sb-link:hover { color: var(--violet); background: rgba(139,92,246,.06); }
+.sb-link.active { color: var(--violet); background: rgba(139,92,246,.08); font-weight: 700; }
+.sb-link i { font-size: 16px; flex-shrink: 0; }
+.sb-badge { margin-left: auto; background: var(--rose); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+.sb-footer { padding: 1rem 1.2rem; border-top: 1px solid var(--border); }
+.sb-logout-btn { width: 100%; padding: 9px; background: rgba(139,92,246,.08); border: 1px solid var(--violet); color: var(--violet); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: inherit; }
+.sb-logout-btn:hover { background: var(--violet); color: #fff; }
+.sso-tag { font-size: 10px; background: var(--brand-soft); color: var(--brand); padding: 2px 8px; border-radius: 20px; font-weight:700; display:inline-flex; align-items:center; gap:4px; margin-top:4px; }
+
+/* MAIN */
+.main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.nav { background: var(--surface); padding: 0 1.5rem; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.06); border-bottom: 1px solid var(--border); }
+.nav-title { font-size: 14px; font-weight: 700; }
+.live-pill { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color: var(--green-ink); background: rgba(34,197,94,.1); padding:5px 10px; border-radius:20px; }
+.live-dot { width:7px; height:7px; border-radius:50%; background: var(--green); animation: pulse 1.4s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.content { flex: 1; padding: 1.5rem; overflow-y: auto; max-width: 1500px; margin: 0 auto; width: 100%; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; box-shadow: 0 2px 8px rgba(15,25,35,.04); }
+.stat-label { font-size: 10.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.stat-value { font-size: 1.7rem; font-weight: 800; color: var(--violet); }
+.stat-value.green{color:var(--green-ink)} .stat-value.amber{color:var(--amber-ink)} .stat-value.sky{color:var(--sky-ink)} .stat-value.rose{color:var(--rose-ink)}
+
+/* SECTION */
+.section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(15,25,35,.04); }
+.section-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.section-title { font-size: .93rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+/* SEARCH/TABLE */
+.search-bar { display: flex; gap: 8px; padding: .9rem 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+.search-input { flex: 1; min-width: 180px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; }
+.search-input:focus { outline:none; border-color: var(--violet); }
+.filter-select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; background: var(--surface); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--bg); }
+th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12.5px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(139,92,246,.02); }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.badge-green { background: rgba(34,197,94,.15); color: var(--green-ink); }
+.badge-amber { background: rgba(245,158,11,.15); color: var(--amber-ink); }
+.badge-rose { background: rgba(244,63,94,.15); color: var(--rose-ink); }
+.badge-sky { background: rgba(14,165,233,.15); color: var(--sky-ink); }
+.badge-violet { background: rgba(139,92,246,.15); color: var(--violet-ink); }
+.badge-muted { background: var(--bg); color: var(--muted); }
+
+/* TICKETS LAYOUT */
+.tickets-layout { display: flex; height: calc(100vh - 170px); min-height:500px; }
+.tk-list { width: 320px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; }
+.tk-item { padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--border); transition: .15s; }
+.tk-item:hover, .tk-item.active { background: rgba(139,92,246,.06); }
+.tk-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:6px; }
+.tk-subject { font-weight: 600; font-size: 12.5px; }
+.tk-meta { font-size: 10.5px; color: var(--muted); margin-top:3px; }
+.tk-pane { flex: 1; display: flex; flex-direction: column; }
+.tk-pane-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.tk-messages { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.tk-msg { max-width: 78%; }
+.tk-msg.mine { align-self: flex-end; }
+.tk-msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+.tk-msg:not(.mine) .tk-msg-bubble { background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+.tk-msg.mine .tk-msg-bubble { background: var(--violet); color: #fff; border-bottom-right-radius: 3px; }
+.tk-msg-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.tk-msg.mine .tk-msg-meta { text-align: right; }
+.tk-input-area { padding: 12px 18px; border-top: 1px solid var(--border); }
+.tk-input-row { display: flex; gap: 8px; }
+.tk-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; resize: none; min-height: 42px; max-height: 100px; }
+.tk-input:focus { outline: none; border-color: var(--violet); }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+.empty-state i { font-size: 44px; opacity: .2; display: block; margin-bottom: .8rem; }
+
+/* TOAST */
+#toast-stack { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; max-width: 360px; }
+.toast { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; font-size: 13px; box-shadow: 0 4px 16px rgba(15,25,35,.15); animation: slideIn .3s ease-out; min-width: 260px; }
+@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.ok { border-left: 3px solid var(--green); } .toast.ok i { color: var(--green); }
+.toast.err { border-left: 3px solid var(--rose); } .toast.err i { color: var(--rose); }
+.toast-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; margin-left: auto; }
+
+@media (max-width: 900px) {
+  .sidebar { display:none; }
+  .main { margin-left: 0; }
+  .tickets-layout { flex-direction: column; height: auto; }
+  .tk-list { width: 100%; max-height: 260px; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo"><i class="bi bi-headset"></i></div>
+    <h1>Support Room</h1>
+    <p class="auth-sub">SoundsCare internal support desk. Sign in with your support admin account, or arrive via an admin dashboard handoff link.</p>
+
+    <div id="sso-checking" class="auth-sso-loading" style="display:none">
+      <div class="spinner-lg"></div>
+      <p style="font-size:12.5px;color:var(--muted)">Verifying your dashboard session…</p>
+    </div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="auth-error" id="auth-error"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input id="auth-username" type="text" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input id="auth-password" type="password" autocomplete="current-password" required>
+          <button type="button" class="pw-eye" onclick="togglePw()"><i class="bi bi-eye" id="pw-eye-icon"></i></button>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" id="auth-submit-btn">
+        <span id="auth-btn-spinner" class="spinner" style="display:none"></span>
+        <i class="bi bi-box-arrow-in-right" id="auth-btn-icon"></i>
+        <span id="auth-btn-text">Sign In</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sb-header">
+    <div class="sb-logo-icon"><i class="bi bi-headset"></i></div>
+    <div class="sb-logo-text">Support Room<small>SoundsCare</small></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">--</div>
+    <div class="sb-user-text">
+      <h3 id="sb-admin-name">—</h3>
+      <p id="sb-admin-level">—</p>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <button class="sb-link active" onclick="switchTab(event,'tickets')"><i class="bi bi-life-preserver"></i><span>Support Tickets</span><span class="sb-badge" id="badge-open-tickets" style="display:none"></span></button>
+    <button class="sb-link" onclick="switchTab(event,'liveroom')"><i class="bi bi-broadcast"></i><span>Live Room</span></button>
+  </nav>
+  <div class="sb-footer">
+    <button class="sb-logout-btn" onclick="handleLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main-app" style="display:none">
+  <div class="nav">
+    <div class="nav-title" id="nav-title">Support Tickets</div>
+    <div class="live-pill"><span class="live-dot"></span> Live</div>
+  </div>
+  <div class="content">
+
+    <!-- TICKETS -->
+    <div id="tab-tickets" class="tab-content active">
+      <div class="section" style="margin-bottom:1rem">
+        <div class="search-bar">
+          <input class="search-input" id="tk-search" placeholder="🔍 Search subject, ticket number, guest name…" oninput="renderTicketList()">
+          <select class="filter-select" id="tk-status-filter" onchange="renderTicketList()">
+            <option value="">All Status</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select class="filter-select" id="tk-priority-filter" onchange="renderTicketList()">
+            <option value="">All Priority</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="section" style="padding:0">
+        <div class="tickets-layout">
+          <div class="tk-list" id="tk-list"><div class="empty-state"><i class="bi bi-hourglass-split"></i><p>Loading tickets…</p></div></div>
+          <div class="tk-pane" id="tk-pane">
+            <div class="empty-state" style="margin:auto"><i class="bi bi-chat-square-text"></i><p>Select a ticket to view the conversation</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE ROOM -->
+    <div id="tab-liveroom" class="tab-content">
+      <div class="stats-grid" id="pulse-stats">
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-people-fill"></i> Online Now</div><div class="stat-value" id="pulse-online">—</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-workspace"></i> Workers</div><div class="stat-value green" id="pulse-workers">—</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-briefcase"></i> Employers</div><div class="stat-value amber" id="pulse-employers">—</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-badge"></i> Agents</div><div class="stat-value sky" id="pulse-agents">—</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-person-plus"></i> Signups /1min</div><div class="stat-value" id="pulse-signups">—</div></div>
+        <div class="stat-card"><div class="stat-label"><i class="bi bi-telephone"></i> Active Calls</div><div class="stat-value rose" id="pulse-calls">—</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-eye"></i> Who's On The Site Right Now</div>
+          <span style="font-size:11px;color:var(--muted)">auto-refreshes every 8s</span>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Page</th><th>Active Visitors</th><th>Latest Visitor</th><th>Referrer</th></tr></thead><tbody id="visitors-tbody"><tr><td colspan="4" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title"><i class="bi bi-activity"></i> Live Gateway &amp; Payment Activity</div>
+          <span style="font-size:11px;color:var(--muted)">auto-refreshes every 8s</span>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Type</th><th>Detail</th><th>Amount</th><th>Time</th></tr></thead><tbody id="gateway-log-tbody"><tr><td colspan="4" style="text-align:center">Loading…</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-stack"></div>
+
+<script>
+// ============================================================
+// INIT
+// ============================================================
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let adminRecord = null;
+let allTickets = [], activeTicketId = null, ticketMessages = [];
+let liveTimer = null;
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(d){ if(!d)return '—'; const dt=new Date(d); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+function fmtTimeOnly(d){ if(!d)return '—'; return new Date(d).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function timeAgo(d){ if(!d)return '—'; const s=Math.floor((Date.now()-new Date(d).getTime())/1000); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; return Math.floor(s/3600)+'h ago'; }
+function getInitials(n){ return (n||'?').split(/[\s._-]+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
+function showToast(type,msg){
+  const stack=document.getElementById('toast-stack');
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML=`<i class="bi bi-${type==='ok'?'check-circle-fill':'exclamation-circle-fill'}"></i><span>${esc(msg)}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+  stack.appendChild(el);
+  setTimeout(()=>el.remove(),5000);
+}
+function togglePw(){
+  const inp=document.getElementById('auth-password'), icon=document.getElementById('pw-eye-icon');
+  if(inp.type==='password'){inp.type='text';icon.className='bi bi-eye-slash';}
+  else{inp.type='password';icon.className='bi bi-eye';}
+}
+
+// ============================================================
+// AUTH — SSO handoff from admin-dashboard.html, or direct login
+// ============================================================
+async function boot(){
+  const params=new URLSearchParams(location.search);
+  const ssoToken=params.get('sso');
+  if(ssoToken){
+    document.getElementById('login-form').style.display='none';
+    document.getElementById('sso-checking').style.display='block';
+    try{
+      const {data,error}=await sb.rpc('consume_admin_sso_token',{p_token:ssoToken});
+      const row=data&&data.length?data[0]:null;
+      if(error||!row) throw new Error('This handoff link is invalid or has expired.');
+      // clean the token out of the URL so it can't be reused/bookmarked
+      history.replaceState({},'',location.pathname);
+      enterAsAdmin(row);
+      return;
+    }catch(err){
+      document.getElementById('sso-checking').style.display='none';
+      document.getElementById('login-form').style.display='block';
+      const errEl=document.getElementById('auth-error');
+      errEl.textContent=err.message||'Handoff failed — please sign in below.';
+      errEl.classList.add('show');
+    }
+  }
+}
+async function handleLogin(e){
+  e.preventDefault();
+  const username=document.getElementById('auth-username').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const errEl=document.getElementById('auth-error');
+  errEl.textContent='';errEl.classList.remove('show');
+  const btn=document.getElementById('auth-submit-btn'),spinner=document.getElementById('auth-btn-spinner'),icon=document.getElementById('auth-btn-icon'),txt=document.getElementById('auth-btn-text');
+  btn.disabled=true;spinner.style.display='inline-block';icon.style.display='none';txt.textContent='Signing in…';
+  const showErr=(msg)=>{errEl.textContent=msg;errEl.classList.add('show');btn.disabled=false;spinner.style.display='none';icon.style.display='';txt.textContent='Sign In';};
+  try{
+    const {data:rows,error}=await sb.rpc('admin_login',{p_username:username,p_password:password});
+    if(error)throw error;
+    const data=rows&&rows.length?rows[0]:null;
+    if(!data){showErr('Invalid username or password.');return;}
+    enterAsAdmin(data);
+  }catch(err){showErr(err.message||'Sign in failed.');}
+}
+function enterAsAdmin(data){
+  adminRecord=data;
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('main-app').style.display='flex';
+  document.getElementById('sb-admin-name').textContent=data.badge||data.username;
+  document.getElementById('sb-avatar').textContent=getInitials(data.badge||data.username);
+  document.getElementById('sb-admin-level').textContent=(data.access_level||data.role||'admin').replace(/_/g,' ');
+  loadTickets();
+  loadLiveRoom();
+  liveTimer=setInterval(loadLiveRoom,8000);
+}
+function handleLogout(){
+  if(liveTimer)clearInterval(liveTimer);
+  adminRecord=null;
+  document.getElementById('sidebar').style.display='none';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('login-form').style.display='block';
+  document.getElementById('sso-checking').style.display='none';
+  document.getElementById('auth-username').value='';
+  document.getElementById('auth-password').value='';
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(e,tab){
+  document.querySelectorAll('.sb-link').forEach(b=>b.classList.remove('active'));
+  if(e)e.currentTarget.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-title').textContent=tab==='tickets'?'Support Tickets':'Live Room';
+}
+
+// ============================================================
+// SUPPORT TICKETS
+// ============================================================
+async function loadTickets(){
+  const {data,error}=await sb.from('support_tickets').select('*').order('created_at',{ascending:false});
+  if(error){showToast('err',error.message);return;}
+  allTickets=data||[];
+  renderTicketList();
+  const openCount=allTickets.filter(t=>t.status==='open').length;
+  const b=document.getElementById('badge-open-tickets');
+  b.style.display=openCount?'inline-block':'none';b.textContent=openCount;
+}
+function renderTicketList(){
+  const q=(document.getElementById('tk-search').value||'').toLowerCase();
+  const sf=document.getElementById('tk-status-filter').value;
+  const pf=document.getElementById('tk-priority-filter').value;
+  let data=allTickets.filter(t=>{
+    if(sf&&t.status!==sf)return false;
+    if(pf&&t.priority!==pf)return false;
+    if(!q)return true;
+    return [(t.subject||''),(t.ticket_number||''),(t.guest_name||''),(t.guest_email||'')].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('tk-list').innerHTML=data.map(t=>{
+    const prioColor={urgent:'rose',high:'amber',normal:'sky',low:'muted'}[t.priority]||'muted';
+    const statColor={open:'rose',in_progress:'amber',resolved:'green',closed:'muted'}[t.status]||'muted';
+    return `<div class="tk-item ${t.id===activeTicketId?'active':''}" onclick="openTicket('${t.id}')">
+      <div class="tk-item-top">
+        <span class="tk-subject">${esc(t.subject||'(no subject)')}</span>
+        <span class="badge badge-${statColor}">${(t.status||'').replace('_',' ')}</span>
+      </div>
+      <div class="tk-meta">
+        ${esc(t.ticket_number||'')} · ${esc(t.is_guest?(t.guest_name||'Guest'):'Registered user')}
+        <span class="badge badge-${prioColor}" style="margin-left:4px">${t.priority||'normal'}</span>
+      </div>
+      <div class="tk-meta">${timeAgo(t.created_at)}</div>
+    </div>`;
+  }).join('')||'<div class="empty-state"><i class="bi bi-inbox"></i><p>No tickets match</p></div>';
+}
+async function openTicket(id){
+  activeTicketId=id;
+  renderTicketList();
+  const t=allTickets.find(t=>t.id===id);
+  if(!t)return;
+  const {data,error}=await sb.from('support_ticket_messages').select('*').eq('ticket_id',id).order('created_at',{ascending:true});
+  ticketMessages=error?[]:(data||[]);
+  const prioColor={urgent:'rose',high:'amber',normal:'sky',low:'muted'}[t.priority]||'muted';
+  document.getElementById('tk-pane').innerHTML=`
+    <div class="tk-pane-header">
+      <div>
+        <div style="font-weight:700;font-size:13.5px">${esc(t.subject||'(no subject)')}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(t.ticket_number||'')} · ${esc(t.is_guest?(t.guest_name||'Guest')+(t.guest_email?' · '+t.guest_email:''):'Registered user')} · ${esc(t.category||'general')}</div>
+      </div>
+      <div class="actions-cell" style="display:flex;gap:6px;flex-wrap:wrap">
+        <select class="filter-select" onchange="updateTicketField('${t.id}','priority',this.value)">
+          <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+          <option value="normal" ${t.priority==='normal'?'selected':''}>Normal</option>
+          <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+          <option value="urgent" ${t.priority==='urgent'?'selected':''}>Urgent</option>
+        </select>
+        <select class="filter-select" onchange="updateTicketField('${t.id}','status',this.value)">
+          <option value="open" ${t.status==='open'?'selected':''}>Open</option>
+          <option value="in_progress" ${t.status==='in_progress'?'selected':''}>In Progress</option>
+          <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
+          <option value="closed" ${t.status==='closed'?'selected':''}>Closed</option>
+        </select>
+      </div>
+    </div>
+    <div class="tk-messages" id="tk-messages">
+      ${ticketMessages.map(m=>`<div class="tk-msg ${m.sender_type==='admin'?'mine':''}">
+        <div class="tk-msg-bubble">${esc(m.message)}</div>
+        <div class="tk-msg-meta">${esc(m.sender_type||'user')} · ${fmtDate(m.created_at)}</div>
+      </div>`).join('')||'<div class="empty-state"><i class="bi bi-chat"></i><p>No messages yet</p></div>'}
+    </div>
+    <div class="tk-input-area">
+      <div class="tk-input-row">
+        <textarea class="tk-input" id="tk-reply-input" placeholder="Type a reply…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTicketReply('${t.id}');}"></textarea>
+        <button class="btn btn-primary" style="width:auto" onclick="sendTicketReply('${t.id}')"><i class="bi bi-send"></i></button>
+      </div>
+    </div>`;
+  const box=document.getElementById('tk-messages');
+  if(box)box.scrollTop=box.scrollHeight;
+}
+async function updateTicketField(id,field,value){
+  const update={[field]:value,updated_at:new Date().toISOString()};
+  if(field==='status'&&(value==='resolved'||value==='closed'))update.closed_at=new Date().toISOString();
+  const {error}=await sb.from('support_tickets').update(update).eq('id',id);
+  if(error){showToast('err',error.message);return;}
+  const t=allTickets.find(t=>t.id===id);if(t)Object.assign(t,update);
+  renderTicketList();
+  showToast('ok','Ticket updated');
+}
+async function sendTicketReply(ticketId){
+  const input=document.getElementById('tk-reply-input');
+  const message=input.value.trim();
+  if(!message)return;
+  input.value='';
+  const {data,error}=await sb.from('support_ticket_messages').insert({
+    ticket_id:ticketId, sender_id:adminRecord?.id||null, sender_type:'admin', message
+  }).select().single();
+  if(error){showToast('err',error.message);return;}
+  ticketMessages.push(data);
+  await sb.from('support_tickets').update({status:'in_progress',updated_at:new Date().toISOString(),assigned_admin_id:adminRecord?.id||null}).eq('id',ticketId)
+    .then(()=>{
+      const t=allTickets.find(t=>t.id===ticketId);
+      if(t){t.status='in_progress';t.assigned_admin_id=adminRecord?.id||null;}
+    });
+  openTicket(ticketId);
+}
+
+// ============================================================
+// LIVE ROOM — system pulse, active page visitors, gateway feed
+// ============================================================
+async function loadLiveRoom(){
+  const [{data:pulse},{data:visits},{data:ledger},{data:events}]=await Promise.all([
+    sb.from('system_pulse_log').select('*').order('captured_at',{ascending:false}).limit(1),
+    sb.from('page_visits').select('*').is('left_at',null).order('entered_at',{ascending:false}).limit(200),
+    sb.from('admin_wallet_ledger').select('*').order('created_at',{ascending:false}).limit(30),
+    sb.from('event_logs').select('*').order('created_at',{ascending:false}).limit(30),
+  ]);
+  const p=pulse&&pulse[0];
+  document.getElementById('pulse-online').textContent=p?p.online_users_count:'—';
+  document.getElementById('pulse-workers').textContent=p?p.online_workers_count:'—';
+  document.getElementById('pulse-employers').textContent=p?p.online_employers_count:'—';
+  document.getElementById('pulse-agents').textContent=p?p.online_agents_count:'—';
+  document.getElementById('pulse-signups').textContent=p?p.new_signups_1min:'—';
+  document.getElementById('pulse-calls').textContent=p?p.active_calls_count:'—';
+
+  const byPage={};
+  (visits||[]).forEach(v=>{
+    const key=v.page||'(unknown)';
+    if(!byPage[key])byPage[key]={count:0,latest:null,referrer:null};
+    byPage[key].count++;
+    if(!byPage[key].latest||new Date(v.entered_at)>new Date(byPage[key].latest)){byPage[key].latest=v.entered_at;byPage[key].referrer=v.referrer;}
+  });
+  const pages=Object.entries(byPage).sort((a,b)=>b[1].count-a[1].count);
+  document.getElementById('visitors-tbody').innerHTML=pages.map(([page,info])=>`<tr>
+      <td><strong>${esc(page)}</strong></td>
+      <td><span class="badge badge-green">${info.count} active</span></td>
+      <td>${timeAgo(info.latest)}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(info.referrer||'direct')}</td>
+    </tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No active visitors right now</td></tr>';
+
+  const merged=[
+    ...(ledger||[]).map(l=>({kind:'ledger',time:l.created_at,type:l.category,detail:l.description||l.category,amount:(l.direction==='credit'?'+':'-')+'Ksh '+Number(l.amount||0).toLocaleString()})),
+    ...(events||[]).map(e=>({kind:'event',time:e.created_at,type:e.event_type,detail:e.description||e.entity_type||'—',amount:''})),
+  ].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,40);
+  document.getElementById('gateway-log-tbody').innerHTML=merged.map(m=>`<tr>
+      <td><span class="badge badge-${m.kind==='ledger'?'violet':'sky'}">${esc((m.type||'').replace(/_/g,' '))}</span></td>
+      <td>${esc(m.detail)}</td>
+      <td>${esc(m.amount)}</td>
+      <td>${fmtTimeOnly(m.time)}</td>
+    </tr>`).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">No activity yet</td></tr>';
+}
+
+boot();
+</script>
+</body>
+</html>
