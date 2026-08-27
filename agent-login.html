@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Login | SoundsCare</title>
+<link rel="icon" href="sound_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#132038;
+    --navy-deep:#0c1626;
+    --navy-mid:#1c2f4f;
+    --gold:#D9A441;
+    --gold-soft:#f4e2b8;
+    --green:#1F9D63;
+    --green-soft:#e5f6ed;
+    --red:#C24B3F;
+    --red-soft:#fbe8e5;
+    --amber:#B8860B;
+    --amber-soft:#fdf3dc;
+    --paper:#F7F5F0;
+    --card:#FFFFFF;
+    --ink:#161B22;
+    --ink-soft:#5C6470;
+    --line:#E7E3DA;
+    --radius:14px;
+    --font-display:'Sora',sans-serif;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+
+  .wrap{min-height:100vh;display:flex;}
+
+  /* left brand panel */
+  .brand-panel{
+    flex:0 0 42%;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-deep) 100%);
+    color:#fff;padding:48px 44px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;
+  }
+  .brand-panel::after{
+    content:"";position:absolute;right:-120px;bottom:-120px;width:340px;height:340px;border-radius:50%;
+    background:radial-gradient(circle,rgba(217,164,65,.16),transparent 70%);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#b9822c);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:var(--navy-deep);
+  }
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:17px;}
+  .brand-name span{display:block;font-family:var(--font-body);font-weight:500;font-size:11px;color:#9fb0c9;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+  .pitch h1{font-family:var(--font-display);font-size:30px;line-height:1.25;margin:0 0 14px;max-width:380px;}
+  .pitch p{color:#b7c3d9;font-size:14.5px;line-height:1.6;max-width:360px;margin:0 0 22px;}
+  .pitch-list{display:flex;flex-direction:column;gap:12px;}
+  .pitch-item{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#dbe3f0;}
+  .pitch-item .check{width:20px;height:20px;border-radius:50%;background:rgba(217,164,65,.2);color:var(--gold);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+  .foot-note{font-size:12px;color:#7a8aa6;}
+
+  /* right form panel */
+  .form-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+  .form-card{width:100%;max-width:400px;}
+  .tabs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:26px;}
+  .tab{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink-soft);}
+  .tab.active{background:var(--navy);color:#fff;}
+
+  .form-card h2{font-family:var(--font-display);font-size:21px;margin:0 0 6px;}
+  .form-card p.sub{margin:0 0 22px;color:var(--ink-soft);font-size:13.5px;}
+
+  /* LOCATION BADGE — East Africa IP gate */
+  .location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-soft);color:#166a41;border-radius:20px;padding:6px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:14px;}
+  .location-badge i{font-size:13px;}
+  .location-badge.loading{background:var(--amber-soft);color:var(--amber);}
+  .location-badge.restricted{background:var(--red-soft);color:var(--red);}
+
+  /* MAINTENANCE / VPN / RESTRICTION BANNERS */
+  .banner{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;margin-bottom:14px;display:none;align-items:flex-start;gap:9px;}
+  .banner.show{display:flex;}
+  .banner i{font-size:16px;flex-shrink:0;margin-top:1px;}
+  .banner.maintenance{background:var(--amber-soft);color:#7a5b0a;border:1px solid #eed48f;}
+  .banner.maintenance strong{display:block;font-size:13px;margin-bottom:2px;}
+  .banner.vpn{background:var(--red-soft);color:#8a3327;border:1px solid #e8b6ae;}
+  .banner.restricted{background:var(--red-soft);color:#8a3327;border:1px solid #e8b6ae;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .field input,.field select{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(19,32,56,.08);}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+
+  .submit-btn{
+    width:100%;background:var(--navy);color:#fff;border:none;padding:12.5px;border-radius:10px;font-size:14.5px;font-weight:700;
+    margin-top:4px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .submit-btn:hover{background:var(--navy-mid);}
+  .submit-btn:disabled{opacity:.6;pointer-events:none;}
+  .btn-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .submit-btn.loading .btn-spinner{display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .alert{border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:16px;display:none;}
+  .alert.error{background:var(--red-soft);color:#8a3327;border:1px solid #e8b6ae;display:block;}
+  .alert.success{background:var(--green-soft);color:#166a41;border:1px solid #aeddc3;display:block;}
+
+  /* SOCIAL — Google + Facebook */
+  .divider{display:flex;align-items:center;gap:10px;color:var(--ink-soft);font-size:12px;font-weight:600;margin:1.1rem 0 .8rem;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line);}
+  .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.4rem;}
+  .social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);transition:all .15s;font-family:var(--font-body);}
+  .social-btn:hover{border-color:var(--navy);background:var(--paper);}
+  .social-btn img{width:18px;height:18px;object-fit:contain;}
+
+  .swap-note{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px;}
+  .swap-note a{color:var(--navy);font-weight:700;text-decoration:underline;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .tab{display:block;}
+
+  /* SUPPORT WIDGET — themed navy/gold to match this page */
+  #ssc-support-fab{
+    position:fixed;bottom:1.5rem;left:1.5rem;z-index:9995;
+    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+    box-shadow:0 8px 26px rgba(12,22,38,.4);
+    display:flex;align-items:center;justify-content:center;color:var(--gold);
+    font-size:22px;transition:transform .25s ease,box-shadow .25s ease;
+  }
+  #ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(12,22,38,.48);}
+  #ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff;}
+  #ssc-support-panel{
+    position:fixed;bottom:5.6rem;left:1.5rem;z-index:9995;
+    width:380px;height:600px;max-height:calc(100vh - 8rem);
+    border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
+    display:none;background:#fff;border:1px solid var(--line);
+  }
+  #ssc-support-panel.open{display:block;}
+  #ssc-support-panel iframe{width:100%;height:100%;border:0;display:block;}
+
+  @media(max-width:840px){.brand-panel{display:none;}}
+  @media(max-width:480px){
+    #ssc-support-panel{width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0;}
+    #ssc-support-fab{bottom:1.1rem;left:1.1rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <aside class="brand-panel">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-name">SoundsCare<span>Agent Portal</span></div>
+    </div>
+    <div class="pitch">
+      <h1>Earn commission connecting employers with trusted domestic workers.</h1>
+      <p>SoundsCare agents post jobs, verify employees, and log hires on behalf of employers across Kenya, Uganda, and Tanzania — earning a payout for every confirmed action.</p>
+      <div class="pitch-list">
+        <div class="pitch-item"><span class="check">✓</span>Earn a fixed commission per job posting and per confirmed hire</div>
+        <div class="pitch-item"><span class="check">✓</span>Withdraw your balance straight to M-Pesa</div>
+        <div class="pitch-item"><span class="check">✓</span>Track every referral, job, and payout from one dashboard</div>
+      </div>
+    </div>
+    <div class="foot-note">© 2026 SoundsCare. All rights reserved.</div>
+  </aside>
+
+  <section class="form-panel">
+    <div class="form-card">
+      <div class="tabs">
+        <div class="tab active" id="tabLogin">Log in</div>
+        <a class="tab" id="tabRegister" href="agent-register.html">Become an agent</a>
+      </div>
+
+      <!-- MAINTENANCE BANNER -->
+      <div class="banner maintenance" id="maintenanceBanner">
+        <i class="bi bi-cone-striped"></i>
+        <div><strong>Site under maintenance</strong><span id="maintenanceText"></span></div>
+      </div>
+
+      <!-- LOCATION / EAST AFRICA GATE -->
+      <div class="location-badge loading" id="locationBadge">
+        <i class="bi bi-geo-alt"></i>
+        <span id="locationText">Verifying your location…</span>
+      </div>
+      <div class="banner restricted" id="restrictedBanner">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>SoundsCare's agent portal is only available to users located in East Africa. Sign-in has been disabled for your current location.</span>
+      </div>
+      <div class="banner vpn" id="vpnBanner">
+        <i class="bi bi-shield-exclamation"></i>
+        <span>VPN or proxy detected. Please disable it for a secure sign-in experience.</span>
+      </div>
+
+      <div class="alert error" id="errorAlert"></div>
+      <div class="alert success" id="successAlert"></div>
+
+      <!-- LOGIN PANEL -->
+      <div class="panel active" id="loginPanel">
+        <h2>Welcome back</h2>
+        <p class="sub">Log in to your SoundsCare agent account.</p>
+        <form id="loginForm">
+          <div class="field">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required autocomplete="email" placeholder="you@example.com">
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••">
+          </div>
+          <button class="submit-btn" type="submit" id="loginBtn">
+            <span class="btn-spinner"></span><span class="btn-label">Log in</span>
+          </button>
+        </form>
+
+        <div class="divider"><span>or continue with</span></div>
+        <div class="social-grid">
+          <button class="social-btn" type="button" onclick="oauthLogin('google')">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
+            Google
+          </button>
+          <button class="social-btn" type="button" onclick="oauthLogin('facebook')">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
+            Facebook
+          </button>
+        </div>
+      </div>
+
+      <div class="swap-note">
+        New to SoundsCare? <a href="agent-register.html">Become an agent</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SUPPORT WIDGET — opens support.html, main support channel on this page -->
+<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
+  <i class="bi bi-headset"></i>
+  <span class="dot"></span>
+</button>
+<div id="ssc-support-panel">
+  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const errorAlert = document.getElementById('errorAlert');
+const successAlert = document.getElementById('successAlert');
+
+// ════════════════════════════════════════════════════════
+//  EAST AFRICA COUNTRY LIST — used by the IP location gate below.
+// ════════════════════════════════════════════════════════
+const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
+let locationBlocked = false; // true only once we've CONFIRMED the IP is outside East Africa
+
+function clearAlerts() {
+  errorAlert.style.display = 'none';
+  successAlert.style.display = 'none';
+}
+function showError(msg) {
+  successAlert.style.display = 'none';
+  errorAlert.innerHTML = msg;
+  errorAlert.style.display = 'block';
+}
+function showSuccess(msg) {
+  errorAlert.style.display = 'none';
+  successAlert.textContent = msg;
+  successAlert.style.display = 'block';
+}
+
+function setLoading(btn, loading) {
+  btn.classList.toggle('loading', loading);
+  btn.disabled = loading;
+}
+
+function friendlyAuthError(err) {
+  const msg = (err && err.message) || 'Something went wrong. Please try again.';
+  if (/invalid login credentials/i.test(msg)) return 'Incorrect email or password.';
+  if (/already registered|already exists/i.test(msg)) return 'An account with this email already exists. Try logging in instead.';
+  if (/password/i.test(msg) && /at least/i.test(msg)) return 'Password must be at least 6 characters.';
+  return msg;
+}
+
+// ════════════════════════════════════════════════════════
+//  MAINTENANCE MODE — reads the shared `settings` table (id=1),
+//  same convention used across SoundsCare's other login pages.
+// ════════════════════════════════════════════════════════
+let siteUnderMaintenance = false;
+async function checkMaintenanceMode() {
+  try {
+    const { data, error } = await sb.from('settings')
+      .select('maintenance_mode, maintenance_message')
+      .eq('id', 1)
+      .maybeSingle();
+    if (error) throw error;
+    if (data && data.maintenance_mode) {
+      siteUnderMaintenance = true;
+      document.getElementById('maintenanceText').textContent =
+        data.maintenance_message || "We're currently performing scheduled maintenance. Please check back shortly.";
+      document.getElementById('maintenanceBanner').classList.add('show');
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.querySelector('.btn-label').textContent = 'Sign-in unavailable';
+    }
+  } catch (err) {
+    // Fail silent — never block login because the settings check itself failed.
+    console.warn('[SoundsCare] Maintenance check failed:', err.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  EAST AFRICA IP GATE + VPN/PROXY DETECTION
+//  Fails OPEN (never blocks) if the lookup itself fails — we only
+//  block sign-in when we've positively identified a non-East-Africa
+//  country, so a flaky geolocation API can never lock everyone out.
+// ════════════════════════════════════════════════════════
+async function checkLocationGate() {
+  const badge = document.getElementById('locationBadge');
+  const text = document.getElementById('locationText');
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    const d = await res.json();
+    const cc = (d.country_code || '').toUpperCase();
+
+    if (d.proxy || d.tor || d.hosting) {
+      document.getElementById('vpnBanner').classList.add('show');
+    }
+
+    badge.classList.remove('loading');
+    if (cc && EAST_AFRICA_COUNTRIES.includes(cc)) {
+      text.textContent = d.country_name ? `📍 ${d.country_name}` : 'Location verified';
+    } else if (cc) {
+      locationBlocked = true;
+      badge.classList.add('restricted');
+      text.textContent = `⚠️ Access restricted from ${d.country_name || cc}`;
+      document.getElementById('restrictedBanner').classList.add('show');
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.querySelector('.btn-label').textContent = 'Unavailable in your region';
+    } else {
+      text.textContent = 'Location unavailable';
+    }
+  } catch (err) {
+    console.warn('[SoundsCare] Location check failed:', err.message);
+    badge.classList.remove('loading');
+    text.textContent = 'Location unavailable';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  ACCOUNT STATUS — checks the `agents` row for banned / deleted /
+//  paused states. Tries the full set of status columns first; if
+//  those columns don't exist yet on this table, falls back to just
+//  `id` so a schema that hasn't been migrated yet doesn't break login.
+// ════════════════════════════════════════════════════════
+async function fetchAgentRecord(userId) {
+  let res = await sb.from('agents')
+    .select('id, is_active, status, account_deactivated, deactivation_reason, banned, ban_reason, deleted_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (res.error) {
+    console.warn('[SoundsCare] Extended agent status columns unavailable, falling back:', res.error.message);
+    res = await sb.from('agents').select('id').eq('user_id', userId).maybeSingle();
+  }
+  return res;
+}
+
+function accountBlockReason(record) {
+  if (!record) return null;
+  if (record.deleted_at) return 'This account has been deleted. Contact support if you believe this is a mistake.';
+  if (record.banned === true) return 'This account has been banned.' + (record.ban_reason ? ' Reason: ' + record.ban_reason : '') + ' Contact support for more information.';
+  if (record.account_deactivated === true) return 'This account has been paused.' + (record.deactivation_reason ? ' Reason: ' + record.deactivation_reason : '') + ' Contact support to reactivate.';
+  if (record.is_active === false) return 'This account has been deactivated. Contact support for assistance.';
+  const s = (record.status || '').toLowerCase();
+  if (s === 'banned') return 'This account has been banned. Contact support for more information.';
+  if (s === 'deleted') return 'This account has been deleted. Contact support if you believe this is a mistake.';
+  if (s === 'paused' || s === 'suspended' || s === 'deactivated') return 'This account has been paused. Contact support to reactivate.';
+  return null;
+}
+
+// ---- LOGIN ----
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearAlerts();
+
+  if (siteUnderMaintenance) {
+    showError('Sign-in is temporarily disabled while the site is under maintenance.');
+    return;
+  }
+  if (locationBlocked) {
+    showError("SoundsCare's agent portal is only available to users located in East Africa.");
+    return;
+  }
+
+  const btn = document.getElementById('loginBtn');
+  setLoading(btn, true);
+
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    const { data: agent, error: agentErr } = await fetchAgentRecord(data.user.id);
+
+    if (agentErr || !agent) {
+      await sb.auth.signOut();
+      successAlert.style.display = 'none';
+      errorAlert.innerHTML = 'We couldn\'t find an agent account for this login. New here? <a href="agent-register.html">Become an agent</a>.';
+      errorAlert.style.display = 'block';
+      setLoading(btn, false);
+      return;
+    }
+
+    const blockReason = accountBlockReason(agent);
+    if (blockReason) {
+      await sb.auth.signOut();
+      showError(blockReason);
+      setLoading(btn, false);
+      return;
+    }
+
+    window.location.href = 'agent-dashboard.html';
+  } catch (err) {
+    showError(friendlyAuthError(err));
+    setLoading(btn, false);
+  }
+});
+
+// ════════════════════════════════════════════════════════
+//  SOCIAL LOGIN — Google & Facebook via Supabase OAuth.
+//  NOTE: this requires the Google and Facebook providers to be
+//  enabled and configured under Authentication → Providers in the
+//  Supabase dashboard for this project, or sign-in will fail with
+//  a "provider not enabled" error from Supabase.
+// ════════════════════════════════════════════════════════
+async function oauthLogin(provider) {
+  clearAlerts();
+  if (siteUnderMaintenance) {
+    showError('Sign-in is temporarily disabled while the site is under maintenance.');
+    return;
+  }
+  if (locationBlocked) {
+    showError("SoundsCare's agent portal is only available to users located in East Africa.");
+    return;
+  }
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) throw error;
+    // Browser is redirected away to the provider here; execution resumes
+    // on return via the "already logged in" check below.
+  } catch (err) {
+    showError('Could not start ' + (provider === 'google' ? 'Google' : 'Facebook') + ' sign-in: ' + friendlyAuthError(err));
+  }
+}
+
+// If already logged in (including just returning from an OAuth redirect)
+// and already a valid, non-blocked agent, skip straight to the dashboard.
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+
+  const { data: agent } = await fetchAgentRecord(session.user.id);
+  if (!agent) return; // e.g. brand-new OAuth sign-in with no agent account yet — stay on this page
+
+  const blockReason = accountBlockReason(agent);
+  if (blockReason) {
+    await sb.auth.signOut();
+    showError(blockReason);
+    return;
+  }
+
+  window.location.href = 'agent-dashboard.html';
+})();
+
+// ════════════════════════════════════════════════════════
+//  SUPPORT WIDGET — opens support.html in an iframe panel.
+// ════════════════════════════════════════════════════════
+(function(){
+  var fab = document.getElementById('ssc-support-fab');
+  var panel = document.getElementById('ssc-support-panel');
+  var frame = document.getElementById('ssc-support-iframe');
+  var loaded = false;
+
+  function openPanel(){
+    if (!loaded){ frame.src = 'support.html'; loaded = true; }
+    panel.classList.add('open');
+    fab.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    fab.setAttribute('aria-expanded', 'false');
+  }
+  function togglePanel(){
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  }
+
+  fab.addEventListener('click', togglePanel);
+  window.addEventListener('message', function(e){
+    if (e.data === 'soundscare-support:close') closePanel();
+  });
+})();
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+checkMaintenanceMode();
+checkLocationGate();
+</script>
+</body>
+</html>
