@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Sign In — SoundsCare</title>
+
+<!-- FAVICON -->
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="sound_logo.jpg">
+
+<!-- OPEN GRAPH / LINK SHARE PREVIEW -->
+<meta property="og:title" content="Employee Sign In — SoundsCare">
+<meta property="og:description" content="Sign in to East Africa's trusted domestic services platform.">
+<meta property="og:image" content="https://sounds.co.ke/sound_logo.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Employee Sign In — SoundsCare">
+<meta name="twitter:description" content="Sign in to East Africa's trusted domestic services platform.">
+<meta name="twitter:image" content="https://sounds.co.ke/sound_logo.jpg">
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1B6B45;--green-dark:#114B30;--green-light:#EEF7F2;--green-mid:#C8E6D6;
+  --accent:#E8A040;--accent-light:#FEF3E2;
+  --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
+  --surface:#FFFFFF;--bg:#F6F8F7;
+  --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --amber:#D97706;--blue:#2563EB;--success:#10B981;
+  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 16px 50px rgba(17,75,48,.14);
+  --radius:12px;--radius-sm:8px;--radius-lg:22px;
+  --font:'DM Sans',system-ui,sans-serif;
+  --serif:'Playfair Display',serif;
+}
+body{
+  font-family:var(--font);color:var(--text);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(27,107,69,.07), transparent 38%),
+    radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
+    var(--bg);
+}
+.page-wrap{width:100%;max-width:460px}
+
+@keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.fade-in{animation:fadeIn .4s ease-out}
+.slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
+
+/* BRAND */
+.brand{text-align:center;margin-bottom:1.6rem;animation:fadeIn .6s ease-out}
+.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
+.brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain}
+.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
+
+/* LOCATION BADGE */
+.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
+.location-badge i{font-size:13px}
+.location-badge.loading{background:#FFF3E0;color:var(--amber)}
+.location-badge.restricted{background:var(--red-bg);color:var(--red)}
+
+/* STEP BADGE */
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
+.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
+.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
+
+/* FORM */
+.fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
+.fg:nth-child(1){animation-delay:.3s}
+.fg:nth-child(2){animation-delay:.35s}
+.fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
+.iw{position:relative;display:flex;align-items:center}
+.iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
+.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
+.iw .sfx:hover{color:var(--text)}
+input[type=email],input[type=password],input[type=text]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+.iw.has-ico input{padding-left:38px}
+.iw.has-sfx input{padding-right:40px}
+input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);animation:shake .3s ease-out}
+
+/* ROW BETWEEN PASSWORD AND FORGOT LINK */
+.row-between{display:flex;align-items:center;justify-content:space-between;margin:.2rem 0 1.3rem;animation:slideInUp .5s ease-out .45s both}
+.remember-wrap{display:flex;align-items:center;gap:7px;cursor:pointer}
+.remember-wrap input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer}
+.remember-wrap label{font-size:12.5px;color:var(--text-mid);cursor:pointer;margin:0}
+.forgot-link{font-size:12.5px;color:var(--green);text-decoration:none;font-weight:600}
+.forgot-link:hover{text-decoration:underline}
+
+/* ALERTS */
+.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
+.alert i{font-size:15px;flex-shrink:0;margin-top:1px}
+.alert.show{display:flex}
+.alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
+.alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
+.alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
+.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
+
+/* MAINTENANCE ALERT — dedicated space, only shown when the site flags maintenance_mode */
+.maintenance-alert{border-radius:var(--radius-sm);padding:13px 14px;font-size:13px;font-weight:500;margin-bottom:14px;display:none;align-items:flex-start;gap:10px;line-height:1.55;background:#FFFBEB;border:1.5px solid #FDE68A;color:#92400E;animation:slideInUp .35s ease-out}
+.maintenance-alert.show{display:flex}
+.maintenance-alert i{font-size:19px;flex-shrink:0;margin-top:1px;color:var(--amber)}
+.maintenance-alert strong{display:block;font-size:13.5px;margin-bottom:2px;color:#78350F}
+
+/* ACTION LINK */
+.action-link{color:var(--green);text-decoration:none;font-weight:700;cursor:pointer}
+.action-link:hover{text-decoration:underline}
+
+/* BUTTONS */
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .55s both}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
+.btn-primary:hover:not(:disabled){background:var(--green-dark)}
+.btn-primary:active:not(:disabled){transform:scale(.99)}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* FOOTER */
+.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .65s both}
+.auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
+.auth-foot a:hover{text-decoration:underline}
+
+/* IP & LOCATION INFO */
+.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
+.ip-status i{font-size:13px}
+
+/* RESTRICTED LOCATION BANNER */
+.restricted-banner{border-radius:var(--radius-sm);padding:11px 13px;font-size:12.5px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);margin-bottom:14px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
+.restricted-banner.show{display:flex}
+.restricted-banner i{font-size:15px;flex-shrink:0;margin-top:1px}
+
+/* SOCIAL — Google + Facebook */
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.6rem;animation:slideInUp .5s ease-out .58s both}
+.social-btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13.5px;font-weight:600;color:var(--text-mid);transition:all .15s;font-family:var(--font)}
+.social-btn:hover{border-color:#9CA3AF;background:var(--bg);transform:translateY(-1px)}
+.social-btn:active{transform:translateY(0)}
+.social-btn img{width:19px;height:19px;object-fit:contain}
+
+/* SUPPORT WIDGET — themed green/gold to match this page */
+#ssc-support-fab{
+  position:fixed;bottom:1.5rem;left:1.5rem;z-index:9995;
+  width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);
+  box-shadow:0 8px 26px rgba(17,75,48,.4);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-size:22px;transition:transform .25s ease,box-shadow .25s ease;
+}
+#ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(17,75,48,.48)}
+#ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff}
+#ssc-support-panel{
+  position:fixed;bottom:5.6rem;left:1.5rem;z-index:9995;
+  width:380px;height:600px;max-height:calc(100vh - 8rem);
+  border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
+  display:none;background:#fff;border:1px solid var(--border);
+}
+#ssc-support-panel.open{display:block}
+#ssc-support-panel iframe{width:100%;height:100%;border:0;display:block}
+@media(max-width:480px){
+  #ssc-support-panel{width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0}
+  #ssc-support-fab{bottom:1.1rem;left:1.1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- BRAND -->
+  <div class="brand">
+    <a class="brand-logo" href="../index.html">
+      <img src="sound_logo.jpg" alt="SoundsCare Logo">
+      SoundsCare
+    </a>
+    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
+  </div>
+
+  <div class="card">
+
+    <!-- LOCATION DETECTION -->
+    <div class="location-badge loading" id="locationBadge">
+      <i class="bi bi-geo-alt"></i>
+      <span id="locationText">Detecting location...</span>
+    </div>
+    <div class="restricted-banner" id="restrictedBanner">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>SoundsCare is only available to users located in East Africa. Sign-in has been disabled for your current location.</span>
+    </div>
+
+    <!-- MAINTENANCE ALERT SPACE — populated/toggled by checkMaintenanceMode() -->
+    <div class="maintenance-alert" id="maintenanceAlert">
+      <i class="bi bi-cone-striped"></i>
+      <div>
+        <strong>Site under maintenance</strong>
+        <span id="maintenanceText"></span>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="alert error" id="alertError">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span id="alertErrorText"></span>
+    </div>
+
+    <div class="alert success" id="alertSuccess">
+      <i class="bi bi-check-circle-fill"></i>
+      <span id="alertSuccessText"></span>
+    </div>
+
+    <div class="alert info" id="alertInfo">
+      <i class="bi bi-info-circle-fill"></i>
+      <span id="alertInfoText"></span>
+    </div>
+
+    <!-- FORM HEADER -->
+    <div class="step-badge">
+      <i class="bi bi-person-fill-check"></i>
+      EMPLOYEE SIGN IN
+    </div>
+    <h1 class="step-title">Welcome Back</h1>
+    <p class="step-sub">Sign in to your SoundsCare employee account to view jobs and manage your profile.</p>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+
+      <!-- EMAIL -->
+      <div class="fg">
+        <label for="loginEmail">Email Address</label>
+        <div class="iw has-ico">
+          <i class="ico bi bi-envelope-fill"></i>
+          <input type="email" id="loginEmail" name="email" placeholder="you@sounds.com" required>
+        </div>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="fg">
+        <label for="loginPassword">Password</label>
+        <div class="iw has-ico has-sfx">
+          <i class="ico bi bi-lock-fill"></i>
+          <input type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+          <button type="button" class="sfx" id="togglePwd" onclick="togglePasswordVisibility()">
+            <i class="bi bi-eye-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- REMEMBER ME / FORGOT PASSWORD -->
+      <div class="row-between">
+        <div class="remember-wrap">
+          <input type="checkbox" id="rememberMe" name="rememberMe">
+          <label for="rememberMe">Remember me</label>
+        </div>
+        <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <!-- SUBMIT BUTTON -->
+      <button type="submit" class="btn btn-primary" id="loginBtn">
+        <span id="loginBtnText">Sign In</span>
+        <div class="spinner" id="loginSpinner"></div>
+      </button>
+
+    </form>
+
+    <div class="divider"><span>or continue with</span></div>
+    <div class="social-grid">
+      <button class="social-btn" type="button" onclick="oauthLogin('google')">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy44eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PC9nPjwvc3ZnPg==" alt="Google">
+        Google
+      </button>
+      <button class="social-btn" type="button" onclick="oauthLogin('facebook')">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMTg3N0YyIj48cGF0aCBkPSJNMjQgMTJjMC02LjYyNy01LjM3My0xMi0xMi0xMlMwIDUuMzczIDAgMTJjMCA1Ljk5IDQuMzg4IDEwLjk1NCAxMC4xMjUgMTEuODU0di04LjM4NUg3LjA3OFYxMmgzLjA0N1Y5LjM1N2MwLTMuMDA3IDEuNzkyLTQuNjY5IDQuNTMzLTQuNjY5IDEuMzEyIDAgMi42ODYuMjM1IDIuNjg2LjIzNXYyLjk1M0gxNS44M2MtMS40OTEgMC0xLjk1Ni45MjUtMS45NTYgMS44NzRWMTJoMy4zMjhsLS41MzIgMy40NjloLTIuNzk2djguMzg1QzE5LjYxMiAyMi45NTQgMjQgMTcuOTkgMjQgMTJ6Ii8+PC9zdmc+" alt="Facebook">
+        Facebook
+      </button>
+    </div>
+
+    <!-- REGISTER LINK -->
+    <div class="auth-foot">
+      Don't have an account? <a href="register.html">Register as an Employee</a>
+    </div>
+
+    <!-- IP & LOCATION INFO -->
+    <div class="ip-status" id="ipStatus" style="display:none;">
+      <i class="bi bi-shield-check"></i>
+      <span id="ipStatusText"></span>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- SUPPORT WIDGET — opens support.html, main support channel on this page -->
+<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
+  <i class="bi bi-headset"></i>
+  <span class="dot"></span>
+</button>
+<div id="ssc-support-panel">
+  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
+</div>
+
+<script>
+
+// ============================================================
+// SUPABASE
+// ============================================================
+var SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+var dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const EAST_AFRICA_COUNTRIES = ['KE', 'TZ', 'UG', 'RW', 'BI', 'DJ', 'ER', 'ET', 'MZ', 'MW'];
+const EAST_AFRICA_REGIONS = {
+  'KE': {name: 'Kenya', lat: [0, 4.5], lng: [32, 41]},
+  'TZ': {name: 'Tanzania', lat: [-12, -1], lng: [29, 41]},
+  'UG': {name: 'Uganda', lat: [-2, 4.2], lng: [29.5, 35.4]},
+  'RW': {name: 'Rwanda', lat: [-3, -1], lng: [28.8, 30.9]},
+  'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
+};
+
+let userLocation = null;
+let userIP = null;
+let siteUnderMaintenance = false;
+let locationBlocked = false;
+
+// ============================================================
+// MAINTENANCE MODE CHECK
+// ============================================================
+async function checkMaintenanceMode() {
+  try {
+    const result = await dbClient
+      .from('settings')
+      .select('maintenance_mode, maintenance_message')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (result.error) throw result.error;
+
+    if (result.data && result.data.maintenance_mode) {
+      siteUnderMaintenance = true;
+      document.getElementById('maintenanceText').textContent =
+        result.data.maintenance_message || "We're currently performing scheduled maintenance. Please check back shortly.";
+      document.getElementById('maintenanceAlert').classList.add('show');
+
+      // Disable sign-in while maintenance is active
+      document.getElementById('loginBtn').disabled = true;
+      document.getElementById('loginBtnText').textContent = 'Sign-in unavailable';
+    }
+  } catch (err) {
+    // Fail silent — never block login because the settings check failed
+    console.warn('[SoundsCare] Maintenance check failed:', err);
+  }
+}
+
+// ============================================================
+// GEOLOCATION — IP-address based only (no GPS permission prompt),
+// and this is where the East-Africa-only access policy is enforced.
+// Fails OPEN on lookup errors — we only ever block sign-in once a
+// non-East-Africa country has been positively identified, so a
+// flaky lookup can never lock everyone out.
+// ============================================================
+async function detectUserLocation() {
+  await getLocationFromIP();
+}
+
+async function getLocationFromIP() {
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    userIP = data.ip;
+    const countryCode = (data.country_code || '').toUpperCase();
+    userLocation = userLocation || {};
+    userLocation.countryName = data.country_name || null;
+    userLocation.county = data.region || null;
+    userLocation.town = data.city || null;
+
+    document.getElementById('ipStatusText').textContent = `IP: ${userIP} (${data.country_name || 'Unknown'})`;
+    document.getElementById('ipStatus').style.display = 'flex';
+
+    if (data.proxy || data.tor || data.hosting) {
+      showAlert('alertInfo', 'alertInfoText', 'VPN or proxy detected. Please disable it for a secure sign-in experience.');
+    }
+
+    if (countryCode && EAST_AFRICA_COUNTRIES.includes(countryCode)) {
+      updateLocationBadge(countryCode, data.country_name, 'success');
+    } else if (countryCode) {
+      updateLocationBadge(countryCode, data.country_name, 'restricted');
+    } else {
+      updateLocationBadge(null, null, 'unknown');
+    }
+  } catch (err) {
+    console.warn('IP lookup failed:', err);
+    updateLocationBadge(null, null, 'unknown');
+  }
+}
+
+function updateLocationBadge(countryCode, countryName, status) {
+  const badge = document.getElementById('locationBadge');
+  const text = document.getElementById('locationText');
+  const regionName = (countryCode && EAST_AFRICA_REGIONS[countryCode]) ? EAST_AFRICA_REGIONS[countryCode].name : (countryName || 'Unknown Location');
+
+  badge.classList.remove('loading', 'restricted');
+
+  if (status === 'success') {
+    badge.classList.add('fade-in');
+    text.textContent = `📍 ${regionName}`;
+  } else if (status === 'restricted') {
+    locationBlocked = true;
+    badge.classList.add('restricted');
+    text.textContent = `⚠️ Access restricted from ${regionName}`;
+    document.getElementById('restrictedBanner').classList.add('show');
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginBtnText').textContent = 'Unavailable in your region';
+  } else {
+    // Unverified — fail open, just inform, never block on an inconclusive lookup.
+    text.textContent = 'Location unavailable';
+  }
+}
+
+// ============================================================
+// PASSWORD VISIBILITY TOGGLE
+// ============================================================
+function togglePasswordVisibility() {
+  const field = document.getElementById('loginPassword');
+  const btn = document.getElementById('togglePwd');
+
+  if (field.type === 'password') {
+    field.type = 'text';
+    btn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+  } else {
+    field.type = 'password';
+    btn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+  }
+}
+
+// ============================================================
+// ACCOUNT STATUS — banned / deleted / paused detection.
+// Tries the full set of status columns first; if those columns
+// don't exist yet on `users`, falls back to the base columns this
+// page already relied on so an unmigrated schema doesn't break login.
+// ============================================================
+async function fetchUserRecord(userId) {
+  let res = await dbClient.from('users')
+    .select('role, is_active, full_name, status, account_deactivated, deactivation_reason, banned, ban_reason, deleted_at')
+    .eq('id', userId)
+    .maybeSingle();
+  if (res.error) {
+    console.warn('[SoundsCare] Extended user status columns unavailable, falling back:', res.error.message);
+    res = await dbClient.from('users').select('role, is_active, full_name').eq('id', userId).maybeSingle();
+  }
+  return res;
+}
+
+function accountBlockReason(record) {
+  if (!record) return null;
+  if (record.deleted_at) return 'This account has been deleted. Please contact support if you believe this is a mistake.';
+  if (record.banned === true) return 'This account has been banned.' + (record.ban_reason ? ' Reason: ' + record.ban_reason : '') + ' Please contact support for more information.';
+  if (record.account_deactivated === true) return 'This account has been paused.' + (record.deactivation_reason ? ' Reason: ' + record.deactivation_reason : '') + ' Please contact support to reactivate.';
+  if (record.is_active === false) return 'Your account has been deactivated. Please contact support for assistance.';
+  const s = (record.status || '').toLowerCase();
+  if (s === 'banned') return 'This account has been banned. Please contact support for more information.';
+  if (s === 'deleted') return 'This account has been deleted. Please contact support if you believe this is a mistake.';
+  if (s === 'paused' || s === 'suspended' || s === 'deactivated') return 'This account has been paused. Please contact support to reactivate.';
+  return null;
+}
+
+// ============================================================
+// LOGIN HANDLER
+// ============================================================
+async function handleLogin(event) {
+  event.preventDefault();
+  hideAllAlerts();
+
+  if (siteUnderMaintenance) {
+    showAlert('alertError', 'alertErrorText', 'Sign-in is temporarily disabled while the site is under maintenance.');
+    return;
+  }
+  if (locationBlocked) {
+    showAlert('alertError', 'alertErrorText', 'SoundsCare is only available to users located in East Africa.');
+    return;
+  }
+
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+
+  setBtnLoading(true, 'Signing in…');
+
+  try {
+    const { data: authData, error: authError } = await dbClient.auth.signInWithPassword({ email, password });
+
+    if (authError) throw authError;
+
+    const user = authData.user || (authData.session && authData.session.user);
+
+    // Confirm this account is an employee, active, and not banned/deleted/paused
+    const userResult = await fetchUserRecord(user.id);
+
+    if (userResult.error) throw userResult.error;
+
+    if (!userResult.data) {
+      throw new Error('Account record not found. Please contact support.');
+    }
+
+    if (userResult.data.role !== 'employee') {
+      await dbClient.auth.signOut();
+      throw new Error('This account is not registered as an employee. Please use the correct sign-in page.');
+    }
+
+    const blockReason = accountBlockReason(userResult.data);
+    if (blockReason) {
+      await dbClient.auth.signOut();
+      throw new Error(blockReason);
+    }
+
+    showAlert('alertSuccess', 'alertSuccessText', `Welcome back, ${userResult.data.full_name || ''}! Redirecting to your dashboard...`);
+
+    setTimeout(function () {
+      window.location.href = 'employee-dashboard.html';
+    }, 1200);
+
+  } catch (err) {
+    console.warn('[SoundsCare] Login error:', err);
+    setBtnLoading(false, 'Sign In');
+    showAlert('alertError', 'alertErrorText', friendlyLoginError(err.message || ''));
+  }
+}
+
+function friendlyLoginError(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Incorrect email or password. Please try again.';
+  if (m.includes('email not confirmed')) return 'Please verify your email address before signing in.';
+  if (m.includes('not registered as an employee')) return msg;
+  if (m.includes('deactivated') || m.includes('banned') || m.includes('deleted') || m.includes('paused')) return msg;
+  if (m.includes('account record not found')) return msg;
+  return 'Sign in failed. Please check your details and try again.';
+}
+
+// ============================================================
+// ALERT & BUTTON UTILITIES
+// ============================================================
+function showAlert(alertId, textId, message) {
+  const alertEl = document.getElementById(alertId);
+  const textEl = document.getElementById(textId);
+  textEl.textContent = message;
+  alertEl.classList.add('show');
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAllAlerts() {
+  ['alertError', 'alertSuccess', 'alertInfo'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+}
+
+function setBtnLoading(loading, text) {
+  const btn = document.getElementById('loginBtn');
+  const spinner = document.getElementById('loginSpinner');
+  const textEl = document.getElementById('loginBtnText');
+
+  btn.disabled = loading;
+  spinner.style.display = loading ? 'inline-block' : 'none';
+  if (text) textEl.textContent = text;
+}
+
+// ============================================================
+// SOCIAL LOGIN — Google & Facebook via Supabase OAuth.
+// NOTE: requires the Google and Facebook providers to be enabled
+// and configured under Authentication → Providers in the Supabase
+// dashboard for this project, or sign-in will fail with a
+// "provider not enabled" error from Supabase.
+// ============================================================
+async function oauthLogin(provider) {
+  hideAllAlerts();
+  if (siteUnderMaintenance) {
+    showAlert('alertError', 'alertErrorText', 'Sign-in is temporarily disabled while the site is under maintenance.');
+    return;
+  }
+  if (locationBlocked) {
+    showAlert('alertError', 'alertErrorText', 'SoundsCare is only available to users located in East Africa.');
+    return;
+  }
+  const label = provider === 'google' ? 'Google' : 'Facebook';
+  try {
+    sessionStorage.setItem('sc_oauth_pending', '1');
+    const { error } = await dbClient.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) throw error;
+    // Browser is redirected away to the provider here; execution resumes
+    // in completeOAuthLogin() on return, via the DOMContentLoaded init below.
+  } catch (err) {
+    sessionStorage.removeItem('sc_oauth_pending');
+    showAlert('alertError', 'alertErrorText', 'Could not start ' + label + ' sign-in: ' + friendlyLoginError(err.message || ''));
+  }
+}
+
+async function completeOAuthLogin() {
+  const { data: { session } } = await dbClient.auth.getSession();
+  if (!session) return;
+
+  const user = session.user;
+  const userResult = await fetchUserRecord(user.id);
+
+  if (!userResult.data) {
+    await dbClient.auth.signOut();
+    showAlert('alertError', 'alertErrorText', 'No SoundsCare employee account found for this login. Please register first.');
+    return;
+  }
+  if (userResult.data.role !== 'employee') {
+    await dbClient.auth.signOut();
+    showAlert('alertError', 'alertErrorText', 'This account is not registered as an employee. Please use the correct sign-in page.');
+    return;
+  }
+  const blockReason = accountBlockReason(userResult.data);
+  if (blockReason) {
+    await dbClient.auth.signOut();
+    showAlert('alertError', 'alertErrorText', blockReason);
+    return;
+  }
+
+  showAlert('alertSuccess', 'alertSuccessText', `Welcome back, ${userResult.data.full_name || ''}! Redirecting to your dashboard...`);
+  setTimeout(function () {
+    window.location.href = 'employee-dashboard.html';
+  }, 1000);
+}
+
+// ============================================================
+// SUPPORT WIDGET — opens support.html in an iframe panel.
+// ============================================================
+(function(){
+  var fab = document.getElementById('ssc-support-fab');
+  var panel = document.getElementById('ssc-support-panel');
+  var frame = document.getElementById('ssc-support-iframe');
+  var loaded = false;
+
+  function openPanel(){
+    if (!loaded){ frame.src = 'support.html'; loaded = true; }
+    panel.classList.add('open');
+    fab.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    fab.setAttribute('aria-expanded', 'false');
+  }
+  function togglePanel(){
+    panel.classList.contains('open') ? closePanel() : openPanel();
+  }
+
+  fab.addEventListener('click', togglePanel);
+  window.addEventListener('message', function(e){
+    if (e.data === 'soundscare-support:close') closePanel();
+  });
+})();
+
+// ============================================================
+// INITIALIZE ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  checkMaintenanceMode();
+  detectUserLocation();
+
+  const returningFromOAuth = sessionStorage.getItem('sc_oauth_pending') === '1';
+  sessionStorage.removeItem('sc_oauth_pending');
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  if (returningFromOAuth) {
+    completeOAuthLogin();
+  }
+});
+
+</script>
+
+</body>
+</html>
