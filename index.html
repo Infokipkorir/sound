@@ -31,6 +31,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <!-- Organization Schema -->
   <script type="application/ld+json">
@@ -53,13 +54,27 @@
 :root{
   --green:#1A7A5E;--green-dark:#145c47;--green-light:#e8f5f0;--green-mid:#2DB877;
   --blue:#3B8ED4;--blue-dark:#2574b8;--blue-light:#EBF4FC;
-  --surface:#f7f9f8;--surface-alt:#f0f4f2;--border:#dae3de;
+  --surface:rgba(247,249,248,.9);--surface-alt:rgba(240,244,242,.9);--border:#dae3de;
   --text:#18281f;--text-muted:#6b7c75;--red:#E24B4A;--amber:#E9A23B;
   --dark-bg:#0d2118;--dark-bg2:#142b1e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--surface);color:var(--text);font-size:15.5px;line-height:1.65;letter-spacing:-.01em}
+
+/* PAGE BACKGROUND IMAGE
+   Drop an image file named "page-bg.jpg" in the same folder as this page
+   (next to sound_logo.jpg) and it will show behind the whole site.
+   The rgba() surface colors below let it show through every section. */
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--surface) url('page-bg.jpg') center/cover fixed no-repeat;
+  color:var(--text);font-size:15.5px;line-height:1.65;letter-spacing:-.01em;
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:rgba(247,249,248,.88);
+}
 a{color:inherit;text-decoration:none;transition:.2s}
 h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;letter-spacing:-.02em}
 section{padding:4.5rem 6%}
@@ -67,7 +82,7 @@ section{padding:4.5rem 6%}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--green-light);color:var(--green-dark);font-weight:700;font-size:.78rem;padding:6px 14px;border-radius:20px;margin-bottom:1rem}
 
 /* NAV */
-.navbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px 6%;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.08);position:sticky;top:0;z-index:1000}
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px 6%;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);box-shadow:0 4px 18px rgba(0,0,0,.08);position:sticky;top:0;z-index:1000}
 .brand-logo{display:flex;align-items:center;gap:12px;flex-shrink:0}
 .brand-img{width:52px;height:52px;object-fit:contain}
 .brand-title{font-size:1.4rem;font-weight:800;color:#0f172a;line-height:1.1;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em}
@@ -82,7 +97,7 @@ section{padding:4.5rem 6%}
 .nav-toggle{display:none;background:none;border:none;font-size:1.5rem;color:var(--text);cursor:pointer}
 
 /* HERO */
-.hero{background:linear-gradient(160deg,var(--green-light) 0%,var(--surface) 55%);padding:3.5rem 6% 2rem;}
+.hero{background:linear-gradient(160deg,rgba(232,245,240,.75) 0%,rgba(247,249,248,.6) 55%);padding:3.5rem 6% 2rem;}
 .hero-grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.05fr .95fr;gap:3rem;align-items:center}
 .hero h1{font-size:3.2rem;font-weight:800;line-height:1.08;letter-spacing:-.03em;color:#0f172a;margin-bottom:1.1rem}
 .hero h1 span{color:var(--green)}
@@ -90,6 +105,25 @@ section{padding:4.5rem 6%}
 .hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
 .hero-media{position:relative}
 .hero-media svg{width:100%;height:auto;border-radius:20px}
+
+/* RATING STARS */
+.rating-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:14px;padding:8px 16px;margin-bottom:1.4rem}
+.star-row{position:relative;display:inline-block;font-size:1.05rem;line-height:1;white-space:nowrap}
+.star-row .stars-back,.star-row .stars-front{display:block;letter-spacing:2px}
+.star-row .stars-back{color:#dde3df}
+.star-row .stars-front{position:absolute;top:0;left:0;overflow:hidden;color:var(--amber);width:68%}
+.rating-badge .rating-score{font-weight:800;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif}
+.rating-badge .rating-label{font-size:.78rem;color:var(--text-muted)}
+
+/* TRUST STATS (live from database) */
+.trust-stats{background:var(--surface-alt)}
+.trust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;text-align:center}
+.trust-card{background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:18px;padding:2rem 1rem;box-shadow:0 10px 30px rgba(0,0,0,.05)}
+.trust-card .trust-icon{width:52px;height:52px;border-radius:14px;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto .9rem}
+.trust-card .trust-number{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:2.1rem;color:var(--green-dark);line-height:1}
+.trust-card .trust-number.is-loading{color:var(--text-muted);font-size:1rem;font-weight:600}
+.trust-card .trust-label{margin-top:.4rem;color:var(--text-muted);font-size:.85rem;font-weight:600}
+@media (max-width:700px){.trust-grid{grid-template-columns:1fr}}
 
 /* FLAGS MARQUEE */
 .flags-strip{background:var(--dark-bg);padding:1.6rem 0;overflow:hidden;position:relative}
@@ -114,18 +148,6 @@ section{padding:4.5rem 6%}
 .word-item i{color:var(--blue);font-size:.9rem}
 .word-dot{width:5px;height:5px;border-radius:50%;background:var(--border)}
 @keyframes wordsScroll{from{transform:translateX(-50%)}to{transform:translateX(0)}}
-
-/* PRICING */
-.pricing{background:var(--surface-alt)}
-.pricing-table{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.05)}
-.pricing-table table{width:100%;border-collapse:collapse;font-size:.92rem}
-.pricing-table th{text-align:left;background:var(--green-light);color:var(--green-dark);padding:14px 20px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif}
-.pricing-table td{padding:14px 20px;border-top:1px solid var(--border)}
-.pricing-table tr:hover td{background:var(--surface-alt)}
-.pricing-table td.role-cell{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text)}
-.pricing-table td.role-cell i{width:32px;height:32px;border-radius:9px;background:var(--green-light);color:var(--green-dark);display:flex;align-items:center;justify-content:center;font-size:.9rem}
-.pricing-rate{font-weight:800;color:var(--green-dark);font-family:'Plus Jakarta Sans',sans-serif}
-.pricing-note{margin-top:1.2rem;color:var(--text-muted);font-size:.85rem;text-align:center}
 
 /* MAP */
 .map-wrap{border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 30px rgba(0,0,0,.2)}
@@ -230,7 +252,6 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
   .hero-grid,.about-grid,.contact-grid{grid-template-columns:1fr}
   .hero h1{font-size:2.1rem}
   .services-grid{grid-template-columns:1fr}
-  .pricing-table{overflow-x:auto}
   .map-wrap iframe{height:320px}
 }
 </style>
@@ -256,7 +277,6 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
     <li><a href="javascript:void(0)" onclick="openRoleModal('employee')">Jobs</a></li>
     <li><a href="javascript:void(0)" onclick="openRoleModal('employer')">Employers</a></li>
     <li><a href="javascript:void(0)" onclick="openRoleModal('employee')">Workers</a></li>
-    <li><a href="#pricing">Pricing</a></li>
     <li><a href="#about">About</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -271,6 +291,14 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
   <div class="hero-grid">
     <div class="hero-content">
       <div class="eyebrow"><i class="bi bi-shield-check-fill"></i> ID-Verified · Connecting East Africa</div>
+      <div class="rating-badge" aria-label="Rated 3.4 out of 5">
+        <span class="star-row">
+          <span class="stars-back">★★★★★</span>
+          <span class="stars-front">★★★★★</span>
+        </span>
+        <span class="rating-score">3.4</span>
+        <span class="rating-label">/ 5 average rating</span>
+      </div>
       <h1>Trusted domestic workers, <span>one platform away.</span></h1>
       <p class="lead">Sounds Care connects verified nannies, drivers, gardeners, security guards and housekeepers with employers across East Africa — safely and simply.</p>
       <div class="hero-ctas">
@@ -343,6 +371,33 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
   <div class="words-track" id="words-track"></div>
 </div>
 
+<!-- TRUST STATS — live counts from the database -->
+<section class="trust-stats" id="trust-stats">
+  <div class="section-inner">
+    <div class="services-head">
+      <div class="eyebrow"><i class="bi bi-graph-up-arrow"></i> Live Platform Numbers</div>
+      <h2 style="font-size:1.9rem">A growing, verified community</h2>
+    </div>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <div class="trust-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="trust-number is-loading" id="stat-registered">Loading…</div>
+        <div class="trust-label">Registered users</div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-icon"><i class="bi bi-patch-check-fill"></i></div>
+        <div class="trust-number is-loading" id="stat-verified">Loading…</div>
+        <div class="trust-label">Verified profiles</div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-icon"><i class="bi bi-briefcase-fill"></i></div>
+        <div class="trust-number is-loading" id="stat-hired">Loading…</div>
+        <div class="trust-label">Successful hires</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ABOUT -->
 <section id="about">
   <div class="section-inner about-grid">
@@ -392,56 +447,6 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
         <p>Recruit and place workers on behalf of employers, and earn commission through our agent network.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- PRICING -->
-<section id="pricing" class="pricing">
-  <div class="section-inner">
-    <div class="services-head">
-      <div class="eyebrow"><i class="bi bi-tag-fill"></i> Transparent Pricing</div>
-      <h2 style="font-size:1.9rem">Know what you'll pay, upfront</h2>
-    </div>
-    <div class="pricing-table">
-      <table>
-        <thead>
-          <tr><th>Service</th><th>Booking Fee</th><th>Rate</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="role-cell"><i class="bi bi-person-heart"></i> Day Nanny</td>
-            <td>Ksh 2,000</td>
-            <td class="pricing-rate">From Ksh 600 / day</td>
-          </tr>
-          <tr>
-            <td class="role-cell"><i class="bi bi-house-heart-fill"></i> Live-in Nanny</td>
-            <td>Ksh 3,500</td>
-            <td class="pricing-rate">From Ksh 12,000 / mo</td>
-          </tr>
-          <tr>
-            <td class="role-cell"><i class="bi bi-stars"></i> Housekeeper</td>
-            <td>Ksh 2,000</td>
-            <td class="pricing-rate">From Ksh 10,000 / mo</td>
-          </tr>
-          <tr>
-            <td class="role-cell"><i class="bi bi-car-front-fill"></i> Driver</td>
-            <td>Ksh 2,500</td>
-            <td class="pricing-rate">From Ksh 15,000 / mo</td>
-          </tr>
-          <tr>
-            <td class="role-cell"><i class="bi bi-flower1"></i> Gardener</td>
-            <td>Ksh 1,500</td>
-            <td class="pricing-rate">From Ksh 500 / visit</td>
-          </tr>
-          <tr>
-            <td class="role-cell"><i class="bi bi-shield-fill-check"></i> Security Guard</td>
-            <td>Ksh 2,500</td>
-            <td class="pricing-rate">From Ksh 14,000 / mo</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="pricing-note">Rates are indicative and vary by experience, location and working hours. <a href="javascript:void(0)" onclick="openRoleModal('employer')" style="color:var(--green-dark);font-weight:700;text-decoration:underline">Get a custom quote</a></p>
   </div>
 </section>
 
@@ -556,6 +561,48 @@ footer{background:var(--dark-bg2);color:#9fc9b8;padding:1.4rem 6%;text-align:cen
 </div>
 
 <script>
+  /* ── SUPABASE — same project/publishable key used on jobs.html ── */
+  const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Animate a stat element from 0 up to `value`.
+  function animateCount(el, value){
+    if(value === null){ el.textContent = '—'; el.classList.remove('is-loading'); return; }
+    el.classList.remove('is-loading');
+    const duration = 900, start = performance.now();
+    function tick(now){
+      const p = Math.min((now-start)/duration, 1);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(value * eased).toLocaleString('en-KE') + (p>=1 ? '+' : '');
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Head+count queries only — they return a row count, never the underlying
+  // user records, so this stays safe to run with the public anon key.
+  async function loadTrustStats(){
+    const registeredEl = document.getElementById('stat-registered');
+    const verifiedEl = document.getElementById('stat-verified');
+    const hiredEl = document.getElementById('stat-hired');
+    try{
+      const [{count:userCount}, {count:workerVerified}, {count:employerVerified}, {count:hiredCount}] = await Promise.all([
+        sb.from('users').select('id', {count:'exact', head:true}),
+        sb.from('worker_profiles').select('id', {count:'exact', head:true}).eq('is_verified', true),
+        sb.from('employer_profiles').select('id', {count:'exact', head:true}).eq('is_verified', true),
+        sb.from('job_applications').select('id', {count:'exact', head:true}).not('hired_at', 'is', null)
+      ]);
+      animateCount(registeredEl, userCount ?? null);
+      animateCount(verifiedEl, (workerVerified||0) + (employerVerified||0));
+      animateCount(hiredEl, hiredCount ?? null);
+    }catch(e){
+      console.warn('Trust stats failed to load:', e.message);
+      [registeredEl, verifiedEl, hiredEl].forEach(el=>{ el.textContent='—'; el.classList.remove('is-loading'); });
+    }
+  }
+  loadTrustStats();
+
   // Mobile nav toggle
   document.getElementById('nav-toggle').addEventListener('click', function(){
     document.getElementById('nav-links').classList.toggle('open');
