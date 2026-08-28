@@ -171,6 +171,17 @@
     }
     .welcome-loves i { color: var(--rose); }
 
+    /* ─── WELCOME BANNER: HELD FUNDS (escrow) — real data from
+       job_escrow_payments via allOngoingJobs, only shown when > 0 ─── */
+    .welcome-held {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; border-radius: 20px;
+      padding: 3px 10px; font-size: 11px; font-weight: 600;
+      margin-top: 8px;
+    }
+    .welcome-held i { color: var(--accent); }
+
     /* STATS */
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
     .stat-card {
@@ -717,10 +728,11 @@
     .verify-badge i { font-size: 9px; }
     .msg-from-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-    /* ─── WELCOME NAME VERIFICATION BADGE (image) ─── */
+    /* ─── WELCOME NAME VERIFICATION BADGE ─── */
     .welcome-name-row { display: flex; align-items: center; gap: 8px; }
     .welcome-verify-badge {
-      width: 18px; height: 18px;
+      font-size: 17px;
+      color: var(--accent);
       display: none; /* shown via JS only when workerProfile.verification_stage === 'verified' */
       flex-shrink: 0;
     }
@@ -1278,11 +1290,16 @@
     <div>
       <div class="welcome-name-row">
         <h2 id="welcome-name">Welcome back 👋</h2>
-        <img src="verification_badge.jpeg" alt="Verified" title="Verified" class="welcome-verify-badge" id="welcome-verify-badge" onerror="this.style.display='none';">
+        <i class="bi bi-patch-check-fill welcome-verify-badge" id="welcome-verify-badge" title="Verified"></i>
       </div>
       <p id="welcome-sub">Your dashboard is loading…</p>
-      <div class="welcome-loves" id="welcome-loves" title="Jobs you've loved">
-        <i class="bi bi-heart-fill"></i> <span id="welcome-loves-count">0</span> Jobs Loved
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="welcome-loves" id="welcome-loves" title="Jobs you've loved">
+          <i class="bi bi-heart-fill"></i> <span id="welcome-loves-count">0</span> Jobs Loved
+        </div>
+        <div class="welcome-held" id="welcome-held" title="Funds currently held in escrow for your ongoing jobs" style="display:none;">
+          <i class="bi bi-shield-lock-fill"></i> <span id="welcome-held-amount">KES 0</span> Held
+        </div>
       </div>
     </div>
     <div class="profile-completeness" id="profile-completeness" onclick="openEditProfile()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEditProfile();}" title="Click to complete your profile" role="button" tabindex="0">
@@ -1363,7 +1380,7 @@
       <div class="ed-avatar" id="ed-avatar">--</div>
       <div>
         <div class="ed-profile-name" id="ed-profile-name">—
-          <img src="verification_badge.jpeg" alt="Verified" style="width:15px;height:15px;display:none;" id="ed-verify-badge" onerror="this.style.display='none';">
+          <i class="bi bi-patch-check-fill" id="ed-verify-badge" title="Verified" style="font-size:14px; color:var(--accent); display:none;"></i>
         </div>
         <div class="ed-profile-meta">
           <span><i class="bi bi-briefcase-fill"></i> <span id="ed-profile-role">—</span></span>
@@ -5342,6 +5359,15 @@ function updateHeldFundsUI() {
   if (statEl) statEl.textContent = text;
   const walletEl = document.getElementById('wallet-held');
   if (walletEl) walletEl.textContent = text;
+  // Welcome banner pill — real data from job_escrow_payments (via
+  // allOngoingJobs, loaded in loadDashboard() step 4c). Only shown when
+  // the worker actually has funds held in escrow right now.
+  const welcomeHeldEl = document.getElementById('welcome-held');
+  const welcomeHeldAmountEl = document.getElementById('welcome-held-amount');
+  if (welcomeHeldEl && welcomeHeldAmountEl) {
+    welcomeHeldAmountEl.textContent = text;
+    welcomeHeldEl.style.display = held > 0 ? 'inline-flex' : 'none';
+  }
 }
 
 // ════════════════════════════════════════════════════════
