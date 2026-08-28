@@ -5376,7 +5376,7 @@ function bidCardHtml(a) {
           <span class="badge ${negotiable ? 'text-bg-info' : 'text-bg-secondary'}">
             <i class="bi ${negotiable ? 'bi-chat-left-text-fill' : 'bi-tag-fill'}"></i> ${negotiable ? 'Negotiable' : 'Fixed Price'}
           </span>
-          <span class="badge text-bg-light border text-dark"><i class="bi bi-cash-coin"></i> KES ${(+a.bid_amount || 0).toLocaleString('en-KE')}</span>
+          <span class="badge text-bg-light border text-dark"><i class="bi bi-cash-coin"></i> ${a.bid_amount != null ? 'KES ' + (+a.bid_amount).toLocaleString('en-KE') : 'No bid amount on file'}</span>
           <span class="small ms-auto" style="color:var(--muted);">${a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : ''}</span>
         </div>
       </div>
@@ -5392,7 +5392,7 @@ function renderBidedJobs() {
     if (previewEl) previewEl.innerHTML = msg;
     return;
   }
-  const bids = (myApplications || []).filter(a => a.bid_amount != null).sort((x, y) => new Date(y.applied_at) - new Date(x.applied_at));
+  const bids = (myApplications || []).slice().sort((x, y) => new Date(y.applied_at) - new Date(x.applied_at));
   document.getElementById('stat-bids').textContent = bids.length;
   if (!bids.length) {
     const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>You haven\'t placed any bids yet.</p></div>';
