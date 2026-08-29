@@ -129,7 +129,8 @@ body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg);
 .main.expanded { margin-left: 0; }
 .nav { background: var(--surface); padding: 0 1.5rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.06); border-bottom: 1px solid var(--border); }
 .nav-burger { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--muted); }
-.nav-title { font-size: 14px; font-weight: 700; flex: 1; margin: 0 1rem; }
+.nav-title { font-size: 14px; font-weight: 700; flex: 1; margin: 0 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#sidebar-backdrop { display: none; }
 .nav-actions { display: flex; align-items: center; gap: 8px; }
 .icon-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: var(--muted); transition: .18s; position: relative; }
 .icon-btn:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
@@ -358,20 +359,90 @@ tr:hover td { background: rgba(27,107,69,.02); }
 
 
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .sidebar { width: 240px; }
-  .main { margin-left: 0; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .content { padding: 1rem; }
-  .form-row { grid-template-columns: 1fr; }
-  .conv-list { width: 240px; }
+/* ============================================================
+   RESPONSIVE / MOBILE
+   Breakpoints: 900px (sidebar becomes an overlay drawer), 768px
+   (tablet-ish density), 600px (phones), 420px (small phones).
+   ============================================================ */
+
+/* Sidebar backdrop — only rendered/used below 900px, see JS toggleSidebar() */
+.sidebar-backdrop {
+  position: fixed; inset: 0; z-index: 1400;
+  background: rgba(15,25,35,.5);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
 }
+.sidebar-backdrop.show { display: block; opacity: 1; pointer-events: auto; }
+
+@media (max-width: 900px) {
+  /* Sidebar is always an overlay drawer on tablet/phone — never pushes content */
+  .sidebar { width: 280px; max-width: 84vw; transform: translateX(-100%); z-index: 1500; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar.collapsed { transform: translateX(-100%); }
+  .main, .main.expanded { margin-left: 0; }
+
+  /* Touch targets */
+  .sb-link { padding: .85rem 1.2rem; font-size: 14px; min-height: 46px; }
+  .nav-burger, .sb-close-btn, .icon-btn { width: 40px; height: 40px; }
+  .btn { min-height: 38px; }
+  .btn-sm { min-height: 32px; }
+  .tab-btn { padding: 12px 14px; min-height: 44px; }
+
+  .content { padding: 1.1rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .nav { padding: 0 1rem; }
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { padding: 1rem; }
+  .comm-stats { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+}
+
 @media (max-width: 600px) {
-  .sidebar { width: 100%; }
+  .content { padding: .85rem; }
   .stats-grid { grid-template-columns: 1fr; }
-  .conv-list { display: none; }
-  .modal { max-width: 98%; }
+  .page-head { flex-direction: column; align-items: stretch; }
+  .page-head-actions { width: 100%; }
+  .page-head-actions .btn { flex: 1; justify-content: center; }
+
+  /* Tables stay horizontally scrollable (columns aren't reflowed into
+     cards — most tables here have 6-10 dynamic columns), but make the
+     scroll comfortable and legible on a phone. */
+  .table-wrap { -webkit-overflow-scrolling: touch; margin: 0 -1px; }
+  th { padding: 9px 10px; font-size: 9.5px; }
+  td { padding: 9px 10px; font-size: 12.5px; }
+  .avatar { width: 28px; height: 28px; font-size: 10px; }
+  .actions-cell { gap: 4px; }
+  .actions-cell .btn-sm { padding: 6px 9px; }
+
+  /* Modals become full-screen sheets instead of centered cards */
+  .modal-overlay { padding: 0; }
+  .modal, .modal.wide, .modal.xlarge, .modal.chat-modal {
+    max-width: 100%; width: 100%; height: 100%; max-height: 100%; border-radius: 0;
+  }
+  .modal-header { padding: 1rem 1.1rem; }
+  .modal-body { padding: 1.1rem; }
+  .modal-footer { padding: .9rem 1.1rem; flex-wrap: wrap; }
+  .modal-footer .btn { flex: 1; justify-content: center; }
+
+  .chat-messages { padding: 12px; }
+  .chat-msg { max-width: 88%; }
+
+  .sub-tabs { -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex-shrink: 0; }
+
+  #toast-stack { left: 12px; right: 12px; bottom: 12px; max-width: none; }
+  .toast { min-width: 0; }
+
+  .form-group input, .form-group textarea, .form-group select { font-size: 16px; } /* prevents iOS auto-zoom on focus */
+}
+
+@media (max-width: 420px) {
+  .nav-title { font-size: 13px; margin: 0 .6rem; }
+  .auth-card, .card { padding: 1.8rem 1.4rem 1.6rem; }
+  .stat-card h3, .stat-card .num { font-size: 1.1rem; }
+  .sb-user-text h3 { font-size: 12px; }
 }
 
 /* INLINE LOADING */
@@ -481,6 +552,7 @@ tr:hover td { background: rgba(27,107,69,.02); }
     <button class="sb-logout-btn" onclick="handleLogout()"><i class="bi bi-box-arrow-left"></i> Logout</button>
   </div>
 </div>
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
 <!-- MAIN -->
 <div class="main" id="main">
@@ -4916,6 +4988,7 @@ function switchTab(e,name){
   document.getElementById('nav-title').textContent=titles[name]||name;
   if(name==='db')loadDBStats();
   if(name==='livelogs')loadLiveLogs();
+  closeSidebarOnMobile();
 }
 function switchSettingsTab(e,tab){
   document.querySelectorAll('#tab-settings .tab-content').forEach(t=>t.classList.remove('active'));
@@ -4934,9 +5007,35 @@ function switchCommsTab(e,tab){
 function toggleSidebar(){
   const s=document.getElementById('sidebar');
   const m=document.getElementById('main');
-  s.classList.toggle('collapsed');
-  m.classList.toggle('expanded');
+  const bd=document.getElementById('sidebar-backdrop');
+  if(window.innerWidth<=900){
+    // Below 900px the sidebar is an overlay drawer (see CSS): toggle its
+    // own class + backdrop rather than pushing .main over, since on a
+    // phone there's no room to push content sideways.
+    s.classList.toggle('mobile-open');
+    bd.classList.toggle('show');
+  } else {
+    s.classList.toggle('collapsed');
+    m.classList.toggle('expanded');
+  }
 }
+function closeSidebarOnMobile(){
+  if(window.innerWidth<=900){
+    document.getElementById('sidebar')?.classList.remove('mobile-open');
+    document.getElementById('sidebar-backdrop')?.classList.remove('show');
+  }
+}
+window.addEventListener('resize',()=>{
+  // Crossing the breakpoint while the drawer/expanded state is on can
+  // leave stale classes (e.g. resizing a tablet from portrait to a
+  // desktop-width window) — reset both mechanisms cleanly.
+  if(window.innerWidth>900){
+    document.getElementById('sidebar')?.classList.remove('mobile-open');
+    document.getElementById('sidebar-backdrop')?.classList.remove('show');
+  } else {
+    document.getElementById('main')?.classList.remove('expanded');
+  }
+});
 
 // ============================================================
 // MODALS
