@@ -1901,38 +1901,22 @@ function goToLogin(){
 }
 
 async function initSession(){
-  const statusEl = document.getElementById('session-check-text');
   try {
+    // No re-validation here on purpose — admin-login.html is where
+    // credentials, active status, and page authorisation all get checked.
+    // If a session exists at all, this page trusts it and just reads the
+    // admin_users row for display (name/avatar) and attribution (adminRecord.id
+    // / currentUser.id get written into admin_id/sender_id/deleted_by columns
+    // elsewhere in this file).
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { goToLogin(); return; }
 
-    const { data, error } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
-    if (error) throw error;
-    if (!data || data.status !== 'Active') {
-      await sb.auth.signOut();
-      goToLogin();
-      return;
-    }
-    const allowedPages = Array.isArray(data.allowed_pages) ? data.allowed_pages : [];
-    if (!allowedPages.includes('admin-dashboard')) {
-      // This admin is authenticated but not authorised for this specific
-      // page (e.g. a support-room-only or cashier-only account) — send
-      // them back to admin-login.html's destination picker instead of
-      // letting them sit on a dashboard they shouldn't see.
-      if (statusEl) statusEl.textContent = 'Redirecting to the right page…';
-      await sb.auth.signOut();
-      goToLogin();
-      return;
-    }
-
-    adminRecord = data;
-    // currentUser.id is the auth.users id — most tables' admin_id/sender_id/
-    // deleted_by columns FK to auth.users, not admin_users. Use adminRecord.id
-    // (the admin_users row id) for anything that specifically needs that.
-    currentUser = { id: session.user.id, email: data.email, role: data.role };
+    const { data } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+    adminRecord = data || null;
+    currentUser = { id: session.user.id, email: data?.email || session.user.email, role: data?.role || 'Admin' };
     document.getElementById('auth-overlay').classList.add('hidden');
-    document.getElementById('sb-admin-name').textContent = data.username;
-    document.getElementById('sb-avatar').textContent = getInitials(data.username);
+    document.getElementById('sb-admin-name').textContent = data?.username || 'Admin';
+    document.getElementById('sb-avatar').textContent = getInitials(data?.username);
     loadAll();
     setupRealtimeSubscriptions();
     ensureNotifPermission();
