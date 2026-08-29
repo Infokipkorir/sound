@@ -27,11 +27,12 @@
   <meta name="twitter:description" content="Find trusted domestic workers in East Africa.">
   <meta name="twitter:image" content="https://www.sounds.co.ke/sound_logo.jpg">
 
-  <!-- Favicons -->
-  <link rel="icon" href="sound_logo.jpg" type="image/jpeg">
-  <link rel="icon" type="image/jpeg" sizes="32x32" href="sound_logo.jpg">
-  <link rel="icon" type="image/jpeg" sizes="16x16" href="sound_logo.jpg">
-  <link rel="apple-touch-icon" href="sound_logo.jpg">
+  <!-- Favicons (root-absolute so they resolve correctly on every page, not just index.html) -->
+  <link rel="icon" href="/sound_logo.jpg" type="image/jpeg">
+  <link rel="icon" type="image/jpeg" sizes="32x32" href="/sound_logo.jpg">
+  <link rel="icon" type="image/jpeg" sizes="16x16" href="/sound_logo.jpg">
+  <link rel="shortcut icon" href="/sound_logo.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="/sound_logo.jpg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -511,8 +512,11 @@
     .footer-social a{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;transition:all .2s}
     .footer-social a:hover{background:#78d9b4;color:var(--dark-bg);transform:translateY(-2px)}
 
-    /* ── TOP ANNOUNCEMENT BAR ── */
-    .announce-bar{background:linear-gradient(90deg,var(--blue-dark),var(--blue));color:#fff;font-size:12.5px;font-weight:600;padding:8px 1rem;display:flex;align-items:center;justify-content:center;gap:.6rem;text-align:center;flex-wrap:wrap;position:relative}
+    /* ── TOP ANNOUNCEMENT BAR (base look; carousel behaviour defined near bottom) ── */
+    .announce-bar{background:linear-gradient(90deg,var(--blue-dark),var(--blue));color:#fff;font-size:12.5px;font-weight:600;padding:8px 1rem;align-items:center;justify-content:center;gap:.6rem;text-align:center;flex-wrap:wrap;position:relative}
+    .announce-bar.type-feature{background:linear-gradient(90deg,var(--green-dark),var(--green))}
+    .announce-bar.type-incident{background:linear-gradient(90deg,#b23a39,var(--red))}
+    .announce-bar.type-maintenance{background:linear-gradient(90deg,#a5701f,var(--amber))}
     .announce-bar a{color:#fff;text-decoration:underline;text-underline-offset:2px}
     .announce-bar .announce-close{position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;opacity:.75;cursor:pointer;font-size:16px;line-height:1}
     .announce-bar .announce-close:hover{opacity:1}
@@ -573,7 +577,7 @@
 
     /* ── EXPLORE EAST AFRICA ── */
     .explore-header{text-align:center;max-width:560px;margin:0 auto 1.6rem}
-    .explore-header h2{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:.4rem}
+    .explore-header h2{font-family:'DM Sans',sans-serif;font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:.4rem}
     .explore-header p{font-size:12.5px;color:var(--text-muted)}
     .explore-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
     @media(max-width:900px){.explore-grid{grid-template-columns:repeat(2,1fr)}}
@@ -638,6 +642,7 @@
 
     /* ================= NETWORK SECTION — ROTATING MAASAI MARA BG ================= */
     .network-section{position:relative;overflow:hidden;background:var(--dark-bg)}
+    .network-bg-layers{position:absolute;inset:0;z-index:0}
     .network-bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.8s ease;z-index:0}
     .network-bg-layer.active{opacity:1}
     .network-section::before{content:'';position:absolute;inset:0;background:linear-gradient(160deg,rgba(13,33,24,.92),rgba(20,43,30,.88));z-index:1}
@@ -645,11 +650,8 @@
     .network-bg-caption{position:absolute;left:6%;bottom:14px;z-index:2;font-size:10.5px;color:rgba(255,255,255,.45);letter-spacing:.03em;display:flex;align-items:center;gap:.4rem}
     .network-bg-caption i{color:#78d9b4;font-size:11px}
 
-    /* ================= EXPLORE EAST AFRICA — NORMAL FONT ================= */
-    .explore-header h2{font-family:'DM Sans',sans-serif;font-weight:700}
-
     /* ================= FOOTER QUICK ACTIONS ================= */
-    .footer-quick-actions{background:linear-gradient(180deg,var(--dark-bg2),var(--dark-bg));padding:1.6rem 1.5rem 1.2rem;text-align:center}
+    .footer-quick-actions{background:linear-gradient(180deg,rgba(255,255,255,.05),transparent);margin:-2.5rem -1.5rem 2rem;padding:1.6rem 1.5rem 1.6rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.1)}
     .footer-quick-actions .fqa-label{font-size:11.5px;color:rgba(255,255,255,.55);font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:.9rem;display:block}
     .footer-quick-actions .fqa-row{display:flex;align-items:center;justify-content:center;gap:.8rem;flex-wrap:wrap}
     .fqa-btn{display:inline-flex;align-items:center;gap:.4rem;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;border:none;text-decoration:none}
@@ -661,13 +663,36 @@
     .fqa-btn.outline-light:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4);transform:translateY(-2px)}
 
     /* ================= ANNOUNCEMENT BAR — DB-DRIVEN CAROUSEL ================= */
-    .announce-bar{min-height:38px}
+    .announce-bar{min-height:38px;display:none}
+    .announce-bar.show{display:flex}
     .announce-slide{display:flex;align-items:center;justify-content:center;gap:.6rem;flex-wrap:wrap;animation:announceFade .5s ease}
+    .announce-slide i{font-size:13px}
     @keyframes announceFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
     .announce-dots{position:absolute;left:1rem;top:50%;transform:translateY(-50%);display:flex;gap:5px}
-    .announce-dots span{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.35);transition:background .2s}
+    .announce-dots span{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.35);transition:background .2s;cursor:pointer}
     .announce-dots span.on{background:#fff}
     @media(max-width:600px){.announce-dots{display:none}}
+
+    /* ================= JOBS QUICK-VIEW MODAL (footer quick action) ================= */
+    .qjob-item{display:flex;align-items:center;gap:.7rem;padding:.7rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.6rem;cursor:pointer;transition:all .18s}
+    .qjob-item:last-child{margin-bottom:0}
+    .qjob-item:hover{border-color:var(--blue);box-shadow:0 4px 14px rgba(59,142,212,.12)}
+    .qjob-item .qj-av{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#3B8ED4,#2574b8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+    .qjob-item .qj-meta{flex:1;min-width:0}
+    .qjob-item .qj-title{font-weight:700;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .qjob-item .qj-sub{font-size:11.5px;color:var(--text-muted)}
+    .qjob-viewall{display:flex;align-items:center;justify-content:center;gap:.4rem;margin-top:.9rem;padding:10px;border-radius:8px;background:var(--blue-light);color:var(--blue-dark);font-weight:700;font-size:13px;text-decoration:none}
+    .qjob-viewall:hover{background:#dcecfa}
+
+    /* ================= NEWSLETTER — SUCCESS STATE ================= */
+    .newsletter-success{display:none;align-items:center;gap:.7rem;background:var(--green-light);border:1px solid #c9e6da;border-radius:10px;padding:.9rem 1rem;animation:announceFade .35s ease}
+    .newsletter-success.show{display:flex}
+    .newsletter-success i{font-size:1.4rem;color:var(--green)}
+    .newsletter-success strong{display:block;font-size:13px;color:var(--text)}
+    .newsletter-success span{font-size:11.5px;color:var(--text-muted)}
+    .newsletter-perks{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+    .newsletter-perks span{display:flex;align-items:center;gap:.3rem;font-size:11px;color:var(--text-muted);background:var(--surface-alt);padding:4px 9px;border-radius:20px}
+    .newsletter-perks i{color:var(--blue);font-size:11px}
 
   </style>
 </head>
@@ -758,8 +783,8 @@
   </div>
 </div>
 
-<!-- TOP ANNOUNCEMENT (loaded from the announcements table) -->
-<div class="announce-bar" id="announce-bar" style="display:none">
+<!-- TOP ANNOUNCEMENT (loaded live from the `announcements` table in Supabase) -->
+<div class="announce-bar" id="announce-bar">
   <div class="announce-dots" id="announce-dots"></div>
   <div id="announce-slide-wrap"></div>
   <button class="announce-close" onclick="dismissAnnouncements()" aria-label="Dismiss announcement">&times;</button>
@@ -970,8 +995,41 @@
   </div>
 </div>
 
-<!-- PLATFORM INSIGHTS (near footer) -->
+<!-- PLATFORM UPDATES & NEWSLETTER -->
 <div class="container" style="padding-bottom:0">
+  <div class="updates-section">
+    <div class="updates-col reveal-left">
+      <div class="updates-head">
+        <h3><i class="bi bi-broadcast" style="color:var(--green)"></i> Platform Updates</h3>
+        <span class="status-pill" id="status-pill"><span class="dot"></span> All Systems Operational</span>
+      </div>
+      <div id="updates-list">
+        <div class="update-item"><i class="bi bi-hourglass-split update-icon"></i><div class="update-body"><p>Loading recent updates…</p></div></div>
+      </div>
+    </div>
+    <div class="newsletter-col reveal-right">
+      <h3><i class="bi bi-envelope-paper-fill" style="color:var(--blue)"></i> Stay in the loop</h3>
+      <p>Get occasional email updates on new markets, features and maintenance windows. No spam.</p>
+      <div class="newsletter-perks">
+        <span><i class="bi bi-briefcase-fill"></i> New job alerts</span>
+        <span><i class="bi bi-map-fill"></i> New market launches</span>
+        <span><i class="bi bi-tools"></i> Maintenance notices</span>
+      </div>
+      <form class="newsletter-form" id="newsletter-form" onsubmit="submitNewsletter(event)">
+        <input type="email" id="newsletter-email" placeholder="you@example.com" required>
+        <button type="submit" id="newsletter-btn"><i class="bi bi-send-fill"></i> Subscribe</button>
+      </form>
+      <div class="newsletter-success" id="newsletter-success">
+        <i class="bi bi-check-circle-fill"></i>
+        <div><strong>You're subscribed!</strong><span>Watch your inbox for updates from SoundsCare.</span></div>
+      </div>
+      <div class="newsletter-note">You can unsubscribe anytime from any email we send.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PLATFORM INSIGHTS (sits right above the footer) -->
+<div class="container" style="padding-top:2.5rem">
   <div class="insights-header reveal">
     <div>
       <h2>Platform Insights</h2>
@@ -1016,32 +1074,18 @@
   </div>
 </div>
 
-<!-- PLATFORM UPDATES & NEWSLETTER -->
-<div class="container" style="padding-top:0">
-  <div class="updates-section">
-    <div class="updates-col">
-      <div class="updates-head">
-        <h3><i class="bi bi-broadcast" style="color:var(--green)"></i> Platform Updates</h3>
-        <span class="status-pill" id="status-pill"><span class="dot"></span> All Systems Operational</span>
-      </div>
-      <div id="updates-list">
-        <div class="update-item"><i class="bi bi-hourglass-split update-icon"></i><div class="update-body"><p>Loading recent updates…</p></div></div>
-      </div>
-    </div>
-    <div class="newsletter-col">
-      <h3><i class="bi bi-envelope-paper-fill" style="color:var(--blue)"></i> Stay in the loop</h3>
-      <p>Get occasional email updates on new markets, features and maintenance windows. No spam.</p>
-      <form class="newsletter-form" id="newsletter-form" onsubmit="submitNewsletter(event)">
-        <input type="email" id="newsletter-email" placeholder="you@example.com" required>
-        <button type="submit" id="newsletter-btn"><i class="bi bi-send-fill"></i> Subscribe</button>
-      </form>
-      <div class="newsletter-note">You can unsubscribe anytime from any email we send.</div>
+<!-- FOOTER (Quick Actions live inside the footer, as requested) -->
+<footer class="footer" id="about">
+  <div class="footer-quick-actions reveal">
+    <span class="fqa-label"><i class="bi bi-lightning-charge-fill"></i> Quick Actions</span>
+    <div class="fqa-row">
+      <button class="fqa-btn solid-green" onclick="openModal('get-started-modal')"><i class="bi bi-rocket-takeoff-fill"></i> Get Started</button>
+      <button class="fqa-btn solid-blue" onclick="openJobsQuickModal()"><i class="bi bi-briefcase-fill"></i> Browse Jobs</button>
+      <button class="fqa-btn outline-light" onclick="pickRole('employer')"><i class="bi bi-building"></i> Hire a Worker</button>
+      <button class="fqa-btn outline-light" onclick="pickRole('employee')"><i class="bi bi-person-badge"></i> Find Work</button>
+      <a class="fqa-btn outline-light" href="support.html"><i class="bi bi-headset"></i> Contact Us</a>
     </div>
   </div>
-</div>
-
-<!-- FOOTER -->
-<footer class="footer" id="about">
   <div class="footer-logo">SoundsCare</div>
   <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda and Ethiopia.</p>
   <div class="footer-social">
@@ -1206,6 +1250,25 @@
           <button class="gate-secondary" onclick="go('login.html')">Log in</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- JOBS QUICK-VIEW MODAL (footer "Browse Jobs" quick action) -->
+<div class="modal-overlay" id="jobs-quick-modal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Recent Job Postings</div>
+        <div class="modal-subtitle">A quick look at what's open right now</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('jobs-quick-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div id="jobs-quick-list">
+        <div class="feed-empty"><i class="bi bi-hourglass-split"></i>Loading jobs…</div>
+      </div>
+      <a href="jobs.html" class="qjob-viewall">View all jobs <i class="bi bi-arrow-right"></i></a>
     </div>
   </div>
 </div>
@@ -1920,7 +1983,17 @@ async function submitNewsletter(event){
       }
     } else {
       showToast('Subscribed! Watch your inbox for updates.','success');
-      document.getElementById('newsletter-form').reset();
+      const form = document.getElementById('newsletter-form');
+      const success = document.getElementById('newsletter-success');
+      form.reset();
+      form.style.display = 'none';
+      if(success){
+        success.classList.add('show');
+        setTimeout(()=>{
+          success.classList.remove('show');
+          form.style.display = 'flex';
+        }, 5000);
+      }
     }
   }catch(e){
     console.error('Newsletter signup error:', e);
@@ -2008,17 +2081,206 @@ async function logCookieConsent(choice){
   } catch(e){ console.warn('Cookie consent log failed (non-fatal):', e.message); }
 }
 
-/* ── WELCOME NOTIFICATION ── */
+/* ── WELCOME NOTIFICATION (shows once per day per visitor, not on every load) ── */
 function showWelcomeNotif(){
+  const today = new Date().toDateString();
+  if(localStorage.getItem('sc_welcome_seen') === today) return;
   const el=document.getElementById('welcome-notif');
+  if(!el) return;
   el.style.display='block';
+  localStorage.setItem('sc_welcome_seen', today);
   setTimeout(()=>{ el.style.display='none'; },7000);
+}
+
+/* ── SCROLL REVEAL (full-page animations on scroll) ── */
+function initScrollReveal(){
+  const targets = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-grid');
+  if(!('IntersectionObserver' in window)){
+    targets.forEach(t=>t.classList.add('visible'));
+    return;
+  }
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.12, rootMargin:'0px 0px -60px 0px'});
+  targets.forEach(t=>io.observe(t));
+}
+
+/* ── ROTATING MAASAI MARA BACKGROUND (Sounds Care Network section) ── */
+const MAASAI_MARA_IMAGES = [
+  {url:'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1600&q=80', credit:'Maasai Mara, Kenya — Great Migration'},
+  {url:'https://images.unsplash.com/photo-1509233725247-49e657c54213?auto=format&fit=crop&w=1600&q=80', credit:'Maasai Mara, Kenya — Savannah sunset'},
+  {url:'https://images.unsplash.com/photo-1547970810-dc1eac37d174?auto=format&fit=crop&w=1600&q=80', credit:'Maasai Mara, Kenya — Wildlife safari'},
+  {url:'https://images.unsplash.com/photo-1521651201144-634f700b36ef?auto=format&fit=crop&w=1600&q=80', credit:'Maasai Mara, Kenya — Acacia plains'}
+];
+let mmBgIndex = 0;
+function initNetworkBgRotator(){
+  const wrap = document.getElementById('network-bg-layers');
+  const creditEl = document.getElementById('network-bg-credit');
+  if(!wrap) return;
+  const layerA = document.createElement('div');
+  const layerB = document.createElement('div');
+  layerA.className = 'network-bg-layer';
+  layerB.className = 'network-bg-layer';
+  wrap.appendChild(layerA);
+  wrap.appendChild(layerB);
+  let layers = [layerA, layerB];
+  let front = 0;
+
+  function show(i){
+    const img = MAASAI_MARA_IMAGES[i % MAASAI_MARA_IMAGES.length];
+    const nextLayer = layers[front === 0 ? 1 : 0];
+    nextLayer.style.backgroundImage = `url('${img.url}')`;
+    requestAnimationFrame(()=>{
+      layers[front].classList.remove('active');
+      nextLayer.classList.add('active');
+    });
+    front = front === 0 ? 1 : 0;
+    if(creditEl) creditEl.textContent = img.credit;
+  }
+
+  show(mmBgIndex);
+  setInterval(()=>{
+    mmBgIndex = (mmBgIndex + 1) % MAASAI_MARA_IMAGES.length;
+    show(mmBgIndex);
+  }, 6000);
+}
+
+/* ── ANNOUNCEMENTS (DB-driven top bar carousel) ── */
+let announceItems = [];
+let announceIdx = 0;
+let announceTimer = null;
+
+async function loadAnnouncements(){
+  const bar = document.getElementById('announce-bar');
+  if(!bar) return;
+
+  const dismissedToday = localStorage.getItem('sc_announce_dismissed') === new Date().toDateString();
+  if(dismissedToday) return;
+
+  try{
+    const nowIso = new Date().toISOString();
+    const {data, error} = await sb.from('announcements')
+      .select('id,message,title,body,link_url,url,type,starts_at,ends_at,is_active,active')
+      .order('created_at',{ascending:false})
+      .limit(10);
+    if(error) throw error;
+
+    announceItems = (data||[]).filter(a=>{
+      const isActive = (a.is_active ?? a.active) !== false;
+      const started = !a.starts_at || new Date(a.starts_at) <= new Date(nowIso);
+      const notEnded = !a.ends_at || new Date(a.ends_at) >= new Date(nowIso);
+      return isActive && started && notEnded;
+    });
+  }catch(e){
+    console.warn('Announcements load failed (non-fatal):', e.message);
+    announceItems = [];
+  }
+
+  if(!announceItems.length) return;
+
+  bar.classList.add('show');
+  const type = announceItems[0].type || 'info';
+  bar.classList.add('type-'+type);
+
+  renderAnnounceDots();
+  renderAnnounceSlide(0);
+
+  if(announceItems.length > 1){
+    announceTimer = setInterval(()=>{
+      announceIdx = (announceIdx + 1) % announceItems.length;
+      renderAnnounceSlide(announceIdx);
+    }, 6000);
+  }
+}
+
+function renderAnnounceDots(){
+  const dotsEl = document.getElementById('announce-dots');
+  if(!dotsEl || announceItems.length < 2) return;
+  dotsEl.innerHTML = announceItems.map((_,i)=>`<span data-i="${i}" onclick="jumpToAnnounce(${i})"></span>`).join('');
+}
+
+function renderAnnounceSlide(i){
+  const wrap = document.getElementById('announce-slide-wrap');
+  const item = announceItems[i];
+  if(!wrap || !item) return;
+  const icons = {maintenance:'bi-tools', feature:'bi-stars', status:'bi-check-circle-fill', incident:'bi-exclamation-triangle-fill', info:'bi-megaphone-fill'};
+  const text = esc(item.message || item.title || item.body || '');
+  const link = item.link_url || item.url;
+  wrap.innerHTML = `<div class="announce-slide">
+    <i class="bi ${icons[item.type]||'bi-megaphone-fill'}"></i>
+    <span>${text}</span>
+    ${link ? `<a href="${esc(link)}">Learn more</a>` : ''}
+  </div>`;
+  document.querySelectorAll('#announce-dots span').forEach((d,idx)=>d.classList.toggle('on', idx===i));
+}
+
+function jumpToAnnounce(i){
+  announceIdx = i;
+  renderAnnounceSlide(i);
+  if(announceTimer) clearInterval(announceTimer);
+  announceTimer = setInterval(()=>{
+    announceIdx = (announceIdx + 1) % announceItems.length;
+    renderAnnounceSlide(announceIdx);
+  }, 6000);
+}
+
+function dismissAnnouncements(){
+  const bar = document.getElementById('announce-bar');
+  if(bar) bar.classList.remove('show');
+  if(announceTimer) clearInterval(announceTimer);
+  localStorage.setItem('sc_announce_dismissed', new Date().toDateString());
+}
+
+/* ── JOBS QUICK-VIEW MODAL (footer "Browse Jobs" quick action) ── */
+async function openJobsQuickModal(){
+  openModal('jobs-quick-modal');
+  const list = document.getElementById('jobs-quick-list');
+  list.innerHTML = '<div class="feed-empty"><i class="bi bi-hourglass-split"></i>Loading jobs…</div>';
+
+  try{
+    const {data, error} = await sb.from('job_postings')
+      .select('id,title,company_name,county,location,job_type,work_type,salary_min,salary_max,created_at')
+      .eq('status','active')
+      .order('created_at',{ascending:false})
+      .limit(5);
+    if(error) throw error;
+
+    if(!data || !data.length){
+      list.innerHTML = '<div class="feed-empty"><i class="bi bi-briefcase"></i>No active jobs right now. Check back soon!</div>';
+      return;
+    }
+
+    list.innerHTML = data.map(j=>{
+      const company = j.company_name || 'Employer';
+      const jobLocation = j.location || j.county || 'Kenya';
+      const type = j.job_type || j.work_type || 'Full Time';
+      return `<div class="qjob-item" onclick="goToJob('${j.id}')">
+        <div class="qj-av">${initials(company)}</div>
+        <div class="qj-meta">
+          <div class="qj-title">${esc(j.title||'—')}</div>
+          <div class="qj-sub">${esc(company)} &middot; ${esc(jobLocation)} &middot; ${esc(type)}</div>
+        </div>
+        <i class="bi bi-arrow-right" style="color:var(--text-muted)"></i>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('Quick jobs load error:', e);
+    list.innerHTML = '<div class="feed-empty"><i class="bi bi-exclamation-circle"></i>Could not load jobs right now.</div>';
+  }
 }
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded',async ()=>{
   showWelcomeNotif();
   initCookieBanner();
+  initScrollReveal();
+  initNetworkBgRotator();
+  loadAnnouncements();
   await loadJobs();
   loadStats();
   loadInsights();
