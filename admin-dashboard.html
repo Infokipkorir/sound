@@ -465,38 +465,19 @@ tr:hover td { background: rgba(27,107,69,.02); }
 
 
 
-<!-- LOGIN -->
+<!-- SESSION CHECK — this page trusts admin-login.html for authentication.
+     It never shows its own login form; it just verifies there's an active,
+     authorised session before rendering, and bounces to admin-login.html
+     otherwise. -->
 <div id="auth-overlay">
-  <div class="auth-card">
-    <div class="auth-logo-wrap">
+  <div class="auth-card" style="text-align:center;padding:2.8rem 2.2rem">
+    <div class="auth-logo-wrap" style="margin-bottom:1rem">
       <div class="auth-logo">
         <img src="sound_logo.png" alt="SoundsCare" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\'font-size:28px\'>🎙️</span>'">
       </div>
-      <h1>SoundsCare Admin</h1>
-      <p class="auth-sub">Control Centre — Authorised access only</p>
     </div>
-    <div class="auth-error" id="auth-error"></div>
-    <form onsubmit="handleLogin(event)">
-      <div class="form-group">
-        <label>Email</label>
-        <input id="auth-email" type="email" placeholder="you@soundscare.co.ke" autocomplete="username" required style="font-size:13px">
-      </div>
-      <div class="form-group" style="position:relative">
-        <label>Password</label>
-        <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" required style="font-size:13px;padding-right:40px">
-        <button type="button" onclick="toggleAdminPw()" style="position:absolute;right:10px;bottom:10px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:2px" title="Show/hide">
-          <i class="bi bi-eye" id="auth-eye"></i>
-        </button>
-      </div>
-      <button type="submit" class="btn btn-primary" id="auth-submit-btn" style="width:100%;justify-content:center;margin-top:.3rem;padding:11px">
-        <span id="auth-btn-spinner" style="display:none;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;margin-right:6px"></span>
-        <i class="bi bi-box-arrow-in-right" id="auth-btn-icon"></i>
-        <span id="auth-btn-text">Sign In to Dashboard</span>
-      </button>
-    </form>
-    <p style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:1.2rem">
-      <i class="bi bi-shield-lock" style="margin-right:4px"></i>Secured connection — admin only
-    </p>
+    <div class="spinner" style="margin:0 auto 14px;width:26px;height:26px;border-width:3px"></div>
+    <p style="font-size:12.5px;color:var(--muted)" id="session-check-text">Checking your session…</p>
   </div>
 </div>
 
@@ -1837,7 +1818,12 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 // requires re-entering credentials on every refresh (see handleLogout notes
 // below), so we don't let Supabase Auth stash a session in localStorage.
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false }
+  // persistSession is on now (via sessionStorage, not localStorage) so the
+  // session admin-login.html creates carries over to this page on redirect.
+  // sessionStorage still clears when the browser/tab closes — same
+  // "don't linger" intent as before, just scoped correctly for a
+  // multi-page login flow instead of single-page.
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
 });
 
 let currentUser = null;
@@ -1903,89 +1889,65 @@ async function logAndSendEmail(recipientEmail,subject,body){
 }
 
 // ============================================================
-// AUTH
+// AUTH — this page has no login form of its own. admin-login.html is the
+// single entry point for authentication; this page only ever checks for
+// an existing, authorised session (via the shared sessionStorage-backed
+// sb client above) and bounces to admin-login.html if there isn't one.
 // ============================================================
 let adminRecord = null; // holds the admin_users row
 
-async function handleLogin(e){
-  e.preventDefault();
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const errEl = document.getElementById('auth-error');
-  errEl.textContent = '';
-  errEl.classList.remove('show');
+function goToLogin(){
+  window.location.href = 'admin-login.html';
+}
 
-  // Set loading state
-  const btn = document.getElementById('auth-submit-btn');
-  const spinner = document.getElementById('auth-btn-spinner');
-  const icon = document.getElementById('auth-btn-icon');
-  const txt = document.getElementById('auth-btn-text');
-  btn.disabled = true;
-  spinner.style.display = 'inline-block';
-  icon.style.display = 'none';
-  txt.textContent = 'Signing in…';
-
-  const showErr = (msg) => {
-    errEl.textContent = msg;
-    errEl.classList.add('show');
-    btn.disabled = false;
-    spinner.style.display = 'none';
-    icon.style.display = '';
-    txt.textContent = 'Sign In to Dashboard';
-  };
-
+async function initSession(){
+  const statusEl = document.getElementById('session-check-text');
   try {
-    // Real Supabase Auth sign-in: rate-limited by Supabase itself, password
-    // never gets compared/returned by hand-rolled SQL, and this is what gives
-    // RLS (is_admin()) a real session to check on every subsequent query.
-    const { data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password });
-    if (authErr) { showErr('Invalid email or password.'); return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { goToLogin(); return; }
 
-    const { data, error } = await sb.from('admin_users').select('*').eq('user_id', authData.user.id).maybeSingle();
+    const { data, error } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
     if (error) throw error;
     if (!data || data.status !== 'Active') {
       await sb.auth.signOut();
-      showErr('This account is not an active admin on this dashboard.');
+      goToLogin();
       return;
     }
-    if (data.access_level === 'support_admin') {
+    const allowedPages = Array.isArray(data.allowed_pages) ? data.allowed_pages : [];
+    if (!allowedPages.includes('admin-dashboard')) {
+      // This admin is authenticated but not authorised for this specific
+      // page (e.g. a support-room-only or cashier-only account) — send
+      // them back to admin-login.html's destination picker instead of
+      // letting them sit on a dashboard they shouldn't see.
+      if (statusEl) statusEl.textContent = 'Redirecting to the right page…';
       await sb.auth.signOut();
-      showErr('Support admin accounts use the Support Room, not this dashboard. Open support-room.html and sign in there.');
+      goToLogin();
       return;
     }
+
     adminRecord = data;
     // currentUser.id is the auth.users id — most tables' admin_id/sender_id/
     // deleted_by columns FK to auth.users, not admin_users. Use adminRecord.id
     // (the admin_users row id) for anything that specifically needs that.
-    currentUser = { id: authData.user.id, email: data.email, role: data.role };
-    // Session persistence is off (see sb init above) — a page refresh still
-    // requires the admin to sign in again, same as before.
+    currentUser = { id: session.user.id, email: data.email, role: data.role };
     document.getElementById('auth-overlay').classList.add('hidden');
     document.getElementById('sb-admin-name').textContent = data.username;
     document.getElementById('sb-avatar').textContent = getInitials(data.username);
     loadAll();
     setupRealtimeSubscriptions();
     ensureNotifPermission();
-  } catch(err) { showErr(err.message || 'Sign in failed. Please try again.'); }
-}
-function toggleAdminPw(){
-  const inp = document.getElementById('auth-password');
-  const icon = document.getElementById('auth-eye');
-  if(inp.type === 'password'){ inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
-  else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
+  } catch (err) {
+    goToLogin();
+  }
 }
 async function handleLogout(){
   teardownRealtimeSubscriptions();
   try { await sb.auth.signOut(); } catch(e) {}
   adminRecord = null;
   currentUser = null;
-  document.getElementById('auth-overlay').classList.remove('hidden');
-  document.getElementById('auth-email').value = '';
-  document.getElementById('auth-password').value = '';
+  goToLogin();
 }
-// NOTE: no session-restore-on-load here by design — every page load/refresh
-// requires the admin to sign back in. Nothing is read from or written to
-// localStorage/sessionStorage for the admin session.
+initSession();
 
 // ============================================================
 // SUPPORT ROOM HANDOFF — mint a short-lived, single-use token from this

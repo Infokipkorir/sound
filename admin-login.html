@@ -179,10 +179,12 @@ h1 { text-align: center; font-size: 1.35rem; font-weight: 800; margin-bottom: .2
 <script>
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
-// Same as admin-dashboard.html: no persisted session, admins re-enter
-// credentials each visit.
+// Session lives in sessionStorage (not localStorage): it survives a
+// same-tab redirect to admin-dashboard.html / support-room.html /
+// cashier.html, but disappears when the tab or browser closes — no
+// "remembered" admin session lingering on a shared machine.
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false }
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
 });
 
 // Registry of every destination an admin might be routed to. `page` matches
@@ -293,6 +295,20 @@ async function signOutAndReset(){
   document.getElementById('dest-list').classList.remove('hidden');
   document.getElementById('auto-redirect-note').classList.add('hidden');
 }
+
+// If an admin already has a live session (e.g. they hit back after landing
+// on a destination page, or opened this page in a second tab), skip
+// straight to the picker instead of asking them to log in again.
+async function checkExistingSession(){
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data: adminRow, error } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+    if (error || !adminRow || adminRow.status !== 'Active') { await sb.auth.signOut(); return; }
+    showDestinationPicker(adminRow);
+  } catch (err) { /* fall through to the login form */ }
+}
+checkExistingSession();
 </script>
 </body>
 </html>
