@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundsCare Admin — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --ink: #0f1923;
+  --brand: #1B6B45;
+  --brand-dark: #134f33;
+  --brand-soft: rgba(27,107,69,0.10);
+  --accent: #E8A040;
+  --accent-ink: #a15a1f;
+  --rose: #f43f5e;
+  --sky: #0ea5e9;
+  --violet: #8b5cf6;
+  --amber: #f59e0b;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(27,107,69,.10), transparent 40%),
+    radial-gradient(circle at 88% 88%, rgba(232,160,64,.09), transparent 40%),
+    var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 2.6rem 2.2rem 2rem;
+  box-shadow: 0 20px 60px rgba(15,25,35,.13), 0 2px 8px rgba(15,25,35,.06);
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+}
+
+.logo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.6rem; }
+.logo {
+  width: 68px; height: 68px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 20px rgba(27,107,69,.18);
+  margin: 0 auto .9rem;
+  font-size: 28px;
+}
+h1 { text-align: center; font-size: 1.35rem; font-weight: 800; margin-bottom: .2rem; letter-spacing: -.3px; }
+.sub { text-align: center; font-size: 12.5px; color: var(--muted); margin-bottom: 1.6rem; line-height: 1.5; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+.form-group input {
+  width: 100%; padding: 10px 12px; font-size: 13px; font-family: inherit;
+  border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg);
+  transition: .15s;
+}
+.form-group input:focus { outline: none; border-color: var(--brand); background: #fff; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+.error-box { color: var(--rose); font-size: 12.5px; margin-bottom: .8rem; text-align: center; background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.18); border-radius: 8px; padding: 8px 12px; display: none; }
+.error-box.show { display: block; }
+
+.btn {
+  width: 100%; padding: 11px; border: none; border-radius: 10px;
+  background: var(--brand); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: .15s;
+}
+.btn:hover { background: var(--brand-dark); }
+.btn:disabled { opacity: .7; cursor: default; }
+.spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pw-field { position: relative; }
+.pw-toggle { position: absolute; right: 10px; bottom: 10px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 2px; }
+
+.footnote { text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 1.2rem; }
+
+/* Destination picker */
+.dest-list { display: flex; flex-direction: column; gap: 10px; margin-top: .4rem; }
+.dest-card {
+  display: flex; align-items: center; gap: 14px;
+  border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px;
+  background: var(--bg); cursor: pointer; text-align: left; width: 100%;
+  font-family: inherit; transition: .15s;
+}
+.dest-card:hover { border-color: var(--brand); background: var(--brand-soft); transform: translateY(-1px); }
+.dest-icon {
+  width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff;
+}
+.dest-text h3 { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+.dest-text p { font-size: 11.5px; color: var(--muted); }
+.dest-arrow { margin-left: auto; color: var(--muted); font-size: 15px; }
+
+.who {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 1.4rem;
+  padding-bottom: 1.2rem; border-bottom: 1px solid var(--border);
+}
+.who-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.who-text h3 { font-size: 13px; font-weight: 600; }
+.who-text p { font-size: 11px; color: var(--muted); }
+.signout-link { margin-left: auto; font-size: 11.5px; color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; font-family: inherit; }
+.signout-link:hover { color: var(--rose); }
+
+.hidden { display: none !important; }
+.redirect-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<!-- STEP 1: LOGIN -->
+<div class="card" id="login-step">
+  <div class="logo-wrap">
+    <div class="logo">🎙️</div>
+    <h1>SoundsCare Admin</h1>
+    <p class="sub">Control Centre — Authorised access only</p>
+  </div>
+  <div class="error-box" id="login-error"></div>
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label>Email</label>
+      <input id="auth-email" type="email" placeholder="you@soundscare.co.ke" autocomplete="username" required>
+    </div>
+    <div class="form-group pw-field">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" required style="padding-right:40px">
+      <button type="button" class="pw-toggle" onclick="togglePw()" title="Show/hide">
+        <i class="bi bi-eye" id="pw-eye"></i>
+      </button>
+    </div>
+    <button type="submit" class="btn" id="login-btn">
+      <span class="spinner hidden" id="login-spinner"></span>
+      <i class="bi bi-box-arrow-in-right" id="login-icon"></i>
+      <span id="login-btn-text">Sign In</span>
+    </button>
+  </form>
+  <p class="footnote"><i class="bi bi-shield-lock" style="margin-right:4px"></i>Secured connection — admin only</p>
+</div>
+
+<!-- STEP 2: DESTINATION PICKER -->
+<div class="card hidden" id="picker-step">
+  <div class="who">
+    <div class="who-avatar" id="who-avatar">AD</div>
+    <div class="who-text">
+      <h3 id="who-name">Admin</h3>
+      <p id="who-role">Admin</p>
+    </div>
+    <button class="signout-link" onclick="signOutAndReset()">Sign out</button>
+  </div>
+  <h1 style="text-align:left;font-size:1.05rem;margin-bottom:1rem">Where would you like to go?</h1>
+  <div class="dest-list" id="dest-list"></div>
+  <p class="redirect-note hidden" id="auto-redirect-note">Taking you there…</p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+// Session lives in sessionStorage (not localStorage): it survives a
+// same-tab redirect to admin-dashboard.html / support-room.html /
+// cashier.html, but disappears when the tab or browser closes — no
+// "remembered" admin session lingering on a shared machine.
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
+});
+
+// Registry of every destination an admin might be routed to. `page` matches
+// the values stored in admin_users.allowed_pages (jsonb array of strings).
+const DESTINATIONS = {
+  'admin-dashboard': { label: 'Admin Dashboard', desc: 'Users, jobs, payments, and platform operations', icon: 'bi-speedometer2', color: 'var(--brand)', href: 'admin-dashboard.html' },
+  'support-room':    { label: 'Support Room',    desc: 'Live chat interviews and support tickets',       icon: 'bi-headset',      color: 'var(--sky)',    href: 'support-room.html' },
+  'cashier':         { label: 'Cashier',         desc: 'Payments, payouts, and reconciliation',          icon: 'bi-cash-coin',    color: 'var(--amber)',  href: 'cashier.html' }
+};
+
+function togglePw(){
+  const inp = document.getElementById('auth-password');
+  const icon = document.getElementById('pw-eye');
+  if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+  else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
+function getInitials(name){ return (name || 'AD').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD'; }
+
+async function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('login-btn');
+  const spinner = document.getElementById('login-spinner');
+  const icon = document.getElementById('login-icon');
+  const txt = document.getElementById('login-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  icon.classList.add('hidden');
+  txt.textContent = 'Signing in…';
+
+  const showErr = (msg) => {
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    icon.classList.remove('hidden');
+    txt.textContent = 'Sign In';
+  };
+
+  try {
+    // Real Supabase Auth sign-in — never a hand-rolled password comparison.
+    // This also seeds the session that RLS policies (is_admin()) check on
+    // every subsequent request from whichever page the admin lands on.
+    const { data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password });
+    if (authErr) { showErr('Invalid email or password.'); return; }
+
+    const { data: adminRow, error } = await sb.from('admin_users').select('*').eq('user_id', authData.user.id).maybeSingle();
+    if (error) throw error;
+    if (!adminRow || adminRow.status !== 'Active') {
+      await sb.auth.signOut();
+      showErr('This account is not an active admin.');
+      return;
+    }
+
+    showDestinationPicker(adminRow);
+  } catch (err) {
+    showErr(err.message || 'Sign in failed. Please try again.');
+  }
+}
+
+function showDestinationPicker(adminRow){
+  document.getElementById('login-step').classList.add('hidden');
+  document.getElementById('picker-step').classList.remove('hidden');
+
+  document.getElementById('who-avatar').textContent = getInitials(adminRow.username);
+  document.getElementById('who-name').textContent = adminRow.username || adminRow.email;
+  document.getElementById('who-role').textContent = adminRow.role || 'Admin';
+
+  const pages = Array.isArray(adminRow.allowed_pages) ? adminRow.allowed_pages.filter(p => DESTINATIONS[p]) : [];
+
+  if (pages.length === 0) {
+    // No allowed_pages configured — fall back to the dashboard so a
+    // misconfigured account isn't locked out with no path forward.
+    pages.push('admin-dashboard');
+  }
+
+  if (pages.length === 1) {
+    document.getElementById('dest-list').classList.add('hidden');
+    document.getElementById('auto-redirect-note').classList.remove('hidden');
+    setTimeout(() => { window.location.href = DESTINATIONS[pages[0]].href; }, 500);
+    return;
+  }
+
+  const list = document.getElementById('dest-list');
+  list.innerHTML = pages.map(p => {
+    const d = DESTINATIONS[p];
+    return `
+      <button class="dest-card" onclick="window.location.href='${d.href}'">
+        <div class="dest-icon" style="background:${d.color}"><i class="bi ${d.icon}"></i></div>
+        <div class="dest-text"><h3>${d.label}</h3><p>${d.desc}</p></div>
+        <i class="bi bi-chevron-right dest-arrow"></i>
+      </button>`;
+  }).join('');
+}
+
+async function signOutAndReset(){
+  try { await sb.auth.signOut(); } catch(e) {}
+  document.getElementById('picker-step').classList.add('hidden');
+  document.getElementById('login-step').classList.remove('hidden');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('dest-list').classList.remove('hidden');
+  document.getElementById('auto-redirect-note').classList.add('hidden');
+}
+
+// If an admin already has a live session (e.g. they hit back after landing
+// on a destination page, or opened this page in a second tab), skip
+// straight to the picker instead of asking them to log in again.
+async function checkExistingSession(){
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data: adminRow, error } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+    if (error || !adminRow || adminRow.status !== 'Active') { await sb.auth.signOut(); return; }
+    showDestinationPicker(adminRow);
+  } catch (err) { /* fall through to the login form */ }
+}
+checkExistingSession();
+</script>
+</body>
+</html>
