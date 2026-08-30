@@ -316,22 +316,26 @@
           <input type="email" id="stEmail" placeholder="you@example.com" required autocomplete="email">
           <div class="ssc-field-error">Please enter a valid email address.</div>
         </div>
-        <div class="ssc-field" id="fieldStartPhone">
-          <label for="stPhone">Phone number<span class="req">*</span></label>
-          <input type="tel" id="stPhone" placeholder="e.g. 0712 345 678" required autocomplete="tel">
-          <div class="ssc-field-error">Please enter your phone number.</div>
-        </div>
         <div class="ssc-field" id="fieldStartCountry">
           <label for="stCountry">Country</label>
           <select id="stCountry">
             <option value="" selected>Select your country</option>
-            <option>Kenya</option>
-            <option>Uganda</option>
-            <option>Tanzania</option>
-            <option>Rwanda</option>
-            <option>Ethiopia</option>
-            <option>Other</option>
+            <option value="Kenya">🇰🇪 Kenya</option>
+            <option value="Uganda">🇺🇬 Uganda</option>
+            <option value="Tanzania">🇹🇿 Tanzania</option>
+            <option value="Rwanda">🇷🇼 Rwanda</option>
+            <option value="Ethiopia">🇪🇹 Ethiopia</option>
+            <option value="Other">Other</option>
           </select>
+        </div>
+        <div class="ssc-field" id="fieldStartCountryOther" style="display:none;">
+          <label for="stCountryOther">Please specify your country</label>
+          <input type="text" id="stCountryOther" placeholder="Enter your country">
+        </div>
+        <div class="ssc-field" id="fieldStartPhone">
+          <label for="stPhone">Phone number<span class="req">*</span></label>
+          <input type="tel" id="stPhone" placeholder="e.g. 0712 345 678" required autocomplete="tel">
+          <div class="ssc-field-error">Please enter your phone number.</div>
         </div>
         <button type="submit" class="ssc-btn-primary" id="stSubmitBtn"><i class="bi bi-arrow-right-circle"></i> Continue</button>
       </form>
@@ -513,6 +517,8 @@
     stEmail: document.getElementById('stEmail'),
     stPhone: document.getElementById('stPhone'),
     stCountry: document.getElementById('stCountry'),
+    fieldStartCountryOther: document.getElementById('fieldStartCountryOther'),
+    stCountryOther: document.getElementById('stCountryOther'),
     stSubmitBtn: document.getElementById('stSubmitBtn'),
 
     afMessage: document.getElementById('afMessage'),
@@ -619,13 +625,15 @@
       var { data: sessionData } = await sb.auth.getSession();
       var session = sessionData && sessionData.session;
       if (!session){
-        var restored = null;
-        try{ restored = JSON.parse(localStorage.getItem('ssc_guest_ticket') || 'null'); }catch(e){}
-        if (restored && restored.id && restored.token){
-          guestTicket = restored;
-          try{ await enterGuestTicket(); return; }
-          catch(e){ guestTicket = null; }
-        }
+        // Ungated (unauthenticated) entry always starts fresh: we do NOT
+        // auto-resume a previously saved guest ticket from localStorage.
+        // Silently jumping into an old ticket meant the guest gate form
+        // (and whatever name/email/phone/country the visitor just typed)
+        // was skipped entirely, so no new row ever reached support_tickets.
+        // Clear any stale saved ticket so a later reload can't do this either.
+        try{ localStorage.removeItem('ssc_guest_ticket'); }catch(e){}
+        guestTicket = null;
+        guestInfo = null;
         showView('viewStart');
         el.stName.focus();
         return;
@@ -671,6 +679,47 @@
   // does the ticket-history view become available.
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  // East African dialing codes shown as a phone placeholder/prefix once a
+  // country is picked. "Other" has no known code, so it just reveals a
+  // free-text field instead of guessing.
+  var COUNTRY_DIAL_CODES = {
+    'Kenya': '+254',
+    'Uganda': '+256',
+    'Tanzania': '+255',
+    'Rwanda': '+250',
+    'Ethiopia': '+251'
+  };
+  var lastAppliedDialCode = '';
+
+  el.stCountry.addEventListener('change', function(){
+    var val = el.stCountry.value;
+    var isOther = (val === 'Other');
+    el.fieldStartCountryOther.style.display = isOther ? '' : 'none';
+    if (isOther){
+      lastAppliedDialCode = '';
+      el.stPhone.placeholder = 'e.g. 0712 345 678';
+      return;
+    }
+    el.stCountryOther.value = '';
+
+    var dial = COUNTRY_DIAL_CODES[val] || '';
+    el.stPhone.placeholder = dial ? (dial + ' 712 345 678') : 'e.g. 0712 345 678';
+
+    var current = el.stPhone.value.trim();
+    // Only auto-fill the code if the field is empty or still holds the
+    // previously-applied code — never overwrite a number the visitor
+    // has actually started typing.
+    if (dial && (current === '' || current === lastAppliedDialCode)){
+      el.stPhone.value = dial + ' ';
+      el.stPhone.focus();
+      if (el.stPhone.setSelectionRange){
+        var len = el.stPhone.value.length;
+        el.stPhone.setSelectionRange(len, len);
+      }
+    }
+    lastAppliedDialCode = dial;
+  });
+
   function validateStartForm(){
     var valid = true;
     var checks = [
@@ -696,6 +745,9 @@
     var email = el.stEmail.value.trim().toLowerCase();
     var phone = el.stPhone.value.trim();
     var country = el.stCountry.value;
+    if (country === 'Other'){
+      country = el.stCountryOther.value.trim() || 'Other';
+    }
     guestInfo = { name: name, email: email, phone: phone, country: country };
 
     el.stSubmitBtn.disabled = true;
@@ -883,7 +935,6 @@
         if (gErr) throw gErr;
         var row = Array.isArray(rows) ? rows[0] : rows;
         guestTicket = { id: row.id, token: row.guest_token };
-        try{ localStorage.setItem('ssc_guest_ticket', JSON.stringify(guestTicket)); }catch(e){}
 
         await enterGuestTicket();
         sendGuestAutoReply(msgText);
