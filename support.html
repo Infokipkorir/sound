@@ -321,6 +321,18 @@
           <input type="tel" id="stPhone" placeholder="e.g. 0712 345 678" required autocomplete="tel">
           <div class="ssc-field-error">Please enter your phone number.</div>
         </div>
+        <div class="ssc-field" id="fieldStartCountry">
+          <label for="stCountry">Country</label>
+          <select id="stCountry">
+            <option value="" selected>Select your country</option>
+            <option>Kenya</option>
+            <option>Uganda</option>
+            <option>Tanzania</option>
+            <option>Rwanda</option>
+            <option>Ethiopia</option>
+            <option>Other</option>
+          </select>
+        </div>
         <button type="submit" class="ssc-btn-primary" id="stSubmitBtn"><i class="bi bi-arrow-right-circle"></i> Continue</button>
       </form>
     </div>
@@ -500,6 +512,7 @@
     stName: document.getElementById('stName'),
     stEmail: document.getElementById('stEmail'),
     stPhone: document.getElementById('stPhone'),
+    stCountry: document.getElementById('stCountry'),
     stSubmitBtn: document.getElementById('stSubmitBtn'),
 
     afMessage: document.getElementById('afMessage'),
@@ -546,7 +559,7 @@
   // token is a capability credential (not a password) that gates read/send
   // access to that one ticket via SECURITY DEFINER RPCs — it is never used
   // to grant access to anyone else's account.
-  var guestInfo = null;      // { name, email, phone }
+  var guestInfo = null;      // { name, email, phone, country }
   var guestTicket = null;    // { id, token }
   var guestPollTimer = null;
 
@@ -682,7 +695,8 @@
     var name = el.stName.value.trim();
     var email = el.stEmail.value.trim().toLowerCase();
     var phone = el.stPhone.value.trim();
-    guestInfo = { name: name, email: email, phone: phone };
+    var country = el.stCountry.value;
+    guestInfo = { name: name, email: email, phone: phone, country: country };
 
     el.stSubmitBtn.disabled = true;
     el.stSubmitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Checking…';
@@ -786,7 +800,8 @@
         noteEl.style.cssText = 'font-size:.78rem;color:var(--ink-soft);margin:-.6rem 0 1rem;';
         el.ntForm.parentNode.insertBefore(noteEl, el.ntForm);
       }
-      noteEl.textContent = 'Sending as ' + guestInfo.name + ' (' + guestInfo.email + ', ' + guestInfo.phone + ').';
+      noteEl.textContent = 'Sending as ' + guestInfo.name + ' (' + guestInfo.email + ', ' + guestInfo.phone +
+        (guestInfo.country ? ', ' + guestInfo.country : '') + ').';
     } else if (noteEl){
       noteEl.remove();
     }
@@ -862,7 +877,8 @@
           p_subject: el.ntSubject.value.trim(),
           p_category: el.ntCategory.value,
           p_priority: selectedPriority,
-          p_message: msgText
+          p_message: msgText,
+          p_country: guestInfo.country || null
         });
         if (gErr) throw gErr;
         var row = Array.isArray(rows) ? rows[0] : rows;
