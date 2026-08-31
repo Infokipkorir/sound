@@ -934,7 +934,7 @@
         });
         if (gErr) throw gErr;
         var row = Array.isArray(rows) ? rows[0] : rows;
-        guestTicket = { id: row.id, token: row.guest_token };
+        guestTicket = { id: row.id, token: row.guest_token, subject: el.ntSubject.value.trim(), category: el.ntCategory.value };
 
         await enterGuestTicket();
         sendGuestAutoReply(msgText);
@@ -1378,6 +1378,25 @@
     }
   }
 
+  // Tries the Gemini-backed support-ai-reply Edge Function first (real
+  // reasoning, grounded in live job/candidate data) and falls back to the
+  // deterministic keyword bot below if the call fails for any reason — the
+  // widget should never go silent just because the AI call errored out.
+  async function buildAiReply(rawText, subject, category){
+    try{
+      var { data, error } = await sb.functions.invoke('support-ai-reply', {
+        body: { message: rawText, subject: subject || '', category: category || '' }
+      });
+      if (error) throw error;
+      if (data && data.error) throw new Error(data.error);
+      if (data && typeof data.reply === 'string' && data.reply.trim()) return data.reply.trim();
+      throw new Error('empty_ai_reply');
+    }catch(err){
+      console.warn('support-ai-reply failed, falling back to keyword bot:', err);
+      return await buildAutoReply(rawText);
+    }
+  }
+
   async function buildAutoReply(rawText){
     var text = normalizeText(rawText);
     if (containsAny(text, HUMAN_WORDS)) return "Of course — tap the \"Human\" button above any time and I'll flag this ticket for our team to join. Feel free to add more detail while you wait.";
@@ -1399,7 +1418,7 @@
   async function sendAutoReply(ticketId, visitorText){
     showTyping(true);
     var startedAt = Date.now();
-    var reply = await buildAutoReply(visitorText);
+    var reply = await buildAiReply(visitorText, currentTicket && currentTicket.subject, currentTicket && currentTicket.category);
     var minDelay = 700 + Math.random()*700;
     var elapsed = Date.now() - startedAt;
     if (elapsed < minDelay) await new Promise(function(resolve){ setTimeout(resolve, minDelay - elapsed); });
@@ -1424,7 +1443,7 @@
     var ticketId = guestTicket.id;
     showTyping(true);
     var startedAt = Date.now();
-    var reply = await buildAutoReply(visitorText);
+    var reply = await buildAiReply(visitorText, guestTicket.subject, guestTicket.category);
     var minDelay = 700 + Math.random()*700;
     var elapsed = Date.now() - startedAt;
     if (elapsed < minDelay) await new Promise(function(resolve){ setTimeout(resolve, minDelay - elapsed); });
