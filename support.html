@@ -1253,7 +1253,7 @@
       answer:"Verification needs a clear photo of your ID (front and back) and a selfie. Our team reviews submissions in the order received — once approved you'll see a verified badge on your profile. If it's been more than 48 hours, let us know and we'll check on it." },
     { title:'Payments', keywords:['payment','pay','wallet','balance','mpesa','m-pesa','fee','refund','withdraw'],
       answer:"For payment issues, it helps to share the transaction reference or amount so we can trace it in your wallet history. Interview and first-salary fees are handled through M-Pesa/Airtel — if a payment isn't reflecting after a few minutes, it's usually a delayed callback and resolves on its own, but we'll check it for you." },
-    { title:'Job applications', keywords:['job','application','apply','applied','hire','hired','interview'],
+    { title:'Job applications', keywords:['application','apply','applied','interview'],
       answer:"You can track your application status from your dashboard — pending, reviewed, shortlisted, hired, or rejected. If an employer hasn't responded in a while, that's normal; we can nudge things along if it's been over a week." },
     { title:'Safety', keywords:['safety','unsafe','scam','fraud','report','harass','abuse'],
       answer:"Thanks for flagging this — safety reports go straight to our review team. If you're in immediate danger, please contact local authorities first. Could you share more detail (who, what happened, when) so we can look into it properly?" },
@@ -1265,8 +1265,40 @@
   var GREETING_WORDS = ['hi','hello','hey','good morning','good afternoon','good evening','howdy'];
   var HUMAN_WORDS = ['talk to a human','talk to a person','human','agent','representative','real person'];
 
+  // Job-seeker asking "is there any work" — answered with real open listings
+  // rather than the generic "Job applications" KB entry, which is about
+  // tracking an application already made.
+  var JOB_SEEKER_PHRASES = [
+    'any job','any jobs','is there a job','is there any job','are there jobs','are there any jobs',
+    'jobs available','job vacancies','vacancy','vacancies','job opening','job openings','any openings',
+    'any vacancies','looking for a job','looking for work','find me a job','need a job','want a job',
+    'job opportunities','current openings','any work'
+  ];
+
+  // Employer asking to be matched with a worker. A role word alone isn't
+  // enough (a worker might say "I am a driver, when will I hear back"), so
+  // we require an explicit hiring-intent phrase alongside a role.
+  var EMPLOYER_TRIGGER_PHRASES = [
+    'need a','need an','looking for a','looking for an','hire a','hire an','want to hire',
+    'looking to hire','find me a','do you have any','send me a','recruit a','recruit an',
+    'get me a','need someone','need somebody','need staff','need workers','need an employee',
+    'need a candidate','need a worker'
+  ];
+  var ROLE_BUCKETS = [
+    { query:'nanny',  label:'House Help / Nanny', match:['nanny','house help','house girl','housegirl','babysitter','maid','domestic worker','house manager'] },
+    { query:'driver', label:'Driver',             match:['driver','chauffeur'] },
+    { query:'guard',  label:'Security Guard',     match:['security guard','watchman','guard','security'] },
+    { query:'garden', label:'Gardener',           match:['gardener','landscaper','garden'] },
+    { query:'cook',   label:'Cook / Chef',        match:['cook','chef'] },
+    { query:'clean',  label:'Cleaner',            match:['cleaner','mama fua','house cleaner','cleaning'] }
+  ];
+
   function normalizeText(text){ return text.toLowerCase().replace(/[^\w\s?]/g,' ').replace(/\s+/g,' ').trim(); }
   function containsAny(text, words){ for (var i=0;i<words.length;i++){ if (text.indexOf(words[i]) !== -1) return true; } return false; }
+  function detectRole(text){
+    for (var i=0;i<ROLE_BUCKETS.length;i++){ if (containsAny(text, ROLE_BUCKETS[i].match)) return ROLE_BUCKETS[i]; }
+    return null;
+  }
   function searchKnowledge(text){
     var best=null, bestScore=0;
     for (var i=0;i<KNOWLEDGE_BASE.length;i++){
@@ -1276,20 +1308,101 @@
     }
     return bestScore>0 ? best : null;
   }
-  function buildAutoReply(rawText){
+
+  function formatSalary(range, min, max){
+    var r = (range || '').toString().trim();
+    if (r) return /kes/i.test(r) ? r : ('KES ' + r);
+    if (min != null && max != null) return 'KES ' + min + ' - ' + max;
+    if (min != null) return 'from KES ' + min;
+    if (max != null) return 'up to KES ' + max;
+    return '';
+  }
+
+  // "Is there any job?" — pulls real, currently active postings. Only
+  // non-sensitive columns are selected; job_postings is already publicly
+  // readable (status = 'active') by RLS, so no RPC is needed here.
+  async function buildJobListingReply(){
+    try{
+      var { data, error } = await sb.from('job_postings')
+        .select('title, company_name, location, job_type, salary_range, salary_min, salary_max')
+        .eq('status', 'active')
+        .order('is_featured', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      if (!data || data.length === 0){
+        return "There aren't any open positions posted right now, but new jobs go up regularly — check back soon, or tell me what kind of role you're after and I'll flag it to our team.";
+      }
+      var lines = data.map(function(j){
+        var bits = [j.title || 'Untitled role'];
+        if (j.company_name) bits.push('at ' + j.company_name);
+        var extras = [];
+        var where = (j.location || '').trim();
+        if (where) extras.push(where);
+        if (j.job_type) extras.push(j.job_type);
+        var pay = formatSalary(j.salary_range, j.salary_min, j.salary_max);
+        if (pay) extras.push(pay);
+        return '• ' + bits.join(' ') + (extras.length ? ' — ' + extras.join(', ') : '');
+      });
+      return "Yes — here are a few open roles right now:\n" + lines.join('\n') +
+        "\n\nYou can see full details and apply from the Jobs tab in your dashboard. Want me to point you to a specific one?";
+    }catch(err){
+      console.warn('Could not fetch open jobs for auto-reply:', err);
+      return "I couldn't pull up the current job list just now — I've noted your question here and our team can send you the latest openings.";
+    }
+  }
+
+  // Employer asking for a specific role — surfaces exactly one matching,
+  // job-seeking worker via a SECURITY DEFINER RPC that only ever returns
+  // name, age, salary expectation, and current location (never phone,
+  // email, ID numbers/photos, or exact address).
+  async function buildCandidateReply(role){
+    try{
+      var { data, error } = await sb.rpc('find_candidate_for_employer', { p_role_query: role.query });
+      if (error) throw error;
+      var row = Array.isArray(data) ? data[0] : data;
+      if (!row){
+        return "I don't have a " + role.label + " matching right now, but our team can run a targeted search — could you share the location and salary range you have in mind?";
+      }
+      var lines = [
+        'Name: ' + row.display_name,
+        'Age: ' + (row.age != null ? row.age : 'Not specified'),
+        'Salary expectation: ' + (row.salary_expectation || 'Not specified'),
+        'Current location: ' + (row.current_location || 'Not specified')
+      ];
+      return "Here's a " + role.label + " who's currently available:\n" + lines.join('\n') +
+        "\n\nWant their full profile and contact details? Log in (or create an employer account) and our team can connect you.";
+    }catch(err){
+      console.warn('Could not fetch candidate for auto-reply:', err);
+      return "I couldn't pull up a matching profile just now, but I've logged your request for a " + role.label + " — our team will follow up with candidates.";
+    }
+  }
+
+  async function buildAutoReply(rawText){
     var text = normalizeText(rawText);
     if (containsAny(text, HUMAN_WORDS)) return "Of course — tap the \"Human\" button above any time and I'll flag this ticket for our team to join. Feel free to add more detail while you wait.";
     if (containsAny(text, GREETING_WORDS) && text.length < 30) return "Hi! How can I help — verification, payments, job applications, or something else?";
+
+    if (containsAny(text, JOB_SEEKER_PHRASES)) return await buildJobListingReply();
+
+    if (containsAny(text, EMPLOYER_TRIGGER_PHRASES)){
+      var role = detectRole(text);
+      if (role) return await buildCandidateReply(role);
+      return "Happy to help you find someone. What role are you looking to fill — House Help / Nanny, Driver, Security Guard, Gardener, Cook, or Cleaner? Tell me the role and I'll pull up a matching profile for you.";
+    }
+
     var match = searchKnowledge(text);
     if (match) return match.answer;
     return "Thanks for the details — I've logged this ticket for our team. If you'd like a human to jump in sooner, tap \"Human\" above.";
   }
 
   async function sendAutoReply(ticketId, visitorText){
-    var reply = buildAutoReply(visitorText);
     showTyping(true);
-    var delay = 700 + Math.random()*700;
-    await new Promise(function(resolve){ setTimeout(resolve, delay); });
+    var startedAt = Date.now();
+    var reply = await buildAutoReply(visitorText);
+    var minDelay = 700 + Math.random()*700;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < minDelay) await new Promise(function(resolve){ setTimeout(resolve, minDelay - elapsed); });
     showTyping(false);
 
     try{
@@ -1309,10 +1422,12 @@
   async function sendGuestAutoReply(visitorText){
     if (!guestTicket) return;
     var ticketId = guestTicket.id;
-    var reply = buildAutoReply(visitorText);
     showTyping(true);
-    var delay = 700 + Math.random()*700;
-    await new Promise(function(resolve){ setTimeout(resolve, delay); });
+    var startedAt = Date.now();
+    var reply = await buildAutoReply(visitorText);
+    var minDelay = 700 + Math.random()*700;
+    var elapsed = Date.now() - startedAt;
+    if (elapsed < minDelay) await new Promise(function(resolve){ setTimeout(resolve, minDelay - elapsed); });
     showTyping(false);
 
     try{
