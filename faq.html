@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FAQ | SoundsCare</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+  :root{
+    --teal:#0F766E; --teal-deep:#0B4F49; --aqua:#14B8A6; --mist:#EAF6F4;
+    --coral:#E0724A; --coral-deep:#B85A38; --gold:#D8A73D; --cream:#FAFAF8;
+    --ink:#182420; --ink-soft:#57655F; --line:rgba(20,30,26,0.09);
+    --body:'Inter','Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:var(--cream); line-height:1.5;}
+  a{color:var(--teal); text-decoration:none;}
+  button{font-family:inherit;}
+
+  /* ---------- Nav ---------- */
+  .fq-nav{
+    position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; padding:.9rem 1.5rem;
+  }
+  .fq-brand{display:flex; align-items:center; gap:.55rem; font-weight:800; color:var(--teal-deep); font-size:1.05rem;}
+  .fq-brand .mark{
+    width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:.95rem; flex-shrink:0;
+  }
+  .fq-nav-links{display:flex; align-items:center; gap:1.6rem;}
+  .fq-nav-links a{font-size:.86rem; font-weight:600; color:var(--ink-soft);}
+  .fq-nav-links a.on{color:var(--teal-deep);}
+  .fq-nav-cta{
+    border:none; border-radius:12px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    color:#fff; font-weight:700; font-size:.82rem; padding:.55rem 1rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:.4rem;
+  }
+  @media (max-width:640px){ .fq-nav-links{display:none;} }
+
+  /* ---------- Hero ---------- */
+  .fq-hero{
+    background:linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 55%, var(--aqua) 130%);
+    color:#fff; padding:3.2rem 1.5rem 4.6rem; text-align:center; position:relative; overflow:hidden;
+  }
+  .fq-hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 82% -10%, rgba(255,255,255,.16), transparent 55%);
+  }
+  .fq-hero-inner{position:relative; z-index:1; max-width:640px; margin:0 auto;}
+  .fq-eyebrow{font-size:.8rem; font-weight:600; color:rgba(255,255,255,.82); margin:0 0 .5rem;}
+  .fq-hero h1{font-size:2rem; font-weight:800; margin:0 0 .6rem; letter-spacing:-0.02em;}
+  .fq-hero p{margin:0; color:rgba(255,255,255,.88); font-size:.98rem;}
+
+  .fq-search{
+    max-width:520px; margin:1.6rem auto 0; background:#fff; border-radius:16px;
+    padding:.25rem .25rem .25rem 1.1rem; display:flex; align-items:center; gap:.5rem;
+    box-shadow:0 20px 45px -18px rgba(4,30,27,.45);
+  }
+  .fq-search i{color:var(--ink-soft); font-size:1.05rem;}
+  .fq-search input{
+    flex:1; border:none; outline:none; font-family:var(--body); font-size:.92rem; padding:.7rem 0; color:var(--ink);
+  }
+  .fq-search-clear{
+    border:none; background:none; color:var(--ink-soft); cursor:pointer; padding:.5rem; display:none;
+  }
+  .fq-search-clear.show{display:block;}
+
+  /* ---------- Body ---------- */
+  .fq-wrap{max-width:760px; margin:0 auto; padding:0 1.5rem 4rem;}
+
+  .fq-chip-rail{
+    display:flex; gap:.55rem; overflow-x:auto; padding:1.4rem .1rem 1.6rem; margin-top:-2.6rem; position:relative; z-index:2;
+  }
+  .fq-chip-rail::-webkit-scrollbar{display:none;}
+  .fq-chip{
+    flex-shrink:0; border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:.5rem 1rem;
+    font-size:.82rem; font-weight:700; color:var(--teal-deep); cursor:pointer; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:.4rem; box-shadow:0 10px 24px -16px rgba(11,79,73,.35);
+    transition:all .18s ease;
+  }
+  .fq-chip.active{background:linear-gradient(135deg,var(--aqua),var(--teal)); border-color:transparent; color:#fff;}
+
+  .fq-cat-group{margin-bottom:1.9rem;}
+  .fq-cat-label{
+    display:flex; align-items:center; gap:.5rem; font-size:.78rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--ink-soft); margin:0 0 .7rem .1rem;
+  }
+  .fq-cat-label i{color:var(--teal); font-size:.95rem;}
+
+  .fq-item{
+    background:#fff; border:1px solid var(--line); border-radius:14px; margin-bottom:.6rem; overflow:hidden;
+  }
+  .fq-q{
+    width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    padding:.95rem 1.1rem; font-size:.9rem; font-weight:700; color:var(--ink);
+  }
+  .fq-q i{color:var(--teal); flex-shrink:0; transition:transform .2s ease; font-size:1rem;}
+  .fq-item.open .fq-q i{transform:rotate(180deg);}
+  .fq-a{max-height:0; overflow:hidden; transition:max-height .25s ease;}
+  .fq-a-inner{padding:0 1.1rem 1.05rem; font-size:.86rem; color:var(--ink-soft); line-height:1.6;}
+
+  .fq-empty{text-align:center; padding:2.6rem 1rem; color:var(--ink-soft);}
+  .fq-empty i{font-size:1.8rem; color:var(--teal); display:block; margin-bottom:.6rem;}
+  .fq-skeleton{background:#fff; border:1px solid var(--line); border-radius:14px; height:56px; margin-bottom:.6rem; position:relative; overflow:hidden;}
+  .fq-skeleton::after{
+    content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(15,118,110,.07), transparent);
+    animation:fqShimmer 1.3s infinite;
+  }
+  @keyframes fqShimmer{from{transform:translateX(-100%);} to{transform:translateX(100%);}}
+
+  /* ---------- Still need help ---------- */
+  .fq-help{
+    max-width:760px; margin:2.6rem auto 0; padding:0 1.5rem;
+  }
+  .fq-help-card{
+    background:linear-gradient(160deg,#fff 0%, var(--mist) 130%); border:1px solid var(--line);
+    border-radius:20px; padding:1.6rem; display:flex; align-items:center; justify-content:space-between;
+    gap:1.2rem; flex-wrap:wrap;
+  }
+  .fq-help-card h3{margin:0 0 .3rem; font-size:1.02rem; font-weight:800; color:var(--teal-deep);}
+  .fq-help-card p{margin:0; font-size:.85rem; color:var(--ink-soft); max-width:360px;}
+  .fq-help-actions{display:flex; gap:.6rem; flex-wrap:wrap;}
+  .fq-btn{
+    border-radius:12px; font-weight:700; font-size:.83rem; padding:.65rem 1.05rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
+  }
+  .fq-btn-primary{border:none; background:linear-gradient(135deg,var(--aqua),var(--teal)); color:#fff;}
+  .fq-btn-ghost{border:1.5px solid var(--teal); background:#fff; color:var(--teal-deep);}
+
+  .fq-footer{text-align:center; padding:2.4rem 1.5rem 3rem; color:var(--ink-soft); font-size:.78rem;}
+</style>
+</head>
+<body>
+
+<nav class="fq-nav">
+  <a href="index.html" class="fq-brand"><span class="mark"><i class="bi bi-headset"></i></span> SoundsCare</a>
+  <div class="fq-nav-links">
+    <a href="index.html">Home</a>
+    <a href="faq.html" class="on">FAQ</a>
+    <a href="knowledge-base.html">Knowledge Base</a>
+  </div>
+  <button class="fq-nav-cta" onclick="location.href='support.html'"><i class="bi bi-chat-dots"></i> Contact support</button>
+</nav>
+
+<header class="fq-hero">
+  <div class="fq-hero-inner">
+    <p class="fq-eyebrow">Help Center</p>
+    <h1>Frequently asked questions</h1>
+    <p>Quick answers on verification, payments, applications, and more.</p>
+    <div class="fq-search">
+      <i class="bi bi-search"></i>
+      <input type="text" id="fqSearchInput" placeholder="Search questions…" autocomplete="off">
+      <button class="fq-search-clear" id="fqSearchClear" aria-label="Clear search"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+</header>
+
+<main class="fq-wrap">
+  <div class="fq-chip-rail" id="fqChipRail">
+    <button class="fq-chip active" data-cat="all"><i class="bi bi-grid"></i> All</button>
+  </div>
+  <div id="fqResults">
+    <div class="fq-skeleton"></div>
+    <div class="fq-skeleton"></div>
+    <div class="fq-skeleton"></div>
+  </div>
+</main>
+
+<div class="fq-help">
+  <div class="fq-help-card">
+    <div>
+      <h3>Still need help?</h3>
+      <p>Browse the full Knowledge Base for step-by-step articles, or message our support team directly.</p>
+    </div>
+    <div class="fq-help-actions">
+      <button class="fq-btn fq-btn-ghost" onclick="location.href='knowledge-base.html'"><i class="bi bi-journal-text"></i> Knowledge Base</button>
+      <button class="fq-btn fq-btn-primary" onclick="location.href='support.html'"><i class="bi bi-send-check"></i> Contact support</button>
+    </div>
+  </div>
+</div>
+
+<footer class="fq-footer">&copy; <span id="fqYear"></span> SoundsCare. All rights reserved.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  document.getElementById('fqYear').textContent = new Date().getFullYear();
+
+  var sb = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+  );
+
+  var el = {
+    chipRail: document.getElementById('fqChipRail'),
+    results: document.getElementById('fqResults'),
+    search: document.getElementById('fqSearchInput'),
+    searchClear: document.getElementById('fqSearchClear')
+  };
+
+  var categories = [];
+  var faqs = [];
+  var activeCat = 'all';
+
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  async function load(){
+    try{
+      var [{ data: cats, error: catErr }, { data: items, error: faqErr }] = await Promise.all([
+        sb.from('help_categories').select('id, name, slug, icon, sort_order').eq('is_active', true).order('sort_order'),
+        sb.from('faq_items').select('id, category_id, question, answer, keywords, sort_order').eq('is_active', true).order('sort_order')
+      ]);
+      if (catErr) throw catErr;
+      if (faqErr) throw faqErr;
+      categories = cats || [];
+      faqs = items || [];
+      renderChips();
+      applyUrlParams();
+      renderList();
+    }catch(err){
+      console.error('Could not load FAQ content:', err);
+      el.results.innerHTML =
+        '<div class="fq-empty"><i class="bi bi-wifi-off"></i>Couldn\'t load the FAQ right now.<br>Please refresh, or <a href="support.html">contact support</a> directly.</div>';
+    }
+  }
+
+  function renderChips(){
+    categories.forEach(function(c){
+      var chip = document.createElement('button');
+      chip.className = 'fq-chip';
+      chip.setAttribute('data-cat', c.slug);
+      chip.innerHTML = '<i class="bi ' + escapeHtml(c.icon || 'bi-question-circle') + '"></i> ' + escapeHtml(c.name);
+      el.chipRail.appendChild(chip);
+    });
+    el.chipRail.addEventListener('click', function(e){
+      var chip = e.target.closest('.fq-chip');
+      if (!chip) return;
+      activeCat = chip.getAttribute('data-cat');
+      Array.prototype.forEach.call(el.chipRail.children, function(c){ c.classList.toggle('active', c === chip); });
+      var url = new URL(window.location.href);
+      if (activeCat === 'all') url.searchParams.delete('category'); else url.searchParams.set('category', activeCat);
+      history.replaceState(null, '', url);
+      renderList();
+    });
+  }
+
+  function applyUrlParams(){
+    var params = new URLSearchParams(window.location.search);
+    var q = params.get('q');
+    var cat = params.get('category');
+    if (q){ el.search.value = q; el.searchClear.classList.add('show'); }
+    if (cat && categories.some(function(c){ return c.slug === cat; })){
+      activeCat = cat;
+      Array.prototype.forEach.call(el.chipRail.children, function(c){
+        c.classList.toggle('active', c.getAttribute('data-cat') === cat);
+      });
+    }
+  }
+
+  function catFor(id){ return categories.find(function(c){ return c.id === id; }); }
+
+  function renderList(){
+    var query = el.search.value.trim().toLowerCase();
+    var filtered = faqs.filter(function(f){
+      if (activeCat !== 'all' && (!catFor(f.category_id) || catFor(f.category_id).slug !== activeCat)) return false;
+      if (!query) return true;
+      var hay = (f.question + ' ' + f.answer + ' ' + (f.keywords || []).join(' ')).toLowerCase();
+      return hay.indexOf(query) !== -1;
+    });
+
+    el.results.innerHTML = '';
+
+    if (filtered.length === 0){
+      el.results.innerHTML =
+        '<div class="fq-empty"><i class="bi bi-search"></i>No matching questions.<br>Try a different search, or <a href="support.html">contact support</a>.</div>';
+      return;
+    }
+
+    if (activeCat !== 'all' || query){
+      var flat = document.createElement('div');
+      filtered.forEach(function(f){ flat.appendChild(buildItem(f)); });
+      el.results.appendChild(flat);
+      return;
+    }
+
+    // Grouped by category when browsing "All" with no search
+    var byCat = {};
+    var order = [];
+    filtered.forEach(function(f){
+      var c = catFor(f.category_id);
+      var key = c ? c.slug : '_none';
+      if (!byCat[key]){ byCat[key] = { cat: c, items: [] }; order.push(key); }
+      byCat[key].items.push(f);
+    });
+    order.forEach(function(key){
+      var group = byCat[key];
+      var wrap = document.createElement('div');
+      wrap.className = 'fq-cat-group';
+      if (group.cat){
+        wrap.innerHTML = '<div class="fq-cat-label"><i class="bi ' + escapeHtml(group.cat.icon || 'bi-question-circle') + '"></i>' + escapeHtml(group.cat.name) + '</div>';
+      }
+      group.items.forEach(function(f){ wrap.appendChild(buildItem(f)); });
+      el.results.appendChild(wrap);
+    });
+  }
+
+  function buildItem(f){
+    var item = document.createElement('div');
+    item.className = 'fq-item';
+    item.id = 'faq-' + f.id;
+    item.innerHTML =
+      '<button class="fq-q" type="button"><span></span><i class="bi bi-chevron-down"></i></button>' +
+      '<div class="fq-a"><div class="fq-a-inner"></div></div>';
+    item.querySelector('.fq-q span').textContent = f.question;
+    item.querySelector('.fq-a-inner').textContent = f.answer;
+    var btn = item.querySelector('.fq-q');
+    var panel = item.querySelector('.fq-a');
+    btn.addEventListener('click', function(){
+      var willOpen = !item.classList.contains('open');
+      item.classList.toggle('open', willOpen);
+      panel.style.maxHeight = willOpen ? panel.scrollHeight + 'px' : '0px';
+    });
+    return item;
+  }
+
+  var searchDebounce;
+  el.search.addEventListener('input', function(){
+    el.searchClear.classList.toggle('show', el.search.value.length > 0);
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(renderList, 150);
+  });
+  el.searchClear.addEventListener('click', function(){
+    el.search.value = '';
+    el.searchClear.classList.remove('show');
+    renderList();
+    el.search.focus();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Knowledge Base | SoundsCare</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+  :root{
+    --teal:#0F766E; --teal-deep:#0B4F49; --aqua:#14B8A6; --mist:#EAF6F4;
+    --coral:#E0724A; --coral-deep:#B85A38; --gold:#D8A73D; --cream:#FAFAF8;
+    --ink:#182420; --ink-soft:#57655F; --line:rgba(20,30,26,0.09);
+    --body:'Inter','Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:var(--cream); line-height:1.5;}
+  a{color:var(--teal); text-decoration:none;}
+  button{font-family:inherit;}
+
+  /* ---------- Nav ---------- */
+  .kb-nav{
+    position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; padding:.9rem 1.5rem;
+  }
+  .kb-brand{display:flex; align-items:center; gap:.55rem; font-weight:800; color:var(--teal-deep); font-size:1.05rem;}
+  .kb-brand .mark{
+    width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:.95rem; flex-shrink:0;
+  }
+  .kb-nav-links{display:flex; align-items:center; gap:1.6rem;}
+  .kb-nav-links a{font-size:.86rem; font-weight:600; color:var(--ink-soft);}
+  .kb-nav-links a.on{color:var(--teal-deep);}
+  .kb-nav-cta{
+    border:none; border-radius:12px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    color:#fff; font-weight:700; font-size:.82rem; padding:.55rem 1rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:.4rem;
+  }
+  @media (max-width:640px){ .kb-nav-links{display:none;} }
+
+  /* ---------- Hero ---------- */
+  .kb-hero{
+    background:linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 55%, var(--aqua) 130%);
+    color:#fff; padding:3.2rem 1.5rem 4.6rem; text-align:center; position:relative; overflow:hidden;
+  }
+  .kb-hero::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at 82% -10%, rgba(255,255,255,.16), transparent 55%);
+  }
+  .kb-hero-inner{position:relative; z-index:1; max-width:640px; margin:0 auto;}
+  .kb-eyebrow{font-size:.8rem; font-weight:600; color:rgba(255,255,255,.82); margin:0 0 .5rem;}
+  .kb-hero h1{font-size:2rem; font-weight:800; margin:0 0 .6rem; letter-spacing:-0.02em;}
+  .kb-hero p{margin:0; color:rgba(255,255,255,.88); font-size:.98rem;}
+
+  .kb-search{
+    max-width:520px; margin:1.6rem auto 0; background:#fff; border-radius:16px;
+    padding:.25rem .25rem .25rem 1.1rem; display:flex; align-items:center; gap:.5rem;
+    box-shadow:0 20px 45px -18px rgba(4,30,27,.45);
+  }
+  .kb-search i{color:var(--ink-soft); font-size:1.05rem;}
+  .kb-search input{flex:1; border:none; outline:none; font-family:var(--body); font-size:.92rem; padding:.7rem 0; color:var(--ink);}
+  .kb-search-clear{border:none; background:none; color:var(--ink-soft); cursor:pointer; padding:.5rem; display:none;}
+  .kb-search-clear.show{display:block;}
+
+  .kb-wrap{max-width:880px; margin:0 auto; padding:0 1.5rem 4rem;}
+  .kb-view{display:none;}
+  .kb-view.active{display:block;}
+
+  /* ---------- Breadcrumb ---------- */
+  .kb-crumb{
+    display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:var(--ink-soft);
+    margin:1.5rem 0 .3rem; position:relative; z-index:2;
+  }
+  .kb-crumb a{color:var(--teal-deep); font-weight:600;}
+  .kb-crumb i{font-size:.7rem;}
+
+  /* ---------- Category grid ---------- */
+  .kb-grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:.9rem;
+    margin-top:-2.8rem; position:relative; z-index:2;
+  }
+  .kb-cat-card{
+    background:#fff; border:1px solid var(--line); border-radius:18px; padding:1.3rem;
+    cursor:pointer; text-align:left; box-shadow:0 16px 34px -22px rgba(11,79,73,.35);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .kb-cat-card:hover{transform:translateY(-3px); box-shadow:0 20px 38px -18px rgba(11,79,73,.4);}
+  .kb-cat-card .ic{
+    width:46px; height:46px; border-radius:13px; background:var(--mist); color:var(--teal);
+    display:flex; align-items:center; justify-content:center; font-size:1.25rem; margin-bottom:.85rem;
+  }
+  .kb-cat-card h3{margin:0 0 .3rem; font-size:.98rem; font-weight:800; color:var(--ink);}
+  .kb-cat-card p{margin:0; font-size:.78rem; color:var(--ink-soft);}
+
+  .kb-section-label{
+    font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); margin:2rem 0 .8rem;
+  }
+
+  /* ---------- Article list ---------- */
+  .kb-art-row{
+    display:flex; align-items:center; gap:.85rem; background:#fff; border:1px solid var(--line);
+    border-radius:14px; padding:.9rem 1.05rem; margin-bottom:.6rem; cursor:pointer;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .kb-art-row:hover{transform:translateY(-2px); box-shadow:0 14px 28px -18px rgba(11,79,73,.3); border-color:transparent;}
+  .kb-art-row .ic{
+    width:38px; height:38px; border-radius:11px; background:var(--mist); color:var(--teal); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:1.05rem;
+  }
+  .kb-art-row-main{min-width:0; flex:1 1 auto;}
+  .kb-art-row-main h4{margin:0 0 .2rem; font-size:.9rem; font-weight:700; color:var(--ink);}
+  .kb-art-row-main p{margin:0; font-size:.79rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .kb-art-row > i.bi-chevron-right{color:var(--ink-soft); flex-shrink:0;}
+
+  /* ---------- Article detail ---------- */
+  .kb-article{background:#fff; border:1px solid var(--line); border-radius:20px; padding:1.8rem 1.9rem; margin-top:1.2rem;}
+  .kb-article-cat{
+    display:inline-flex; align-items:center; gap:.35rem; font-size:.74rem; font-weight:700;
+    color:var(--teal-deep); background:var(--mist); border-radius:999px; padding:.28rem .7rem; margin-bottom:.8rem;
+  }
+  .kb-article h1{font-size:1.5rem; font-weight:800; margin:0 0 .6rem; letter-spacing:-0.01em; color:var(--ink);}
+  .kb-article .kb-meta{font-size:.78rem; color:var(--ink-soft); margin-bottom:1.3rem;}
+  .kb-article-body{font-size:.92rem; color:var(--ink); line-height:1.75;}
+  .kb-article-body p{margin:0 0 1rem;}
+  .kb-article-body ul{margin:0 0 1rem; padding-left:1.2rem;}
+  .kb-article-body li{margin-bottom:.35rem;}
+
+  .kb-related{margin-top:1.6rem; padding-top:1.4rem; border-top:1px solid var(--line);}
+
+  .kb-empty{text-align:center; padding:2.6rem 1rem; color:var(--ink-soft);}
+  .kb-empty i{font-size:1.8rem; color:var(--teal); display:block; margin-bottom:.6rem;}
+
+  .kb-skeleton{background:#fff; border:1px solid var(--line); border-radius:16px; height:110px; margin-top:-2.8rem; position:relative; z-index:2; overflow:hidden;}
+  .kb-skeleton::after{
+    content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(15,118,110,.07), transparent);
+    animation:kbShimmer 1.3s infinite;
+  }
+  @keyframes kbShimmer{from{transform:translateX(-100%);} to{transform:translateX(100%);}}
+
+  /* ---------- Still need help ---------- */
+  .kb-help{margin-top:2.4rem;}
+  .kb-help-card{
+    background:linear-gradient(160deg,#fff 0%, var(--mist) 130%); border:1px solid var(--line);
+    border-radius:20px; padding:1.6rem; display:flex; align-items:center; justify-content:space-between;
+    gap:1.2rem; flex-wrap:wrap;
+  }
+  .kb-help-card h3{margin:0 0 .3rem; font-size:1.02rem; font-weight:800; color:var(--teal-deep);}
+  .kb-help-card p{margin:0; font-size:.85rem; color:var(--ink-soft); max-width:360px;}
+  .kb-help-actions{display:flex; gap:.6rem; flex-wrap:wrap;}
+  .kb-btn{border-radius:12px; font-weight:700; font-size:.83rem; padding:.65rem 1.05rem; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;}
+  .kb-btn-primary{border:none; background:linear-gradient(135deg,var(--aqua),var(--teal)); color:#fff;}
+  .kb-btn-ghost{border:1.5px solid var(--teal); background:#fff; color:var(--teal-deep);}
+
+  .kb-footer{text-align:center; padding:2.4rem 1.5rem 3rem; color:var(--ink-soft); font-size:.78rem;}
+</style>
+</head>
+<body>
+
+<nav class="kb-nav">
+  <a href="index.html" class="kb-brand"><span class="mark"><i class="bi bi-headset"></i></span> SoundsCare</a>
+  <div class="kb-nav-links">
+    <a href="index.html">Home</a>
+    <a href="faq.html">FAQ</a>
+    <a href="knowledge-base.html" class="on">Knowledge Base</a>
+  </div>
+  <button class="kb-nav-cta" onclick="location.href='support.html'"><i class="bi bi-chat-dots"></i> Contact support</button>
+</nav>
+
+<header class="kb-hero">
+  <div class="kb-hero-inner">
+    <p class="kb-eyebrow">Help Center</p>
+    <h1>Knowledge Base</h1>
+    <p>Step-by-step articles on verification, payments, hiring, and more.</p>
+    <div class="kb-search">
+      <i class="bi bi-search"></i>
+      <input type="text" id="kbSearchInput" placeholder="Search articles…" autocomplete="off">
+      <button class="kb-search-clear" id="kbSearchClear" aria-label="Clear search"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+</header>
+
+<main class="kb-wrap">
+
+  <div class="kb-crumb" id="kbCrumb" style="display:none;"></div>
+
+  <!-- Categories view -->
+  <div class="kb-view" id="viewCategories">
+    <div class="kb-grid" id="kbCatGrid">
+      <div class="kb-skeleton"></div><div class="kb-skeleton"></div><div class="kb-skeleton"></div>
+    </div>
+    <div class="kb-section-label" id="kbSearchLabel" style="display:none;">Search results</div>
+    <div id="kbSearchResults"></div>
+  </div>
+
+  <!-- Article list within a category -->
+  <div class="kb-view" id="viewList">
+    <div id="kbArticleList"></div>
+  </div>
+
+  <!-- Single article -->
+  <div class="kb-view" id="viewArticle">
+    <article class="kb-article" id="kbArticle"></article>
+    <div class="kb-related" id="kbRelated"></div>
+  </div>
+
+</main>
+
+<div class="kb-wrap kb-help">
+  <div class="kb-help-card">
+    <div>
+      <h3>Can't find what you need?</h3>
+      <p>Check the FAQ for quick answers, or message our support team directly.</p>
+    </div>
+    <div class="kb-help-actions">
+      <button class="kb-btn kb-btn-ghost" onclick="location.href='faq.html'"><i class="bi bi-patch-question"></i> FAQ</button>
+      <button class="kb-btn kb-btn-primary" onclick="location.href='support.html'"><i class="bi bi-send-check"></i> Contact support</button>
+    </div>
+  </div>
+</div>
+
+<footer class="kb-footer">&copy; <span id="kbYear"></span> SoundsCare. All rights reserved.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  document.getElementById('kbYear').textContent = new Date().getFullYear();
+
+  var sb = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+  );
+
+  var el = {
+    crumb: document.getElementById('kbCrumb'),
+    viewCategories: document.getElementById('viewCategories'),
+    viewList: document.getElementById('viewList'),
+    viewArticle: document.getElementById('viewArticle'),
+    catGrid: document.getElementById('kbCatGrid'),
+    searchLabel: document.getElementById('kbSearchLabel'),
+    searchResults: document.getElementById('kbSearchResults'),
+    articleList: document.getElementById('kbArticleList'),
+    article: document.getElementById('kbArticle'),
+    related: document.getElementById('kbRelated'),
+    search: document.getElementById('kbSearchInput'),
+    searchClear: document.getElementById('kbSearchClear')
+  };
+
+  var categories = [];
+  var articles = [];
+
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function renderBody(body){
+    var blocks = (body || '').split(/\n\s*\n/);
+    return blocks.map(function(block){
+      var lines = block.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+      if (lines.length && lines.every(function(l){ return l.indexOf('- ') === 0; })){
+        return '<ul>' + lines.map(function(l){ return '<li>' + escapeHtml(l.slice(2)) + '</li>'; }).join('') + '</ul>';
+      }
+      return '<p>' + escapeHtml(block.trim()) + '</p>';
+    }).join('');
+  }
+
+  function showView(name){
+    ['viewCategories','viewList','viewArticle'].forEach(function(v){
+      el[v].classList.toggle('active', v === name);
+    });
+  }
+
+  async function load(){
+    try{
+      var [{ data: cats, error: catErr }, { data: arts, error: artErr }] = await Promise.all([
+        sb.from('help_categories').select('id, name, slug, icon, sort_order').eq('is_active', true).order('sort_order'),
+        sb.from('kb_articles').select('id, category_id, title, slug, summary, body, keywords, sort_order').eq('is_active', true).order('sort_order')
+      ]);
+      if (catErr) throw catErr;
+      if (artErr) throw artErr;
+      categories = cats || [];
+      articles = arts || [];
+      renderCategoryGrid();
+      route();
+    }catch(err){
+      console.error('Could not load knowledge base content:', err);
+      el.catGrid.innerHTML =
+        '<div class="kb-empty" style="grid-column:1/-1;"><i class="bi bi-wifi-off"></i>Couldn\'t load the Knowledge Base right now.<br>Please refresh, or <a href="support.html">contact support</a> directly.</div>';
+    }
+  }
+
+  function catFor(id){ return categories.find(function(c){ return c.id === id; }); }
+  function catBySlug(slug){ return categories.find(function(c){ return c.slug === slug; }); }
+  function articlesFor(catId){ return articles.filter(function(a){ return a.category_id === catId; }); }
+
+  function renderCategoryGrid(){
+    el.catGrid.innerHTML = '';
+    categories.forEach(function(c){
+      var count = articlesFor(c.id).length;
+      var card = document.createElement('button');
+      card.className = 'kb-cat-card';
+      card.innerHTML =
+        '<div class="ic"><i class="bi ' + escapeHtml(c.icon || 'bi-journal-text') + '"></i></div>' +
+        '<h3>' + escapeHtml(c.name) + '</h3>' +
+        '<p>' + count + (count === 1 ? ' article' : ' articles') + '</p>';
+      card.addEventListener('click', function(){ goToCategory(c.slug); });
+      el.catGrid.appendChild(card);
+    });
+  }
+
+  function setCrumb(parts){
+    if (!parts.length){ el.crumb.style.display = 'none'; return; }
+    el.crumb.style.display = 'flex';
+    el.crumb.innerHTML = parts.map(function(p, i){
+      var sep = i > 0 ? '<i class="bi bi-chevron-right"></i>' : '';
+      return sep + (p.href ? '<a href="' + p.href + '">' + escapeHtml(p.label) + '</a>' : '<span>' + escapeHtml(p.label) + '</span>');
+    }).join('');
+  }
+
+  function goToCategory(slug){
+    var url = new URL(window.location.href);
+    url.searchParams.set('category', slug);
+    url.searchParams.delete('article');
+    url.searchParams.delete('q');
+    history.pushState(null, '', url);
+    renderCategoryList(slug);
+  }
+
+  function renderCategoryList(slug){
+    var cat = catBySlug(slug);
+    if (!cat){ showView('viewCategories'); setCrumb([]); return; }
+    setCrumb([{ label:'Knowledge Base', href:'knowledge-base.html' }, { label: cat.name }]);
+    var items = articlesFor(cat.id);
+    el.articleList.innerHTML =
+      '<div class="kb-section-label">' + escapeHtml(cat.name) + '</div>';
+    if (!items.length){
+      el.articleList.innerHTML += '<div class="kb-empty"><i class="bi bi-journal"></i>No articles in this category yet.</div>';
+    } else {
+      items.forEach(function(a){ el.articleList.appendChild(buildArticleRow(a, cat)); });
+    }
+    showView('viewList');
+  }
+
+  function buildArticleRow(a, cat){
+    var row = document.createElement('button');
+    row.className = 'kb-art-row';
+    row.innerHTML =
+      '<div class="ic"><i class="bi ' + escapeHtml((cat && cat.icon) || 'bi-file-earmark-text') + '"></i></div>' +
+      '<div class="kb-art-row-main"><h4></h4><p></p></div>' +
+      '<i class="bi bi-chevron-right"></i>';
+    row.querySelector('h4').textContent = a.title;
+    row.querySelector('p').textContent = a.summary;
+    row.addEventListener('click', function(){ goToArticle(a.slug); });
+    return row;
+  }
+
+  function goToArticle(slug){
+    var url = new URL(window.location.href);
+    url.searchParams.set('article', slug);
+    history.pushState(null, '', url);
+    renderArticle(slug);
+  }
+
+  function renderArticle(slug){
+    var a = articles.find(function(x){ return x.slug === slug; });
+    if (!a){
+      el.article.innerHTML = '<div class="kb-empty"><i class="bi bi-file-earmark-x"></i>That article couldn\'t be found.<br><a href="knowledge-base.html">Back to Knowledge Base</a></div>';
+      el.related.innerHTML = '';
+      showView('viewArticle');
+      setCrumb([{ label:'Knowledge Base', href:'knowledge-base.html' }]);
+      return;
+    }
+    var cat = catFor(a.category_id);
+    setCrumb([
+      { label:'Knowledge Base', href:'knowledge-base.html' },
+      cat ? { label: cat.name, href:'knowledge-base.html?category=' + cat.slug } : null,
+      { label: a.title }
+    ].filter(Boolean));
+
+    el.article.innerHTML =
+      (cat ? '<div class="kb-article-cat"><i class="bi ' + escapeHtml(cat.icon || 'bi-journal-text') + '"></i>' + escapeHtml(cat.name) + '</div>' : '') +
+      '<h1></h1>' +
+      '<div class="kb-meta"></div>' +
+      '<div class="kb-article-body"></div>';
+    el.article.querySelector('h1').textContent = a.title;
+    el.article.querySelector('.kb-meta').textContent = a.summary;
+    el.article.querySelector('.kb-article-body').innerHTML = renderBody(a.body);
+
+    // Related: same category, excluding this article
+    var related = (cat ? articlesFor(cat.id) : []).filter(function(x){ return x.id !== a.id; }).slice(0, 3);
+    el.related.innerHTML = related.length ? '<div class="kb-section-label" style="margin-top:0;">Related articles</div>' : '';
+    related.forEach(function(r){ el.related.appendChild(buildArticleRow(r, cat)); });
+
+    showView('viewArticle');
+    window.scrollTo({ top: 0, behavior:'smooth' });
+
+    sb.rpc('increment_kb_article_views', { p_slug: a.slug }).then(function(){}, function(){});
+  }
+
+  function runSearch(query){
+    setCrumb([{ label:'Knowledge Base', href:'knowledge-base.html' }, { label:'Search: "' + query + '"' }]);
+    var q = query.toLowerCase();
+    var results = articles.filter(function(a){
+      var hay = (a.title + ' ' + a.summary + ' ' + a.body + ' ' + (a.keywords || []).join(' ')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+    el.searchLabel.style.display = 'block';
+    el.searchLabel.textContent = results.length + (results.length === 1 ? ' result' : ' results') + ' for "' + query + '"';
+    el.catGrid.style.display = 'none';
+    el.searchResults.innerHTML = '';
+    if (!results.length){
+      el.searchResults.innerHTML = '<div class="kb-empty"><i class="bi bi-search"></i>No matching articles.<br>Try different words, or <a href="support.html">contact support</a>.</div>';
+    } else {
+      results.forEach(function(a){ el.searchResults.appendChild(buildArticleRow(a, catFor(a.category_id))); });
+    }
+    showView('viewCategories');
+  }
+
+  function clearSearchView(){
+    el.searchLabel.style.display = 'none';
+    el.catGrid.style.display = '';
+    el.searchResults.innerHTML = '';
+  }
+
+  function route(){
+    var params = new URLSearchParams(window.location.search);
+    var article = params.get('article');
+    var category = params.get('category');
+    var q = params.get('q');
+
+    if (article){ clearSearchView(); renderArticle(article); return; }
+    if (q){ el.search.value = q; el.searchClear.classList.add('show'); runSearch(q); return; }
+    if (category){ clearSearchView(); renderCategoryList(category); return; }
+
+    clearSearchView();
+    setCrumb([]);
+    showView('viewCategories');
+  }
+
+  window.addEventListener('popstate', route);
+
+  var searchDebounce;
+  el.search.addEventListener('input', function(){
+    var val = el.search.value.trim();
+    el.searchClear.classList.toggle('show', val.length > 0);
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(function(){
+      var url = new URL(window.location.href);
+      if (val){ url.searchParams.set('q', val); url.searchParams.delete('article'); url.searchParams.delete('category'); }
+      else { url.searchParams.delete('q'); }
+      history.replaceState(null, '', url);
+      if (val) runSearch(val); else { clearSearchView(); setCrumb([]); showView('viewCategories'); }
+    }, 200);
+  });
+  el.searchClear.addEventListener('click', function(){
+    el.search.value = '';
+    el.searchClear.classList.remove('show');
+    var url = new URL(window.location.href);
+    url.searchParams.delete('q');
+    history.replaceState(null, '', url);
+    clearSearchView();
+    setCrumb([]);
+    showView('viewCategories');
+    el.search.focus();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

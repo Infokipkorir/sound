@@ -168,6 +168,36 @@
 
   .ssc-empty-note{text-align:center; color:var(--ink-soft); font-size:.82rem; padding:1.4rem 0;}
 
+  /* ---------- Help Center shortcuts ---------- */
+  .ssc-help-row{display:flex; gap:.6rem; margin-bottom:1.3rem;}
+  .ssc-help-card{
+    flex:1; display:flex; flex-direction:column; gap:.5rem; text-align:left;
+    border:1px solid var(--line); background:#fff; border-radius:14px; padding:.8rem .85rem;
+    cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .ssc-help-card:hover{transform:translateY(-2px); box-shadow:0 14px 26px -16px rgba(11,79,73,.3); border-color:transparent;}
+  .ssc-help-card .ic{
+    width:32px; height:32px; border-radius:9px; background:var(--mist); color:var(--teal);
+    display:flex; align-items:center; justify-content:center; font-size:.95rem;
+  }
+  .ssc-help-card .lbl{font-size:.79rem; font-weight:700; color:var(--ink);}
+  .ssc-help-card .sub{font-size:.7rem; color:var(--ink-soft);}
+
+  /* ---------- Related-article chips under bot replies ---------- */
+  .ssc-related-wrap{display:flex; flex-direction:column; gap:.3rem; align-self:flex-start; max-width:82%; margin-top:-.2rem;}
+  .ssc-related-label{font-size:.68rem; font-weight:700; color:var(--ink-soft); margin-left:.2rem;}
+  .ssc-related-chips{display:flex; gap:.4rem; flex-wrap:wrap;}
+  .ssc-related-chip{
+    display:inline-flex; align-items:center; gap:.3rem; border:1px solid var(--line); background:#fff;
+    color:var(--teal-deep); border-radius:999px; padding:.32rem .7rem; font-size:.72rem; font-weight:700;
+    cursor:pointer; transition:all .15s ease; white-space:nowrap;
+  }
+  .ssc-related-chip:hover{background:var(--mist); border-color:var(--teal);}
+  .ssc-related-chip i{font-size:.8rem; color:var(--teal);}
+
+  .ssc-msg a{color:inherit; text-decoration:underline; font-weight:700;}
+  .ssc-msg.support a{color:var(--teal-deep);}
+
   /* ---------- New ticket form ---------- */
   .ssc-form-wrap{flex:1 1 auto; overflow-y:auto; padding:1.1rem 1.1rem 1.4rem;}
   .ssc-field{margin-bottom:.9rem;}
@@ -364,6 +394,19 @@
       </div>
 
       <button class="ssc-newticket-btn" id="sscNewTicketBtn"><i class="bi bi-plus-circle"></i> Book a new support ticket</button>
+
+      <div class="ssc-help-row">
+        <button class="ssc-help-card" id="sscFaqLink">
+          <span class="ic"><i class="bi bi-patch-question"></i></span>
+          <span class="lbl">FAQ</span>
+          <span class="sub">Quick answers</span>
+        </button>
+        <button class="ssc-help-card" id="sscKbLink">
+          <span class="ic"><i class="bi bi-journal-text"></i></span>
+          <span class="lbl">Knowledge Base</span>
+          <span class="sub">Full articles</span>
+        </button>
+      </div>
 
       <div class="ssc-section-label">Common topics</div>
       <div class="ssc-chip-row" id="sscChipRow">
@@ -823,6 +866,11 @@
     openNewTicketForm(null, null);
   });
 
+  var sscFaqLink = document.getElementById('sscFaqLink');
+  var sscKbLink = document.getElementById('sscKbLink');
+  if (sscFaqLink) sscFaqLink.addEventListener('click', function(){ window.open('faq.html', '_blank'); });
+  if (sscKbLink) sscKbLink.addEventListener('click', function(){ window.open('knowledge-base.html', '_blank'); });
+
   document.querySelectorAll('.ssc-chip').forEach(function(chip){
     chip.addEventListener('click', function(){
       openNewTicketForm(chip.getAttribute('data-subject'), chip.getAttribute('data-category'));
@@ -1115,7 +1163,30 @@
     }
   });
 
-  function renderMessage(msg){
+  // Renders message text as safe DOM nodes, turning bare http(s) URLs (used
+  // by the auto-reply engine's "Read more" links) into real, clickable
+  // anchors without ever using innerHTML on visitor- or bot-authored text.
+  var URL_RE = /(https?:\/\/[^\s]+)/g;
+  function appendLinkifiedText(container, text){
+    var lastIndex = 0, m;
+    URL_RE.lastIndex = 0;
+    while ((m = URL_RE.exec(text)) !== null){
+      if (m.index > lastIndex) container.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      var raw = m[0].replace(/[)\].,]+$/, ''); // strip trailing punctuation from the match
+      var trail = m[0].slice(raw.length);
+      var a = document.createElement('a');
+      a.href = raw;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = raw;
+      container.appendChild(a);
+      if (trail) container.appendChild(document.createTextNode(trail));
+      lastIndex = m.index + m[0].length;
+    }
+    if (lastIndex < text.length) container.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
+  function renderMessage(msg, relatedLinks){
     if (renderedIds[msg.id]) return;
     renderedIds[msg.id] = true;
 
@@ -1127,7 +1198,7 @@
 
     var bubble = document.createElement('div');
     bubble.className = 'ssc-msg ' + (mine ? 'mine' : 'support');
-    bubble.textContent = msg.message;
+    appendLinkifiedText(bubble, msg.message);
 
     var time = document.createElement('div');
     time.className = 'ssc-msg-time';
@@ -1136,7 +1207,38 @@
     wrap.appendChild(bubble);
     wrap.appendChild(time);
     el.thread.appendChild(wrap);
+
+    if (!mine && relatedLinks && relatedLinks.length){
+      wrap.appendChild(buildRelatedChips(relatedLinks));
+    }
+
     scrollThreadToBottom();
+  }
+
+  // Ephemeral "Related articles" suggestion chips shown under a matched
+  // bot reply. Not persisted — regenerated client-side at reply time from
+  // whatever the KB matcher found, same as the "Read more" link in the
+  // message text itself.
+  function buildRelatedChips(items){
+    var box = document.createElement('div');
+    box.className = 'ssc-related-wrap';
+    var label = document.createElement('div');
+    label.className = 'ssc-related-label';
+    label.textContent = 'Related';
+    box.appendChild(label);
+    var row = document.createElement('div');
+    row.className = 'ssc-related-chips';
+    items.forEach(function(item){
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'ssc-related-chip';
+      chip.innerHTML = '<i class="bi ' + (item.type === 'article' ? 'bi-journal-text' : 'bi-patch-question') + '"></i>';
+      chip.appendChild(document.createTextNode(item.label));
+      chip.addEventListener('click', function(){ window.open(item.url, '_blank'); });
+      row.appendChild(chip);
+    });
+    box.appendChild(row);
+    return box;
   }
 
   function scrollThreadToBottom(){
@@ -1248,7 +1350,10 @@
   // and the Request Human flow stay accurate regardless of auto-replies.
   // =====================================================================
 
-  var KNOWLEDGE_BASE = [
+  // Built-in fallback, used only if the Supabase-backed FAQ/KB content
+  // (help_categories / faq_items / kb_articles — see faq_kb_migration.sql)
+  // fails to load, so the bot never goes silent.
+  var FALLBACK_KNOWLEDGE_BASE = [
     { title:'Verification', keywords:['verify','verification','id','national id','selfie','approved'],
       answer:"Verification needs a clear photo of your ID (front and back) and a selfie. Our team reviews submissions in the order received — once approved you'll see a verified badge on your profile. If it's been more than 48 hours, let us know and we'll check on it." },
     { title:'Payments', keywords:['payment','pay','wallet','balance','mpesa','m-pesa','fee','refund','withdraw'],
@@ -1262,6 +1367,36 @@
     { title:'Messaging', keywords:['message','chat','call','conversation','block'],
       answer:"If messages or calls aren't going through, it's often a connection or notification setting issue. Try refreshing the app first — if it persists, let us know which conversation it's happening in." }
   ];
+
+  // Live FAQ/KB content, loaded once from Supabase (see loadHelpContent
+  // below) and reused for every message in the session so the bot doesn't
+  // hit the network on every keystroke/send.
+  var HELP_FAQS = [];       // { id, question, answer, keywords }
+  var HELP_ARTICLES = [];   // { id, title, slug, summary, keywords }
+  var helpContentPromise = null;
+
+  async function loadHelpContent(){
+    try{
+      var results = await Promise.all([
+        sb.from('faq_items').select('id, question, answer, keywords').eq('is_active', true),
+        sb.from('kb_articles').select('id, title, slug, summary, keywords').eq('is_active', true)
+      ]);
+      if (results[0].error) throw results[0].error;
+      if (results[1].error) throw results[1].error;
+      HELP_FAQS = results[0].data || [];
+      HELP_ARTICLES = results[1].data || [];
+    }catch(err){
+      console.warn('Could not load FAQ/Knowledge Base content, using built-in fallback answers:', err);
+      HELP_FAQS = [];
+      HELP_ARTICLES = [];
+    }
+  }
+  function ensureHelpContentLoaded(){
+    if (!helpContentPromise) helpContentPromise = loadHelpContent();
+    return helpContentPromise;
+  }
+  ensureHelpContentLoaded(); // kick off in the background as soon as the widget boots
+
   var GREETING_WORDS = ['hi','hello','hey','good morning','good afternoon','good evening','howdy'];
   var HUMAN_WORDS = ['talk to a human','talk to a person','human','agent','representative','real person'];
 
@@ -1299,14 +1434,61 @@
     for (var i=0;i<ROLE_BUCKETS.length;i++){ if (containsAny(text, ROLE_BUCKETS[i].match)) return ROLE_BUCKETS[i]; }
     return null;
   }
-  function searchKnowledge(text){
-    var best=null, bestScore=0;
-    for (var i=0;i<KNOWLEDGE_BASE.length;i++){
-      var entry = KNOWLEDGE_BASE[i], score=0;
-      for (var j=0;j<entry.keywords.length;j++){ if (text.indexOf(entry.keywords[j]) !== -1) score++; }
-      if (score>bestScore){ bestScore=score; best=entry; }
+  // Matches the visitor's message against live FAQ/KB content and returns
+  // { text, related } — `text` is the reply (with a "Read more" link to the
+  // single best-matching KB article appended when one exists) and `related`
+  // is up to 3 additional FAQ/article suggestions for the chip row under
+  // the reply. Falls back to the built-in keyword list if Supabase content
+  // never loaded.
+  async function searchKnowledge(text){
+    await ensureHelpContentLoaded();
+
+    var candidates = [];
+    HELP_FAQS.forEach(function(f){
+      candidates.push({
+        type:'faq', id:f.id, title:f.question, text:f.answer, keywords: f.keywords || [],
+        url: 'faq.html?q=' + encodeURIComponent(f.question)
+      });
+    });
+    HELP_ARTICLES.forEach(function(a){
+      candidates.push({
+        type:'article', id:a.id, title:a.title, text:a.summary, keywords: a.keywords || [],
+        url: 'knowledge-base.html?article=' + encodeURIComponent(a.slug)
+      });
+    });
+
+    if (!candidates.length){
+      // Supabase content unavailable — old built-in behavior, no links.
+      var best=null, bestScore=0;
+      for (var i=0;i<FALLBACK_KNOWLEDGE_BASE.length;i++){
+        var entry = FALLBACK_KNOWLEDGE_BASE[i], score=0;
+        for (var j=0;j<entry.keywords.length;j++){ if (text.indexOf(entry.keywords[j]) !== -1) score++; }
+        if (score>bestScore){ bestScore=score; best=entry; }
+      }
+      return bestScore>0 ? { text: best.answer, related: [] } : null;
     }
-    return bestScore>0 ? best : null;
+
+    var scored = candidates.map(function(c){
+      var score = 0;
+      for (var k=0;k<c.keywords.length;k++){ if (text.indexOf(c.keywords[k]) !== -1) score++; }
+      return { c:c, score:score };
+    }).filter(function(x){ return x.score > 0; }).sort(function(a,b){ return b.score - a.score; });
+
+    if (!scored.length) return null;
+
+    var best = scored[0].c;
+    var articleMatch = scored.find(function(x){ return x.c.type === 'article' && x.c.id !== best.id; });
+    var readMoreUrl = best.type === 'article' ? best.url : (articleMatch ? articleMatch.c.url : null);
+
+    var replyText = best.text;
+    if (readMoreUrl) replyText += '\n\n📖 Read more: ' + readMoreUrl;
+
+    var related = scored
+      .filter(function(x){ return x.c.id !== best.id && x.c.url !== readMoreUrl; })
+      .slice(0, 3)
+      .map(function(x){ return { type: x.c.type, label: x.c.title, url: x.c.url }; });
+
+    return { text: replyText, related: related };
   }
 
   function formatSalary(range, min, max){
@@ -1382,6 +1564,9 @@
   // reasoning, grounded in live job/candidate data) and falls back to the
   // deterministic keyword bot below if the call fails for any reason — the
   // widget should never go silent just because the AI call errored out.
+  // Always resolves to { text, related } — related links/chips only ever
+  // come from the deterministic keyword bot's KB match (see searchKnowledge
+  // above); a successful AI edge-function reply carries no related links.
   async function buildAiReply(rawText, subject, category){
     try{
       var { data, error } = await sb.functions.invoke('support-ai-reply', {
@@ -1389,7 +1574,7 @@
       });
       if (error) throw error;
       if (data && data.error) throw new Error(data.error);
-      if (data && typeof data.reply === 'string' && data.reply.trim()) return data.reply.trim();
+      if (data && typeof data.reply === 'string' && data.reply.trim()) return { text: data.reply.trim(), related: [] };
       throw new Error('empty_ai_reply');
     }catch(err){
       console.warn('support-ai-reply failed, falling back to keyword bot:', err);
@@ -1399,20 +1584,20 @@
 
   async function buildAutoReply(rawText){
     var text = normalizeText(rawText);
-    if (containsAny(text, HUMAN_WORDS)) return "Of course — tap the \"Human\" button above any time and I'll flag this ticket for our team to join. Feel free to add more detail while you wait.";
-    if (containsAny(text, GREETING_WORDS) && text.length < 30) return "Hi! How can I help — verification, payments, job applications, or something else?";
+    if (containsAny(text, HUMAN_WORDS)) return { text: "Of course — tap the \"Human\" button above any time and I'll flag this ticket for our team to join. Feel free to add more detail while you wait.", related: [] };
+    if (containsAny(text, GREETING_WORDS) && text.length < 30) return { text: "Hi! How can I help — verification, payments, job applications, or something else?", related: [] };
 
-    if (containsAny(text, JOB_SEEKER_PHRASES)) return await buildJobListingReply();
+    if (containsAny(text, JOB_SEEKER_PHRASES)) return { text: await buildJobListingReply(), related: [] };
 
     if (containsAny(text, EMPLOYER_TRIGGER_PHRASES)){
       var role = detectRole(text);
-      if (role) return await buildCandidateReply(role);
-      return "Happy to help you find someone. What role are you looking to fill — House Help / Nanny, Driver, Security Guard, Gardener, Cook, or Cleaner? Tell me the role and I'll pull up a matching profile for you.";
+      if (role) return { text: await buildCandidateReply(role), related: [] };
+      return { text: "Happy to help you find someone. What role are you looking to fill — House Help / Nanny, Driver, Security Guard, Gardener, Cook, or Cleaner? Tell me the role and I'll pull up a matching profile for you.", related: [] };
     }
 
-    var match = searchKnowledge(text);
-    if (match) return match.answer;
-    return "Thanks for the details — I've logged this ticket for our team. If you'd like a human to jump in sooner, tap \"Human\" above.";
+    var match = await searchKnowledge(text);
+    if (match) return match;
+    return { text: "Thanks for the details — I've logged this ticket for our team. If you'd like a human to jump in sooner, tap \"Human\" above.", related: [] };
   }
 
   async function sendAutoReply(ticketId, visitorText){
@@ -1429,10 +1614,10 @@
         ticket_id: ticketId,
         sender_id: null,
         sender_type: 'admin',
-        message: reply
+        message: reply.text
       }).select('id, sender_id, sender_type, message, created_at').single();
       if (error) throw error;
-      if (currentTicket && currentTicket.id === ticketId) renderMessage(row);
+      if (currentTicket && currentTicket.id === ticketId) renderMessage(row, reply.related);
     }catch(err){
       console.warn('Could not persist auto-reply:', err);
     }
@@ -1451,10 +1636,10 @@
 
     try{
       var { data: row, error } = await sb.rpc('send_guest_bot_reply', {
-        p_ticket_id: ticketId, p_token: guestTicket.token, p_message: reply
+        p_ticket_id: ticketId, p_token: guestTicket.token, p_message: reply.text
       });
       if (error) throw error;
-      if (guestTicket && guestTicket.id === ticketId) renderMessage(row);
+      if (guestTicket && guestTicket.id === ticketId) renderMessage(row, reply.related);
     }catch(err){
       console.warn('Could not persist guest auto-reply:', err);
     }
