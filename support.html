@@ -74,6 +74,36 @@
   body.standalone #sscCloseInline{display:none;}
   body.embedded #sscCloseInline{display:flex;}
 
+  .ssc-head-help{
+    border:1.5px solid rgba(255,255,255,.4); background:rgba(255,255,255,.1); color:#fff;
+    border-radius:999px; padding:.4rem .8rem; font-size:.76rem; font-weight:700; cursor:pointer;
+    display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap;
+    transition:background .2s ease;
+  }
+  .ssc-head-help:hover{background:rgba(255,255,255,.22);}
+
+  .ssc-help-menu{
+    position:fixed; z-index:30;
+    background:#fff; border:1px solid var(--line); border-radius:14px; padding:.4rem;
+    box-shadow:0 20px 40px -18px rgba(4,30,27,.4); display:none; min-width:190px;
+  }
+  .ssc-help-menu.show{display:block;}
+  .ssc-help-menu button{
+    width:100%; text-align:left; border:none; background:none; border-radius:9px; padding:.6rem .7rem;
+    font-size:.83rem; font-weight:700; color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; gap:.55rem;
+  }
+  .ssc-help-menu button:hover{background:var(--mist); color:var(--teal-deep);}
+  .ssc-help-menu button i{color:var(--teal); font-size:1rem;}
+
+  .ssc-gate-help-link{
+    display:flex; align-items:center; justify-content:center; gap:.4rem;
+    font-size:.78rem; font-weight:700; color:var(--teal-deep);
+    margin:1.1rem 0 .3rem; padding:.65rem; border:1.5px dashed var(--teal); border-radius:12px;
+    background:var(--mist); cursor:pointer;
+  }
+  .ssc-gate-help-link:hover{background:#dff2ef;}
+
   /* ---------- Main / views ---------- */
   .ssc-main{flex:1 1 auto; display:flex; flex-direction:column; min-height:0; position:relative;}
   .ssc-view{position:absolute; inset:0; display:none; flex-direction:column; min-height:0;}
@@ -316,8 +346,14 @@
     </div>
   </div>
   <div class="ssc-head-actions">
+    <button class="ssc-head-help" id="sscHeadHelpBtn"><i class="bi bi-life-preserver"></i> Help Center</button>
     <button class="ssc-icon-btn" id="sscCloseInline" aria-label="Close support chat"><i class="bi bi-x-lg"></i></button>
   </div>
+</div>
+
+<div class="ssc-help-menu" id="sscHeadHelpMenu">
+  <button type="button" id="sscHeadHelpFaq"><i class="bi bi-patch-question"></i> FAQ</button>
+  <button type="button" id="sscHeadHelpKb"><i class="bi bi-journal-text"></i> Knowledge Base</button>
 </div>
 
 <!-- ============ MAIN ============ -->
@@ -335,6 +371,7 @@
         <h2 style="font-size:1rem;">Let's get you help</h2>
         <p>Share a few details so we know who we're talking to &mdash; if you already have a SoundsCare account we'll get you signed in.</p>
       </div>
+      <button type="button" class="ssc-gate-help-link" id="sscGateHelpLink"><i class="bi bi-life-preserver"></i> Just browsing? Check the FAQ or Knowledge Base first</button>
       <form id="startForm" novalidate>
         <div class="ssc-field" id="fieldStartName">
           <label for="stName">Full name<span class="req">*</span></label>
@@ -629,6 +666,51 @@
     }
   }
   el.closeInline.addEventListener('click', closePanel);
+
+  // ---------------------------------------------------------------------
+  // Help Center access — a "Help Center" button lives in the header on
+  // every view (including the guest gate, before anyone has filled in
+  // their name/email), plus a matching shortcut on the gate screen itself.
+  // Both open the same FAQ/Knowledge Base picker.
+  // ---------------------------------------------------------------------
+  var helpMenu = document.getElementById('sscHeadHelpMenu');
+  var helpMenuAnchor = null;
+
+  function positionHelpMenu(anchorEl){
+    var r = anchorEl.getBoundingClientRect();
+    helpMenu.style.left = 'auto';
+    helpMenu.style.top = (r.bottom + 8) + 'px';
+    var right = window.innerWidth - r.right;
+    helpMenu.style.right = Math.max(right, 12) + 'px';
+  }
+  function openHelpMenu(anchorEl){
+    helpMenuAnchor = anchorEl;
+    positionHelpMenu(anchorEl);
+    helpMenu.classList.add('show');
+  }
+  function closeHelpMenu(){
+    helpMenu.classList.remove('show');
+    helpMenuAnchor = null;
+  }
+  function toggleHelpMenu(anchorEl){
+    if (helpMenu.classList.contains('show') && helpMenuAnchor === anchorEl) closeHelpMenu();
+    else openHelpMenu(anchorEl);
+  }
+
+  var sscHeadHelpBtn = document.getElementById('sscHeadHelpBtn');
+  var sscGateHelpLink = document.getElementById('sscGateHelpLink');
+  if (sscHeadHelpBtn) sscHeadHelpBtn.addEventListener('click', function(e){ e.stopPropagation(); toggleHelpMenu(sscHeadHelpBtn); });
+  if (sscGateHelpLink) sscGateHelpLink.addEventListener('click', function(e){ e.stopPropagation(); toggleHelpMenu(sscGateHelpLink); });
+
+  var sscHeadHelpFaq = document.getElementById('sscHeadHelpFaq');
+  var sscHeadHelpKb = document.getElementById('sscHeadHelpKb');
+  if (sscHeadHelpFaq) sscHeadHelpFaq.addEventListener('click', function(){ window.open('faq.html', '_blank'); closeHelpMenu(); });
+  if (sscHeadHelpKb) sscHeadHelpKb.addEventListener('click', function(){ window.open('knowledge-base.html', '_blank'); closeHelpMenu(); });
+
+  document.addEventListener('click', function(e){
+    if (helpMenu.classList.contains('show') && !helpMenu.contains(e.target)) closeHelpMenu();
+  });
+  window.addEventListener('resize', function(){ if (helpMenuAnchor) positionHelpMenu(helpMenuAnchor); });
 
   el.backBtn.addEventListener('click', function(){
     if (el.viewThread.classList.contains('active')){
