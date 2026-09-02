@@ -1954,7 +1954,7 @@
     </div>
     <div class="modal-body">
       <p style="font-size:12px; color:var(--muted); margin-bottom:1rem; line-height:1.6;">
-        How was your interview with <strong id="rate-employer-name">this employer</strong>? Your rating helps other workers.
+        How was your experience working with <strong id="rate-employer-name">this employer</strong>? Your rating helps other workers.
       </p>
       <div id="rate-star-picker" style="display:flex; gap:6px; justify-content:center; font-size:28px; color:var(--border); margin-bottom:16px;">
         <i class="bi bi-star-fill" data-star="1" onclick="setRatingStars(1)"></i>
@@ -1983,7 +1983,6 @@
       <button class="modal-close" onclick="closeModal('modal-interviews')">×</button>
     </div>
     <div class="modal-body">
-      <div id="pending-employer-ratings"></div>
       <div id="interviews-list">
         <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
       </div>
@@ -2855,7 +2854,7 @@ let myApplications = [];
 let reportingJobId = null;
 let jobEscrowStatus = {}; // job_id -> 'held' | 'released' | ... — payment-verified badge on job cards
 let jobApplicantCounts = {}; // job_id -> number of applications — best-effort, see loadDashboard() 3a-ii
-let allOngoingJobs = [];  // { application, job, escrow } — set in loadDashboard(), rendered by renderOngoingJobs()
+let allOngoingJobs = [];  // { application, job, escrow, employerProfile, alreadyRated } — set in loadDashboard(), rendered by renderOngoingJobs()
 let bidCtx = { jobId: null, title: '', pricingMode: 'fixed', fixedAmount: 0 }; // active job in the Bid modal
 let callAudioCtx = null; // for voice message recording audio ctx (separate from ringtone)
 
@@ -3209,31 +3208,59 @@ async function loadDashboard() {
     // job_applications.worker_id references worker_profiles.id, but
     // job_escrow_payments.worker_id references auth.uid() directly — two
     // different identity spaces, so each query uses the right key.
+    //
+    // Employer ratings: only a worker with a *confirmed hire* (status='hired'
+    // AND hired_at set) for a job may rate that job's employer — this is the
+    // fraud guard, so a rating can never be submitted from just an interview
+    // or application with no hire on record. employer_id/employer profile and
+    // existing employer_ratings are fetched here so ongoingJobCardHtml can
+    // show "Rate Employer" only where that's actually true.
     console.log('🔍 4️⃣c Loading ongoing jobs…');
     try {
-      const hiredApps = (myApplications || []).filter(a => a.status === 'hired');
+      const hiredApps = (myApplications || []).filter(a => a.status === 'hired' && a.hired_at);
       const jobIds = [...new Set(hiredApps.map(a => a.job_id))];
       let ongoingJobsData = [];
       if (jobIds.length) {
-        const [{ data: jobRows }, escRes] = await Promise.all([
+        const [{ data: jobRows }, escRes, ratedRes] = await Promise.all([
           sb.from('job_postings')
-            .select('id,title,company_name,is_mama_fua,salary_min,salary_max,duration_type,is_closed,is_paused,county')
+            .select('id,title,company_name,is_mama_fua,salary_min,salary_max,duration_type,is_closed,is_paused,county,employer_id')
             .in('id', jobIds),
           sb.from('job_escrow_payments')
             .select('id,job_id,amount,service_fee,tax_amount,net_amount,status,release_requested_at,created_at')
             .eq('worker_id', currentUser.id)
             .in('job_id', jobIds),
+          sb.from('employer_ratings')
+            .select('job_id')
+            .eq('worker_id', workerProfile.id)
+            .in('job_id', jobIds),
         ]);
         const jobById = {}; (jobRows || []).forEach(j => { jobById[j.id] = j; });
+        const ratedJobIds = new Set((ratedRes?.data || []).map(r => r.job_id));
+
+        const employerUserIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
+        let employerByUserId = {};
+        if (employerUserIds.length) {
+          const { data: empRows } = await sb.from('employer_profiles')
+            .select('id, user_id, full_name, company_name')
+            .in('user_id', employerUserIds);
+          (empRows || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
+        }
+
         ongoingJobsData = hiredApps
           .filter(a => jobById[a.job_id] && !jobById[a.job_id].is_closed)
-          .map(a => ({
-            application: a,
-            job: jobById[a.job_id],
-            escrow: (escRes?.data || [])
-              .filter(e => e.job_id === a.job_id)
-              .sort((x, y) => new Date(y.created_at) - new Date(x.created_at))[0] || null,
-          }));
+          .map(a => {
+            const job = jobById[a.job_id];
+            const employerProfile = job.employer_id ? employerByUserId[job.employer_id] : null;
+            return {
+              application: a,
+              job,
+              escrow: (escRes?.data || [])
+                .filter(e => e.job_id === a.job_id)
+                .sort((x, y) => new Date(y.created_at) - new Date(x.created_at))[0] || null,
+              employerProfile,
+              alreadyRated: ratedJobIds.has(a.job_id),
+            };
+          });
       }
       ongoingJobsData.sort((a, b) => new Date(b.application.hired_at || b.application.applied_at) - new Date(a.application.hired_at || a.application.applied_at));
       allOngoingJobs = ongoingJobsData;
@@ -3483,56 +3510,18 @@ async function loadRecentInterviews() {
 
   if (recentEl) recentEl.innerHTML = interviews.slice(0, 2).map(c => renderInterviewCard(c, true)).join('');
   if (listEl) listEl.innerHTML = interviews.map(c => renderInterviewCard(c, false)).join('');
-  loadPendingEmployerRatings();
 }
 
 // ════════════════════════════════════════════════════════
-//  RATE EMPLOYER (worker rates employer after a completed interview)
+//  RATE EMPLOYER — fraud guard: the ONLY place that can open this modal is
+//  the "Rate Employer" button rendered in ongoingJobCardHtml(), which itself
+//  only appears when the worker has a confirmed hire on record
+//  (job_applications.status === 'hired' AND hired_at is set) for that job —
+//  see allOngoingJobs / loadDashboard step 4c. There is no path here from a
+//  mere application or interview, so a rating can never be submitted before
+//  an actual hire.
 // ════════════════════════════════════════════════════════
 let ratingContext = { interviewId: null, employerProfileId: null, jobId: null, stars: 0 };
-
-async function loadPendingEmployerRatings() {
-  const el = document.getElementById('pending-employer-ratings');
-  if (!el || !workerProfile?.id) { if (el) el.innerHTML = ''; return; }
-
-  const { data: completedInterviews, error: intErr } = await sb.from('interviews')
-    .select('id, employer_id, job_id, scheduled_at')
-    .eq('worker_id', workerProfile.id)
-    .eq('status', 'completed');
-
-  if (intErr || !completedInterviews?.length) { el.innerHTML = ''; return; }
-
-  const { data: alreadyRated } = await sb.from('employer_ratings')
-    .select('interview_id')
-    .eq('worker_id', workerProfile.id);
-  const ratedIds = new Set((alreadyRated || []).map(r => r.interview_id));
-
-  const pending = completedInterviews.filter(i => !ratedIds.has(i.id));
-  if (!pending.length) { el.innerHTML = ''; return; }
-
-  // interviews.employer_id is the employer's auth user id — resolve to employer_profiles.id + display name
-  const employerUserIds = [...new Set(pending.map(i => i.employer_id).filter(Boolean))];
-  const { data: employerProfiles } = await sb.from('employer_profiles')
-    .select('id, user_id, full_name, company_name')
-    .in('user_id', employerUserIds);
-  const employerByUserId = {};
-  (employerProfiles || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
-
-  el.innerHTML = pending.map(i => {
-    const ep = employerByUserId[i.employer_id];
-    const name = ep?.company_name || ep?.full_name || 'this employer';
-    return `
-    <div class="rate-pending-card">
-      <div style="font-size:12px;">
-        <i class="bi bi-star" style="color:#f59e0b;"></i>
-        Rate your interview with <strong>${esc(name)}</strong>
-      </div>
-      <button class="btn btn-sm" style="background:#f59e0b; color:#fff;" onclick="openRateEmployerModal('${i.id}', '${ep?.id || ''}', '${i.job_id || ''}', ${JSON.stringify(name).replace(/"/g, '&quot;')})">
-        <i class="bi bi-star-fill"></i> Rate Now
-      </button>
-    </div>`;
-  }).join('');
-}
 
 function openRateEmployerModal(interviewId, employerProfileId, jobId, employerName) {
   if (!employerProfileId) {
@@ -3567,7 +3556,7 @@ async function submitEmployerRating() {
   const { error } = await sb.from('employer_ratings').insert({
     employer_id: ratingContext.employerProfileId,
     worker_id: workerProfile.id,
-    interview_id: ratingContext.interviewId,
+    interview_id: ratingContext.interviewId || null,
     job_id: ratingContext.jobId,
     rating: ratingContext.stars,
     review_text: document.getElementById('rate-review-text').value.trim() || null,
@@ -3581,7 +3570,13 @@ async function submitEmployerRating() {
   } else {
     showToast('ok', 'bi-check-circle', 'Thank You!', 'Your rating has been submitted.');
     closeModal('modal-rate-employer');
-    loadPendingEmployerRatings();
+    // Mark this job as rated in-memory and re-render so the "Rate Employer"
+    // button on its ongoing-job card immediately flips to "Rated" without a
+    // full dashboard reload.
+    (allOngoingJobs || []).forEach(o => {
+      if (o.application?.job_id === ratingContext.jobId) o.alreadyRated = true;
+    });
+    renderOngoingJobs();
   }
 }
 
@@ -5415,7 +5410,7 @@ function renderBidedJobs() {
 //    { application, job, escrow } where escrow may be null
 // ════════════════════════════════════════════════════════
 function ongoingJobCardHtml(o) {
-  const { application: a, job, escrow } = o;
+  const { application: a, job, escrow, employerProfile, alreadyRated } = o;
   const escMap = {
     pending: { cls: 'text-bg-warning', icon: 'bi-hourglass-split', label: 'Verifying Payment' },
     held: { cls: 'text-bg-info', icon: 'bi-shield-lock-fill', label: 'Payment Held' },
@@ -5427,6 +5422,18 @@ function ongoingJobCardHtml(o) {
   const badge = escrow ? (escMap[escrow.status] || { cls: 'text-bg-secondary', icon: 'bi-question-circle', label: escrow.status })
                        : { cls: 'text-bg-secondary', icon: 'bi-hourglass', label: 'Awaiting Payment' };
   const amount = escrow ? (+escrow.net_amount || +escrow.amount || 0) : 0;
+
+  // "Rate Employer" only ever renders here: a.status === 'hired' with a.hired_at
+  // set is guaranteed by the query that builds allOngoingJobs (see loadDashboard
+  // 4c), so this button can never appear from a mere application or interview —
+  // only a confirmed hire. Also hidden once employer_ratings already has a row
+  // for this worker+job, and hidden if we couldn't resolve an employer profile.
+  const canRate = !!(a.status === 'hired' && a.hired_at && employerProfile?.id && !alreadyRated);
+  const employerName = employerProfile?.company_name || employerProfile?.full_name || 'Employer';
+  const rateBtn = canRate
+    ? `<button class="btn btn-sm" style="background:#f59e0b; color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${a.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})"><i class="bi bi-star-fill"></i> Rate Employer</button>`
+    : (alreadyRated ? `<span class="small" style="color:var(--muted);"><i class="bi bi-star-fill" style="color:#f59e0b;"></i> Rated</span>` : '');
+
   return `
     <div class="card mb-2">
       <div class="card-body py-2 px-3">
@@ -5441,6 +5448,7 @@ function ongoingJobCardHtml(o) {
           ${amount ? `<span class="badge text-bg-light border text-dark"><i class="bi bi-cash-coin"></i> KES ${amount.toLocaleString('en-KE')}</span>` : ''}
           <span class="small ms-auto" style="color:var(--muted);">Hired ${a.hired_at ? timeAgo(new Date(a.hired_at)) + ' ago' : (a.applied_at ? timeAgo(new Date(a.applied_at)) + ' ago' : '')}</span>
         </div>
+        ${rateBtn ? `<div class="d-flex mt-2">${rateBtn}</div>` : ''}
       </div>
     </div>`;
 }
