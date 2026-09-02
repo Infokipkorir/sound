@@ -5227,6 +5227,10 @@ async function submitJobReport() {
 
 // ════════════════════════════════════════════════════════
 //  DEEP LINK — open a shared job (?job=ID) once the dashboard loads
+//  NOTE: newly-shared links now point to /job/slug--id → jobs.html
+//  (public, no login needed), so they no longer land here at all.
+//  This stays only to support any old ?job=/#employee-dashboard?job=
+//  links already circulating before this change.
 // ════════════════════════════════════════════════════════
 function handleJobDeepLink() {
   // Supports both ?job=ID (query) and #employee-dashboard?job=ID (hash) formats
@@ -5262,23 +5266,25 @@ function handleJobDeepLink() {
 }
 
 // ════════════════════════════════════════════════════════
-//  SHARE JOB (public, ungated link)
+//  SHARE JOB (public, ungated link) — same clean /job/slug--id
+//  format as jobs.html, so both share paths produce one working
+//  link that Vercel's /job/:slug rewrite actually catches.
+//  (The old hash-based #employee-dashboard?job=ID link never
+//  reached the server — Vercel rewrites can't see URL fragments —
+//  so it landed on the site root instead of opening anything.)
 // ════════════════════════════════════════════════════════
-function buildJobShareUrl(jobId) {
-  // NOTE: hash-based URL. Vercel's rewrites in vercel.json only match real paths
-  // (e.g. /employee-dashboard), not URL fragments — a fragment never reaches the server,
-  // so this link will land on whatever page sits at the site root (e.g. index.html) and
-  // will NOT automatically open employee-dashboard.html unless that root page reads
-  // location.hash itself and redirects. See chat notes.
-  // "username" is the sharer's full_name, included for referral tracking.
-  const params = new URLSearchParams({ job: jobId });
-  const sharerName = workerProfile?.full_name;
-  if (sharerName) params.set('username', sharerName);
-  return `${location.origin}/#employee-dashboard?${params.toString()}`;
+function slugify(s) {
+  return String(s || 'job').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-+|-+$)/g, '')
+    .slice(0, 60) || 'job';
+}
+function buildJobShareUrl(jobId, jobTitle) {
+  return `https://www.sounds.co.ke/job/${slugify(jobTitle)}--${jobId}`;
 }
 
 async function shareJob(jobId, jobTitle) {
-  const url = buildJobShareUrl(jobId);
+  const url = buildJobShareUrl(jobId, jobTitle);
   const shareData = { title: jobTitle || 'Job on SoundsCare', text: `Check out this job: ${jobTitle || ''}`, url };
   try {
     if (navigator.share) {
