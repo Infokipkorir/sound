@@ -14,6 +14,7 @@
 
   <link rel="canonical" href="https://www.sounds.co.ke/">
   <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#1A7A5E">
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Sounds Care Services">
@@ -27,12 +28,15 @@
   <meta name="twitter:description" content="Find trusted domestic workers in East Africa.">
   <meta name="twitter:image" content="https://www.sounds.co.ke/sound_logo.jpg">
 
-  <!-- Favicons (root-absolute so they resolve correctly on every page, not just index.html) -->
-  <link rel="icon" href="/sound_logo.jpg" type="image/jpeg">
-  <link rel="icon" type="image/jpeg" sizes="32x32" href="/sound_logo.jpg">
-  <link rel="icon" type="image/jpeg" sizes="16x16" href="/sound_logo.jpg">
-  <link rel="shortcut icon" href="/sound_logo.jpg" type="image/jpeg">
-  <link rel="apple-touch-icon" href="/sound_logo.jpg">
+  <!-- Favicons (root-absolute so they resolve correctly on every page, not just index.html)
+       Transparent-background PNG set, used for the browser tab icon, the
+       PWA install icon (via site.webmanifest) and the native app-launch
+       splash screen Chrome/Android generates from the manifest. -->
+  <link rel="icon" href="/icons/icon-96.png" type="image/png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-96.png">
+  <link rel="shortcut icon" href="/icons/icon-96.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -910,9 +914,82 @@
     .newsletter-perks span{display:flex;align-items:center;gap:.3rem;font-size:11px;color:var(--text-muted);background:var(--surface-alt);padding:4px 9px;border-radius:20px}
     .newsletter-perks i{color:var(--blue);font-size:11px}
 
+    /* ================= APP SPLASH (fills the gap the native PWA splash
+       screen can't: Chrome/Android's OS-drawn launch splash is a static
+       icon with no animation API, so this custom overlay picks up the
+       instant index.html starts rendering and plays the fade-in + progress
+       bar, then dissolves into the real page. Same brand background_color
+       as site.webmanifest so the handoff from native splash is seamless. */
+    #app-splash{
+      position:fixed;inset:0;z-index:99999;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6rem;
+      background:#ffffff;
+      transition:opacity .45s ease;
+    }
+    #app-splash.hide{opacity:0;pointer-events:none}
+    #app-splash .splash-logo{
+      width:132px;height:auto;
+      opacity:0;
+      animation:splashLogoIn 1s ease forwards .05s;
+    }
+    #app-splash .splash-bar-track{
+      width:150px;height:4px;border-radius:4px;
+      background:var(--green-light);
+      overflow:hidden;
+    }
+    #app-splash .splash-bar-fill{
+      width:0%;height:100%;border-radius:4px;
+      background:linear-gradient(90deg,var(--green-mid),var(--green));
+      transition:width .3s ease;
+    }
+    @keyframes splashLogoIn{
+      0%{opacity:0;transform:translateY(10px) scale(.94)}
+      100%{opacity:1;transform:translateY(0) scale(1)}
+    }
+    @media (prefers-reduced-motion: reduce){
+      #app-splash .splash-logo{animation:none;opacity:1}
+    }
   </style>
 </head>
 <body id="top">
+
+<!-- APP SPLASH — see #app-splash CSS for why this exists alongside
+     site.webmanifest's native splash. Dismissed by the script at the
+     bottom of the page once the window 'load' event fires (or a hard
+     timeout, in case something never finishes loading). -->
+<div id="app-splash" aria-hidden="true">
+  <img class="splash-logo" src="/icons/logo-transparent-splash.png" alt="" width="132" height="133">
+  <div class="splash-bar-track"><div class="splash-bar-fill" id="splash-bar-fill"></div></div>
+</div>
+<script>
+(function(){
+  var splash = document.getElementById('app-splash');
+  var bar = document.getElementById('splash-bar-fill');
+  if (!splash || !bar) return;
+
+  // Progress bar is tied to real page-load milestones (not a fake timer):
+  // an early bump so it isn't stuck at 0 while the first assets fetch, a
+  // step at DOMContentLoaded, then 100% at window 'load'.
+  bar.style.width = '8%';
+  document.addEventListener('DOMContentLoaded', function(){
+    bar.style.width = '55%';
+  });
+
+  var settled = false;
+  function dismiss(){
+    if (settled) return;
+    settled = true;
+    bar.style.width = '100%';
+    setTimeout(function(){
+      splash.classList.add('hide');
+      setTimeout(function(){ splash.remove(); }, 500);
+    }, 220);
+  }
+  window.addEventListener('load', dismiss);
+  // Hard fallback: never trap the user behind the splash if some resource stalls.
+  setTimeout(dismiss, 4500);
+})();
+</script>
 
 <div id="toast-container"></div>
 
