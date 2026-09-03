@@ -323,6 +323,16 @@
       display: flex; align-items: center; gap: 8px;
     }
 
+    /* TAPPABLE SECTIONS — every dashboard section opens something on tap
+       instead of sitting inert; interactive descendants (buttons, links,
+       the visibility toggle, job/message cards, profile tabs) opt out via
+       their own onclick + stopPropagation, or are excluded by
+       handleSectionTap()'s closest() check. */
+    .tap-section { cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+    .tap-section:hover { background: var(--surface); border-color: rgba(27,107,69,.25); }
+    .tap-section:active { background: var(--brand-soft); }
+    .section-tap-arrow { margin-left: auto; color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
     /* PROFILE VISIBILITY TOGGLE */
     .visibility-toggle {
       display: flex; align-items: center; gap: 10px;
@@ -1463,10 +1473,13 @@
   </div>
 
   <!-- PROFILE VISIBILITY -->
-  <div class="section">
-    <div class="section-title"><i class="bi bi-eye" style="color: var(--brand);"></i> Profile Visibility</div>
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-account')">
+    <div class="section-title">
+      <i class="bi bi-eye" style="color: var(--brand);"></i> Profile Visibility
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
+    </div>
     <div class="visibility-toggle">
-      <label class="toggle-switch">
+      <label class="toggle-switch" onclick="event.stopPropagation()">
         <input type="checkbox" id="visibility-toggle" onclick="toggleVisibility()">
         <span class="toggle-track"></span>
       </label>
@@ -1481,8 +1494,11 @@
   </div>
 
   <!-- ═══════════════ EMPLOYEE DETAILS (merged from Demo UI) ═══════════════ -->
-  <div class="section ed-wrap">
-    <div class="section-title"><i class="bi bi-person-badge" style="color: var(--brand);"></i> Employee Details</div>
+  <div class="section ed-wrap tap-section" onclick="handleSectionTap(event, 'modal-account')">
+    <div class="section-title">
+      <i class="bi bi-person-badge" style="color: var(--brand);"></i> Employee Details
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
+    </div>
 
     <div class="ed-profile-row">
       <div class="ed-avatar" id="ed-avatar">--</div>
@@ -1498,7 +1514,7 @@
       </div>
     </div>
 
-    <div class="ed-tab-strip">
+    <div class="ed-tab-strip" onclick="event.stopPropagation()">
       <button class="ed-tab-item active" data-ed-tab="ed-profile" onclick="switchEdTab('ed-profile', this)">Profile</button>
       <button class="ed-tab-item" data-ed-tab="ed-activity" onclick="switchEdTab('ed-activity', this)">Activity</button>
       <button class="ed-tab-item" data-ed-tab="ed-hiring" onclick="switchEdTab('ed-hiring', this)">Hiring History</button>
@@ -1507,39 +1523,37 @@
     </div>
 
     <!-- PROFILE -->
-    <div class="ed-tab-panel active" id="ed-profile">
+    <div class="ed-tab-panel active" id="ed-profile" onclick="event.stopPropagation()">
       <div id="ed-profile-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading profile…</p></div></div>
     </div>
 
     <!-- ACTIVITY -->
-    <div class="ed-tab-panel" id="ed-activity">
+    <div class="ed-tab-panel" id="ed-activity" onclick="event.stopPropagation()">
       <div id="ed-activity-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading activity…</p></div></div>
     </div>
 
     <!-- HIRING HISTORY -->
-    <div class="ed-tab-panel" id="ed-hiring">
+    <div class="ed-tab-panel" id="ed-hiring" onclick="event.stopPropagation()">
       <div id="ed-hiring-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading hiring history…</p></div></div>
     </div>
 
     <!-- EARNINGS -->
-    <div class="ed-tab-panel" id="ed-earnings">
+    <div class="ed-tab-panel" id="ed-earnings" onclick="event.stopPropagation()">
       <div id="ed-earnings-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading earnings…</p></div></div>
     </div>
 
     <!-- DOCUMENTS -->
-    <div class="ed-tab-panel" id="ed-documents">
+    <div class="ed-tab-panel" id="ed-documents" onclick="event.stopPropagation()">
       <div id="ed-documents-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading documents…</p></div></div>
     </div>
   </div>
 
   <!-- ONGOING JOBS — Mama Fua Mtaani + active hires -->
-  <div class="section">
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-ongoing-jobs')">
     <div class="section-title">
       <i class="bi bi-activity" style="color: var(--sky);"></i>
       Ongoing Jobs
-      <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-ongoing-jobs')">View All</button>
-      </span>
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
     </div>
     <div id="ongoing-jobs-preview">
       <div class="empty-state"><i class="bi bi-activity"></i><p>Loading ongoing jobs…</p></div>
@@ -1547,13 +1561,11 @@
   </div>
 
   <!-- RECENT MESSAGES PREVIEW -->
-  <div class="section">
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-messages')">
     <div class="section-title">
       <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
       Recent Messages
-      <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-messages')">View All</button>
-      </span>
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
     </div>
     <div id="recent-messages">
       <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
@@ -1561,13 +1573,11 @@
   </div>
 
   <!-- RECENT INTERVIEWS PREVIEW -->
-  <div class="section">
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-interviews', loadRecentInterviews)">
     <div class="section-title">
       <i class="bi bi-calendar-check" style="color: var(--brand);"></i>
       Recent Interviews
-      <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-interviews'); loadRecentInterviews()">View All</button>
-      </span>
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
     </div>
     <div id="recent-interviews">
       <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
@@ -1575,13 +1585,11 @@
   </div>
 
   <!-- BIDED JOBS PREVIEW -->
-  <div class="section">
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-bids')">
     <div class="section-title">
       <i class="bi bi-tag" style="color: var(--sky);"></i>
       Bided Jobs
-      <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-bids')">View All</button>
-      </span>
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
     </div>
     <div id="bided-jobs-preview">
       <div class="empty-state"><i class="bi bi-tag"></i><p>Loading bids…</p></div>
@@ -1589,13 +1597,11 @@
   </div>
 
   <!-- SAVED JOBS PREVIEW -->
-  <div class="section">
+  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-saved-jobs')">
     <div class="section-title">
       <i class="bi bi-bookmark-check" style="color: var(--brand);"></i>
       Saved Jobs
-      <span style="margin-left: auto;">
-        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-saved-jobs')">View All</button>
-      </span>
+      <i class="bi bi-chevron-right section-tap-arrow"></i>
     </div>
     <div id="saved-jobs-preview">
       <div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>
@@ -6421,6 +6427,19 @@ async function signOut() {
 // ════════════════════════════════════════════════════════
 //  UI UTILITIES
 // ════════════════════════════════════════════════════════
+// Section tap-to-open: bound on each dashboard .section (see .tap-section
+// in the page markup). Ignores clicks on interactive descendants — buttons,
+// links, inputs, individual message/job/ongoing-job cards, the visibility
+// toggle, and the Employee Details tab strip/panels — so their own
+// click handlers (opening a conversation, saving a job, switching a tab,
+// etc.) aren't hijacked by the section-level tap. Everything else in the
+// section (empty states, plain text, whitespace) opens modalId.
+function handleSectionTap(e, modalId, afterFn) {
+  if (e.target.closest('a, button, input, label, .msg-item, .job-card, .card, .toggle-switch, .ed-tab-item, .ed-tab-panel')) return;
+  openModal(modalId);
+  if (afterFn) afterFn();
+}
+
 function openModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
