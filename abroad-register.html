@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Register | SoundsCare Abroad</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+  :root{
+    --teal:#0F766E; --teal-deep:#0B4F49; --aqua:#14B8A6; --mist:#EAF6F4;
+    --coral:#E0724A; --coral-deep:#B85A38; --gold:#D8A73D; --cream:#FAFAF8;
+    --ink:#182420; --ink-soft:#57655F; --line:rgba(20,30,26,0.09);
+    --body:'Inter','Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:var(--body); color:var(--ink); background:var(--cream); line-height:1.5;}
+  a{color:var(--teal); text-decoration:none;}
+  button{font-family:inherit;}
+
+  .ab-nav{
+    position:sticky; top:0; z-index:20; background:#fff; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; padding:.9rem 1.5rem;
+  }
+  .ab-brand{display:flex; align-items:center; gap:.55rem; font-weight:800; color:var(--teal-deep); font-size:1.05rem;}
+  .ab-brand .mark{
+    width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:.95rem; flex-shrink:0;
+  }
+  .ab-nav-link{font-size:.86rem; font-weight:600; color:var(--ink-soft);}
+
+  .ab-wrap{max-width:420px; margin:0 auto; padding:2.4rem 1.5rem 4rem;}
+  .ab-eyebrow{display:flex; align-items:center; gap:.4rem; font-size:.8rem; font-weight:700; color:var(--teal); margin:0 0 .5rem;}
+  .ab-wrap h1{font-size:1.7rem; font-weight:800; margin:0 0 .35rem; letter-spacing:-0.02em;}
+  .ab-wrap > p.ab-sub{margin:0 0 1.8rem; color:var(--ink-soft); font-size:.92rem;}
+
+  .ab-field{margin-bottom:1.05rem;}
+  .ab-field label{display:block; font-size:.82rem; font-weight:700; color:var(--ink); margin-bottom:.35rem;}
+  .ab-field input{
+    width:100%; border:1.5px solid var(--line); border-radius:12px; padding:.75rem .9rem;
+    font-family:var(--body); font-size:.92rem; color:var(--ink); background:#fff; outline:none;
+    transition:border-color .15s ease;
+  }
+  .ab-field input:focus{border-color:var(--aqua);}
+  .ab-hint{font-size:.76rem; color:var(--ink-soft); margin-top:.3rem;}
+
+  .ab-btn{
+    width:100%; border:none; border-radius:12px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    color:#fff; font-weight:700; font-size:.94rem; padding:.85rem 1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:.4rem;
+  }
+  .ab-btn:disabled{opacity:.65; cursor:default;}
+  .ab-btn .spin{width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:abspin .7s linear infinite; display:none;}
+  .ab-btn.loading .spin{display:inline-block;}
+  .ab-btn.loading .btxt{display:none;}
+  @keyframes abspin{to{transform:rotate(360deg);}}
+
+  .ab-alt{text-align:center; font-size:.86rem; color:var(--ink-soft); margin-top:1.4rem;}
+  .ab-alt a{font-weight:700; color:var(--teal-deep);}
+
+  .ab-msg{
+    border-radius:12px; padding:.75rem .9rem; font-size:.84rem; margin-bottom:1.1rem; display:none;
+  }
+  .ab-msg.err{background:#FDEDE8; color:var(--coral-deep); display:block;}
+  .ab-msg.ok{background:var(--mist); color:var(--teal-deep); display:block;}
+
+  .ab-divider{display:flex; align-items:center; gap:.7rem; margin:1.6rem 0; color:var(--ink-soft); font-size:.78rem;}
+  .ab-divider::before, .ab-divider::after{content:''; flex:1; height:1px; background:var(--line);}
+</style>
+</head>
+<body>
+
+<nav class="ab-nav">
+  <a href="index.html" class="ab-brand"><span class="mark"><i class="bi bi-airplane"></i></span> SoundsCare Abroad</a>
+  <a href="abroad-login.html" class="ab-nav-link">Sign in</a>
+</nav>
+
+<main class="ab-wrap">
+  <p class="ab-eyebrow"><i class="bi bi-globe-americas"></i> Work abroad</p>
+  <h1>Create your account</h1>
+  <p class="ab-sub">Register to browse verified jobs in the Gulf and apply in minutes.</p>
+
+  <div class="ab-msg" id="abMsg"></div>
+
+  <form id="abRegisterForm" novalidate>
+    <div class="ab-field">
+      <label for="abName">Full name</label>
+      <input type="text" id="abName" autocomplete="name" required placeholder="e.g. Jane Wanjiru">
+    </div>
+    <div class="ab-field">
+      <label for="abPhone">WhatsApp number</label>
+      <input type="tel" id="abPhone" autocomplete="tel" required placeholder="e.g. 0712 345 678">
+    </div>
+    <div class="ab-field">
+      <label for="abEmail">Email address</label>
+      <input type="email" id="abEmail" autocomplete="email" required placeholder="you@example.com">
+    </div>
+    <div class="ab-field">
+      <label for="abPassword">Password</label>
+      <input type="password" id="abPassword" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters">
+      <p class="ab-hint">Use at least 8 characters.</p>
+    </div>
+    <button class="ab-btn" type="submit" id="abSubmitBtn">
+      <span class="spin"></span><span class="btxt">Create account</span>
+    </button>
+  </form>
+
+  <div class="ab-divider">or</div>
+  <p class="ab-alt">Already have an account? <a href="abroad-login.html">Sign in</a></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var sb = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+  );
+
+  var form = document.getElementById('abRegisterForm');
+  var btn = document.getElementById('abSubmitBtn');
+  var msg = document.getElementById('abMsg');
+
+  function showMsg(text, type){
+    msg.textContent = text;
+    msg.className = 'ab-msg ' + type;
+  }
+
+  // If already signed in, skip straight to the jobs page
+  sb.auth.getSession().then(function(res){
+    if (res.data && res.data.session) window.location.href = 'abroad-jobs.html';
+  });
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    msg.className = 'ab-msg';
+
+    var name = document.getElementById('abName').value.trim();
+    var phone = document.getElementById('abPhone').value.trim();
+    var email = document.getElementById('abEmail').value.trim();
+    var password = document.getElementById('abPassword').value;
+
+    if (!name || !phone || !email || password.length < 8){
+      showMsg('Please fill in every field. Password needs at least 8 characters.', 'err');
+      return;
+    }
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try{
+      var { data, error } = await sb.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { full_name: name, whatsapp_number: phone, account_type: 'abroad_worker' } }
+      });
+      if (error) throw error;
+
+      if (data.session){
+        window.location.href = 'abroad-jobs.html';
+      } else {
+        showMsg('Account created. Check your email to confirm, then sign in.', 'ok');
+        form.reset();
+      }
+    }catch(err){
+      showMsg(err.message || 'Could not create your account. Please try again.', 'err');
+    }finally{
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
