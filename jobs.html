@@ -149,7 +149,7 @@
   .job-love.loved i{color:var(--red)}.job-love.loved i::before{content:"\f415"}
 
   .card-header{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.7rem;padding-right:4.6rem}
-  .card-avatar{width:46px;height:46px;border-radius:9px;background:linear-gradient(135deg,#3B8ED4,#2574b8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;flex-shrink:0}
+  .card-avatar{width:46px;height:46px;border-radius:9px;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
   .card-meta{flex:1;min-width:0}
   .card-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .card-subtitle{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:.3rem}
@@ -784,7 +784,7 @@ function jobCardHTML(j, opts){
         <i class="bi bi-share-fill"></i>
       </button>
       <div class="card-header">
-        <div class="card-avatar">${initials(company)}</div>
+        <div class="card-avatar" title="${esc(getCountry(j.country_code).name)}">${getCountry(j.country_code).flag}</div>
         <div class="card-meta">
           <div class="card-title">${esc(j.title||'—')}</div>
           <div class="card-subtitle">
@@ -882,7 +882,7 @@ async function openJobDetail(id){
   ]);
   if(error || !j){ showToast('Could not load that job.', 'error'); return; }
   document.getElementById('jd-title').textContent = j.title||'Job';
-  document.getElementById('jd-subtitle').textContent = (j.company_name||'Employer')+' · '+(j.county||j.location||'East Africa');
+  document.getElementById('jd-subtitle').textContent = getCountry(j.country_code).flag+' '+(j.company_name||'Employer')+' · '+(j.county||j.location||'East Africa');
   const days = daysUntil(j.deadline);
   const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
   const paymentVerified = escrowRow && (escrowRow.status==='held' || escrowRow.status==='released');
