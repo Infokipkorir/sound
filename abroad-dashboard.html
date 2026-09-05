@@ -86,6 +86,66 @@
   .ab-skeleton{background:#fff; border:1px solid var(--line); border-radius:14px; height:66px; margin-bottom:.6rem; position:relative; overflow:hidden;}
   .ab-skeleton::after{content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(15,118,110,.07), transparent); animation:abShimmer 1.3s infinite;}
   @keyframes abShimmer{from{transform:translateX(-100%);} to{transform:translateX(100%);}}
+
+  .ab-commission{font-size:.74rem; color:var(--ink-soft); margin-top:.15rem; display:flex; align-items:center; gap:.3rem;}
+  .ab-commission i{color:var(--gold);}
+
+  /* ---------- Documents checklist ---------- */
+  .ab-doc-list{list-style:none; margin:1rem 0 0; padding:0;}
+  .ab-doc-item{display:flex; align-items:center; gap:.7rem; padding:.55rem 0; border-top:1px solid var(--line); font-size:.85rem;}
+  .ab-doc-item:first-child{border-top:none;}
+  .ab-doc-item .dot{width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.72rem; background:#EDEDEA; color:var(--ink-soft);}
+  .ab-doc-item.done .dot{background:var(--teal); color:#fff;}
+  .ab-doc-item span.label{flex:1 1 auto; color:var(--ink);}
+  .ab-doc-item.done span.label{color:var(--ink-soft);}
+  .ab-doc-progress{height:6px; border-radius:999px; background:var(--mist); overflow:hidden; margin-top:1rem;}
+  .ab-doc-progress-bar{height:100%; background:linear-gradient(135deg,var(--aqua),var(--teal)); border-radius:999px; transition:width .3s ease;}
+
+  /* ---------- Documents modal ---------- */
+  .ab-modal-overlay{
+    position:fixed; inset:0; background:rgba(11,30,27,.55); z-index:50; display:none;
+    align-items:flex-start; justify-content:center; padding:2rem 1rem; overflow-y:auto;
+  }
+  .ab-modal-overlay.show{display:flex;}
+  .ab-modal{
+    background:#fff; border-radius:20px; max-width:540px; width:100%; padding:1.7rem; margin:auto 0;
+    max-height:calc(100vh - 4rem); overflow-y:auto;
+  }
+  .ab-modal-head{display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:.3rem;}
+  .ab-modal-head h2{margin:0; font-size:1.2rem; font-weight:800; color:var(--ink);}
+  .ab-modal-sub{font-size:.82rem; color:var(--ink-soft); margin:0 0 1.2rem;}
+  .ab-modal-close{border:none; background:var(--mist); color:var(--teal-deep); width:32px; height:32px; border-radius:10px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+
+  .ab-grid-2{display:grid; grid-template-columns:1fr 1fr; gap:.85rem;}
+  @media (max-width:480px){ .ab-grid-2{grid-template-columns:1fr;} }
+
+  .ab-field{margin-bottom:1rem;}
+  .ab-field label{display:block; font-size:.8rem; font-weight:700; color:var(--ink); margin-bottom:.3rem;}
+  .ab-field .hint{display:block; font-size:.74rem; font-weight:400; color:var(--ink-soft); margin-top:.25rem;}
+  .ab-field input{
+    width:100%; border:1.5px solid var(--line); border-radius:11px; padding:.68rem .85rem;
+    font-family:var(--body); font-size:.88rem; color:var(--ink); background:#fff; outline:none;
+  }
+  .ab-field input:focus{border-color:var(--aqua);}
+  .ab-field input[type="file"]{padding:.5rem .6rem; font-size:.8rem;}
+
+  .ab-file-status{font-size:.76rem; color:var(--teal-deep); margin-top:.3rem; display:flex; align-items:center; gap:.3rem;}
+  .ab-file-status a{font-weight:700;}
+
+  .ab-modal-msg{border-radius:12px; padding:.7rem .85rem; font-size:.82rem; margin-bottom:1rem; display:none;}
+  .ab-modal-msg.err{background:#FDEDE8; color:var(--coral-deep); display:block;}
+  .ab-modal-msg.ok{background:var(--mist); color:var(--teal-deep); display:block;}
+
+  .ab-modal-submit{
+    width:100%; border:none; border-radius:12px; background:linear-gradient(135deg,var(--aqua),var(--teal));
+    color:#fff; font-weight:700; font-size:.92rem; padding:.85rem 1rem; cursor:pointer; margin-top:.3rem;
+    display:flex; align-items:center; justify-content:center; gap:.5rem;
+  }
+  .ab-modal-submit:disabled{opacity:.65; cursor:default;}
+  .ab-modal-submit .spin{width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:abspin .7s linear infinite; display:none;}
+  .ab-modal-submit.loading .spin{display:inline-block;}
+  .ab-modal-submit.loading .btxt{display:none;}
+  @keyframes abspin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -120,6 +180,18 @@
   <div class="ab-card">
     <div class="ab-card-flex">
       <div>
+        <h3><i class="bi bi-file-earmark-check"></i> Requirements</h3>
+        <p>These are needed before you can apply to any abroad job.</p>
+      </div>
+      <button class="ab-btn" id="abDocsBtn"><i class="bi bi-upload"></i> Add / update</button>
+    </div>
+    <ul class="ab-doc-list" id="abDocList"></ul>
+    <div class="ab-doc-progress"><div class="ab-doc-progress-bar" id="abDocProgressBar" style="width:0%;"></div></div>
+  </div>
+
+  <div class="ab-card">
+    <div class="ab-card-flex">
+      <div>
         <h3><i class="bi bi-globe-americas"></i> Find your next role</h3>
         <p>Browse live-in and live-out jobs across Qatar, the UAE, Saudi Arabia, and more.</p>
       </div>
@@ -132,6 +204,57 @@
     <div class="ab-skeleton"></div><div class="ab-skeleton"></div>
   </div>
 </main>
+
+<!-- Documents modal -->
+<div class="ab-modal-overlay" id="abDocsModalOverlay">
+  <div class="ab-modal">
+    <div class="ab-modal-head">
+      <div><h2>Passport &amp; verification documents</h2></div>
+      <button class="ab-modal-close" id="abDocsModalClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <p class="ab-modal-sub">Required for every abroad application. Files are private to your account and our recruitment team.</p>
+
+    <div class="ab-modal-msg" id="abDocsModalMsg"></div>
+
+    <form id="abDocsForm" novalidate>
+      <div class="ab-grid-2">
+        <div class="ab-field">
+          <label for="dPassportNumber">Passport number</label>
+          <input type="text" id="dPassportNumber" required placeholder="e.g. AK1234567">
+        </div>
+        <div class="ab-field">
+          <label for="dPassportExpiry">Passport expiry date</label>
+          <input type="date" id="dPassportExpiry" required>
+        </div>
+      </div>
+
+      <div class="ab-field">
+        <label for="dPassportScan">Passport bio-page (photo or scan)</label>
+        <input type="file" id="dPassportScan" accept="image/*,application/pdf">
+        <span class="hint">Clear photo or scan of the passport page with your photo and details.</span>
+        <div class="ab-file-status" id="dPassportScanStatus" style="display:none;"></div>
+      </div>
+
+      <div class="ab-field">
+        <label for="dPassportPhoto">Passport-size photo</label>
+        <input type="file" id="dPassportPhoto" accept="image/*">
+        <span class="hint">Plain background, recent, face clearly visible.</span>
+        <div class="ab-file-status" id="dPassportPhotoStatus" style="display:none;"></div>
+      </div>
+
+      <div class="ab-field">
+        <label for="dIntroVideo">Video: introduce yourself in English</label>
+        <input type="file" id="dIntroVideo" accept="video/*">
+        <span class="hint">30–60 seconds. Say your name, your experience, and why you want to work abroad.</span>
+        <div class="ab-file-status" id="dIntroVideoStatus" style="display:none;"></div>
+      </div>
+
+      <button class="ab-modal-submit" type="submit" id="abDocsSubmitBtn">
+        <span class="spin"></span><span class="btxt">Save requirements</span>
+      </button>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -147,13 +270,33 @@
     welcome: document.getElementById('abWelcome'),
     profileCard: document.getElementById('abProfileCard'),
     appsList: document.getElementById('abAppsList'),
-    signOut: document.getElementById('navSignOut')
+    signOut: document.getElementById('navSignOut'),
+    docsBtn: document.getElementById('abDocsBtn'),
+    docList: document.getElementById('abDocList'),
+    docProgressBar: document.getElementById('abDocProgressBar'),
+    docsModalOverlay: document.getElementById('abDocsModalOverlay'),
+    docsModalClose: document.getElementById('abDocsModalClose'),
+    docsModalMsg: document.getElementById('abDocsModalMsg'),
+    docsForm: document.getElementById('abDocsForm'),
+    docsSubmitBtn: document.getElementById('abDocsSubmitBtn')
   };
 
   var STATUS_LABELS = {
     submitted: 'Submitted', under_review: 'Under review', shortlisted: 'Shortlisted',
     interview_scheduled: 'Interview scheduled', placed: 'Placed', rejected: 'Not selected', withdrawn: 'Withdrawn'
   };
+
+  var PAYER_LABELS = { worker: 'paid by you', employer: 'paid by employer', agency: 'paid by agency' };
+
+  var REQUIRED_DOCS = [
+    { key: 'passport_number', label: 'Passport number & expiry' },
+    { key: 'passport_scan_url', label: 'Passport bio-page scan/photo' },
+    { key: 'passport_photo_url', label: 'Passport-size photo' },
+    { key: 'intro_video_url', label: 'Video introducing yourself in English' }
+  ];
+
+  var session = null;
+  var currentProfile = null;
 
   function escapeHtml(s){
     return (s || '').replace(/[&<>"']/g, function(c){
@@ -166,6 +309,17 @@
     catch(e){ return ''; }
   }
 
+  function fmtMoney(n){
+    return Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  function commissionLine(job){
+    if (!job || !job.commission_amount || !job.commission_payer || job.commission_payer === 'none') return '';
+    var amt = (job.commission_currency || 'KES') + ' ' + fmtMoney(job.commission_amount);
+    var who = PAYER_LABELS[job.commission_payer] || '';
+    return 'Recruitment fee: ' + amt + (who ? ' Β· ' + who : '');
+  }
+
   el.signOut.addEventListener('click', async function(e){
     e.preventDefault();
     await sb.auth.signOut();
@@ -174,7 +328,7 @@
 
   async function init(){
     var sess = await sb.auth.getSession();
-    var session = sess.data && sess.data.session ? sess.data.session : null;
+    session = sess.data && sess.data.session ? sess.data.session : null;
     if (!session){
       window.location.href = 'abroad-login.html';
       return;
@@ -183,22 +337,43 @@
     var name = (session.user.user_metadata && session.user.user_metadata.full_name) || session.user.email;
     el.welcome.textContent = 'Welcome back, ' + name.split(' ')[0];
 
-    checkProfile(session.user.id);
+    loadProfile(session.user.id);
     loadApplications(session.user.id);
   }
 
-  async function checkProfile(userId){
+  async function loadProfile(userId){
     try{
-      var { data } = await sb.from('abroad_worker_profiles').select('id').eq('user_id', userId).maybeSingle();
+      var { data } = await sb.from('abroad_worker_profiles').select('*').eq('user_id', userId).maybeSingle();
+      currentProfile = data || null;
       el.profileCard.style.display = data ? 'none' : '';
-    }catch(e){ /* leave hidden on error */ }
+      renderDocChecklist();
+    }catch(e){
+      currentProfile = null;
+      renderDocChecklist();
+    }
+  }
+
+  function renderDocChecklist(){
+    el.docList.innerHTML = '';
+    var doneCount = 0;
+    REQUIRED_DOCS.forEach(function(d){
+      var has = currentProfile && currentProfile[d.key];
+      if (has) doneCount++;
+      var li = document.createElement('li');
+      li.className = 'ab-doc-item' + (has ? ' done' : '');
+      li.innerHTML = '<span class="dot"><i class="bi ' + (has ? 'bi-check-lg' : 'bi-dash') + '"></i></span><span class="label"></span>';
+      li.querySelector('.label').textContent = d.label;
+      el.docList.appendChild(li);
+    });
+    var pct = Math.round((doneCount / REQUIRED_DOCS.length) * 100);
+    el.docProgressBar.style.width = pct + '%';
   }
 
   async function loadApplications(userId){
     try{
       var { data, error } = await sb
         .from('abroad_applications')
-        .select('id, status, applied_at, abroad_jobs(title, category), abroad_countries(name, flag_emoji)')
+        .select('id, status, applied_at, abroad_jobs(title, category, commission_amount, commission_currency, commission_payer), abroad_countries(name, flag_emoji)')
         .eq('user_id', userId)
         .order('applied_at', { ascending: false });
       if (error) throw error;
@@ -224,11 +399,13 @@
     var row = document.createElement('div');
     row.className = 'ab-app-row';
     var canWithdraw = a.status === 'submitted' || a.status === 'under_review';
+    var cLine = commissionLine(job);
     row.innerHTML =
       '<div class="ab-app-flag">' + (country.flag_emoji || '🏳️') + '</div>' +
       '<div class="ab-app-main">' +
         '<h4></h4>' +
         '<p></p>' +
+        (cLine ? '<div class="ab-commission"><i class="bi bi-info-circle-fill"></i> ' + escapeHtml(cLine) + '</div>' : '') +
       '</div>' +
       '<span class="ab-status ' + a.status + '">' + (STATUS_LABELS[a.status] || a.status) + '</span>' +
       (canWithdraw ? '<button class="ab-withdraw-btn" data-id="' + a.id + '">Withdraw</button>' : '');
@@ -256,6 +433,112 @@
       alert(err.message || 'Could not withdraw the application. Please try again.');
     }
   }
+
+  // ---------- Documents modal ----------
+
+  var docFields = {
+    passport_scan_url: { input: 'dPassportScan', status: 'dPassportScanStatus', label: 'Passport scan' },
+    passport_photo_url: { input: 'dPassportPhoto', status: 'dPassportPhotoStatus', label: 'Passport photo' },
+    intro_video_url: { input: 'dIntroVideo', status: 'dIntroVideoStatus', label: 'Intro video' }
+  };
+
+  function openDocsModal(){
+    el.docsModalMsg.className = 'ab-modal-msg';
+    el.docsForm.reset();
+    document.getElementById('dPassportNumber').value = (currentProfile && currentProfile.passport_number) || '';
+    document.getElementById('dPassportExpiry').value = (currentProfile && currentProfile.passport_expiry) || '';
+    Object.keys(docFields).forEach(function(key){
+      var f = docFields[key];
+      var statusEl = document.getElementById(f.status);
+      var url = currentProfile && currentProfile[key];
+      if (url){
+        statusEl.style.display = '';
+        statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + f.label + ' uploaded Β· <a href="' + url + '" target="_blank" rel="noopener">view</a> (choose a new file to replace)';
+      } else {
+        statusEl.style.display = 'none';
+      }
+    });
+    el.docsModalOverlay.classList.add('show');
+  }
+
+  function closeDocsModal(){
+    el.docsModalOverlay.classList.remove('show');
+  }
+
+  el.docsBtn.addEventListener('click', openDocsModal);
+  el.docsModalClose.addEventListener('click', closeDocsModal);
+  el.docsModalOverlay.addEventListener('click', function(e){
+    if (e.target === el.docsModalOverlay) closeDocsModal();
+  });
+
+  var MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+  var MAX_VIDEO_BYTES = 80 * 1024 * 1024;
+
+  async function uploadDoc(userId, key, file){
+    var maxBytes = key === 'intro_video_url' ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+    if (file.size > maxBytes){
+      throw new Error(docFields[key].label + ' is too large (max ' + Math.round(maxBytes / (1024 * 1024)) + 'MB).');
+    }
+    var ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    var slug = key.replace('_url', '');
+    var path = userId + '/' + slug + '-' + Date.now() + '.' + ext;
+    var { error: upErr } = await sb.storage.from('worker-documents').upload(path, file, { upsert: true, contentType: file.type || undefined });
+    if (upErr) throw upErr;
+    var { data: pub } = sb.storage.from('worker-documents').getPublicUrl(path);
+    return pub.publicUrl;
+  }
+
+  el.docsForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    el.docsModalMsg.className = 'ab-modal-msg';
+
+    var passportNumber = document.getElementById('dPassportNumber').value.trim();
+    var passportExpiry = document.getElementById('dPassportExpiry').value;
+    if (!passportNumber || !passportExpiry){
+      el.docsModalMsg.textContent = 'Please fill in your passport number and expiry date.';
+      el.docsModalMsg.className = 'ab-modal-msg err';
+      return;
+    }
+
+    var hasScan = (currentProfile && currentProfile.passport_scan_url) || document.getElementById('dPassportScan').files[0];
+    var hasPhoto = (currentProfile && currentProfile.passport_photo_url) || document.getElementById('dPassportPhoto').files[0];
+    var hasVideo = (currentProfile && currentProfile.intro_video_url) || document.getElementById('dIntroVideo').files[0];
+    if (!hasScan || !hasPhoto || !hasVideo){
+      el.docsModalMsg.textContent = 'Please upload your passport scan, passport photo, and intro video.';
+      el.docsModalMsg.className = 'ab-modal-msg err';
+      return;
+    }
+
+    el.docsSubmitBtn.classList.add('loading');
+    el.docsSubmitBtn.disabled = true;
+
+    try{
+      var userId = session.user.id;
+      var updates = { user_id: userId, passport_number: passportNumber, passport_expiry: passportExpiry };
+
+      for (var key in docFields){
+        var file = document.getElementById(docFields[key].input).files[0];
+        if (file){
+          updates[key] = await uploadDoc(userId, key, file);
+        }
+      }
+
+      var { error } = await sb.from('abroad_worker_profiles').upsert(updates, { onConflict: 'user_id' });
+      if (error) throw error;
+
+      currentProfile = Object.assign({}, currentProfile, updates);
+      renderDocChecklist();
+      el.docsModalMsg.textContent = 'Requirements saved.';
+      el.docsModalMsg.className = 'ab-modal-msg ok';
+      setTimeout(closeDocsModal, 900);
+    }catch(err){
+      el.docsModalMsg.textContent = err.message || 'Could not save your requirements. Please try again.';
+      el.docsModalMsg.className = 'ab-modal-msg err';
+    }finally{
+      el.docsSubmitBtn.classList.remove('loading');
+      el.docsSubmitBtn.disabled = false;
+    }
+  });
 
   init();
 })();

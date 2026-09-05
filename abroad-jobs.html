@@ -138,6 +138,21 @@
   .ab-modal-msg.err{background:#FDEDE8; color:var(--coral-deep); display:block;}
   .ab-modal-msg.ok{background:var(--mist); color:var(--teal-deep); display:block;}
 
+  .ab-commission{font-size:.76rem; color:var(--ink-soft); margin-top:.35rem; display:flex; align-items:center; gap:.3rem;}
+  .ab-commission i{color:var(--gold);}
+
+  .ab-reqgate{border:1.5px solid #F2D9A8; background:#FFF9EC; border-radius:14px; padding:.9rem 1rem; margin-bottom:1.1rem;}
+  .ab-reqgate h4{margin:0 0 .3rem; font-size:.86rem; font-weight:800; color:#8A6B1E; display:flex; align-items:center; gap:.4rem;}
+  .ab-reqgate ul{margin:.4rem 0 .7rem; padding-left:1.2rem; font-size:.8rem; color:#6b5a2e;}
+  .ab-reqgate ul li{margin-bottom:.2rem;}
+  .ab-reqgate ul li.ok{color:var(--teal-deep); text-decoration:line-through;}
+  .ab-reqgate-btn{
+    border:none; border-radius:10px; background:#8A6B1E; color:#fff; font-weight:700; font-size:.8rem;
+    padding:.55rem .9rem; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;
+  }
+  .ab-reqgate.complete{border-color:var(--aqua); background:var(--mist);}
+  .ab-reqgate.complete h4{color:var(--teal-deep);}
+
   .ab-modal-submit{
     width:100%; border:none; border-radius:12px; background:linear-gradient(135deg,var(--aqua),var(--teal));
     color:#fff; font-weight:700; font-size:.92rem; padding:.85rem 1rem; cursor:pointer; margin-top:.3rem;
@@ -197,6 +212,12 @@
       <button class="ab-modal-close" id="abModalClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
     </div>
     <p class="ab-modal-sub" id="abModalSub">Fill in your details. We'll reuse them for future applications.</p>
+
+    <div class="ab-reqgate" id="abReqGate" style="display:none;">
+      <h4><i class="bi bi-clipboard-check"></i> Before you apply</h4>
+      <ul id="abReqGateList"></ul>
+      <button type="button" class="ab-reqgate-btn" id="abReqGateBtn"><i class="bi bi-arrow-right"></i> Complete in Dashboard</button>
+    </div>
 
     <div class="ab-modal-msg" id="abModalMsg"></div>
 
@@ -290,6 +311,9 @@
     modalTitle: document.getElementById('abModalTitle'),
     modalSub: document.getElementById('abModalSub'),
     modalMsg: document.getElementById('abModalMsg'),
+    reqGate: document.getElementById('abReqGate'),
+    reqGateList: document.getElementById('abReqGateList'),
+    reqGateBtn: document.getElementById('abReqGateBtn'),
     form: document.getElementById('abApplyForm'),
     submitBtn: document.getElementById('abModalSubmitBtn'),
     toast: document.getElementById('abToast'),
@@ -315,6 +339,15 @@
   }
 
   function countryFor(id){ return countries.find(function(c){ return c.id === id; }); }
+
+  var PAYER_LABELS = { worker: 'paid by you', employer: 'paid by employer', agency: 'paid by agency' };
+
+  function commissionLine(j){
+    if (!j.commission_amount || j.commission_payer === 'none' || !j.commission_payer) return '';
+    var amt = (j.commission_currency || 'KES') + ' ' + fmtMoney(j.commission_amount);
+    var who = PAYER_LABELS[j.commission_payer] || '';
+    return 'Recruitment fee: ' + amt + (who ? ' Β· ' + who : '');
+  }
 
   async function init(){
     var sess = await sb.auth.getSession();
@@ -361,7 +394,7 @@
     try{
       var [{ data: cts, error: ctErr }, { data: jbs, error: jbErr }] = await Promise.all([
         sb.from('abroad_countries').select('id, name, code, flag_emoji, currency_code, currency_symbol, exchange_rate_to_kes, sort_order').eq('is_active', true).order('sort_order'),
-        sb.from('abroad_jobs').select('id, country_id, title, category, salary_amount, contract_years, requirements, description, slots_available, sort_order').eq('is_active', true).order('sort_order')
+        sb.from('abroad_jobs').select('id, country_id, title, category, salary_amount, contract_years, requirements, description, slots_available, sort_order, commission_amount, commission_currency, commission_payer, commission_notes').eq('is_active', true).order('sort_order')
       ]);
       if (ctErr) throw ctErr;
       if (jbErr) throw jbErr;
@@ -434,6 +467,7 @@
       '<div class="ab-salary">' +
         '<div class="amt">' + (country ? country.currency_symbol : '') + ' ' + fmtMoney(j.salary_amount) + ' <span>/month</span></div>' +
         (cmpLine ? '<div class="cmp"><i class="bi bi-arrow-left-right"></i> ' + cmpLine + '</div>' : '') +
+        (commissionLine(j) ? '<div class="ab-commission"><i class="bi bi-info-circle-fill"></i> ' + escapeHtml(commissionLine(j)) + '</div>' : '') +
       '</div>' +
       (j.description ? '<p class="ab-job-desc"></p>' : '') +
       (j.requirements && j.requirements.length ? '<div><span class="ab-reqs-label">Requirements</span><ul class="ab-reqs"></ul></div>' : '') +
@@ -477,6 +511,9 @@
     el.modalMsg.className = 'ab-modal-msg';
     el.form.reset();
     document.getElementById('fHomeCountry').value = 'Kenya';
+    el.reqGate.style.display = 'none';
+    el.submitBtn.disabled = false;
+    el.submitBtn.style.opacity = '';
     prefillFromProfile();
     el.modalOverlay.classList.add('show');
   }
@@ -490,10 +527,42 @@
   el.modalOverlay.addEventListener('click', function(e){
     if (e.target === el.modalOverlay) closeApplyModal();
   });
+  el.reqGateBtn.addEventListener('click', function(){
+    window.location.href = 'abroad-dashboard.html';
+  });
+
+  var REQUIRED_DOCS = [
+    { key: 'passport_number', label: 'Passport number & expiry' },
+    { key: 'passport_scan_url', label: 'Passport bio-page scan/photo' },
+    { key: 'passport_photo_url', label: 'Passport-size photo' },
+    { key: 'intro_video_url', label: 'Short video introducing yourself in English' }
+  ];
+
+  function renderReqGate(profile){
+    var missing = REQUIRED_DOCS.filter(function(d){ return !profile || !profile[d.key]; });
+    el.reqGateList.innerHTML = '';
+    REQUIRED_DOCS.forEach(function(d){
+      var li = document.createElement('li');
+      var has = profile && profile[d.key];
+      li.className = has ? 'ok' : '';
+      li.textContent = d.label + (has ? ' Β· done' : '');
+      el.reqGateList.appendChild(li);
+    });
+    var complete = missing.length === 0;
+    el.reqGate.style.display = '';
+    el.reqGate.classList.toggle('complete', complete);
+    el.reqGate.querySelector('h4').innerHTML = complete
+      ? '<i class="bi bi-check-circle-fill"></i> Documents complete'
+      : '<i class="bi bi-clipboard-check"></i> Before you apply';
+    el.reqGateBtn.style.display = complete ? 'none' : '';
+    el.submitBtn.disabled = !complete;
+    el.submitBtn.style.opacity = complete ? '' : '.6';
+  }
 
   async function prefillFromProfile(){
     try{
       var { data } = await sb.from('abroad_worker_profiles').select('*').eq('user_id', session.user.id).maybeSingle();
+      renderReqGate(data);
       if (!data) {
         if (session.user.email) document.getElementById('fEmail').value = session.user.email;
         return;
@@ -514,6 +583,12 @@
   el.form.addEventListener('submit', async function(e){
     e.preventDefault();
     el.modalMsg.className = 'ab-modal-msg';
+
+    if (el.submitBtn.disabled){
+      el.modalMsg.textContent = 'Please complete your passport, photo and video requirements in the Dashboard first.';
+      el.modalMsg.className = 'ab-modal-msg err';
+      return;
+    }
 
     var payload = {
       full_legal_name: document.getElementById('fLegalName').value.trim(),
