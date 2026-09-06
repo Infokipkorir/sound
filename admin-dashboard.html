@@ -1501,6 +1501,29 @@ tr:hover td { background: rgba(27,107,69,.02); }
   </div>
 </div>
 
+<!-- NEW ADMIN CHAT THREAD -->
+<div id="new-conv-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-chat-square-dots"></i> New Thread</h2><button class="modal-close" onclick="closeModal('new-conv-modal')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Start (or resume) a direct admin support thread with a user. If a thread already exists for this user, it will be opened instead of duplicated.</p>
+      <div class="form-group"><label>User Type</label>
+        <select id="new-conv-role">
+          <option value="employee">Employee</option>
+          <option value="employer">Employer</option>
+        </select>
+      </div>
+      <div class="form-group"><label>User Email</label>
+        <input id="new-conv-email" type="email" placeholder="user@example.com">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('new-conv-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="startNewThread()"><i class="bi bi-chat-dots"></i> Start Thread</button>
+    </div>
+  </div>
+</div>
+
 <!-- SEND NOTIFICATION BULK -->
 <div id="send-notif-bulk-modal" class="modal-overlay">
   <div class="modal wide">
@@ -3793,6 +3816,25 @@ async function saveUser(){
 }
 
 // ============================================================
+// NEW THREAD MODAL (Messaging Centre "New Thread" button) — looks the
+// user up by email/role, then reuses openAdminChat below to find-or-create
+// the admin thread and open it, same as the per-row chat buttons do.
+// ============================================================
+function startNewThread(){
+  const role=document.getElementById('new-conv-role').value;
+  const email=document.getElementById('new-conv-email').value.trim().toLowerCase();
+  if(!email){showToast('err','Enter a user email');return;}
+  const record=role==='employer'
+    ?allEmployers.find(e=>(e.email||'').toLowerCase()===email)
+    :allWorkers.find(w=>(w.email||'').toLowerCase()===email);
+  if(!record){showToast('err','No '+role+' found with that email');return;}
+  const userId=role==='employer'?(record.user_id||record.id):(record.session_id||record.id);
+  closeModal('new-conv-modal');
+  document.getElementById('new-conv-email').value='';
+  openAdminChat(userId,record.email,record.full_name,role);
+}
+
+// ============================================================
 // DIRECT ADMIN CHAT (live chat with any user, from any tab)
 // ============================================================
 async function openAdminChat(userId,email,name,role){
@@ -4301,6 +4343,16 @@ async function sendTicketReply(){
 // ============================================================
 // CALLS (Voice / Video) — raw WebRTC, Supabase Realtime signaling
 // ============================================================
+async function loadCalls(){
+  try{
+    const {data,error}=await sb.from('calls').select('*').order('created_at',{ascending:false}).limit(200);
+    if(error)throw error;
+    allCalls=data||[];
+    renderCalls();
+    setEl('badge-calls',allCalls.filter(c=>c.status==='ringing'||c.status==='active').length);
+    showToast('ok','Calls refreshed');
+  }catch(err){showToast('err','Could not refresh calls: '+err.message);}
+}
 function renderCalls(){
   const typeF=document.getElementById('calls-type-filter')?.value||'';
   const statusF=document.getElementById('calls-status-filter')?.value||'';
