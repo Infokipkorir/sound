@@ -2415,6 +2415,23 @@ function getUserCurrency() {
   return sel ? sel.value : 'KES';
 }
 
+// Fills the hidden jb-lat/jb-lng fields from the browser's GPS so nearby
+// workers can find this job by distance (same idea as jobs.html's "Near Me").
+function useExactLocation() {
+  const hint = document.getElementById('jb-location-hint');
+  if (!navigator.geolocation) { if (hint) hint.textContent = 'Location not supported by this browser.'; return; }
+  if (hint) hint.textContent = 'Getting your location…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      document.getElementById('jb-lat').value = pos.coords.latitude;
+      document.getElementById('jb-lng').value = pos.coords.longitude;
+      if (hint) hint.innerHTML = '<i class="bi bi-check-circle-fill" style="color:var(--green)"></i> Exact location captured — nearby workers can now find this job by distance.';
+    },
+    () => { if (hint) hint.textContent = 'Could not get your location. Check browser permissions.'; },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
 async function postJob() {
   const title = document.getElementById('jb-title').value.trim();
   if (!title) { showToast('err','bi-x-circle','Required','Job title is required.'); return; }
@@ -2447,6 +2464,8 @@ async function postJob() {
     pricing_mode: isNegotiable ? 'negotiable' : 'fixed',
     location: document.getElementById('jb-location').value,
     county: document.getElementById('jb-county').value,
+    latitude: document.getElementById('jb-lat').value ? parseFloat(document.getElementById('jb-lat').value) : null,
+    longitude: document.getElementById('jb-lng').value ? parseFloat(document.getElementById('jb-lng').value) : null,
     work_type: isMamaFua ? 'One-Time Task' : document.getElementById('jb-work-type').value,
     salary_min: isMamaFua ? (isNegotiable ? null : mfAmount) : (parseInt(document.getElementById('jb-sal-min').value)||null),
     salary_max: isMamaFua ? (isNegotiable ? null : mfAmount) : (parseInt(document.getElementById('jb-sal-max').value)||null),
@@ -2481,9 +2500,10 @@ async function postJob() {
 
 function resetPostJobForm() {
   setJobCategory('standard');
-  ['jb-title','jb-location','jb-county','jb-sal-min','jb-sal-max','jb-desc','jb-reqs','jb-deadline','mf-amount','mf-basins-qty'].forEach(id=>{
+  ['jb-title','jb-location','jb-county','jb-sal-min','jb-sal-max','jb-desc','jb-reqs','jb-deadline','mf-amount','mf-basins-qty','jb-lat','jb-lng'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  const locHint = document.getElementById('jb-location-hint'); if (locHint) locHint.textContent = '';
   ['mf-bedroom','mf-kitchen','mf-livingroom'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.checked = false;
   });
@@ -2698,6 +2718,56 @@ async function submitPayment(method) {
   openModal('receipt-modal');
   showToast('ok','bi-check-circle-fill','Payment Submitted','Our team will verify your payment shortly.');
   await loadAll();
+}
+
+// ── CALL HISTORY ──
+function fmtCallDuration(sec) {
+  sec = sec || 0;
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+function setCallHistoryFilter(filter) {
+  callHistoryFilter = filter;
+  document.querySelectorAll('.chf').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === filter));
+  renderCallHistory();
+}
+function renderCallHistory() {
+  const el = document.getElementById('call-history-list');
+  if (!el) return;
+  let list = allCalls.slice();
+  const f = callHistoryFilter;
+  if (f === 'outgoing') list = list.filter(c => c.caller_id === currentUser?.id);
+  else if (f === 'incoming') list = list.filter(c => c.receiver_id === currentUser?.id);
+  else if (f === 'missed') list = list.filter(c => c.status === 'missed');
+  else if (f === 'rejected') list = list.filter(c => c.status === 'rejected');
+  else if (f === 'cancelled') list = list.filter(c => c.status === 'cancelled');
+  else if (f === 'ongoing') list = list.filter(c => c.status === 'accepted' && !(c.ended_at || c.call_ended_at));
+
+  if (!list.length) { el.innerHTML = '<div class="empty"><i class="bi bi-telephone"></i><p>No calls yet</p></div>'; return; }
+
+  const statusBadge = { ringing: 'badge-sky', accepted: 'badge-green', ended: 'badge-green', missed: 'badge-rose', rejected: 'badge-rose', cancelled: 'badge-muted' };
+  const statusLabel = { ringing: 'Ringing', accepted: 'Ongoing', ended: 'Completed', missed: 'Missed', rejected: 'Declined', cancelled: 'Cancelled' };
+
+  el.innerHTML = list.map(c => {
+    const outgoing = c.caller_id === currentUser?.id;
+    const otherId = outgoing ? c.receiver_id : c.caller_id;
+    const wp = workerMap[otherId];
+    const name = wp?.full_name || 'Worker';
+    const dirIcon = outgoing ? 'bi-telephone-outbound-fill' : 'bi-telephone-inbound-fill';
+    const typeIcon = c.call_type === 'video' ? 'bi-camera-video-fill' : 'bi-telephone-fill';
+    const dur = (c.duration || c.call_duration_seconds) ? fmtCallDuration(c.duration || c.call_duration_seconds) : '';
+    return `<div class="conv-row" style="cursor:default">
+      <div class="conv-av">${wp?.profile_photo_url ? `<img src="${esc(wp.profile_photo_url)}">` : ''}${ini(name)}</div>
+      <div class="conv-info">
+        <div class="conv-name"><i class="bi ${dirIcon}" style="color:var(--muted);margin-right:4px"></i>${esc(name)}</div>
+        <div class="conv-preview"><i class="bi ${typeIcon}"></i> ${outgoing ? 'Outgoing' : 'Incoming'} ${c.call_type || 'voice'} call${dur ? ' · ' + dur : ''}</div>
+      </div>
+      <div class="conv-meta">
+        <div class="conv-time">${timeAgo(c.started_at)}</div>
+        <span class="badge ${statusBadge[c.status] || 'badge-muted'}" style="margin-top:3px">${statusLabel[c.status] || c.status || '—'}</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderPayHistory() {
