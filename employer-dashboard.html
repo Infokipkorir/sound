@@ -93,6 +93,16 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:v
 .gc-chip-meta{display:flex;align-items:center;gap:5px;font-size:10.5px;opacity:.8;}
 .gc-empty-ongoing{font-size:12px;opacity:.7;background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.25);border-radius:12px;padding:.7rem .9rem;}
 
+/* ─── HERO PHOTO LAYER — a different photo loads behind the greeting card each visit ─── */
+.gc-photo{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity .6s ease;mix-blend-mode:overlay;}
+.gc-photo.loaded{opacity:.55;}
+
+/* ─── DASHBOARD QUICK LINKS (replaces full duplicated Workers/Jobs sections) ─── */
+.gc-quicklinks{display:flex;gap:10px;margin-bottom:1.4rem;flex-wrap:wrap;}
+.gc-qlink{display:flex;align-items:center;gap:8px;background:var(--brand-soft);border:1px solid rgba(27,107,69,.18);color:var(--brand);border-radius:11px;padding:.65rem 1rem;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;}
+.gc-qlink:hover{background:rgba(27,107,69,.18);transform:translateY(-1px);}
+.gc-qlink i{font-size:14px;}
+
 /* ─── SECTION ─── */
 .section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:1.4rem;box-shadow:0 1px 6px rgba(15,25,35,.05);}
 .sec-head{padding:1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
@@ -684,6 +694,7 @@ tr:hover td{background:rgba(27,107,69,.02);}
 
     <!-- Greeting Card -->
     <div class="greeting-card">
+      <div class="gc-photo" id="gc-photo"></div>
       <div class="gc-top">
         <div class="gc-left">
           <h1 id="greeting-text">Good Morning 👋</h1>
@@ -711,6 +722,13 @@ tr:hover td{background:rgba(27,107,69,.02);}
       </div>
     </div>
 
+    <!-- Quick links — full lists live in their own tabs now, not duplicated here -->
+    <div class="gc-quicklinks">
+      <button class="gc-qlink" onclick="showPanel('employees',null)"><i class="bi bi-people-fill"></i><span>Browse Workers</span></button>
+      <button class="gc-qlink" onclick="showPanel('jobs',null)"><i class="bi bi-briefcase-fill"></i><span>Posted Jobs</span></button>
+      <button class="gc-qlink" onclick="openModal('post-job-modal')"><i class="bi bi-plus-circle-fill"></i><span>Post a Job</span></button>
+    </div>
+
     <!-- Recent Messages -->
     <div class="section">
       <div class="sec-head">
@@ -727,29 +745,6 @@ tr:hover td{background:rgba(27,107,69,.02);}
         <button class="btn btn-secondary btn-sm" onclick="showPanel('interviews',null)"><i class="bi bi-arrow-right"></i> All</button>
       </div>
       <div id="recent-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
-    </div>
-
-    <!-- Available Workers -->
-    <div class="section">
-      <div class="sec-head">
-        <div class="sec-title"><i class="bi bi-people-fill" style="color:var(--accent)"></i> Available Workers</div>
-        <button class="btn btn-secondary btn-sm" onclick="showPanel('employees',null)"><i class="bi bi-arrow-right"></i> Browse All</button>
-      </div>
-      <div class="search-bar" style="padding:.8rem 1.2rem;border-bottom:1px solid var(--border);display:flex;gap:8px;">
-        <input style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13px;outline:none;" type="text" placeholder="🔍 Search workers…" oninput="renderWorkerGrid('dash-worker-grid',this.value)">
-      </div>
-      <div class="worker-grid" id="dash-worker-grid"></div>
-    </div>
-
-    <!-- Posted Jobs -->
-    <div class="section">
-      <div class="sec-head">
-        <div class="sec-title"><i class="bi bi-briefcase-fill" style="color:var(--sky)"></i> Posted Jobs</div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
-      </div>
-      <div class="table-wrap" id="dash-jobs-table">
-        <div class="empty"><i class="bi bi-briefcase"></i><p>No jobs posted yet</p></div>
-      </div>
     </div>
   </div>
 
@@ -1416,9 +1411,21 @@ let reportTargetConvId = null;
   currentUser = session.user;
 
   startClock();
+  setHeroPhoto();
   await loadAll();
   setupRealtime();
 })();
+
+// ── HERO PHOTO — random image behind the greeting card, different every load ──
+function setHeroPhoto() {
+  const el = document.getElementById('gc-photo');
+  if (!el) return;
+  const seed = Date.now() + '-' + Math.floor(Math.random() * 100000);
+  const img = new Image();
+  const url = `https://picsum.photos/seed/${seed}/1200/500`;
+  img.onload = () => { el.style.backgroundImage = `url('${url}')`; el.classList.add('loaded'); };
+  img.src = url;
+}
 
 // ── CLOCK + GREETING ──
 function startClock() {
