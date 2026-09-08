@@ -2802,10 +2802,12 @@ async function submitPayment(method) {
 }
 
 // ── CALL HISTORY ──
+// Always returns HH:MM:SS — calls with no recorded duration (missed/rejected/
+// cancelled) show 00:00:00 instead of being left blank.
 function fmtCallDuration(sec) {
-  sec = sec || 0;
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  sec = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 function setCallHistoryFilter(filter) {
   callHistoryFilter = filter;
@@ -2836,19 +2838,73 @@ function renderCallHistory() {
     const name = wp?.full_name || 'Worker';
     const dirIcon = outgoing ? 'bi-telephone-outbound-fill' : 'bi-telephone-inbound-fill';
     const typeIcon = c.call_type === 'video' ? 'bi-camera-video-fill' : 'bi-telephone-fill';
-    const dur = (c.duration || c.call_duration_seconds) ? fmtCallDuration(c.duration || c.call_duration_seconds) : '';
+    const dur = fmtCallDuration(c.duration || c.call_duration_seconds);
+    const conv = allConvs.find(cv => cv.employee_id === otherId);
     return `<div class="conv-row" style="cursor:default">
       <div class="conv-av">${wp?.profile_photo_url ? `<img src="${esc(wp.profile_photo_url)}">` : ''}${ini(name)}</div>
       <div class="conv-info">
         <div class="conv-name"><i class="bi ${dirIcon}" style="color:var(--muted);margin-right:4px"></i>${esc(name)}</div>
-        <div class="conv-preview"><i class="bi ${typeIcon}"></i> ${outgoing ? 'Outgoing' : 'Incoming'} ${c.call_type || 'voice'} call${dur ? ' · ' + dur : ''}</div>
+        <div class="conv-preview"><i class="bi ${typeIcon}"></i> ${outgoing ? 'Outgoing' : 'Incoming'} ${c.call_type || 'voice'} call · ${dur}</div>
       </div>
       <div class="conv-meta">
         <div class="conv-time">${timeAgo(c.started_at)}</div>
         <span class="badge ${statusBadge[c.status] || 'badge-muted'}" style="margin-top:3px">${statusLabel[c.status] || c.status || '—'}</span>
       </div>
+      <div class="kebab-wrap" onclick="event.stopPropagation()">
+        <button class="kebab-btn" onclick="toggleKebab(event)" title="More options"><i class="bi bi-three-dots-vertical"></i></button>
+        <div class="kebab-menu" id="kebab-call-${c.id}">
+          <button class="kebab-item" onclick="openCallAsMessage('${c.id}');closeKebab()"><i class="bi bi-chat-square-text"></i> Open as Message</button>
+          <button class="kebab-item" onclick="callAgainFromHistory('${c.id}','voice');closeKebab()"><i class="bi bi-telephone-fill"></i> Voice Call</button>
+          <button class="kebab-item" onclick="callAgainFromHistory('${c.id}','video');closeKebab()"><i class="bi bi-camera-video-fill"></i> Video Call</button>
+          <div class="kebab-sep"></div>
+          <button class="kebab-item danger" onclick="deleteCallRecord('${c.id}');closeKebab()"><i class="bi bi-trash"></i> Delete</button>
+          <button class="kebab-item danger" onclick="blockWorkerFromHistory('${otherId||''}');closeKebab()"${conv?'':' disabled'}><i class="bi bi-slash-circle"></i> Block</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
+}
+
+// ── CALL HISTORY ROW ACTIONS ──
+// "Open as Message": jump into the existing conversation with this worker.
+function openCallAsMessage(callId) {
+  const c = allCalls.find(x => x.id === callId);
+  if (!c) return;
+  const otherId = c.caller_id === currentUser?.id ? c.receiver_id : c.caller_id;
+  const conv = allConvs.find(cv => cv.employee_id === otherId);
+  if (!conv) { showToast('err','bi-chat-square-text','No Conversation','No message thread found for this worker.'); return; }
+  openConvInMessages(conv.id);
+}
+
+// "Call": redial the same worker from their call history entry.
+function callAgainFromHistory(callId, type) {
+  const c = allCalls.find(x => x.id === callId);
+  if (!c) return;
+  const otherId = c.caller_id === currentUser?.id ? c.receiver_id : c.caller_id;
+  const conv = allConvs.find(cv => cv.employee_id === otherId);
+  if (!conv) { showToast('err','bi-telephone','Cannot Call','No conversation with this worker yet.'); return; }
+  if (activeCallId) { showToast('info','bi-telephone','Already in a Call','End the current call first.'); return; }
+  activeConvId = conv.id;
+  startCall(type || c.call_type || 'voice');
+}
+
+// "Delete": removes this call from the employer's own history only.
+async function deleteCallRecord(callId) {
+  if (!confirm('Delete this call from your history?')) return;
+  const { error } = await sb.from('calls').delete().eq('id', callId);
+  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
+  allCalls = allCalls.filter(c => c.id !== callId);
+  renderCallHistory();
+  showToast('ok','bi-trash','Call Deleted','Removed from your call history.');
+}
+
+// "Block": blocks the worker on the matching conversation, same as blocking from Messages.
+async function blockWorkerFromHistory(otherId) {
+  if (!otherId) return;
+  const conv = allConvs.find(cv => cv.employee_id === otherId);
+  if (!conv) { showToast('err','bi-slash-circle','Cannot Block','No conversation with this worker yet.'); return; }
+  await blockWorker(conv.id);
+  renderCallHistory();
 }
 
 function renderPayHistory() {
@@ -3300,6 +3356,11 @@ async function startCall(type) {
 
     activeCallId = callRow.id;
 
+    // The call row reached the database, i.e. it's now ringing on the other
+    // end — move the caller's screen from "Calling…" to "Ringing…" and stay
+    // there until the DB tells us otherwise (accepted / rejected / missed).
+    setCallStatusLabel(type, 'Ringing…');
+
     // Register ourselves as a participant so the call is reliably tracked through to the other end
     await safeFire(sb.from('call_participants').insert({ call_id: callRow.id, user_id: currentUser.id }));
 
@@ -3334,6 +3395,22 @@ async function startCall(type) {
     if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
     activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
     updateUserCallStatus('online');
+  }
+}
+
+// ── CALL STATUS LABEL — single place that reflects the call's DB status ──
+// Calling… (dialing, before the row is confirmed) → Ringing… (row reached the
+// other end) → Connected (they answered — timer starts) → Call Ended (no
+// answer / hung up, plays silence).
+function setCallStatusLabel(type, text) {
+  if (type === 'voice') {
+    const lbl = document.getElementById('vc-label');
+    if (lbl) lbl.textContent = text;
+  } else {
+    const s1 = document.getElementById('vid-status-text');
+    const s2 = document.getElementById('vid-top-status');
+    if (s1) s1.textContent = text;
+    if (s2) s2.textContent = text;
   }
 }
 
@@ -3443,6 +3520,7 @@ async function acceptIncomingCall() {
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       await sb.from('calls').update({ status: 'accepted', sdp_answer: JSON.stringify(answer), answered_at: new Date().toISOString(), call_answered_at: new Date().toISOString() }).eq('id', callId);
+      setCallStatusLabel(callType, 'Connected');
     }
     await safeFire(sb.from('call_participants').insert({ call_id: callId, user_id: currentUser.id }));
     updateUserCallStatus('in_call');
@@ -3509,13 +3587,17 @@ async function endCall(type) {
 
 async function missedCall() {
   if (!activeCallId) return;
-  await sb.from('calls').update({ status: 'missed', ended_at: new Date().toISOString() }).eq('id', activeCallId);
   const type = activeCallType || 'voice';
+  // Not reaching the other user within the ring window — end and go silent.
+  setCallStatusLabel(type, 'Call Ended');
+  stopRingtone();
+  await sb.from('calls').update({ status: 'missed', ended_at: new Date().toISOString() }).eq('id', activeCallId);
   document.getElementById(type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
-  stopLocalStream(); stopRingtone();
+  stopLocalStream();
   showToast('info','bi-telephone-missed','No Answer',`${activeCallPeer||'Worker'} didn't answer.`);
   activeCallId = null; activeCallType = null; activeCallRole = null;
   updateUserCallStatus('online');
+  renderCallHistory();
 }
 
 // ── 7. WEBRTC PEER CONNECTION ──
@@ -3536,12 +3618,13 @@ async function createPeerConnection(type) {
     }
     if (!callTimer) startCallTimer(type);
   };
+  // "Connected" is set from the DB call status below (subscribeCallSignaling /
+  // acceptIncomingCall), not here — having two places flip the label to
+  // "Connected" caused it to race with the DB-driven state. This handler now
+  // only watches for a dropped connection.
   peerConnection.onconnectionstatechange = () => {
     const s = peerConnection?.connectionState;
-    if (s === 'connected' && type === 'voice') {
-      document.getElementById('vc-label').textContent = 'Connected';
-      document.getElementById('vc-status-dot').style.background = 'var(--green)';
-    } else if (s === 'failed' || s === 'disconnected') {
+    if (s === 'failed' || s === 'disconnected') {
       showToast('err','bi-wifi-off','Connection Lost','The call was interrupted.');
       endCall(type);
     }
@@ -3556,14 +3639,25 @@ function subscribeCallSignaling(callId, roomId) {
       if (row.status === 'accepted' && activeCallRole === 'caller' && row.sdp_answer) {
         const answer = JSON.parse(row.sdp_answer);
         if (peerConnection && peerConnection.signalingState !== 'stable') await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        // The other user received the call — silence the ringback, mark
+        // Connected, and start counting.
+        clearTimeout(missedCallTimeout);
+        stopRingtone();
+        setCallStatusLabel(activeCallType, 'Connected');
+        if (activeCallType === 'voice') document.getElementById('vc-status-dot').style.background = 'var(--green)';
+        if (!callTimer) startCallTimer(activeCallType);
       }
       if (row.status === 'rejected') {
+        // Not reaching the other user (declined) — end and go silent.
+        clearTimeout(missedCallTimeout);
         stopRingtone();
+        setCallStatusLabel(activeCallType, 'Call Ended');
         document.getElementById(activeCallType === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
         showToast('info','bi-telephone-x','Call Declined',`${activeCallPeer} declined the call.`);
         stopLocalStream(); clearInterval(callTimer); callTimer = null;
         activeCallId = null; activeCallType = null; activeCallRole = null;
         updateUserCallStatus('online');
+        renderCallHistory();
       }
       if (row.status === 'ended' && activeCallRole === 'callee') endCall(activeCallType || 'voice');
     })
