@@ -225,6 +225,24 @@
       align-items: center;
       justify-content: space-between;
       gap: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      min-height: 190px;
+    }
+    /* Rotating background photos — see setupWelcomeBgRotation(). One
+       .welcome-bg-slide element per photo, cross-faded via .active. A dark
+       gradient scrim (::before) sits above the photos and below the text
+       (z-index:-1) so the banner copy stays readable over any image. */
+    .welcome-bg-slide {
+      position: absolute; inset: 0; z-index: -2;
+      background-size: cover; background-position: center;
+      opacity: 0; transition: opacity 1.4s ease;
+    }
+    .welcome-bg-slide.active { opacity: 1; }
+    .welcome-banner::before {
+      content: ''; position: absolute; inset: 0; z-index: -1;
+      background: linear-gradient(135deg, rgba(15,23,42,.82) 0%, rgba(22,91,59,.72) 100%);
     }
     .welcome-banner h2 {
       font-size: clamp(1.50rem, 1.20rem + 1.2vw, 2.15rem);
@@ -1333,6 +1351,42 @@
     .ed-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 2.5rem 1rem; color: var(--muted); text-align: center; }
     .ed-empty i { font-size: 1.9rem; opacity: .3; }
 
+    /* ═══ PROFILE HUB (full-screen "My Profile" modal) ═══
+       #modal-account is a .panel-mode overlay, which already renders full-
+       bleed (see .modal-overlay.panel-mode rules). ed-hub-inner just caps
+       line-length on wide screens so text/forms stay readable. */
+    .ed-hub-inner { max-width: 1000px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+    .ed-hub-hero {
+      background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+      padding: 2.25rem 1.5rem 1.75rem; text-align: center; position: relative;
+    }
+    .ed-hub-avatar-wrap { position: relative; width: 92px; height: 92px; margin: 0 auto 12px; }
+    .ed-hub-avatar-wrap .profile-modal-avatar { width: 92px; height: 92px; margin: 0; border-color: rgba(255,255,255,.55); }
+    .verif-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      border-radius: 20px; padding: 3px 11px; font-size: 11px; font-weight: 700;
+    }
+    .verif-pill.is-verified { background: rgba(34,197,94,.18); color: #bbf7d0; border: 1px solid rgba(34,197,94,.35); }
+    .verif-pill.not-verified { background: rgba(255,255,255,.15); color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.25); }
+    .verif-pill.pending { background: rgba(217,119,6,.2); color: #fde68a; border: 1px solid rgba(217,119,6,.35); }
+
+    .verif-card {
+      border: 1px solid var(--border); border-radius: var(--ds-radius-md);
+      padding: 1.1rem; margin-bottom: 1rem; background: var(--card);
+    }
+    .verif-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .verif-card-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .otp-row { display: flex; gap: 8px; margin: 10px 0; }
+    .otp-box {
+      width: 42px; height: 48px; text-align: center; font-size: 18px; font-weight: 800;
+      border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; color: var(--ink);
+    }
+    .otp-box:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(27,107,69,.1); }
+    .esc-wallet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+
     .ed-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 10px; margin-bottom: 1rem; }
     .ed-stat-box { border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px; }
     .ed-stat-box .n { font-size: 1.25rem; font-weight: 800; }
@@ -1504,6 +1558,12 @@
 
   <!-- WELCOME BANNER -->
   <div class="welcome-banner" id="welcome-banner">
+    <!-- Rotating background photos — populated + cross-faded by setupWelcomeBgRotation().
+         NOTE: these are a curated set of stock work/domestic-life photo URLs, not a live
+         Google Images API call (that needs a server-side key + CSE); swap WELCOME_BG_PHOTOS
+         for a backend endpoint later if a live image feed is required. -->
+    <div class="welcome-bg-slide" id="welcome-bg-slide-a"></div>
+    <div class="welcome-bg-slide" id="welcome-bg-slide-b"></div>
     <div>
       <div class="welcome-name-row">
         <h2 id="welcome-name">Welcome back 👋</h2>
@@ -1527,213 +1587,15 @@
     </div>
   </div>
 
-  <!-- STATS -->
-  <div class="stats">
-    <div class="stat-card" onclick="navTo('modal-messages')">
-      <div class="stat-icon msg"><i class="bi bi-chat-dots"></i></div>
-      <div class="stat-value" id="stat-messages">—</div>
-      <div class="stat-label">Messages</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-jobs')">
-      <div class="stat-icon job"><i class="bi bi-briefcase"></i></div>
-      <div class="stat-value" id="stat-jobs">—</div>
-      <div class="stat-label">Jobs Available</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-applications')">
-      <div class="stat-icon" style="background: rgba(124,58,237,0.1); color: #7c3aed;"><i class="bi bi-send-check"></i></div>
-      <div class="stat-value" id="stat-applications">—</div>
-      <div class="stat-label">Applications</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-bids')">
-      <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-tag"></i></div>
-      <div class="stat-value" id="stat-bids">—</div>
-      <div class="stat-label">Bided Jobs</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-wallet')">
-      <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-shield-lock"></i></div>
-      <div class="stat-value" id="stat-held">—</div>
-      <div class="stat-label">Held Funds</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-interviews'); loadRecentInterviews()">
-      <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-calendar-check"></i></div>
-      <div class="stat-value" id="stat-interviewed">—</div>
-      <div class="stat-label">Interviewed</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-saved-jobs')">
-      <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-bookmark-check"></i></div>
-      <div class="stat-value" id="stat-saved-jobs">—</div>
-      <div class="stat-label">Saved Jobs</div>
-    </div>
-    <div class="stat-card" onclick="navTo('modal-wallet')">
-      <div class="stat-icon pay"><i class="bi bi-wallet2"></i></div>
-      <div class="stat-value" id="stat-wallet">—</div>
-      <div class="stat-label">Balance</div>
-    </div>
-  </div>
-
-  <!-- PROFILE VISIBILITY -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-account')">
-    <div class="section-title">
-      <i class="bi bi-eye" style="color: var(--brand);"></i> Profile Visibility
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div class="visibility-toggle">
-      <label class="toggle-switch" onclick="event.stopPropagation()">
-        <input type="checkbox" id="visibility-toggle" onclick="toggleVisibility()">
-        <span class="toggle-track"></span>
-      </label>
-      <div>
-        <div class="toggle-label" id="visibility-label">Loading…</div>
-        <div class="toggle-sub" id="visibility-sub">Checking status…</div>
-      </div>
-    </div>
-    <div style="font-size: 12px; color: var(--muted); line-height: 1.6;">
-      When <strong>ON</strong>, employers can find and contact you. Turn off if you're currently employed or not seeking work.
-    </div>
-  </div>
-
-  <!-- ═══════════════ EMPLOYEE DETAILS (merged from Demo UI) ═══════════════ -->
-  <div class="section ed-wrap tap-section" onclick="handleSectionTap(event, 'modal-account')">
-    <div class="section-title">
-      <i class="bi bi-person-badge" style="color: var(--brand);"></i> Employee Details
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-
-    <div class="ed-profile-row">
-      <div class="ed-avatar" id="ed-avatar">--</div>
-      <div>
-        <div class="ed-profile-name" id="ed-profile-name">—
-          <i class="bi bi-patch-check-fill" id="ed-verify-badge" title="Verified" style="font-size:14px; color:var(--accent); display:none;"></i>
-        </div>
-        <div class="ed-profile-meta">
-          <span><i class="bi bi-briefcase-fill"></i> <span id="ed-profile-role">—</span></span>
-          <span><i class="bi bi-geo-alt-fill"></i> <span id="ed-profile-location">—</span></span>
-          <span><i class="bi bi-star-fill" style="color:var(--accent);"></i> <span id="ed-profile-rating">—</span></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="ed-tab-strip" onclick="event.stopPropagation()">
-      <button class="ed-tab-item active" data-ed-tab="ed-profile" onclick="switchEdTab('ed-profile', this)">Profile</button>
-      <button class="ed-tab-item" data-ed-tab="ed-activity" onclick="switchEdTab('ed-activity', this)">Activity</button>
-      <button class="ed-tab-item" data-ed-tab="ed-hiring" onclick="switchEdTab('ed-hiring', this)">Hiring History</button>
-      <button class="ed-tab-item" data-ed-tab="ed-earnings" onclick="switchEdTab('ed-earnings', this)">Earnings</button>
-      <button class="ed-tab-item" data-ed-tab="ed-documents" onclick="switchEdTab('ed-documents', this)">Documents</button>
-    </div>
-
-    <!-- PROFILE -->
-    <div class="ed-tab-panel active" id="ed-profile" onclick="event.stopPropagation()">
-      <div id="ed-profile-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading profile…</p></div></div>
-    </div>
-
-    <!-- ACTIVITY -->
-    <div class="ed-tab-panel" id="ed-activity" onclick="event.stopPropagation()">
-      <div id="ed-activity-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading activity…</p></div></div>
-    </div>
-
-    <!-- HIRING HISTORY -->
-    <div class="ed-tab-panel" id="ed-hiring" onclick="event.stopPropagation()">
-      <div id="ed-hiring-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading hiring history…</p></div></div>
-    </div>
-
-    <!-- EARNINGS -->
-    <div class="ed-tab-panel" id="ed-earnings" onclick="event.stopPropagation()">
-      <div id="ed-earnings-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading earnings…</p></div></div>
-    </div>
-
-    <!-- DOCUMENTS -->
-    <div class="ed-tab-panel" id="ed-documents" onclick="event.stopPropagation()">
-      <div id="ed-documents-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading documents…</p></div></div>
-    </div>
-  </div>
-
-  <!-- ONGOING JOBS — Mama Fua Mtaani + active hires -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-ongoing-jobs')">
-    <div class="section-title">
-      <i class="bi bi-activity" style="color: var(--sky);"></i>
-      Ongoing Jobs
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div id="ongoing-jobs-preview">
-      <div class="empty-state"><i class="bi bi-activity"></i><p>Loading ongoing jobs…</p></div>
-    </div>
-  </div>
-
-  <!-- RECENT MESSAGES PREVIEW -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-messages')">
-    <div class="section-title">
-      <i class="bi bi-chat-dots" style="color: var(--sky);"></i>
-      Recent Messages
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div id="recent-messages">
-      <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
-    </div>
-  </div>
-
-  <!-- RECENT INTERVIEWS PREVIEW -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-interviews', loadRecentInterviews)">
-    <div class="section-title">
-      <i class="bi bi-calendar-check" style="color: var(--brand);"></i>
-      Recent Interviews
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div id="recent-interviews">
-      <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
-    </div>
-  </div>
-
-  <!-- BIDED JOBS PREVIEW -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-bids')">
-    <div class="section-title">
-      <i class="bi bi-tag" style="color: var(--sky);"></i>
-      Bided Jobs
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div id="bided-jobs-preview">
-      <div class="empty-state"><i class="bi bi-tag"></i><p>Loading bids…</p></div>
-    </div>
-  </div>
-
-  <!-- SAVED JOBS PREVIEW -->
-  <div class="section tap-section" onclick="handleSectionTap(event, 'modal-saved-jobs')">
-    <div class="section-title">
-      <i class="bi bi-bookmark-check" style="color: var(--brand);"></i>
-      Saved Jobs
-      <i class="bi bi-chevron-right section-tap-arrow"></i>
-    </div>
-    <div id="saved-jobs-preview">
-      <div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>
-    </div>
-  </div>
-
-  <!-- QUICK ACTIONS -->
-  <div class="section">
-    <div class="section-title"><i class="bi bi-lightning" style="color: var(--accent);"></i> Quick Actions</div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px;">
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-jobs')">
-        <i class="bi bi-briefcase"></i> Find Jobs
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-wallet')">
-        <i class="bi bi-wallet2"></i> Payments
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-messages')">
-        <i class="bi bi-chat-dots"></i> Messages
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-account')">
-        <i class="bi bi-person"></i> Profile
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-saved-jobs')">
-        <i class="bi bi-bookmark-heart"></i> Saved Jobs
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-bids')">
-        <i class="bi bi-tag"></i> My Bids
-      </button>
-      <button class="btn btn-secondary btn-full" onclick="navTo('modal-ongoing-jobs')">
-        <i class="bi bi-briefcase-fill"></i> My Jobs
-      </button>
-    </div>
-  </div>
+  <!-- Everything that used to live below the Welcome banner (stats, profile
+       visibility, employee details, recent messages/interviews, ongoing/
+       bided/saved jobs, quick actions) has moved into the full-screen
+       "My Profile" modal (#modal-account) or is one tap away via the
+       sidebar, so Overview is just the Welcome section now. The elements
+       those hidden previews used to populate (stat-messages, stat-jobs,
+       ongoing-jobs-preview, bided-jobs-preview, saved-jobs-preview, etc.)
+       are gone from the DOM; the loader functions were updated to guard
+       with `?.`/null-checks so they no-op quietly instead of throwing. -->
 
 </div><!-- /page -->
 <!-- ═══════════════════════════ NOTIFICATIONS MODAL ═══════════════════════════ -->
@@ -2387,21 +2249,39 @@
 </div>
 
 <!-- ═══════════════════════════ ACCOUNT MODAL ═══════════════════════════ -->
+<!-- ═══════════════════════════ MY PROFILE (full-screen hub) ═══════════════════════════
+     panel-mode already renders this edge-to-edge (see .modal-overlay.panel-mode CSS);
+     the max-width cap that used to sit on the inline style is gone on purpose. -->
 <div class="modal-overlay panel-mode" id="modal-account">
-  <div class="modal" style="max-width:640px;margin:0 auto;">
+  <div class="modal">
     <div class="modal-header">
-      <h2><i class="bi bi-person-circle"></i> My Account</h2>
-      <button class="modal-close" onclick="navTo('overview')">×</button>
+      <h2><i class="bi bi-person-circle"></i> My Profile</h2>
+      <div style="display:flex;align-items:center;gap:2px;">
+        <button class="nav-btn" onclick="launchEditProfile(event)" title="Edit Profile"><i class="bi bi-pencil-square"></i></button>
+        <button class="nav-btn" onclick="launchAccountSettings(event)" title="Account Settings"><i class="bi bi-gear"></i></button>
+        <button class="modal-close" onclick="navTo('overview')">×</button>
+      </div>
     </div>
     <div class="modal-body" style="padding:0;">
 
       <!-- Profile Hero Card -->
-      <div style="background:linear-gradient(135deg,var(--brand-dark),var(--brand)); padding:2rem 1.5rem 1.5rem; text-align:center; position:relative;">
-        <div id="account-avatar" style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.2);color:#fff;font-size:2rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.4);backdrop-filter:blur(4px);">W</div>
-        <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:3px;" id="account-name">—</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-bottom:6px;" id="account-email">—</div>
-        <div id="account-role-badge" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;">
-          <i class="bi bi-person-badge-fill"></i> <span id="account-role">Employee</span>
+      <div class="ed-hub-hero">
+        <div class="ed-hub-avatar-wrap">
+          <div id="account-avatar" class="profile-modal-avatar" style="background:rgba(255,255,255,0.2);backdrop-filter:blur(4px);">
+            <span id="account-avatar-init">W</span>
+            <input type="file" accept="image/*" onchange="uploadProfilePhoto(this)" title="Change profile photo">
+          </div>
+        </div>
+        <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:3px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span id="account-name">—</span>
+          <i class="bi bi-patch-check-fill" id="account-verify-icon" title="Verified" style="color:#4ade80;display:none;"></i>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-bottom:8px;" id="account-email">—</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <div id="account-role-badge" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;">
+            <i class="bi bi-person-badge-fill"></i> <span id="account-role">Employee</span>
+          </div>
+          <span class="verif-pill not-verified" id="account-verif-pill"><i class="bi bi-shield"></i> <span id="account-verif-pill-text">Unverified</span></span>
         </div>
       </div>
 
@@ -2411,51 +2291,129 @@
       </div>
 
       <!-- Quick info cards row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px 16px 0;">
-        <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.15);border-radius:12px;padding:12px;text-align:center;">
-          <div style="font-size:10px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Verification</div>
-          <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-verif-badge">—</div>
+      <div class="ed-hub-inner" style="padding-top:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;">
+          <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.15);border-radius:12px;padding:12px;text-align:center;cursor:pointer;" onclick="switchEdTab('ed-verification', document.querySelector('[data-ed-tab=\'ed-verification\']'))">
+            <div style="font-size:10px;color:var(--brand);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Verification</div>
+            <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-verif-badge">—</div>
+          </div>
+          <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.2);border-radius:12px;padding:12px;text-align:center;cursor:pointer;" onclick="switchEdTab('ed-earnings', document.querySelector('[data-ed-tab=\'ed-earnings\']'))">
+            <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Payment</div>
+            <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-pay-badge">—</div>
+          </div>
         </div>
-        <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.2);border-radius:12px;padding:12px;text-align:center;">
-          <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Payment</div>
-          <div style="font-size:13px;font-weight:800;color:var(--ink);" id="acct-pay-badge">—</div>
+
+        <!-- ═══════════════ EMPLOYEE DETAILS / PROFILE HUB TABS ═══════════════ -->
+        <div class="ed-wrap">
+          <div class="ed-profile-row">
+            <div class="ed-avatar" id="ed-avatar">--</div>
+            <div>
+              <div class="ed-profile-name" id="ed-profile-name">—
+                <i class="bi bi-patch-check-fill" id="ed-verify-badge" title="Verified" style="font-size:14px; color:var(--accent); display:none;"></i>
+              </div>
+              <div class="ed-profile-meta">
+                <span><i class="bi bi-briefcase-fill"></i> <span id="ed-profile-role">—</span></span>
+                <span><i class="bi bi-geo-alt-fill"></i> <span id="ed-profile-location">—</span></span>
+                <span><i class="bi bi-star-fill" style="color:var(--accent);"></i> <span id="ed-profile-rating">—</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ed-tab-strip">
+            <button class="ed-tab-item active" data-ed-tab="ed-profile" onclick="switchEdTab('ed-profile', this)">Profile</button>
+            <button class="ed-tab-item" data-ed-tab="ed-verification" onclick="switchEdTab('ed-verification', this)">Verification</button>
+            <button class="ed-tab-item" data-ed-tab="ed-visibility" onclick="switchEdTab('ed-visibility', this)">Visibility</button>
+            <button class="ed-tab-item" data-ed-tab="ed-activity" onclick="switchEdTab('ed-activity', this)">Activity</button>
+            <button class="ed-tab-item" data-ed-tab="ed-hiring" onclick="switchEdTab('ed-hiring', this)">Applications</button>
+            <button class="ed-tab-item" data-ed-tab="ed-hiring-history" onclick="switchEdTab('ed-hiring-history', this)">Hiring History</button>
+            <button class="ed-tab-item" data-ed-tab="ed-earnings" onclick="switchEdTab('ed-earnings', this)">Escrow & Wallet</button>
+            <button class="ed-tab-item" data-ed-tab="ed-documents" onclick="switchEdTab('ed-documents', this)">Documents</button>
+          </div>
+
+          <!-- PROFILE (bio data) -->
+          <div class="ed-tab-panel active" id="ed-profile">
+            <div id="ed-profile-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading profile…</p></div></div>
+          </div>
+
+          <!-- VERIFICATION -->
+          <div class="ed-tab-panel" id="ed-verification">
+            <div id="ed-verification-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading verification status…</p></div></div>
+          </div>
+
+          <!-- VISIBILITY (moved from Overview — same #visibility-toggle, toggleVisibility() untouched) -->
+          <div class="ed-tab-panel" id="ed-visibility">
+            <div class="verif-card">
+              <div class="verif-card-head">
+                <span class="verif-card-icon" style="background:var(--brand-soft);"><i class="bi bi-eye" style="color:var(--brand);"></i></span>
+                <strong>Profile Visibility</strong>
+              </div>
+              <div class="visibility-toggle">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="visibility-toggle" onclick="toggleVisibility()">
+                  <span class="toggle-track"></span>
+                </label>
+                <div>
+                  <div class="toggle-label" id="visibility-label">Loading…</div>
+                  <div class="toggle-sub" id="visibility-sub">Checking status…</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.6; margin-top:8px;">
+                When <strong>ON</strong>, employers can find and contact you. Turn off if you're currently employed or not seeking work.
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVITY — includes the Recent Messages / Recent Interviews previews moved from Overview -->
+          <div class="ed-tab-panel" id="ed-activity">
+            <div class="section" style="border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;padding:1.1rem;">
+              <div class="section-title" style="cursor:pointer;" onclick="navTo('modal-messages')">
+                <i class="bi bi-chat-dots" style="color: var(--sky);"></i> Recent Conversations
+                <i class="bi bi-chevron-right section-tap-arrow"></i>
+              </div>
+              <div id="recent-messages">
+                <div class="empty-state"><i class="bi bi-chat-dots"></i><p>Loading messages…</p></div>
+              </div>
+            </div>
+            <div class="section" style="border:1px solid var(--border);border-radius:12px;margin-bottom:1rem;padding:1.1rem;">
+              <div class="section-title" style="cursor:pointer;" onclick="navTo('modal-interviews'); loadRecentInterviews()">
+                <i class="bi bi-calendar-check" style="color: var(--brand);"></i> Recent Interviews
+                <i class="bi bi-chevron-right section-tap-arrow"></i>
+              </div>
+              <div id="recent-interviews">
+                <div class="empty-state"><i class="bi bi-calendar-check"></i><p>Loading interviews…</p></div>
+              </div>
+            </div>
+            <div id="ed-activity-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading activity…</p></div></div>
+          </div>
+
+          <!-- APPLICATIONS (jobs applied to + status) -->
+          <div class="ed-tab-panel" id="ed-hiring">
+            <div id="ed-hiring-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading applications…</p></div></div>
+          </div>
+
+          <!-- HIRING HISTORY (hired roles + their interview record) -->
+          <div class="ed-tab-panel" id="ed-hiring-history">
+            <div id="ed-hiring-history-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading hiring history…</p></div></div>
+          </div>
+
+          <!-- ESCROW & WALLET -->
+          <div class="ed-tab-panel" id="ed-earnings">
+            <div class="esc-wallet-actions">
+              <button class="btn btn-primary btn-full" onclick="launchWalletAction('deposit')"><i class="bi bi-plus-circle"></i> Deposit</button>
+              <button class="btn btn-secondary btn-full" onclick="launchWalletAction('withdraw')"><i class="bi bi-cash-coin"></i> Withdraw</button>
+            </div>
+            <div id="ed-earnings-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading escrow & wallet…</p></div></div>
+          </div>
+
+          <!-- DOCUMENTS -->
+          <div class="ed-tab-panel" id="ed-documents">
+            <div id="ed-documents-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading documents…</p></div></div>
+          </div>
         </div>
-      </div>
 
-      <!-- Action buttons -->
-      <div style="display:flex;flex-direction:column;gap:6px;padding:16px;">
-        <button class="btn btn-secondary btn-full" onclick="launchEditProfile(event)" style="justify-content:flex-start;gap:12px;">
-          <span style="width:32px;height:32px;border-radius:8px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-pencil-square" style="color:var(--brand);"></i></span>
-          <span>
-            <span style="display:block;font-weight:700;">Edit Profile</span>
-            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Update name, photo, skills & availability</span>
-          </span>
-          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
-        </button>
-
-        <button class="btn btn-secondary btn-full" onclick="launchAccountSettings(event)" style="justify-content:flex-start;gap:12px;">
-          <span style="width:32px;height:32px;border-radius:8px;background:rgba(139,92,246,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-gear" style="color:var(--violet);"></i></span>
-          <span>
-            <span style="display:block;font-weight:700;">Account Settings</span>
-            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Password, deactivate or delete account</span>
-          </span>
-          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
-        </button>
-
-        <button class="btn btn-secondary btn-full" onclick="navTo('modal-wallet'); navTo('overview')" style="justify-content:flex-start;gap:12px;">
-          <span style="width:32px;height:32px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-wallet2" style="color:var(--accent);"></i></span>
-          <span>
-            <span style="display:block;font-weight:700;">Wallet & Payments</span>
-            <span style="display:block;font-size:11px;color:var(--muted);font-weight:400;">Balance, fees & payment history</span>
-          </span>
-          <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
-        </button>
-
-        <div style="height:1px;background:var(--border);margin:4px 0;"></div>
-
-        <button class="btn btn-full" onclick="signOut()" style="background:rgba(244,63,94,.08);color:var(--rose);border:1px solid rgba(244,63,94,.2);justify-content:flex-start;gap:12px;">
-          <span style="width:32px;height:32px;border-radius:8px;background:rgba(244,63,94,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-box-arrow-right" style="color:var(--rose);"></i></span>
-          <span style="font-weight:700;">Sign Out</span>
+        <div style="height:1px;background:var(--border);margin:1.5rem 0;"></div>
+        <button class="btn btn-full" onclick="signOut()" style="background:rgba(244,63,94,.08);color:var(--rose);border:1px solid rgba(244,63,94,.2);justify-content:center;gap:10px;">
+          <i class="bi bi-box-arrow-right"></i> <span style="font-weight:700;">Sign Out</span>
         </button>
       </div>
     </div>
@@ -3134,7 +3092,8 @@ async function loadDashboard() {
     const name = workerProfile?.full_name || currentUser.email?.split('@')[0] || 'Worker';
     document.getElementById('welcome-name').textContent = 'Welcome back, ' + name + ' 👋';
     document.getElementById('nav-avatar-init').textContent = name[0].toUpperCase();
-    document.getElementById('account-avatar').textContent = name[0].toUpperCase();
+    const acctAvatarInit = document.getElementById('account-avatar-init');
+    if (acctAvatarInit) acctAvatarInit.textContent = name[0].toUpperCase();
     document.getElementById('account-name').textContent = name;
     document.getElementById('account-email').textContent = currentUser.email;
     document.getElementById('account-role').textContent = 'Employee · ' + (workerProfile?.verification_stage || 'unverified');
@@ -3194,7 +3153,7 @@ async function loadDashboard() {
       document.getElementById('msg-badge').textContent = totalUnread;
       document.getElementById('msg-badge').classList.add('show');
     }
-    document.getElementById('stat-messages').textContent = allConversations.length;
+    setText('stat-messages', allConversations.length);
 
     try {
       await renderConversationList();
@@ -3220,7 +3179,7 @@ async function loadDashboard() {
     }
     console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
-    document.getElementById('stat-jobs').textContent = allJobs.length;
+    setText('stat-jobs', allJobs.length);
 
     // 3a. Payment-verified badge — has the employer already funded escrow for
     // this job? Best-effort: some RLS setups may not let a worker read escrow
@@ -3280,9 +3239,9 @@ async function loadDashboard() {
         savedJobIds = new Set((saved || []).map(r => r.job_id));
         lovedJobIds = new Set((loved || []).map(r => r.job_id));
         myApplications = apps || [];
-        document.getElementById('stat-saved-jobs').textContent = savedJobIds.size;
-        document.getElementById('stat-applications').textContent = myApplications.length;
-        document.getElementById('stat-interviewed').textContent = interviewCount ?? 0;
+        setText('stat-saved-jobs', savedJobIds.size);
+        setText('stat-applications', myApplications.length);
+        setText('stat-interviewed', interviewCount ?? 0);
         // Loves count — shown as a pill inside the welcome banner
         document.getElementById('welcome-loves-count').textContent = lovedJobIds.size;
         // Saved Jobs dashboard section preview
@@ -3340,7 +3299,7 @@ async function loadDashboard() {
     if (wallet) {
       const bal = (wallet.balance || 0);
       document.getElementById('wallet-balance').textContent = 'KES ' + bal.toLocaleString('en-KE');
-      document.getElementById('stat-wallet').textContent = 'KES ' + bal.toLocaleString('en-KE');
+      setText('stat-wallet', 'KES ' + bal.toLocaleString('en-KE'));
       document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
       updateFeeStatus(wallet);
       if (!wallet.account_number) {
@@ -3350,7 +3309,7 @@ async function loadDashboard() {
     } else {
       // Try worker_profiles for fee status fallback
       if (workerProfile) updateFeeStatus(workerProfile);
-      document.getElementById('stat-wallet').textContent = 'KES 0';
+      setText('stat-wallet', 'KES 0');
     }
     document.getElementById('wd-avail-balance').textContent = 'KES ' + ((wallet?.balance || 0)).toLocaleString('en-KE');
 
@@ -5469,7 +5428,7 @@ async function loadApplications() {
   }
 
   myApplications = data || [];
-  document.getElementById('stat-applications').textContent = myApplications.length;
+  setText('stat-applications', myApplications.length);
 
   if (!myApplications.length) {
     el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>You haven\'t applied to any jobs yet.</p></div>';
@@ -5543,7 +5502,7 @@ function renderBidedJobs() {
     return;
   }
   const bids = (myApplications || []).slice().sort((x, y) => new Date(y.applied_at) - new Date(x.applied_at));
-  document.getElementById('stat-bids').textContent = bids.length;
+  setText('stat-bids', bids.length);
   if (!bids.length) {
     const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>You haven\'t placed any bids yet.</p></div>';
     if (el) el.innerHTML = msg;
@@ -5954,7 +5913,7 @@ async function payFromWallet() {
 
     // 4. Update local UI
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    setText('stat-wallet', 'KES ' + newBalance.toLocaleString('en-KE'));
     document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
     updateFeeStatus({
       interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid,
@@ -6113,7 +6072,7 @@ async function requestWithdrawal() {
 
     // 3. Reflect the new balance across the UI (wallet modal, stat tile, withdraw form).
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    document.getElementById('stat-wallet').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
+    setText('stat-wallet', 'KES ' + newBalance.toLocaleString('en-KE'));
     document.getElementById('wd-avail-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
 
     document.getElementById('wd-amount').value = '';
@@ -6538,7 +6497,7 @@ function subscribeToRealtime() {
       filter: `user_id=eq.${currentUser.id}` }, (payload) => {
       const w = payload.new;
       document.getElementById('wallet-balance').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
-      document.getElementById('stat-wallet').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
+      setText('stat-wallet', 'KES ' + (w.balance || 0).toLocaleString('en-KE'));
       updateFeeStatus(w);
     })
     .subscribe();
@@ -6665,6 +6624,14 @@ function timeAgo(d) {
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// Safe DOM setters — several elements this dashboard used to update lived
+// in Overview-page preview sections (stats grid, ongoing/bided/saved-jobs
+// previews) that were removed when Overview was trimmed down to just the
+// Welcome banner (those views are still one tap away via the sidebar).
+// These helpers no-op quietly instead of throwing when an id is gone.
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function setHTML(id, val) { const el = document.getElementById(id); if (el) el.innerHTML = val; }
 
 function showToast(type, icon, title, body) {
   const stack = document.getElementById('toast-stack');
@@ -7048,8 +7015,11 @@ async function savePersonalInfo() {
   document.getElementById('welcome-name').textContent = 'Welcome back, ' + fullName + ' 👋';
   document.getElementById('account-name').textContent = fullName;
   document.getElementById('nav-avatar-init').textContent = fullName[0].toUpperCase();
-  document.getElementById('account-avatar').textContent = fullName[0].toUpperCase();
+  const accInit2 = document.getElementById('account-avatar-init');
+  if (accInit2) accInit2.textContent = fullName[0].toUpperCase();
   document.getElementById('ep-avatar-init').textContent = fullName[0].toUpperCase();
+  const edNameEl = document.getElementById('ed-profile-name');
+  if (edNameEl?.childNodes[0]) edNameEl.childNodes[0].textContent = fullName + ' ';
 
   showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
 }
@@ -7191,6 +7161,12 @@ async function uploadProfilePhoto(input) {
   const matchVal = workerProfile.id;
   await sb.from('worker_profiles').update({ profile_photo_url: pub.publicUrl }).eq(matchCol, matchVal);
   workerProfile.profile_photo_url = pub.publicUrl;
+  if (edFullProfile) edFullProfile.profile_photo_url = pub.publicUrl;
+  const name = workerProfile.full_name || currentUser.email?.split('@')[0] || 'Worker';
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+  const edAvatarEl = document.getElementById('ed-avatar');
+  if (edAvatarEl) edAvatarEl.innerHTML = `<img src="${esc(pub.publicUrl)}" alt="${esc(name)}">`;
+  syncProfileHeroAvatarAndVerification?.(name, initials);
   showToast('ok', 'bi-check-circle', 'Photo Updated', '');
 }
 
@@ -7265,7 +7241,7 @@ async function deleteAccount() {
 //  slowed down by data most sessions never open.
 // ════════════════════════════════════════════════════════
 let edFullProfile = null; // full worker_profiles row (loadDashboard() only selects a subset)
-const edLoaded = { activity: false, hiring: false, earnings: false, documents: false };
+const edLoaded = { activity: false, hiring: false, earnings: false, documents: false, verification: false, hiringHistory: false };
 
 function switchEdTab(tabId, btn) {
   document.querySelectorAll('.ed-tab-item').forEach(el => el.classList.remove('active'));
@@ -7275,8 +7251,12 @@ function switchEdTab(tabId, btn) {
 
   if (tabId === 'ed-activity' && !edLoaded.activity) { edLoaded.activity = true; loadEdActivity(); }
   if (tabId === 'ed-hiring' && !edLoaded.hiring) { edLoaded.hiring = true; loadEdHiringHistory(); }
+  if (tabId === 'ed-hiring-history' && !edLoaded.hiringHistory) { edLoaded.hiringHistory = true; loadEdHiringHistoryDetailed(); }
   if (tabId === 'ed-earnings' && !edLoaded.earnings) { edLoaded.earnings = true; loadEdEarnings(); }
   if (tabId === 'ed-documents' && !edLoaded.documents) { edLoaded.documents = true; loadEdDocuments(); }
+  if (tabId === 'ed-verification' && !edLoaded.verification) { edLoaded.verification = true; renderEdVerificationTab(); }
+  // Visibility tab has no async load — toggleVisibility()'s checkbox state is
+  // already kept in sync by loadDashboard(), same as when it lived on Overview.
 }
 
 function edStatusPillClass(status) {
@@ -7326,8 +7306,42 @@ async function initEmployeeDetailsSection() {
   if (edFullProfile.profile_photo_url) {
     document.getElementById('ed-avatar').innerHTML = `<img src="${esc(edFullProfile.profile_photo_url)}" alt="${esc(name)}">`;
   }
+  syncProfileHeroAvatarAndVerification(name, initials);
 
   renderEdProfileTab();
+}
+
+// Keeps the big hero avatar/verified-badge at the top of the My Profile
+// modal in sync with whatever the Profile/Documents tabs already know —
+// called once on load and again after a photo upload or a verification
+// stage change, so every place a "you are verified" signal shows agrees.
+function syncProfileHeroAvatarAndVerification(name, initials) {
+  const isVerified = (edFullProfile?.verification_stage || workerProfile?.verification_stage || '').toLowerCase() === 'verified';
+  const isPending = (edFullProfile?.verification_stage || workerProfile?.verification_stage || '').toLowerCase().includes('pending');
+
+  const heroIcon = document.getElementById('account-verify-icon');
+  if (heroIcon) heroIcon.style.display = isVerified ? 'inline-block' : 'none';
+
+  const pill = document.getElementById('account-verif-pill');
+  const pillText = document.getElementById('account-verif-pill-text');
+  if (pill && pillText) {
+    pill.classList.remove('is-verified', 'not-verified', 'pending');
+    if (isVerified) { pill.classList.add('is-verified'); pillText.textContent = 'Verified'; pill.querySelector('i').className = 'bi bi-patch-check-fill'; }
+    else if (isPending) { pill.classList.add('pending'); pillText.textContent = 'Pending Review'; pill.querySelector('i').className = 'bi bi-hourglass-split'; }
+    else { pill.classList.add('not-verified'); pillText.textContent = 'Unverified'; pill.querySelector('i').className = 'bi bi-shield'; }
+  }
+
+  const photoUrl = edFullProfile?.profile_photo_url;
+  const accountAvatarEl = document.getElementById('account-avatar');
+  if (accountAvatarEl) {
+    if (photoUrl) {
+      accountAvatarEl.innerHTML = `<img src="${esc(photoUrl)}" alt="${esc(name || '')}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+        <input type="file" accept="image/*" onchange="uploadProfilePhoto(this)" title="Change profile photo">`;
+    } else {
+      accountAvatarEl.innerHTML = `<span id="account-avatar-init">${esc(initials || (name ? name[0].toUpperCase() : 'W'))}</span>
+        <input type="file" accept="image/*" onchange="uploadProfilePhoto(this)" title="Change profile photo">`;
+    }
+  }
 }
 
 function renderEdProfileTab() {
@@ -7548,6 +7562,241 @@ async function loadEdDocuments() {
 
   el.innerHTML = imagesHtml + docsHtml;
 }
+
+// ════════════════════════════════════════════════════════
+//  VERIFICATION TAB — status, "Request Verification", and
+//  email verification via Supabase Auth's OTP flow.
+//  NOTE ON EMAIL OTP: this calls the real Supabase Auth JS SDK
+//  (auth.updateUser + auth.verifyOtp with type:'email_change'),
+//  which is the correct API shape for a 6-digit email-change code.
+//  It only works end-to-end if "Confirm email" / Email OTP is
+//  enabled in this Supabase project's Auth settings — if the
+//  project instead sends a confirmation *link*, the code input
+//  below simply won't have a code to check against yet.
+// ════════════════════════════════════════════════════════
+let edOtpEmailPending = null;
+
+function edVerifStageLabel(stage) {
+  const s = (stage || '').toLowerCase();
+  if (s === 'verified') return { label: 'Verified', cls: 'is-verified', icon: 'bi-patch-check-fill' };
+  if (s.includes('pending')) return { label: 'Pending Review', cls: 'pending', icon: 'bi-hourglass-split' };
+  if (s.includes('reject')) return { label: 'Rejected — please re-submit', cls: 'not-verified', icon: 'bi-x-circle' };
+  return { label: 'Unverified', cls: 'not-verified', icon: 'bi-shield' };
+}
+
+function renderEdVerificationTab() {
+  const el = document.getElementById('ed-verification-content');
+  const p = edFullProfile || workerProfile;
+  if (!el || !p) return;
+
+  const stage = (p.verification_stage || '').toLowerCase();
+  const info = edVerifStageLabel(stage);
+  const canRequest = stage !== 'verified' && !stage.includes('pending');
+  const email = currentUser?.email || '—';
+
+  el.innerHTML = `
+    <div class="verif-card">
+      <div class="verif-card-head">
+        <span class="verif-card-icon" style="background:${stage === 'verified' ? 'rgba(34,197,94,.12)' : 'var(--surface)'};">
+          <i class="bi ${info.icon}" style="color:${stage === 'verified' ? 'var(--green)' : 'var(--muted)'};"></i>
+        </span>
+        <div>
+          <strong>Account Verification</strong>
+          <div style="font-size:12px;color:var(--muted);">Current status: <span class="verif-pill ${info.cls}" style="margin-left:2px;">${esc(info.label)}</span></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:8px 0;">
+        Verified profiles get priority placement in employer searches and a checkmark badge next to your name.
+        Verification reviews your ID documents and CV under the <strong>Documents</strong> tab.
+      </div>
+      <button class="btn btn-primary btn-full" id="ed-req-verif-btn" ${canRequest ? '' : 'disabled'} onclick="requestVerification()">
+        <i class="bi bi-patch-check"></i> ${stage === 'verified' ? 'Already Verified' : stage.includes('pending') ? 'Request Pending…' : 'Request Verification'}
+      </button>
+      ${!p.id_front_url || !p.id_back_url ? '<div class="form-hint" style="margin-top:6px;"><i class="bi bi-exclamation-circle"></i> Upload your ID front/back in Documents before requesting verification.</div>' : ''}
+    </div>
+
+    <div class="verif-card">
+      <div class="verif-card-head">
+        <span class="verif-card-icon" style="background:var(--brand-soft);"><i class="bi bi-envelope-check" style="color:var(--brand);"></i></span>
+        <div>
+          <strong>Verify Email Address</strong>
+          <div style="font-size:12px;color:var(--muted);">${esc(email)}</div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Email to verify</label>
+        <input type="email" id="verif-email-input" value="${esc(email)}" placeholder="you@email.com">
+      </div>
+      <button class="btn btn-secondary btn-full" id="verif-send-otp-btn" onclick="sendEmailOtp()">
+        <i class="bi bi-send"></i> Send Verification Code
+      </button>
+      <div id="verif-otp-section" style="display:none; margin-top:12px;">
+        <label style="display:block;font-weight:600;font-size:13px;margin-bottom:6px;">Enter the 6-digit code</label>
+        <div class="otp-row">
+          ${[0,1,2,3,4,5].map(i => `<input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="${i}" oninput="edOtpAdvance(this)">`).join('')}
+        </div>
+        <button class="btn btn-primary btn-full" onclick="verifyEmailOtp()"><i class="bi bi-check-circle"></i> Verify Code</button>
+        <div class="form-hint">Didn't get it? <a href="javascript:void(0)" onclick="sendEmailOtp()">Resend code</a></div>
+      </div>
+    </div>`;
+}
+
+async function requestVerification() {
+  if (!workerProfile?.id) { showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.'); return; }
+  const btn = document.getElementById('ed-req-verif-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…'; }
+  const { error } = await sb.from('worker_profiles')
+    .update({ verification_stage: 'pending_review' })
+    .eq('id', workerProfile.id);
+  if (error) {
+    showToast('err', 'bi-exclamation-circle', 'Request Failed', error.message);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-patch-check"></i> Request Verification'; }
+    return;
+  }
+  workerProfile.verification_stage = 'pending_review';
+  if (edFullProfile) edFullProfile.verification_stage = 'pending_review';
+  const acctVerifBadge = document.getElementById('acct-verif-badge');
+  if (acctVerifBadge) acctVerifBadge.textContent = 'pending_review';
+  syncProfileHeroAvatarAndVerification?.(workerProfile.full_name, null);
+  renderEdVerificationTab();
+  showToast('ok', 'bi-check-circle', 'Verification Requested', 'Our team will review your documents shortly.');
+}
+
+async function sendEmailOtp() {
+  const input = document.getElementById('verif-email-input');
+  const email = input?.value?.trim();
+  if (!email || !email.includes('@')) { showToast('err', 'bi-exclamation-circle', 'Invalid Email', 'Enter a valid email address.'); return; }
+  const btn = document.getElementById('verif-send-otp-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending…'; }
+  const { error } = await sb.auth.updateUser({ email });
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Resend Verification Code'; }
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Could Not Send Code', error.message); return; }
+  edOtpEmailPending = email;
+  document.getElementById('verif-otp-section').style.display = 'block';
+  document.querySelector('[data-otp-idx="0"]')?.focus();
+  showToast('ok', 'bi-envelope-check', 'Code Sent', `Check ${email} for a 6-digit verification code.`);
+}
+
+function edOtpAdvance(box) {
+  box.value = box.value.replace(/[^0-9]/g, '').slice(0, 1);
+  if (box.value && box.dataset.otpIdx !== '5') {
+    const next = document.querySelector(`[data-otp-idx="${Number(box.dataset.otpIdx) + 1}"]`);
+    next?.focus();
+  }
+}
+
+async function verifyEmailOtp() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const token = Array.from(boxes).map(b => b.value).join('');
+  if (token.length !== 6) { showToast('err', 'bi-exclamation-circle', 'Incomplete Code', 'Enter all 6 digits.'); return; }
+  if (!edOtpEmailPending) { showToast('err', 'bi-exclamation-circle', 'Error', 'Send a code first.'); return; }
+  const { error } = await sb.auth.verifyOtp({ email: edOtpEmailPending, token, type: 'email_change' });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Verification Failed', error.message); return; }
+  showToast('ok', 'bi-check-circle', 'Email Verified', edOtpEmailPending + ' is now confirmed.');
+  document.getElementById('account-email').textContent = edOtpEmailPending;
+  document.getElementById('verif-otp-section').style.display = 'none';
+  edOtpEmailPending = null;
+}
+
+// ════════════════════════════════════════════════════════
+//  HIRING HISTORY TAB — hired applications matched with their
+//  interview record (distinct from the "Applications" tab,
+//  which lists every application + its current status).
+// ════════════════════════════════════════════════════════
+async function loadEdHiringHistoryDetailed() {
+  const el = document.getElementById('ed-hiring-history-content');
+  if (!el) return;
+  try {
+    const [{ data: apps, error: appErr }, { data: interviews, error: intErr }] = await Promise.all([
+      sb.from('job_applications')
+        .select('id, job_id, status, hired_at, bid_amount')
+        .eq('worker_id', workerProfile.id)
+        .eq('status', 'hired'),
+      sb.from('interviews')
+        .select('id, job_id, scheduled_at, status, interview_type')
+        .eq('worker_id', workerProfile.id),
+    ]);
+    if (appErr) throw appErr;
+    if (intErr) throw intErr;
+
+    if (!apps?.length) { el.innerHTML = '<div class="ed-empty"><i class="bi bi-briefcase"></i><p>No hiring history yet</p></div>'; return; }
+
+    const jobIds = [...new Set(apps.map(a => a.job_id))];
+    const { data: jobRows } = await sb.from('job_postings').select('id, title, company_name, county').in('id', jobIds);
+    const jobById = {}; (jobRows || []).forEach(j => { jobById[j.id] = j; });
+    const interviewByJob = {}; (interviews || []).forEach(i => { interviewByJob[i.job_id] = i; });
+
+    el.innerHTML = apps.map(a => {
+      const j = jobById[a.job_id] || {};
+      const iv = interviewByJob[a.job_id];
+      return `
+      <div class="ed-entry">
+        <div class="ed-entry-top">
+          <div>
+            <div class="ed-entry-title">${esc(j.title || 'Job posting')}</div>
+            <div class="ed-entry-sub">${esc(j.company_name || '')}${j.county ? ' · ' + esc(j.county) : ''}${a.bid_amount ? ' · ' + edFmtMoney(a.bid_amount) : ''}</div>
+          </div>
+          <div class="ed-entry-date">Hired ${edFmtDate(a.hired_at)}</div>
+        </div>
+        <span class="ed-pill ok">hired</span>
+        ${iv ? `<div style="font-size:12px;color:var(--muted);margin-top:6px;"><i class="bi bi-calendar-check"></i> ${esc((iv.interview_type || 'Interview'))} — ${esc(iv.status || 'scheduled')} on ${edFmtDate(iv.scheduled_at)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('❌ loadEdHiringHistoryDetailed failed:', e.message);
+    el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load hiring history</p></div>';
+  }
+}
+
+// Opens the full Wallet modal and jumps straight to its Deposit
+// ("Make Payment") or Withdraw tab, instead of duplicating the
+// wallet forms inside the profile hub.
+function launchWalletAction(mode) {
+  navTo('modal-wallet');
+  setTimeout(() => {
+    const tabId = mode === 'withdraw' ? 'payment-withdraw' : 'payment-make';
+    const btn = Array.from(document.querySelectorAll('#modal-wallet .tab')).find(b => b.getAttribute('onclick')?.includes(tabId));
+    switchTab(tabId, btn);
+    if (mode === 'withdraw') loadWithdrawalHistory();
+  }, 60);
+}
+
+// ════════════════════════════════════════════════════════
+//  WELCOME BANNER — rotating background photos
+//  Curated stock photo set (NOT a live Google Images API call —
+//  that needs a server-side API key + Custom Search Engine ID).
+//  Swap WELCOME_BG_PHOTOS for a fetch() to your own backend/CSE
+//  proxy if a live rotating image feed becomes available.
+// ════════════════════════════════════════════════════════
+const WELCOME_BG_PHOTOS = [
+  'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1600&q=60',
+  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=1600&q=60',
+];
+function setupWelcomeBgRotation() {
+  const slideA = document.getElementById('welcome-bg-slide-a');
+  const slideB = document.getElementById('welcome-bg-slide-b');
+  if (!slideA || !slideB || !WELCOME_BG_PHOTOS.length) return;
+  let idx = 0;
+  let showingA = true;
+  slideA.style.backgroundImage = `url('${WELCOME_BG_PHOTOS[0]}')`;
+  slideA.classList.add('active');
+  const preload = new Image();
+  setInterval(() => {
+    idx = (idx + 1) % WELCOME_BG_PHOTOS.length;
+    const nextUrl = WELCOME_BG_PHOTOS[idx];
+    const incoming = showingA ? slideB : slideA;
+    const outgoing = showingA ? slideA : slideB;
+    preload.src = nextUrl;
+    incoming.style.backgroundImage = `url('${nextUrl}')`;
+    incoming.classList.add('active');
+    outgoing.classList.remove('active');
+    showingA = !showingA;
+  }, 8000);
+}
+document.addEventListener('DOMContentLoaded', setupWelcomeBgRotation);
 </script>
 </body>
 </html>
