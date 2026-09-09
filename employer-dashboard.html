@@ -646,6 +646,8 @@ tr:hover td{background:rgba(27,107,69,.02);}
   font-size:28px;line-height:1;transition:transform .25s ease,box-shadow .25s ease;
 }
 #ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(19,79,51,.48)}
+body.ssc-hide-support-fab #ssc-support-fab,
+body.ssc-hide-support-fab #ssc-support-panel{display:none!important;}
 #ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2ECC71;border:2px solid #fff}
 #ssc-support-panel{
   position:fixed;bottom:5.8rem;right:1.5rem;z-index:9995;
@@ -3387,10 +3389,16 @@ function closeKebab() { document.querySelectorAll('.kebab-menu').forEach(m => m.
 document.addEventListener('click', () => closeKebab());
 
 // ── MODALS ──
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+function openModal(id) {
+  document.getElementById(id)?.classList.add('open');
+  if (id === 'chat-modal') document.body.classList.add('ssc-hide-support-fab');
+}
+function closeModal(id) {
+  document.getElementById(id)?.classList.remove('open');
+  if (id === 'chat-modal') document.body.classList.remove('ssc-hide-support-fab');
+}
 document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
 });
 
 // ── SWITCH TABS ──
