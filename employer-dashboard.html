@@ -288,6 +288,33 @@ tr:hover td{background:rgba(27,107,69,.02);}
 .pf span{font-size:13px;font-weight:500;}
 .profile-sec-title{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
 
+/* ─── PROFILE — FULL PAGE ─── */
+.modal-overlay#profile-modal .modal{max-width:100%;width:100%;height:100vh;max-height:100vh;border-radius:0;}
+.modal-overlay#profile-modal .modal-body{background:var(--bg);}
+.profile-page-grid{display:grid;grid-template-columns:300px 1fr;gap:1.4rem;align-items:start;}
+@media (max-width:820px){.profile-page-grid{grid-template-columns:1fr;}}
+.profile-page-left{display:flex;flex-direction:column;gap:1rem;}
+.profile-av-wrap{position:relative;width:92px;margin:0 auto;}
+.profile-av-edit-btn{position:absolute;bottom:-2px;right:-2px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;border:3px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;box-shadow:0 3px 8px rgba(15,25,35,.25);}
+.profile-country{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);justify-content:center;margin-top:2px;}
+.verify-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem;}
+.verify-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.verify-row:last-child{border-bottom:none;}
+.verify-row-label{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;}
+.otp-row{display:none;gap:8px;margin-top:8px;}
+.otp-row input{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;letter-spacing:.15em;}
+
+/* ─── ICON SHAKE — new notification / message arrived ─── */
+@keyframes icon-shake{
+  0%,100%{transform:rotate(0);}
+  15%{transform:rotate(-14deg);}
+  30%{transform:rotate(11deg);}
+  45%{transform:rotate(-8deg);}
+  60%{transform:rotate(6deg);}
+  75%{transform:rotate(-3deg);}
+}
+.nav-icon-btn.shake i{display:inline-block;animation:icon-shake .6s ease-in-out 2;transform-origin:50% 0;}
+
 /* ─── ACCOUNT SETTINGS ─── */
 .settings-tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;}
 .stab{padding:9px 14px;border:none;background:none;cursor:pointer;font-weight:600;font-size:12.5px;color:var(--muted);border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap;}
@@ -673,11 +700,11 @@ tr:hover td{background:rgba(27,107,69,.02);}
       <i class="bi bi-lightning-charge-fill"></i>
       <span id="connects-balance-display">—</span>
     </button>
-    <button class="nav-icon-btn" onclick="openModal('notif-modal')" title="Notifications">
+    <button class="nav-icon-btn" id="nav-notif-btn" onclick="openModal('notif-modal')" title="Notifications">
       <i class="bi bi-bell"></i>
       <span class="nav-dot" id="notif-dot"></span>
     </button>
-    <button class="nav-icon-btn" onclick="showPanel('messages',null);openModal('chat-modal')" title="Messages">
+    <button class="nav-icon-btn" id="nav-msg-btn" onclick="showPanel('messages',null);openModal('chat-modal')" title="Messages">
       <i class="bi bi-chat-dots"></i>
       <span class="nav-dot" id="msg-dot"></span>
     </button>
@@ -727,24 +754,6 @@ tr:hover td{background:rgba(27,107,69,.02);}
       <button class="gc-qlink" onclick="showPanel('employees',null)"><i class="bi bi-people-fill"></i><span>Browse Workers</span></button>
       <button class="gc-qlink" onclick="showPanel('jobs',null)"><i class="bi bi-briefcase-fill"></i><span>Posted Jobs</span></button>
       <button class="gc-qlink" onclick="openModal('post-job-modal')"><i class="bi bi-plus-circle-fill"></i><span>Post a Job</span></button>
-    </div>
-
-    <!-- Recent Messages -->
-    <div class="section">
-      <div class="sec-head">
-        <div class="sec-title"><i class="bi bi-chat-dots-fill" style="color:var(--brand)"></i> Recent Conversations</div>
-        <button class="btn btn-secondary btn-sm" onclick="showPanel('messages',null);openModal('chat-modal')"><i class="bi bi-arrow-right"></i> Open Inbox</button>
-      </div>
-      <div id="recent-convs-list"><div class="empty"><i class="bi bi-chat-square-dots"></i><p>No conversations yet</p></div></div>
-    </div>
-
-    <!-- Recent Interviews -->
-    <div class="section">
-      <div class="sec-head">
-        <div class="sec-title"><i class="bi bi-camera-video-fill" style="color:var(--violet)"></i> Recent Interviews</div>
-        <button class="btn btn-secondary btn-sm" onclick="showPanel('interviews',null)"><i class="bi bi-arrow-right"></i> All</button>
-      </div>
-      <div id="recent-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
     </div>
   </div>
 
@@ -890,62 +899,113 @@ tr:hover td{background:rgba(27,107,69,.02);}
       <button class="modal-close" onclick="closeModal('profile-modal')">×</button>
     </div>
     <div class="modal-body" id="profile-modal-body">
-      <!-- Tabs -->
-      <div class="settings-tabs">
-        <button class="stab active" onclick="switchProfileTab('info',this)"><i class="bi bi-person"></i> My Profile</button>
-        <button class="stab" onclick="switchProfileTab('interviews',this)"><i class="bi bi-camera-video"></i> Interviews</button>
-        <button class="stab" onclick="switchProfileTab('hires-tab',this)"><i class="bi bi-check-circle"></i> Hires</button>
-        <button class="stab" onclick="switchProfileTab('payments-tab',this)"><i class="bi bi-wallet2"></i> Payments</button>
-        <button class="stab" onclick="switchProfileTab('settings-tab',this)"><i class="bi bi-gear"></i> Settings</button>
-      </div>
+      <div class="profile-page-grid">
 
-      <!-- Info -->
-      <div class="stab-content active" id="stab-info">
-        <div class="profile-hero">
-          <div class="profile-av-lg" id="pm-avatar">EP</div>
-          <div>
+        <!-- ── LEFT COLUMN ── -->
+        <div class="profile-page-left">
+          <div class="profile-hero">
+            <div class="profile-av-wrap">
+              <div class="profile-av-lg" id="pm-avatar">EP</div>
+              <label class="profile-av-edit-btn" title="Change photo">
+                <i class="bi bi-camera-fill"></i>
+                <input type="file" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
+              </label>
+            </div>
             <div class="profile-hero-name" id="pm-name">Loading…</div>
             <div class="profile-hero-sub" id="pm-company"></div>
+            <div class="profile-country" id="pm-country"><i class="bi bi-geo-alt-fill"></i> —</div>
             <div class="profile-hero-badges" id="pm-badges"></div>
           </div>
-        </div>
-        <div class="profile-fields" id="pm-fields"></div>
-      </div>
 
-      <!-- Interviews -->
-      <div class="stab-content" id="stab-interviews">
-        <div id="pm-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
-      </div>
-
-      <!-- Hires -->
-      <div class="stab-content" id="stab-hires-tab">
-        <div id="pm-hires-list"><div class="empty"><i class="bi bi-person-check"></i><p>No hires yet</p></div></div>
-      </div>
-
-      <!-- Payments -->
-      <div class="stab-content" id="stab-payments-tab">
-        <button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openModal('pay-modal')" style="margin-bottom:1rem;"><i class="bi bi-plus"></i> Make Payment</button>
-        <div id="pm-payments-list"><div class="empty"><i class="bi bi-receipt"></i><p>No payments yet</p></div></div>
-      </div>
-
-      <!-- Account Settings -->
-      <div class="stab-content" id="stab-settings-tab">
-        <div class="form-group"><label>New Password</label><input type="password" id="new-pwd" placeholder="Min. 8 characters"></div>
-        <div class="form-group"><label>Confirm Password</label><input type="password" id="confirm-pwd" placeholder="Repeat password"></div>
-        <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-bottom:1.5rem;"><i class="bi bi-lock"></i> Reset Password</button>
-        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1.2rem;">
-        <div class="danger-zone">
-          <div style="font-size:12px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Danger Zone</div>
-          <div class="danger-item">
-            <div class="danger-item-info"><h4>Deactivate Account</h4><p>Temporarily suspend your account</p></div>
-            <button class="btn btn-danger btn-sm" onclick="deactivateAccount()">Deactivate</button>
+          <!-- Verification -->
+          <div class="verify-box">
+            <div class="profile-sec-title" style="border-bottom:none;margin-bottom:6px;">Verification</div>
+            <div class="verify-row">
+              <div class="verify-row-label"><i class="bi bi-envelope-check" style="color:var(--brand)"></i> Email</div>
+              <span id="pm-email-verify-action"></span>
+            </div>
+            <div class="otp-row" id="email-otp-row">
+              <input type="text" id="email-otp-input" placeholder="6-digit code" maxlength="6" inputmode="numeric">
+              <button class="btn btn-primary btn-sm" onclick="confirmEmailOtp()">Confirm</button>
+            </div>
+            <div class="verify-row">
+              <div class="verify-row-label"><i class="bi bi-patch-check" style="color:var(--brand)"></i> Profile Verification</div>
+              <span id="pm-profile-verify-action"></span>
+            </div>
           </div>
-          <div class="danger-item">
-            <div class="danger-item-info"><h4>Delete Account</h4><p>Permanently remove all your data</p></div>
-            <button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete</button>
+
+          <!-- Recent Conversations (moved from Dashboard) -->
+          <div class="section" style="margin-bottom:0;">
+            <div class="sec-head">
+              <div class="sec-title"><i class="bi bi-chat-dots-fill" style="color:var(--brand)"></i> Recent Conversations</div>
+              <button class="btn btn-secondary btn-sm" onclick="closeModal('profile-modal');showPanel('messages',null);openModal('chat-modal')"><i class="bi bi-arrow-right"></i></button>
+            </div>
+            <div id="recent-convs-list"><div class="empty"><i class="bi bi-chat-square-dots"></i><p>No conversations yet</p></div></div>
+          </div>
+
+          <!-- Recent Interviews (moved from Dashboard) -->
+          <div class="section" style="margin-bottom:0;">
+            <div class="sec-head">
+              <div class="sec-title"><i class="bi bi-camera-video-fill" style="color:var(--violet)"></i> Recent Interviews</div>
+              <button class="btn btn-secondary btn-sm" onclick="closeModal('profile-modal');showPanel('interviews',null)"><i class="bi bi-arrow-right"></i></button>
+            </div>
+            <div id="recent-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
           </div>
         </div>
-        <button class="btn btn-ghost btn-full" style="margin-top:1.2rem;" onclick="handleSignOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+
+        <!-- ── RIGHT COLUMN ── -->
+        <div>
+          <!-- Tabs -->
+          <div class="settings-tabs">
+            <button class="stab active" onclick="switchProfileTab('info',this)"><i class="bi bi-person"></i> My Profile</button>
+            <button class="stab" onclick="switchProfileTab('interviews',this)"><i class="bi bi-camera-video"></i> Interviews</button>
+            <button class="stab" onclick="switchProfileTab('hires-tab',this)"><i class="bi bi-check-circle"></i> Hires</button>
+            <button class="stab" onclick="switchProfileTab('payments-tab',this)"><i class="bi bi-wallet2"></i> Payments</button>
+            <button class="stab" onclick="switchProfileTab('settings-tab',this)"><i class="bi bi-gear"></i> Settings</button>
+          </div>
+
+          <!-- Info -->
+          <div class="stab-content active" id="stab-info">
+            <div class="profile-fields" id="pm-fields"></div>
+          </div>
+
+          <!-- Interviews -->
+          <div class="stab-content" id="stab-interviews">
+            <div id="pm-interviews-list"><div class="empty"><i class="bi bi-camera-video"></i><p>No interviews yet</p></div></div>
+          </div>
+
+          <!-- Hires -->
+          <div class="stab-content" id="stab-hires-tab">
+            <div id="pm-hires-list"><div class="empty"><i class="bi bi-person-check"></i><p>No hires yet</p></div></div>
+          </div>
+
+          <!-- Payments -->
+          <div class="stab-content" id="stab-payments-tab">
+            <button class="btn btn-primary btn-sm" onclick="closeModal('profile-modal');openModal('pay-modal')" style="margin-bottom:1rem;"><i class="bi bi-plus"></i> Make Payment</button>
+            <div id="pm-payments-list"><div class="empty"><i class="bi bi-receipt"></i><p>No payments yet</p></div></div>
+          </div>
+
+          <!-- Account Settings -->
+          <div class="stab-content" id="stab-settings-tab">
+            <div class="form-group"><label>New Password</label><input type="password" id="new-pwd" placeholder="Min. 8 characters"></div>
+            <div class="form-group"><label>Confirm Password</label><input type="password" id="confirm-pwd" placeholder="Repeat password"></div>
+            <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-bottom:1.5rem;"><i class="bi bi-lock"></i> Reset Password</button>
+            <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1.2rem;">
+            <div class="danger-zone">
+              <div style="font-size:12px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">Danger Zone</div>
+              <div class="danger-item">
+                <div class="danger-item-info"><h4>Deactivate Account</h4><p>Temporarily suspend your account</p></div>
+                <button class="btn btn-danger btn-sm" onclick="deactivateAccount()">Deactivate</button>
+              </div>
+              <div class="danger-item">
+                <div class="danger-item-info"><h4>Delete Account</h4><p>Permanently remove all your data</p></div>
+                <button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete</button>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-full" style="margin-top:1.2rem;" onclick="handleSignOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1391,6 +1451,7 @@ const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 
 let sb, currentUser, employerProfile, employerProfileId;
 let allWorkers = [], allConvs = [], allJobs = [], allInterviews = [], allPayments = [], allNotifs = [], allEscrowPayments = [];
+let myVerificationRequest = null;
 let connectsTariffs = null; // loaded once in loadAll(); { message_cost, voice_cost_per_min, video_cost_per_min, daily_free_connects, reset_hour_local }
 let jobAppCounts = {}, jobSaveCounts = {}, jobApplicantsCache = {}, jobAppsByJob = {}, employerWallet = null;
 let jobsFilter = 'all';
@@ -1443,7 +1504,7 @@ function startClock() {
 async function loadAll() {
   // employer profile — fetch first
   let { data: ep } = await sb.from('employer_profiles')
-    .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at,ringback_tone_url')
+    .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at,ringback_tone_url,email_verified')
     .eq('user_id', currentUser.id).maybeSingle();
 
   // Auto-create profile if missing (new signup or backfill gap)
@@ -1455,7 +1516,7 @@ async function loadAll() {
         full_name: meta.full_name || currentUser.email?.split('@')[0] || 'Employer',
         created_at: new Date().toISOString(),
       })
-      .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at,ringback_tone_url')
+      .select('id,user_id,full_name,company_name,location,county,phone_number,phone,profile_photo_url,is_verified,verified_at,hiring_history,created_at,ringback_tone_url,email_verified')
       .single();
     ep = created;
   }
@@ -1465,7 +1526,8 @@ async function loadAll() {
 
   const name = ep?.full_name || ep?.company_name || currentUser.email?.split('@')[0] || 'Employer';
   const initArr = name.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-  document.getElementById('nav-avatar').textContent = initArr;
+  const navAv = document.getElementById('nav-avatar');
+  navAv.innerHTML = ep?.profile_photo_url ? `<img src="${esc(ep.profile_photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : initArr;
   document.getElementById('greeting-sub').textContent = `Welcome back, ${name.split(' ')[0]}. Here's what's happening today.`;
 
   // ── Everything below is independent of everything else (none of these
@@ -1475,7 +1537,7 @@ async function loadAll() {
   // of wall-clock time. ──
   const [
     convsRes, availRes, jobsRes, ivsRes, paysRes, escRes,
-    walletRes, tariffRes, notifsRes, callsRes,
+    walletRes, tariffRes, notifsRes, callsRes, verifReqRes,
   ] = await Promise.all([
     sb.from('conversations')
       .select('id,employee_id,last_message_text,last_message_at,last_msg_at,employer_unread,status,is_admin_thread,employer_blocked,employee_blocked,not_interested_at')
@@ -1503,6 +1565,8 @@ async function loadAll() {
     sb.from('connects_tariffs').select('*').eq('id', 1).maybeSingle(),
     sb.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(30),
     sb.from('calls').select('*').or(`caller_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`).order('started_at', { ascending: false }).limit(200),
+    // Latest profile-verification submission (ID/selfie review), if any.
+    safeFire(sb.from('profile_verification_requests').select('id,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1)),
   ]);
 
   allConvs = convsRes.data || [];
@@ -1513,6 +1577,7 @@ async function loadAll() {
   allEscrowPayments = escRes?.data || [];
   allNotifs = notifsRes.data || [];
   allCalls = callsRes.data || [];
+  myVerificationRequest = verifReqRes?.data?.[0] || null;
 
   // workers referenced in conversations + their live presence — depends on
   // allConvs above, so it still has to run after, but the two calls inside
@@ -2963,6 +3028,8 @@ function renderProfileModal() {
   document.getElementById('pm-avatar').innerHTML = ep.profile_photo_url ? `<img src="${esc(ep.profile_photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini_;
   document.getElementById('pm-name').textContent = name;
   document.getElementById('pm-company').textContent = ep.company_name || currentUser.email || '';
+  // SoundsCare operates in Kenya — flag reflects the platform's home country.
+  document.getElementById('pm-country').innerHTML = `🇰🇪 Kenya${ep.county ? ' · '+esc(ep.county) : ''}`;
   document.getElementById('pm-badges').innerHTML = `
     ${ep.is_verified ? '<span class="badge badge-green"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<span class="badge badge-muted">Unverified</span>'}
     <span class="badge badge-sky">${ep.hiring_history||0} Hires</span>`;
@@ -2972,6 +3039,29 @@ function renderProfileModal() {
     <div class="pf"><label>Location</label><span>${esc(ep.location||'—')}</span></div>
     <div class="pf"><label>County</label><span>${esc(ep.county||'—')}</span></div>
     <div class="pf"><label>Member Since</label><span>${fmtDate(ep.created_at)}</span></div>`;
+
+  // Email verification action
+  const emailAction = document.getElementById('pm-email-verify-action');
+  if (emailAction) {
+    emailAction.innerHTML = ep.email_verified
+      ? '<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Verified</span>'
+      : '<button class="btn btn-secondary btn-sm" onclick="requestEmailOtp()">Verify with OTP</button>';
+  }
+  document.getElementById('email-otp-row').style.display = 'none';
+
+  // Profile / identity verification action
+  const profAction = document.getElementById('pm-profile-verify-action');
+  if (profAction) {
+    if (ep.is_verified) {
+      profAction.innerHTML = '<span class="badge badge-green"><i class="bi bi-patch-check-fill"></i> Verified</span>';
+    } else if (myVerificationRequest?.status === 'pending') {
+      profAction.innerHTML = '<span class="badge badge-amber">Pending Review</span>';
+    } else if (myVerificationRequest?.status === 'rejected') {
+      profAction.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="requestProfileVerification()">Resubmit Request</button>';
+    } else {
+      profAction.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="requestProfileVerification()">Request Verification</button>';
+    }
+  }
 }
 
 function switchProfileTab(id, btn) {
@@ -2979,6 +3069,63 @@ function switchProfileTab(id, btn) {
   document.querySelectorAll('.stab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('stab-'+id)?.classList.add('active');
   btn.classList.add('active');
+}
+
+// ── PROFILE PHOTO UPLOAD ──
+async function uploadProfilePhoto(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('err','bi-x-circle','Invalid File','Please choose an image.'); input.value=''; return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('err','bi-x-circle','Too Large','Choose an image under 5MB.'); input.value=''; return; }
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${currentUser.id}/profile-photo-${Date.now()}.${ext}`;
+  showToast('info','bi-arrow-repeat','Uploading…','Uploading your photo.');
+  const { error: upErr } = await sb.storage.from('Media').upload(path, file, { upsert: true, cacheControl: '3600' });
+  if (upErr) { showToast('err','bi-x-circle','Upload Failed', upErr.message); input.value=''; return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+  const url = pub?.publicUrl;
+  const { error: updErr } = await sb.from('employer_profiles').update({ profile_photo_url: url }).eq('id', employerProfileId);
+  if (updErr) { showToast('err','bi-x-circle','Error', updErr.message); input.value=''; return; }
+  employerProfile.profile_photo_url = url;
+  renderProfileModal();
+  const navAv = document.getElementById('nav-avatar');
+  if (navAv) navAv.innerHTML = `<img src="${esc(url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  showToast('ok','bi-check-circle','Photo Updated','Your profile photo has been updated.');
+  input.value = '';
+}
+
+// ── EMAIL VERIFICATION (OTP) ──
+async function requestEmailOtp() {
+  if (!currentUser?.email) { showToast('err','bi-envelope','No Email','Your account has no email on file.'); return; }
+  const { error } = await sb.auth.signInWithOtp({ email: currentUser.email, options: { shouldCreateUser: false } });
+  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
+  document.getElementById('email-otp-row').style.display = 'flex';
+  document.getElementById('email-otp-input')?.focus();
+  showToast('ok','bi-envelope-check','Code Sent','Enter the 6-digit code we emailed you.');
+}
+async function confirmEmailOtp() {
+  const token = document.getElementById('email-otp-input').value.trim();
+  if (!token) { showToast('err','bi-x-circle','Required','Enter the code from your email.'); return; }
+  const { error } = await sb.auth.verifyOtp({ email: currentUser.email, token, type: 'email' });
+  if (error) { showToast('err','bi-x-circle','Invalid Code', error.message); return; }
+  const { error: updErr } = await sb.from('employer_profiles').update({ email_verified: true }).eq('id', employerProfileId);
+  if (updErr) { showToast('err','bi-x-circle','Error', updErr.message); return; }
+  employerProfile.email_verified = true;
+  renderProfileModal();
+  showToast('ok','bi-patch-check-fill','Email Verified','Your email is now verified.');
+}
+
+// ── PROFILE / IDENTITY VERIFICATION REQUEST ──
+async function requestProfileVerification() {
+  if (employerProfile?.is_verified) return;
+  if (myVerificationRequest?.status === 'pending') { showToast('info','bi-hourglass-split','Already Requested','Your verification request is pending review.'); return; }
+  const { data, error } = await sb.from('profile_verification_requests')
+    .insert({ user_id: currentUser.id, status: 'pending', consent_confirmed: true })
+    .select('id,status,created_at').single();
+  if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
+  myVerificationRequest = data;
+  renderProfileModal();
+  showToast('ok','bi-patch-check','Requested','Your verification request has been submitted for review.');
 }
 
 // ── WORKER PROFILE MODAL ──
@@ -3075,6 +3222,16 @@ function updateBadges() {
   if (sbMsg) { sbMsg.style.display = unreadMsgs ? 'inline-block' : 'none'; sbMsg.textContent = unreadMsgs; }
 }
 
+// Briefly shakes a nav icon (bell / chat) to draw the eye to a new arrival.
+function shakeIcon(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.classList.remove('shake');
+  void btn.offsetWidth; // restart the animation if it's already mid-shake
+  btn.classList.add('shake');
+  setTimeout(() => btn.classList.remove('shake'), 1300);
+}
+
 // ── REALTIME ──
 function setupRealtime() {
   sb.channel('employer-realtime-'+currentUser.id)
@@ -3097,6 +3254,7 @@ function setupRealtime() {
       conv.last_message_at = msg.created_at;
       if (activeConvId !== msg.conversation_id) {
         conv.employer_unread = (conv.employer_unread || 0) + 1;
+        shakeIcon('nav-msg-btn');
       } else {
         renderMessages(msg.conversation_id);
         await sb.from('conversations').update({ employer_unread: 0 }).eq('id', msg.conversation_id);
@@ -3117,6 +3275,7 @@ function setupRealtime() {
       allNotifs.unshift(payload.new);
       renderNotifs();
       updateBadges();
+      shakeIcon('nav-notif-btn');
       showToast('info','bi-bell-fill',payload.new.title||'Notification',payload.new.message||'');
     })
     .subscribe();
@@ -3144,8 +3303,9 @@ async function deleteAccount() {
   showToast('err','bi-trash3-fill','Request Sent','Your deletion request has been submitted. Our team will process it within 48 hours.');
 }
 async function handleSignOut() {
+  if (!confirm('Are you sure you want to sign out?')) return;
   await sb.auth.signOut();
-  window.location.href = 'employee-login.html';
+  window.location.href = 'employer-login.html';
 }
 
 // ── FRAUD REPORT ──
@@ -3276,6 +3436,7 @@ let activeCallId      = null;
 let activeCallType    = null;
 let activeCallRole    = null;
 let activeCallPeer    = null;
+let activeCallRoomId  = null;
 let callTimer         = null;
 let callSeconds       = 0;
 let callWasConnected  = false;
@@ -3291,6 +3452,8 @@ let ringtoneCtx       = null;
 let ringtoneNode      = null;
 let missedCallTimeout = null;
 let currentCameraFacing = 'user';
+let awaitingRenegAnswer = false; // true while we're waiting for the other side to re-answer after we reconnected post-refresh
+let suppressDisconnectEnd = false; // true during a renegotiation handshake, so a momentary 'disconnected' doesn't auto-end the call
 
 const ICE_SERVERS = {
   iceServers: [
@@ -3299,6 +3462,82 @@ const ICE_SERVERS = {
     { urls: 'turn:a.relay.metered.ca:80', username: 'soundscare', credential: 'soundscare2026' }
   ]
 };
+
+// ── PERSIST ACTIVE CALL ACROSS A PAGE REFRESH ──
+// A hard refresh always tears down the WebRTC connection and JS state — that
+// part can't be avoided. What we CAN do: remember which call we were in, and
+// on load, if the DB still shows it as accepted/ongoing, transparently rejoin
+// it (fresh mic, fresh peer connection, fresh SDP offer) instead of just
+// dropping the user back on the dashboard with a silently-dead call.
+const ACTIVE_CALL_KEY = 'sc_active_call';
+function persistActiveCall() {
+  if (!activeCallId) { sessionStorage.removeItem(ACTIVE_CALL_KEY); return; }
+  try {
+    sessionStorage.setItem(ACTIVE_CALL_KEY, JSON.stringify({
+      callId: activeCallId, type: activeCallType, role: activeCallRole,
+      peer: activeCallPeer, convId: activeConvId, roomId: activeCallRoomId,
+    }));
+  } catch (e) { console.warn('[persistActiveCall]', e); }
+}
+function clearPersistedCall() {
+  try { sessionStorage.removeItem(ACTIVE_CALL_KEY); } catch (e) {}
+}
+
+async function restoreActiveCallIfAny() {
+  let saved;
+  try { saved = JSON.parse(sessionStorage.getItem(ACTIVE_CALL_KEY) || 'null'); } catch { saved = null; }
+  if (!saved?.callId || activeCallId) return;
+
+  const { data: row } = await sb.from('calls').select('*').eq('id', saved.callId).maybeSingle();
+  if (!row || row.status !== 'accepted' || row.ended_at || row.call_ended_at) { clearPersistedCall(); return; }
+
+  // Carry over elapsed time so the Connects billing (and the on-screen timer)
+  // doesn't quietly reset to 0:00 just because the tab refreshed mid-call.
+  const answeredAt = row.answered_at || row.call_answered_at;
+  callSecondsCarryOver = answeredAt ? Math.max(0, Math.floor((Date.now() - new Date(answeredAt).getTime()) / 1000)) : 0;
+
+  activeCallId = saved.callId; activeCallType = saved.type; activeCallRole = saved.role;
+  activeCallPeer = saved.peer; activeConvId = saved.convId; activeCallRoomId = saved.roomId;
+
+  const constraints = saved.type === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
+  try { localStream = await navigator.mediaDevices.getUserMedia(constraints); }
+  catch {
+    showToast('err','bi-mic-mute','Reconnect Failed','Allow microphone access to rejoin your call.');
+    activeCallId = null; activeCallType = null; activeCallRole = null; clearPersistedCall();
+    return;
+  }
+
+  showCallScreen(saved.type, saved.peer || 'Worker', null, 'Reconnecting…', saved.role);
+  subscribeCallSignaling(saved.callId, saved.roomId);
+  await createPeerConnection(saved.type);
+
+  try {
+    const offer = await peerConnection.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: saved.type === 'video' });
+    await peerConnection.setLocalDescription(offer);
+    awaitingRenegAnswer = true;
+    suppressDisconnectEnd = true;
+    setTimeout(() => { suppressDisconnectEnd = false; }, 15000); // safety net if 'connected' never fires
+    await sb.from('calls').update({
+      sdp_offer: JSON.stringify(offer),
+      sdp_answer: null,
+      call_metadata: { renegotiate_at: new Date().toISOString(), by: currentUser.id },
+    }).eq('id', saved.callId);
+    persistActiveCall();
+  } catch (e) {
+    console.error('[restoreActiveCallIfAny] failed:', e);
+    showToast('err','bi-exclamation-circle','Reconnect Failed','Could not rejoin your call.');
+    document.getElementById(saved.type === 'voice' ? 'voice-call-overlay' : 'video-call-overlay').classList.remove('open');
+    stopLocalStream();
+    if (peerConnection) { peerConnection.close(); peerConnection = null; }
+    if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
+    activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
+    clearPersistedCall();
+  }
+}
+
+// Best-effort: catch a same-tab close/refresh so state is definitely saved
+// (it's already persisted at call-start/accept, this just covers edge cases).
+window.addEventListener('beforeunload', () => { if (activeCallId) persistActiveCall(); });
 
 // ── 1. INITIATE CALL (employer is always caller here) ──
 async function startCall(type) {
@@ -3355,11 +3594,13 @@ async function startCall(type) {
     if (callErr) throw new Error(callErr.message);
 
     activeCallId = callRow.id;
+    activeCallRoomId = roomId;
 
     // The call row reached the database, i.e. it's now ringing on the other
     // end — move the caller's screen from "Calling…" to "Ringing…" and stay
     // there until the DB tells us otherwise (accepted / rejected / missed).
     setCallStatusLabel(type, 'Ringing…');
+    persistActiveCall();
 
     // Register ourselves as a participant so the call is reliably tracked through to the other end
     await safeFire(sb.from('call_participants').insert({ call_id: callRow.id, user_id: currentUser.id }));
@@ -3395,6 +3636,7 @@ async function startCall(type) {
     if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
     activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
     updateUserCallStatus('online');
+    clearPersistedCall();
   }
 }
 
@@ -3502,6 +3744,7 @@ async function acceptIncomingCall() {
   const { callerName, callType, convId, callId, roomId } = incomingCallData;
   incomingCallData = null;
   activeCallId = callId; activeCallType = callType; activeCallRole = 'callee'; activeCallPeer = callerName;
+  activeCallRoomId = roomId;
   if (convId) activeConvId = convId;
   const constraints = callType === 'video' ? { audio: true, video: { facingMode: 'user' } } : { audio: true };
   try { localStream = await navigator.mediaDevices.getUserMedia(constraints); }
@@ -3524,6 +3767,7 @@ async function acceptIncomingCall() {
     }
     await safeFire(sb.from('call_participants').insert({ call_id: callId, user_id: currentUser.id }));
     updateUserCallStatus('in_call');
+    persistActiveCall();
   } catch (err) {
     console.error('[acceptIncomingCall] failed:', err);
     showToast('err','bi-exclamation-circle','Call Failed', err?.message || 'Could not connect the call.');
@@ -3533,6 +3777,7 @@ async function acceptIncomingCall() {
     if (callSignalChan) { sb.removeChannel(callSignalChan); callSignalChan = null; }
     activeCallId = null; activeCallType = null; activeCallRole = null; activeCallPeer = null;
     updateUserCallStatus('online');
+    clearPersistedCall();
   }
 }
 
@@ -3582,6 +3827,7 @@ async function endCall(type) {
   activeCallId = null; activeCallType = null; activeCallRole = null;
   isMuted = false; isCamOff = false; isSpeakerOn = true;
   updateUserCallStatus('online');
+  clearPersistedCall();
   renderCallHistory();
 }
 
@@ -3597,6 +3843,7 @@ async function missedCall() {
   showToast('info','bi-telephone-missed','No Answer',`${activeCallPeer||'Worker'} didn't answer.`);
   activeCallId = null; activeCallType = null; activeCallRole = null;
   updateUserCallStatus('online');
+  clearPersistedCall();
   renderCallHistory();
 }
 
@@ -3624,7 +3871,8 @@ async function createPeerConnection(type) {
   // only watches for a dropped connection.
   peerConnection.onconnectionstatechange = () => {
     const s = peerConnection?.connectionState;
-    if (s === 'failed' || s === 'disconnected') {
+    if (s === 'connected') suppressDisconnectEnd = false;
+    if ((s === 'failed' || s === 'disconnected') && !suppressDisconnectEnd) {
       showToast('err','bi-wifi-off','Connection Lost','The call was interrupted.');
       endCall(type);
     }
@@ -3633,9 +3881,44 @@ async function createPeerConnection(type) {
 
 // ── 8. SUPABASE SIGNALING ──
 function subscribeCallSignaling(callId, roomId) {
+  let _lastRenegOffer = null; // dedupes renegotiation offers so we don't re-answer the same one twice
   callSignalChan = sb.channel(`call-signal-${callId}`)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls', filter: `id=eq.${callId}` }, async (payload) => {
       const row = payload.new;
+
+      // ── Reconnect after a page refresh: whichever side refreshed has a
+      // fresh peer connection and pushes a brand-new offer flagged with
+      // call_metadata.renegotiate_at. The side that stayed connected (this
+      // handler, on the still-live tab) answers it here — regardless of who
+      // was originally caller/callee — so the media resumes.
+      if (row.call_metadata?.renegotiate_at && row.call_metadata?.by !== currentUser.id && row.sdp_offer && row.sdp_offer !== _lastRenegOffer && activeCallId === callId) {
+        _lastRenegOffer = row.sdp_offer;
+        suppressDisconnectEnd = true;
+        setTimeout(() => { suppressDisconnectEnd = false; }, 15000); // safety net if 'connected' never fires
+        try {
+          const offer = JSON.parse(row.sdp_offer);
+          if (peerConnection) { peerConnection.close(); peerConnection = null; }
+          await createPeerConnection(activeCallType);
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          await sb.from('calls').update({ sdp_answer: JSON.stringify(answer) }).eq('id', callId);
+          setCallStatusLabel(activeCallType, 'Connected');
+        } catch (e) { console.warn('[renegotiate] failed to re-answer:', e); }
+        return;
+      }
+      // The side that refreshed is waiting on this fresh answer to complete reconnecting.
+      if (row.call_metadata?.renegotiate_at && row.sdp_answer && awaitingRenegAnswer && activeCallId === callId) {
+        awaitingRenegAnswer = false;
+        try {
+          const answer = JSON.parse(row.sdp_answer);
+          if (peerConnection && peerConnection.signalingState !== 'stable') await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+          setCallStatusLabel(activeCallType, 'Connected');
+          if (!callTimer) startCallTimer(activeCallType);
+        } catch (e) { console.warn('[renegotiate] failed to apply answer:', e); }
+        return;
+      }
+
       if (row.status === 'accepted' && activeCallRole === 'caller' && row.sdp_answer) {
         const answer = JSON.parse(row.sdp_answer);
         if (peerConnection && peerConnection.signalingState !== 'stable') await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
@@ -3657,6 +3940,7 @@ function subscribeCallSignaling(callId, roomId) {
         stopLocalStream(); clearInterval(callTimer); callTimer = null;
         activeCallId = null; activeCallType = null; activeCallRole = null;
         updateUserCallStatus('online');
+        clearPersistedCall();
         renderCallHistory();
       }
       if (row.status === 'ended' && activeCallRole === 'callee') endCall(activeCallType || 'voice');
@@ -3673,9 +3957,11 @@ function subscribeCallSignaling(callId, roomId) {
 }
 
 // ── 9. CALL TIMER ──
+let callSecondsCarryOver = 0; // elapsed seconds already billed before a reconnect — startCallTimer resumes from here instead of 0
 function startCallTimer(type) {
   stopRingtone();
-  callSeconds = 0;
+  callSeconds = callSecondsCarryOver;
+  callSecondsCarryOver = 0;
   callWasConnected = true;
   if (type === 'voice') {
     document.getElementById('vc-label').textContent = 'Connected';
@@ -3947,6 +4233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const __callPatch = setInterval(() => {
   if (typeof currentUser !== 'undefined' && currentUser?.id) {
     subscribeIncomingCalls();
+    restoreActiveCallIfAny();
     clearInterval(__callPatch);
   }
 }, 800);
