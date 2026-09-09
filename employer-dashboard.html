@@ -3056,7 +3056,7 @@ function renderProfileModal() {
   if (profAction) {
     if (ep.is_verified) {
       profAction.innerHTML = '<span class="badge badge-green"><i class="bi bi-patch-check-fill"></i> Verified</span>';
-    } else if (myVerificationRequest?.status === 'pending') {
+    } else if (myVerificationRequest?.status === 'pending_review') {
       profAction.innerHTML = '<span class="badge badge-amber">Pending Review</span>';
     } else if (myVerificationRequest?.status === 'rejected') {
       profAction.innerHTML = '<button class="btn btn-secondary btn-sm" onclick="requestProfileVerification()">Resubmit Request</button>';
@@ -3120,9 +3120,9 @@ async function confirmEmailOtp() {
 // ── PROFILE / IDENTITY VERIFICATION REQUEST ──
 async function requestProfileVerification() {
   if (employerProfile?.is_verified) return;
-  if (myVerificationRequest?.status === 'pending') { showToast('info','bi-hourglass-split','Already Requested','Your verification request is pending review.'); return; }
+  if (myVerificationRequest?.status === 'pending_review') { showToast('info','bi-hourglass-split','Already Requested','Your verification request is pending review.'); return; }
   const { data, error } = await sb.from('profile_verification_requests')
-    .insert({ user_id: currentUser.id, status: 'pending', consent_confirmed: true })
+    .insert({ user_id: currentUser.id, status: 'pending_review', consent_confirmed: true })
     .select('id,status,created_at').single();
   if (error) { showToast('err','bi-x-circle','Error', error.message); return; }
   myVerificationRequest = data;
