@@ -388,6 +388,39 @@ var currentRole = 'employer';
 var COOKIE_NAME  = 'sc_remember';
 var COOKIE_DAYS  = 30;
 
+// ============================================================
+// ROLE OWNERSHIP — this is the EMPLOYER sign-in page. An account of any
+// other type (employee, agent, abroad worker, admin) must never be sent
+// into the employer dashboard just because it happened to authenticate
+// here. Checked in both the password flow and the OAuth flow, before
+// any redirect.
+// ============================================================
+var ROLE_LOGIN_PAGES = {
+  employee:      'login.html',
+  agent:         'agent-login.html',
+  abroad_worker: 'abroad-login.html',
+  admin:         'admin-login.html',
+  super_admin:   'admin-login.html'
+};
+var ROLE_LABELS = {
+  employee:      'Employee',
+  agent:         'Agent',
+  abroad_worker: 'Abroad worker',
+  admin:         'Admin',
+  super_admin:   'Admin'
+};
+
+// Returns null if the account belongs on this page (role === 'employer'),
+// otherwise a message pointing the person to their real sign-in page.
+function checkBelongsOnThisPage(role) {
+  if (role === 'employer') return null;
+  var label = ROLE_LABELS[role] || 'This';
+  var page = ROLE_LOGIN_PAGES[role] || null;
+  return label + ' accounts don\'t sign in here. This is the employer sign-in page' +
+    (page ? ' — please sign in at ' + page + ' instead.' : '.');
+}
+
+
 // ════════════════════════════════════════════════════════
 //  EAST AFRICA COUNTRY LIST — used by the IP location gate.
 // ════════════════════════════════════════════════════════
@@ -576,6 +609,15 @@ async function completeOAuthLogin(user) {
   }
 
   var role = account.role || currentRole;
+
+  // Role gate — this page is employer-only
+  var mismatch = checkBelongsOnThisPage(role);
+  if (mismatch) {
+    await dbClient.auth.signOut();
+    showAlert('alertLogin', 'alertLoginText', mismatch, 'warn');
+    return;
+  }
+
   window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'employee-dashboard.html';
 }
 
@@ -821,6 +863,15 @@ async function handleLogin() {
     await dbClient.auth.signOut();
     setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
     showAlert('alertLogin','alertLoginText', blockReason, 'warn');
+    return;
+  }
+
+  // Role gate — this page is employer-only
+  var mismatch = checkBelongsOnThisPage(role);
+  if (mismatch) {
+    await dbClient.auth.signOut();
+    setBtnLoading('loginBtn','loginSpinner','loginBtnText', false, 'Sign In');
+    showAlert('alertLogin','alertLoginText', mismatch, 'warn');
     return;
   }
 
