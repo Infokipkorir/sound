@@ -422,10 +422,11 @@
     .msg-avatar.is-admin { background: linear-gradient(135deg, var(--rose), #f87171); }
     .msg-avatar.is-employer { background: linear-gradient(135deg, var(--accent), #f0b562); }
     .msg-avatar.verified::after {
-      content: '✓'; position: absolute; bottom: -2px; right: -2px;
+      content: '\f633'; font-family: 'bootstrap-icons'; font-style: normal; font-weight: normal;
+      position: absolute; bottom: -2px; right: -2px;
       width: 18px; height: 18px;
       background: var(--green); color: #fff;
-      border-radius: 50%; font-size: 10px; font-weight: 700;
+      border-radius: 50%; font-size: 10px;
       border: 2px solid var(--card);
       display: flex; align-items: center; justify-content: center;
     }
@@ -1245,7 +1246,8 @@
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
     .profile-modal-avatar:hover::after {
-      content: '📷'; position: absolute; inset: 0;
+      content: '\f219'; font-family: 'bootstrap-icons'; font-style: normal; font-weight: normal;
+      position: absolute; inset: 0; color: #fff;
       background: rgba(0,0,0,0.5);
       display: flex; align-items: center; justify-content: center;
       font-size: 1.5rem;
@@ -3172,8 +3174,12 @@ async function loadDashboard() {
     }
 
     // Welcome sub
-    const statusMap = { approved: '✅ Profile approved & visible', pending: '⏳ Profile under review', rejected: '❌ Profile needs attention' };
-    document.getElementById('welcome-sub').textContent = statusMap[workerProfile?.status] || 'Complete your profile to get hired faster.';
+    const statusMap = {
+      approved: '<i class="bi bi-check-circle-fill"></i> Profile approved & visible',
+      pending: '<i class="bi bi-hourglass-split"></i> Profile under review',
+      rejected: '<i class="bi bi-x-circle-fill"></i> Profile needs attention',
+    };
+    document.getElementById('welcome-sub').innerHTML = statusMap[workerProfile?.status] || 'Complete your profile to get hired faster.';
 
     // Profile visibility toggle
     const visible = workerProfile?.profile_visible !== false;
