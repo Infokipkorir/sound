@@ -62,6 +62,7 @@
 
       --ds-touch-min: 44px;
       --ds-touch-target: 48px;
+      --sidebar-w: 260px;
 
       /* ── Legacy variable names remapped onto the tokens above, so every
          existing var(--x) reference in this stylesheet automatically picks
@@ -1269,6 +1270,8 @@
       font-size:28px;line-height:1;transition:transform .25s ease,box-shadow .25s ease;
     }
     #ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(19,79,51,.48)}
+    body.ssc-hide-support-fab #ssc-support-fab,
+    body.ssc-hide-support-fab #ssc-support-panel{display:none!important;}
     #ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#2ECC71;border:2px solid #fff}
     #ssc-support-panel{
       position:fixed;bottom:5.8rem;left:1.5rem;z-index:9995;
@@ -1364,44 +1367,140 @@
     .ed-img-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; aspect-ratio: 1; display: block; background: var(--surface); }
     .ed-img-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .ed-img-label { font-size: 10px; color: var(--muted); text-align: center; margin-top: 4px; }
+
+    /* ══════════════════════════════════════════════════════════
+       SIDEBAR / TOP-NAV SHELL — matches employer-dashboard.html's
+       design language (dark green sidebar, fixed top bar, single
+       active panel). Added without touching any existing data
+       logic; existing modal-overlay panels are reused in place via
+       the .panel-mode class below rather than duplicated. ══════ */
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+      background:linear-gradient(180deg,#0d3a24 0%,var(--brand) 100%);
+      z-index:500;display:flex;flex-direction:column;overflow-y:auto;
+      transition:transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar.hidden{transform:translateX(-100%);}
+    .sb-head{padding:1.1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.12);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+    .sb-logo-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;flex-shrink:0;}
+    .sb-logo-text{color:#fff;font-weight:800;font-size:14.5px;letter-spacing:-.01em;}
+    .sb-logo-text span{color:var(--accent);}
+    .sb-close{margin-left:auto;background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:20px;line-height:1;display:none;}
+    .sb-section-lbl{padding:.75rem 1.2rem .3rem;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+    .sb-link{display:flex;align-items:center;gap:10px;padding:.62rem 1.2rem;color:rgba(255,255,255,.72);text-decoration:none;cursor:pointer;border:none;background:none;width:100%;font-size:13px;font-family:inherit;font-weight:500;border-left:3px solid transparent;transition:.15s;text-align:left;}
+    .sb-link:hover,.sb-link.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--accent);}
+    .sb-link i{font-size:15.5px;flex-shrink:0;width:18px;text-align:center;}
+    .sb-badge{margin-left:auto;background:var(--rose);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;min-width:17px;text-align:center;}
+    .sb-footer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,.12);margin-top:auto;flex-shrink:0;}
+    .sb-signout{width:100%;padding:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.15s;display:flex;align-items:center;justify-content:center;gap:7px;}
+    .sb-signout:hover{background:rgba(244,63,94,.25);border-color:rgba(244,63,94,.5);}
+    .sb-scrim{display:none;position:fixed;inset:0;background:rgba(15,25,35,.45);z-index:490;}
+    .sb-scrim.show{display:block;}
+
+    .main-wrap{margin-left:var(--sidebar-w);transition:margin-left .28s cubic-bezier(.4,0,.2,1);min-height:100vh;}
+    .burger{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;width:34px;height:34px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;margin-right:2px;}
+
+    @media (max-width:900px){
+      .sidebar{transform:translateX(-100%);}
+      .sidebar.show{transform:translateX(0);}
+      .sidebar.hidden{transform:translateX(-100%);}
+      .main-wrap{margin-left:0;}
+      .burger{display:flex;}
+      .sb-close{display:flex;align-items:center;justify-content:center;}
+    }
+
+    /* Reuse existing .modal-overlay / .modal cards as full-width, in-flow
+       panels for sidebar navigation instead of centered popups. Only
+       elements explicitly given .panel-mode are affected — job-detail,
+       edit-profile, bid, report-job, rate-employer, account-settings and
+       confirm-action stay true centered modals exactly as before. */
+    .modal-overlay.panel-mode{
+      position:static;background:none;padding:0;width:auto;height:auto;z-index:auto;
+      display:none;align-items:stretch;justify-content:stretch;
+    }
+    .modal-overlay.panel-mode.open{display:block;}
+    .modal-overlay.panel-mode .modal{max-width:none;width:100%;max-height:none;box-shadow:0 1px 3px rgba(15,25,35,.06);}
+
+    /* Simple, honest "Calls" panel — no fabricated call-log data since
+       the current schema has no call-history table; voice/video calls
+       remain accessible from within a conversation exactly as before. */
+    .calls-info{text-align:center;padding:3rem 1.5rem;color:var(--muted);}
+    .calls-info i{font-size:40px;color:var(--brand);opacity:.5;margin-bottom:14px;display:block;}
   </style>
 </head>
 <body>
 
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo-icon">SC</div>
+    <div class="sb-logo-text">Sounds<span>Care</span></div>
+    <button class="sb-close" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="sb-section-lbl">Main</div>
+  <button class="sb-link active" onclick="navTo('overview',this)"><i class="bi bi-grid-1x2-fill"></i> Overview</button>
+  <button class="sb-link" onclick="navTo('modal-account',this)"><i class="bi bi-person-circle"></i> My Profile</button>
+  <button class="sb-link" onclick="navTo('modal-jobs',this)"><i class="bi bi-search"></i> Find Jobs</button>
+  <button class="sb-link" onclick="navTo('modal-applications',this)"><i class="bi bi-send-check"></i> My Applications</button>
+  <button class="sb-link" onclick="navTo('modal-saved-jobs',this)"><i class="bi bi-bookmark-heart"></i> Saved Jobs</button>
+  <button class="sb-link" onclick="navTo('modal-bids',this)"><i class="bi bi-tag"></i> My Bids</button>
+  <button class="sb-link" onclick="navTo('modal-ongoing-jobs',this)"><i class="bi bi-briefcase-fill"></i> My Jobs</button>
+  <button class="sb-link" onclick="navTo('modal-interviews',this)"><i class="bi bi-calendar-event"></i> Interviews</button>
+
+  <div class="sb-section-lbl">Communication</div>
+  <button class="sb-link" onclick="navTo('modal-messages',this)"><i class="bi bi-chat-dots"></i> Messages</button>
+  <button class="sb-link" onclick="navTo('modal-calls',this)"><i class="bi bi-telephone"></i> Calls</button>
+
+  <div class="sb-section-lbl">Account</div>
+  <button class="sb-link" onclick="navTo('modal-wallet',this)"><i class="bi bi-wallet2"></i> Wallet</button>
+  <button class="sb-link" onclick="navTo('modal-notifications',this)"><i class="bi bi-bell"></i> Notifications</button>
+  <button class="sb-link" onclick="openModal('modal-account-settings')"><i class="bi bi-gear"></i> Settings</button>
+
+  <div class="sb-footer">
+    <button class="sb-signout" onclick="signOut()"><i class="bi bi-box-arrow-left"></i> Sign Out</button>
+  </div>
+</aside>
+<div class="sb-scrim" id="sb-scrim" onclick="toggleSidebar()"></div>
+
+<div class="main-wrap" id="main-wrap">
+
 <!-- NAV -->
 <div class="nav">
-  <a href="index.html" class="nav-logo">
+  <button class="burger" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+  <a href="index.html" class="nav-logo" style="display:none;">
     <div class="logo-icon">SC</div>
     <span>Sounds<strong style="color: var(--accent)">Care</strong></span>
   </a>
+  <span id="nav-section-title" style="font-weight:800;font-size:14.5px;flex:1;">Overview</span>
   <div class="nav-right">
     <div class="status-pill status-online" id="online-status" style="margin-right: 8px;">
       <span class="status-dot"></span> Online
     </div>
-    <button class="nav-btn" onclick="openModal('modal-notifications')" title="Notifications">
+    <button class="nav-btn" onclick="navTo('modal-notifications')" title="Notifications">
       <i class="bi bi-bell"></i>
       <div class="nav-badge" id="notif-badge">0</div>
     </button>
-    <button class="nav-btn" onclick="openModal('modal-messages')" title="Messages">
+    <button class="nav-btn" onclick="navTo('modal-messages')" title="Messages">
       <i class="bi bi-chat-dots"></i>
       <div class="nav-badge" id="msg-badge">0</div>
     </button>
-    <button class="nav-btn" onclick="openModal('modal-jobs')" title="Available Jobs">
+    <button class="nav-btn" onclick="navTo('modal-jobs')" title="Available Jobs">
       <i class="bi bi-briefcase"></i>
     </button>
-    <button class="connects-pill" onclick="openModal('modal-wallet')" title="Connects balance">
+    <button class="connects-pill" onclick="navTo('modal-wallet')" title="Connects balance">
       <i class="bi bi-lightning-charge-fill"></i>
       <span id="connects-balance-display">—</span>
     </button>
-    <button class="nav-btn" onclick="openModal('modal-wallet')" title="Wallet & Payments">
+    <button class="nav-btn" onclick="navTo('modal-wallet')" title="Wallet & Payments">
       <i class="bi bi-wallet2"></i>
     </button>
-    <button class="nav-avatar" onclick="openModal('modal-account')" id="nav-avatar" title="Account"><span id="nav-avatar-init">W</span></button>
+    <button class="nav-avatar" onclick="navTo('modal-account')" id="nav-avatar" title="Account"><span id="nav-avatar-init">W</span></button>
   </div>
 </div>
 
 <!-- PAGE -->
-<div class="page">
+<div class="page" id="page-overview">
 
   <!-- WELCOME BANNER -->
   <div class="welcome-banner" id="welcome-banner">
@@ -1430,42 +1529,42 @@
 
   <!-- STATS -->
   <div class="stats">
-    <div class="stat-card" onclick="openModal('modal-messages')">
+    <div class="stat-card" onclick="navTo('modal-messages')">
       <div class="stat-icon msg"><i class="bi bi-chat-dots"></i></div>
       <div class="stat-value" id="stat-messages">—</div>
       <div class="stat-label">Messages</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-jobs')">
+    <div class="stat-card" onclick="navTo('modal-jobs')">
       <div class="stat-icon job"><i class="bi bi-briefcase"></i></div>
       <div class="stat-value" id="stat-jobs">—</div>
       <div class="stat-label">Jobs Available</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-applications')">
+    <div class="stat-card" onclick="navTo('modal-applications')">
       <div class="stat-icon" style="background: rgba(124,58,237,0.1); color: #7c3aed;"><i class="bi bi-send-check"></i></div>
       <div class="stat-value" id="stat-applications">—</div>
       <div class="stat-label">Applications</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-bids')">
+    <div class="stat-card" onclick="navTo('modal-bids')">
       <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-tag"></i></div>
       <div class="stat-value" id="stat-bids">—</div>
       <div class="stat-label">Bided Jobs</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-wallet')">
+    <div class="stat-card" onclick="navTo('modal-wallet')">
       <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-shield-lock"></i></div>
       <div class="stat-value" id="stat-held">—</div>
       <div class="stat-label">Held Funds</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-interviews'); loadRecentInterviews()">
+    <div class="stat-card" onclick="navTo('modal-interviews'); loadRecentInterviews()">
       <div class="stat-icon" style="background: rgba(14,165,233,0.1); color: var(--sky);"><i class="bi bi-calendar-check"></i></div>
       <div class="stat-value" id="stat-interviewed">—</div>
       <div class="stat-label">Interviewed</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-saved-jobs')">
+    <div class="stat-card" onclick="navTo('modal-saved-jobs')">
       <div class="stat-icon" style="background: rgba(27,107,69,0.1); color: var(--brand);"><i class="bi bi-bookmark-check"></i></div>
       <div class="stat-value" id="stat-saved-jobs">—</div>
       <div class="stat-label">Saved Jobs</div>
     </div>
-    <div class="stat-card" onclick="openModal('modal-wallet')">
+    <div class="stat-card" onclick="navTo('modal-wallet')">
       <div class="stat-icon pay"><i class="bi bi-wallet2"></i></div>
       <div class="stat-value" id="stat-wallet">—</div>
       <div class="stat-label">Balance</div>
@@ -1612,28 +1711,37 @@
   <div class="section">
     <div class="section-title"><i class="bi bi-lightning" style="color: var(--accent);"></i> Quick Actions</div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px;">
-      <button class="btn btn-secondary btn-full" onclick="openModal('modal-jobs')">
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-jobs')">
         <i class="bi bi-briefcase"></i> Find Jobs
       </button>
-      <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet')">
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-wallet')">
         <i class="bi bi-wallet2"></i> Payments
       </button>
-      <button class="btn btn-secondary btn-full" onclick="openModal('modal-messages')">
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-messages')">
         <i class="bi bi-chat-dots"></i> Messages
       </button>
-      <button class="btn btn-secondary btn-full" onclick="openModal('modal-account')">
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-account')">
         <i class="bi bi-person"></i> Profile
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-saved-jobs')">
+        <i class="bi bi-bookmark-heart"></i> Saved Jobs
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-bids')">
+        <i class="bi bi-tag"></i> My Bids
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="navTo('modal-ongoing-jobs')">
+        <i class="bi bi-briefcase-fill"></i> My Jobs
       </button>
     </div>
   </div>
 
 </div><!-- /page -->
 <!-- ═══════════════════════════ NOTIFICATIONS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-notifications">
+<div class="modal-overlay panel-mode" id="modal-notifications">
   <div class="modal">
     <div class="modal-header">
       <h2><i class="bi bi-bell"></i> Notifications</h2>
-      <button class="modal-close" onclick="closeModal('modal-notifications')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="push-notif-banner" class="visibility-toggle" style="display:none; margin-bottom:1rem;">
@@ -1651,11 +1759,11 @@
 </div>
 
 <!-- ═══════════════════════════ MESSAGES MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-messages">
-  <div class="modal wide" style="max-width:820px; max-height:92vh;">
+<div class="modal-overlay panel-mode" id="modal-messages">
+  <div class="modal wide" style="max-width:820px; max-height:92vh; margin:0 auto;">
     <div class="modal-header">
       <h2><i class="bi bi-chat-dots"></i> Messages</h2>
-      <button class="modal-close" onclick="closeModal('modal-messages')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body" style="padding:0; overflow:hidden;">
       <div class="chat-split">
@@ -1740,12 +1848,35 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════ CALLS PANEL ═══════════════════════════
+     No call-history table exists in the current schema, so this panel
+     doesn't fabricate a call log. Voice/video calls happen from inside a
+     conversation exactly as before (see startCall() in Messages), and
+     that's still the real call engine — this panel just orients the
+     employee there instead of showing invented data. ═══════════════════ -->
+<div class="modal-overlay panel-mode" id="modal-calls">
+  <div class="modal wide" style="margin:0 auto;">
+    <div class="modal-header">
+      <h2><i class="bi bi-telephone"></i> Calls</h2>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="calls-info">
+        <i class="bi bi-telephone-outbound"></i>
+        <p style="font-weight:700;color:var(--ink);margin-bottom:6px;">Calls happen inside a conversation</p>
+        <p style="font-size:12.5px;max-width:340px;margin:0 auto 16px;">Open a conversation in Messages and use the voice or video call buttons there to call an employer. There's no separate call log yet — recent calls will appear here once that's added.</p>
+        <button class="btn btn-secondary" onclick="navTo('modal-messages')"><i class="bi bi-chat-dots"></i> Go to Messages</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════ JOBS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-jobs">
+<div class="modal-overlay panel-mode" id="modal-jobs">
   <div class="modal wide">
     <div class="modal-header">
       <h2><i class="bi bi-briefcase"></i> Available Jobs</h2>
-      <button class="modal-close" onclick="closeModal('modal-jobs')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div style="margin-bottom:1rem; display:flex; gap:8px;">
@@ -1753,7 +1884,7 @@
         <select id="job-county" onchange="filterJobs()" style="padding:9px 12px; border:1px solid var(--border); border-radius:10px; font-family:inherit; font-size:13px; min-width:130px;">
           <option value="">All Counties</option>
         </select>
-        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-jobs'); openModal('modal-saved-jobs');" title="Saved Jobs">
+        <button class="btn btn-secondary btn-sm" onclick="navTo('overview'); navTo('modal-saved-jobs');" title="Saved Jobs">
           <i class="bi bi-bookmark-check"></i>
         </button>
       </div>
@@ -1845,11 +1976,11 @@
 </div>
 
 <!-- ═══════════════════════════ SAVED JOBS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-saved-jobs">
+<div class="modal-overlay panel-mode" id="modal-saved-jobs">
   <div class="modal wide">
     <div class="modal-header">
       <h2><i class="bi bi-bookmark-check"></i> Saved Jobs</h2>
-      <button class="modal-close" onclick="closeModal('modal-saved-jobs')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="saved-jobs-list">
@@ -1860,11 +1991,11 @@
 </div>
 
 <!-- ═══════════════════════════ APPLICATIONS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-applications">
+<div class="modal-overlay panel-mode" id="modal-applications">
   <div class="modal wide">
     <div class="modal-header">
       <h2><i class="bi bi-send-check"></i> My Applications</h2>
-      <button class="modal-close" onclick="closeModal('modal-applications')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="applications-list">
@@ -1922,11 +2053,11 @@
 </div>
 
 <!-- ═══════════════════════════ BIDED JOBS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-bids">
+<div class="modal-overlay panel-mode" id="modal-bids">
   <div class="modal wide">
     <div class="modal-header">
       <h2><i class="bi bi-tag-fill"></i> Bided Jobs</h2>
-      <button class="modal-close" onclick="closeModal('modal-bids')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="bided-jobs-list">
@@ -1937,11 +2068,11 @@
 </div>
 
 <!-- ═══════════════════════════ ONGOING JOBS MODAL (Mama Fua Mtaani) ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-ongoing-jobs">
+<div class="modal-overlay panel-mode" id="modal-ongoing-jobs">
   <div class="modal wide" style="max-width:680px;">
     <div class="modal-header">
       <h2><i class="bi bi-activity"></i> Ongoing Jobs</h2>
-      <button class="modal-close" onclick="closeModal('modal-ongoing-jobs')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="ongoing-jobs-list">
@@ -1982,11 +2113,11 @@
 </div>
 
 <!-- ═══════════════════════════ INTERVIEWS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-interviews">
+<div class="modal-overlay panel-mode" id="modal-interviews">
   <div class="modal wide" style="max-width:680px;">
     <div class="modal-header">
       <h2><i class="bi bi-calendar-check"></i> Interviews</h2>
-      <button class="modal-close" onclick="closeModal('modal-interviews')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div id="interviews-list">
@@ -1997,11 +2128,11 @@
 </div>
 
 <!-- ═══════════════════════════ WALLET & PAYMENTS MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-wallet">
+<div class="modal-overlay panel-mode" id="modal-wallet">
   <div class="modal wide">
     <div class="modal-header">
       <h2><i class="bi bi-wallet2"></i> Wallet & Payments</h2>
-      <button class="modal-close" onclick="closeModal('modal-wallet')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
       <div class="balance-box">
@@ -2042,7 +2173,7 @@
           </div>
           <div class="text-end">
             <div class="fw-bold fs-5" id="wallet-held" style="color:var(--sky);">KES 0</div>
-            <button class="btn btn-sm btn-outline-info mt-1" onclick="closeModal('modal-wallet'); openModal('modal-ongoing-jobs');">View Ongoing</button>
+            <button class="btn btn-sm btn-outline-info mt-1" onclick="navTo('overview'); navTo('modal-ongoing-jobs');">View Ongoing</button>
           </div>
         </div>
       </div>
@@ -2256,11 +2387,11 @@
 </div>
 
 <!-- ═══════════════════════════ ACCOUNT MODAL ═══════════════════════════ -->
-<div class="modal-overlay" id="modal-account">
-  <div class="modal" style="max-width:420px;">
+<div class="modal-overlay panel-mode" id="modal-account">
+  <div class="modal" style="max-width:640px;margin:0 auto;">
     <div class="modal-header">
       <h2><i class="bi bi-person-circle"></i> My Account</h2>
-      <button class="modal-close" onclick="closeModal('modal-account')">×</button>
+      <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body" style="padding:0;">
 
@@ -2311,7 +2442,7 @@
           <i class="bi bi-chevron-right" style="margin-left:auto;color:var(--muted);font-size:12px;"></i>
         </button>
 
-        <button class="btn btn-secondary btn-full" onclick="openModal('modal-wallet'); closeModal('modal-account')" style="justify-content:flex-start;gap:12px;">
+        <button class="btn btn-secondary btn-full" onclick="navTo('modal-wallet'); navTo('overview')" style="justify-content:flex-start;gap:12px;">
           <span style="width:32px;height:32px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-wallet2" style="color:var(--accent);"></i></span>
           <span>
             <span style="display:block;font-weight:700;">Wallet & Payments</span>
@@ -2622,6 +2753,8 @@
 
 <!-- TOAST -->
 <div id="toast-stack"></div>
+
+</div><!-- /main-wrap -->
 
 <!-- ═══════════════════════ VOICE CALL OVERLAY ═══════════════════════ -->
 <div class="call-overlay" id="voice-call-overlay">
@@ -3447,7 +3580,7 @@ function renderRecentMessagesPreview() {
     const roleLabel = isSupport ? 'Support' : 'Employer';
 
     return `
-    <div class="msg-item ${unread ? 'unread' : ''}" onclick="openModal('modal-messages'); openConversation('${conv.id}');" style="cursor:pointer;">
+    <div class="msg-item ${unread ? 'unread' : ''}" onclick="navTo('modal-messages'); openConversation('${conv.id}');" style="cursor:pointer;">
       <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
@@ -3494,7 +3627,7 @@ async function loadRecentInterviews() {
     const time = conv.last_message_at ? timeAgo(new Date(conv.last_message_at)) : '';
     const avatarInner = emp.photo ? `<img src="${esc(emp.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : esc(init);
     return `
-    <div class="msg-item" onclick="openConversation('${conv.id}'); closeModal('modal-interviews'); openModal('modal-messages');" style="cursor:pointer;">
+    <div class="msg-item" onclick="openConversation('${conv.id}'); navTo('overview'); navTo('modal-messages');" style="cursor:pointer;">
       <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
@@ -3847,7 +3980,7 @@ async function openConversation(convId) {
   await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
 
   if (!document.getElementById('modal-messages').classList.contains('open')) {
-    openModal('modal-messages');
+    navTo('modal-messages');
   }
 
   // Clear reply preview
@@ -5252,7 +5385,7 @@ function handleJobDeepLink() {
     return;
   }
 
-  openModal('modal-jobs');
+  navTo('modal-jobs');
 
   // Wait for the modal to open and the card to be in the DOM, then scroll to + highlight it
   setTimeout(() => {
@@ -5568,7 +5701,7 @@ function openApplicationMessages() {
   }
   closeModal('modal-application-detail');
   openConversation(conv.id);
-  openModal('modal-messages');
+  navTo('modal-messages');
 }
 
 function sendApplicationToSupport() {
@@ -5717,7 +5850,7 @@ async function submitCardPayment() {
   btn.innerHTML = '<i class="bi bi-credit-card"></i> Pay Now';
 
   showToast('ok', 'bi-check-circle', 'Payment Submitted', `Ref: ${ref || '—'}`);
-  closeModal('modal-wallet');
+  navTo('overview');
 }
 
 async function payFromWallet() {
@@ -5835,7 +5968,7 @@ async function payFromWallet() {
 
     showToast('ok', 'bi-check-circle', 'Payment Successful',
       `KES ${amount.toLocaleString('en-KE')} deducted from your wallet. Ref: ${txnRef}`);
-    closeModal('modal-wallet');
+    navTo('overview');
 
   } catch (e) {
     showToast('err', 'bi-exclamation-circle', 'Payment Failed', e.message);
@@ -6302,7 +6435,7 @@ function subscribeToRealtime() {
         const senderName = (conv.is_admin_thread ? 'Support' : (employerCache[conv.employer_id]?.name || 'Employer'));
         pushNotify(`💬 ${senderName}`, (msg.body || msg.content || 'Sent you a message').substring(0, 100), {
           tag: 'msg-' + conv.id, skipIfFocused: true,
-          onClick: () => { openConversation(conv.id); openModal('modal-messages'); },
+          onClick: () => { openConversation(conv.id); navTo('modal-messages'); },
         });
       }
 
@@ -6361,7 +6494,7 @@ function subscribeToRealtime() {
       document.getElementById('notif-badge').classList.add('show');
       pushNotify(n.title || '🔔 Notification', n.message || '', {
         tag: 'notif-' + n.id, skipIfFocused: true,
-        onClick: () => openModal('modal-notifications'),
+        onClick: () => navTo('modal-notifications'),
       });
     })
     .subscribe();
@@ -6383,7 +6516,7 @@ function subscribeToRealtime() {
       showToast('info', 'bi-briefcase', 'Application Updated', `${jobTitle}: ${app.status}`);
       pushNotify('📋 Application Update', `${jobTitle} — status changed to ${app.status}`, {
         tag: 'app-' + app.id, skipIfFocused: true,
-        onClick: () => { openModal('modal-applications'); openApplicationDetail(app.id); },
+        onClick: () => { navTo('modal-applications'); openApplicationDetail(app.id); },
       });
     })
     .subscribe();
@@ -6436,7 +6569,7 @@ async function signOut() {
 // section (empty states, plain text, whitespace) opens modalId.
 function handleSectionTap(e, modalId, afterFn) {
   if (e.target.closest('a, button, input, label, .msg-item, .job-card, .card, .toggle-switch, .ed-tab-item, .ed-tab-panel')) return;
-  openModal(modalId);
+  navTo(modalId);
   if (afterFn) afterFn();
 }
 
@@ -6455,6 +6588,48 @@ function openModal(id) {
   if (id === 'modal-ongoing-jobs') renderOngoingJobs();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+// ── SIDEBAR NAVIGATION ──
+// The panels below are the SAME modal-overlay elements/functions as before
+// (openModal/closeModal, and every data-loading side effect they trigger,
+// are untouched) — navTo() just also hides the Overview page, closes any
+// other open panel, and keeps the sidebar/top-bar in sync so only one
+// section is visible at a time.
+const SSC_PANEL_IDS = ['modal-notifications','modal-messages','modal-jobs','modal-saved-jobs',
+  'modal-applications','modal-bids','modal-ongoing-jobs','modal-interviews','modal-wallet',
+  'modal-account','modal-calls'];
+const SSC_PANEL_TITLES = {
+  overview: 'Overview', 'modal-account': 'My Profile', 'modal-jobs': 'Find Jobs',
+  'modal-applications': 'My Applications', 'modal-saved-jobs': 'Saved Jobs', 'modal-bids': 'My Bids',
+  'modal-ongoing-jobs': 'My Jobs', 'modal-interviews': 'Interviews', 'modal-messages': 'Messages',
+  'modal-wallet': 'Wallet', 'modal-notifications': 'Notifications', 'modal-calls': 'Calls'
+};
+function navTo(id, btn) {
+  SSC_PANEL_IDS.forEach(pid => { if (pid !== id) closeModal(pid); });
+  const overview = document.getElementById('page-overview');
+  if (overview) overview.style.display = (id === 'overview') ? '' : 'none';
+  if (id !== 'overview') openModal(id);
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else {
+    // Nav/stat-card shortcuts don't pass a button — highlight the matching sidebar link anyway
+    document.querySelectorAll('.sb-link').forEach(l => {
+      if (l.getAttribute('onclick')?.includes(`navTo('${id}'`)) l.classList.add('active');
+    });
+  }
+  const t = document.getElementById('nav-section-title');
+  if (t) t.textContent = SSC_PANEL_TITLES[id] || 'Overview';
+  document.body.classList.toggle('ssc-hide-support-fab', id === 'modal-messages');
+  if (window.innerWidth <= 900) {
+    document.getElementById('sidebar')?.classList.remove('show');
+    document.getElementById('sb-scrim')?.classList.remove('show');
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+function toggleSidebar() {
+  document.getElementById('sidebar')?.classList.toggle('show');
+  document.getElementById('sb-scrim')?.classList.toggle('show');
+}
 
 function switchTab(tabId, btn) {
   // Scope to the nearest .modal so sibling modals' tabs are not affected
@@ -6491,7 +6666,7 @@ function showToast(type, icon, title, body) {
 }
 
 // Close modals on overlay click — only if clicking the overlay itself (not a button inside)
-document.querySelectorAll('.modal-overlay').forEach(el => {
+document.querySelectorAll('.modal-overlay:not(.panel-mode)').forEach(el => {
   el.addEventListener('click', e => {
     if (e.target === el && !el.dataset.justOpened) el.classList.remove('open');
   });
@@ -6500,7 +6675,7 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 // Helper: open a modal without the click event bubbling to the overlay
 function launchEditProfile(e) {
   if (e) { e.stopPropagation(); e.preventDefault(); }
-  closeModal('modal-account');
+  navTo('overview');
   // Wait for the account modal to fully close before opening edit modal.
   // The longer delay prevents the same click from immediately closing the newly-opened modal.
   setTimeout(() => openEditProfile(), 150);
@@ -6508,7 +6683,7 @@ function launchEditProfile(e) {
 
 function launchAccountSettings(e) {
   if (e) e.stopPropagation();
-  closeModal('modal-account');
+  navTo('overview');
   setTimeout(() => openModal('modal-account-settings'), 50);
 }
 
