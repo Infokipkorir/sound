@@ -1470,8 +1470,21 @@ let reportTargetConvId = null;
   if (!window.supabaseClient) window.supabaseClient = sb;
 
   const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) { window.location.href = 'employee-login.html'; return; }
+  if (!session?.user) { window.location.href = 'employer-login.html'; return; }
   currentUser = session.user;
+
+  // ── ROLE GUARD ──
+  // public.users.role is the single source of truth for account type (set at
+  // signup, kept in sync by DB triggers). Without this check, ANY logged-in
+  // user — employee, agent, admin, abroad worker — could open this URL and
+  // loadAll() would silently auto-create them an employer_profile, letting
+  // them straight into the employer dashboard.
+  const { data: acct, error: acctErr } = await sb.from('users').select('role').eq('id', currentUser.id).maybeSingle();
+  if (acctErr || !acct || acct.role !== 'employer') {
+    await sb.auth.signOut();
+    window.location.href = 'employer-login.html?error=wrong_dashboard';
+    return;
+  }
 
   startClock();
   setHeroPhoto();

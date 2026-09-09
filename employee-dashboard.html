@@ -3013,6 +3013,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) { console.error('getUser() returned null — redirecting'); window.location.href = 'login.html'; return; }
   currentUser = user;
 
+  // ── ROLE GUARD ──
+  // public.users.role is the single source of truth for account type. Without
+  // this check, any logged-in user (employer, agent, admin, abroad worker)
+  // could open this URL and get treated as an employee.
+  const { data: acct, error: acctErr } = await sb.from('users').select('role').eq('id', currentUser.id).maybeSingle();
+  if (acctErr || !acct || acct.role !== 'employee') {
+    await sb.auth.signOut();
+    window.location.href = 'login.html?error=wrong_dashboard';
+    return;
+  }
+
   // Update presence
   console.log('📍 Updating user_presence…');
   const { error: presenceErr } = await sb.from('user_presence').upsert(
