@@ -3744,6 +3744,9 @@ async function submitEmployerRating() {
       if (o.application?.job_id === ratingContext.jobId) o.alreadyRated = true;
     });
     renderOngoingJobs();
+    // Keep the Hiring History tab's feedback/rating block in sync if it's
+    // already been loaded this session (rating can be submitted from either tab).
+    if (edLoaded?.hiringHistory) loadEdHiringHistoryDetailed();
   }
 }
 
@@ -7783,13 +7786,35 @@ async function loadEdHiringHistoryDetailed() {
     if (!apps?.length) { el.innerHTML = '<div class="ed-empty"><i class="bi bi-briefcase"></i><p>No hiring history yet</p></div>'; return; }
 
     const jobIds = [...new Set(apps.map(a => a.job_id))];
-    const { data: jobRows } = await sb.from('job_postings').select('id, title, company_name, county').in('id', jobIds);
+
+    // Employer profile + any feedback/rating the worker already left, fetched
+    // alongside the job rows so each hiring-history entry can show either the
+    // submitted rating/review or a "Rate Employer" prompt. Same eligibility
+    // rule as the Ongoing Jobs tab: only a confirmed hire (status='hired' +
+    // hired_at) can rate, enforced here in the UI and by RLS server-side.
+    const [{ data: jobRows }, { data: ratingRows, error: ratingErr }] = await Promise.all([
+      sb.from('job_postings').select('id, title, company_name, county, employer_id').in('id', jobIds),
+      sb.from('employer_ratings').select('job_id, rating, review_text, created_at').eq('worker_id', workerProfile.id).in('job_id', jobIds),
+    ]);
+    if (ratingErr) console.error('❌ employer_ratings fetch failed:', ratingErr.message);
+
     const jobById = {}; (jobRows || []).forEach(j => { jobById[j.id] = j; });
     const interviewByJob = {}; (interviews || []).forEach(i => { interviewByJob[i.job_id] = i; });
+    const ratingByJob = {}; (ratingRows || []).forEach(r => { ratingByJob[r.job_id] = r; });
+
+    const employerUserIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
+    let employerByUserId = {};
+    if (employerUserIds.length) {
+      const { data: empRows } = await sb.from('employer_profiles').select('id, user_id, full_name, company_name').in('user_id', employerUserIds);
+      (empRows || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
+    }
 
     el.innerHTML = apps.map(a => {
       const j = jobById[a.job_id] || {};
       const iv = interviewByJob[a.job_id];
+      const existingRating = ratingByJob[a.job_id];
+      const employerProfile = j.employer_id ? employerByUserId[j.employer_id] : null;
+      const employerName = employerProfile?.company_name || employerProfile?.full_name || j.company_name || 'this employer';
       return `
       <div class="ed-entry">
         <div class="ed-entry-top">
@@ -7801,12 +7826,41 @@ async function loadEdHiringHistoryDetailed() {
         </div>
         <span class="ed-pill ok">hired</span>
         ${iv ? `<div style="font-size:12px;color:var(--muted);margin-top:6px;"><i class="bi bi-calendar-check"></i> ${esc((iv.interview_type || 'Interview'))} — ${esc(iv.status || 'scheduled')} on ${edFmtDate(iv.scheduled_at)}</div>` : ''}
+        ${edHiringFeedbackHtml(a, employerProfile, employerName, existingRating)}
       </div>`;
     }).join('');
   } catch (e) {
     console.error('❌ loadEdHiringHistoryDetailed failed:', e.message);
     el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load hiring history</p></div>';
   }
+}
+
+// Renders either the worker's already-submitted employer rating/review, or a
+// "Rate Employer" prompt when eligible. Reuses the existing modal-rate-employer
+// flow (openRateEmployerModal / submitEmployerRating) so RLS eligibility —
+// confirmed hire only, one rating per worker+job — stays enforced in one place.
+function edHiringFeedbackHtml(app, employerProfile, employerName, existingRating) {
+  if (existingRating) {
+    const stars = [1,2,3,4,5].map(n =>
+      `<i class="bi ${n <= existingRating.rating ? 'bi-star-fill' : 'bi-star'}" style="color:#f59e0b;font-size:13px;"></i>`
+    ).join('');
+    return `
+      <div style="margin-top:8px;padding:8px 10px;background:var(--ds-brand-soft);border:1px solid var(--ds-brand-border);border-radius:10px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:600;color:var(--ds-text-secondary);">Your feedback for ${esc(employerName)}</span>
+          <span style="display:flex;gap:1px;">${stars}</span>
+        </div>
+        ${existingRating.review_text ? `<div style="font-size:12px;color:var(--ds-text-secondary);margin-top:4px;font-style:italic;">"${esc(existingRating.review_text)}"</div>` : ''}
+      </div>`;
+  }
+  const canRate = !!(app.status === 'hired' && app.hired_at && employerProfile?.id);
+  if (!canRate) return '';
+  return `
+    <div style="margin-top:8px;">
+      <button class="btn btn-sm" style="background:#f59e0b;color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${app.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})">
+        <i class="bi bi-star-fill"></i> Rate &amp; Leave Feedback
+      </button>
+    </div>`;
 }
 
 // Opens the full Wallet modal and jumps straight to its Deposit
