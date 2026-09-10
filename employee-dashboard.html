@@ -3048,9 +3048,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     showToast('err', 'bi-exclamation-circle', 'Dashboard failed to load', err.message);
   }
   try {
-    initEmployeeDetailsSection();
+    // initEmployeeDetailsSection is `async` — calling it without `await`
+    // meant this try/catch could only ever catch a *synchronous* throw
+    // before its first `await`. Any error after that (in renderEdProfileTab,
+    // a bad DOM lookup, a failed fetch inside it, etc.) became an unhandled
+    // promise rejection: no catch fired, nothing was shown, and the whole
+    // My Profile / Hiring History / Documents section could silently stop
+    // populating with zero feedback to the user. This is the page "failing
+    // in silence" — add the missing await so real errors surface here.
+    await initEmployeeDetailsSection();
   } catch (edErr) {
     console.error('Employee Details section failed to init:', edErr.message);
+    showToast('err', 'bi-exclamation-circle', 'Profile section failed to load', edErr.message);
   }
   try {
     subscribeToRealtime();
@@ -3404,20 +3413,26 @@ async function loadDashboard() {
         const jobById = {}; (jobRows || []).forEach(j => { jobById[j.id] = j; });
         const ratedJobIds = new Set((ratedRes?.data || []).map(r => r.job_id));
 
-        const employerUserIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
-        let employerByUserId = {};
-        if (employerUserIds.length) {
+        // job_postings.employer_id stores employer_profiles.id (the profile's
+        // own PK) — NOT the employer's auth user_id, despite the column name.
+        // Confirmed against live data: 0 jobs match by user_id, all matched
+        // rows match by profile id. Matching against user_id here silently
+        // returned no employer profile for every real hired job, which hid
+        // the "Rate Employer" button (canRate requires employerProfile?.id).
+        const employerProfileIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
+        let employerByProfileId = {};
+        if (employerProfileIds.length) {
           const { data: empRows } = await sb.from('employer_profiles')
             .select('id, user_id, full_name, company_name')
-            .in('user_id', employerUserIds);
-          (empRows || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
+            .in('id', employerProfileIds);
+          (empRows || []).forEach(ep => { employerByProfileId[ep.id] = ep; });
         }
 
         ongoingJobsData = hiredApps
           .filter(a => jobById[a.job_id] && !jobById[a.job_id].is_closed)
           .map(a => {
             const job = jobById[a.job_id];
-            const employerProfile = job.employer_id ? employerByUserId[job.employer_id] : null;
+            const employerProfile = job.employer_id ? employerByProfileId[job.employer_id] : null;
             return {
               application: a,
               job,
@@ -4069,7 +4084,9 @@ function cancelRecording() {
 async function uploadVoiceNote(blob) {
   if (!activeConvId) return;
   showToast('info', 'bi-mic', 'Uploading', 'Sending voice message…');
-  const path = `voice-notes/${activeConvId}/${Date.now()}.webm`;
+  // Storage RLS on Media (media_own_folder_insert) requires the first path
+  // segment to be the uploader's own auth.uid() — folder must be the uid.
+  const path = `${currentUser.id}/voice-notes/${activeConvId}/${Date.now()}.webm`;
   const { error: upErr } = await sb.storage.from('Media').upload(path, blob, { contentType: 'audio/webm' });
   if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload failed', upErr.message); return; }
   const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
@@ -6971,7 +6988,9 @@ async function sendEmployeeFile() {
   const sendBtn = document.getElementById('send-btn');
   if (sendBtn) sendBtn.disabled = true;
   try {
-    const path = `employee-files/${activeConvId}/${Date.now()}-${file.name}`;
+    // Storage RLS on Media (media_own_folder_insert) requires the first path
+    // segment to be the uploader's own auth.uid() — folder must be the uid.
+    const path = `${currentUser.id}/employee-files/${activeConvId}/${Date.now()}-${file.name}`;
     const { error: ue } = await sb.storage.from('Media').upload(path, file);
     if (ue) throw ue;
     const { data: { publicUrl } } = sb.storage.from('Media').getPublicUrl(path);
@@ -7203,7 +7222,11 @@ async function uploadProfilePhoto(input) {
   if (!file) return;
   showToast('info', 'bi-upload', 'Uploading photo…', '');
   const ext = file.name.split('.').pop();
-  const path = `profile-photos/${currentUser.id}.${ext}`;
+  // Storage RLS on the Media bucket (media_own_folder_insert) requires the
+  // FIRST path segment to equal the uploader's own auth.uid() — the old
+  // 'profile-photos/<uid>.<ext>' path put 'profile-photos' there instead, so
+  // the policy rejected every upload. Folder must be the uid.
+  const path = `${currentUser.id}/profile-photos/photo.${ext}`;
   const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
   if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
   const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
@@ -7802,18 +7825,21 @@ async function loadEdHiringHistoryDetailed() {
     const interviewByJob = {}; (interviews || []).forEach(i => { interviewByJob[i.job_id] = i; });
     const ratingByJob = {}; (ratingRows || []).forEach(r => { ratingByJob[r.job_id] = r; });
 
-    const employerUserIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
-    let employerByUserId = {};
-    if (employerUserIds.length) {
-      const { data: empRows } = await sb.from('employer_profiles').select('id, user_id, full_name, company_name').in('user_id', employerUserIds);
-      (empRows || []).forEach(ep => { employerByUserId[ep.user_id] = ep; });
+    // job_postings.employer_id stores employer_profiles.id, not the
+    // employer's auth user_id — see the matching note in loadDashboard's
+    // Ongoing Jobs step. Must look up employer_profiles by .id here too.
+    const employerProfileIds = [...new Set((jobRows || []).map(j => j.employer_id).filter(Boolean))];
+    let employerByProfileId = {};
+    if (employerProfileIds.length) {
+      const { data: empRows } = await sb.from('employer_profiles').select('id, user_id, full_name, company_name').in('id', employerProfileIds);
+      (empRows || []).forEach(ep => { employerByProfileId[ep.id] = ep; });
     }
 
     el.innerHTML = apps.map(a => {
       const j = jobById[a.job_id] || {};
       const iv = interviewByJob[a.job_id];
       const existingRating = ratingByJob[a.job_id];
-      const employerProfile = j.employer_id ? employerByUserId[j.employer_id] : null;
+      const employerProfile = j.employer_id ? employerByProfileId[j.employer_id] : null;
       const employerName = employerProfile?.company_name || employerProfile?.full_name || j.company_name || 'this employer';
       return `
       <div class="ed-entry">
