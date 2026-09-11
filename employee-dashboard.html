@@ -2557,7 +2557,7 @@
 
 <!-- ═══════════════════════════ EDIT PROFILE MODAL ═══════════════════════════ -->
 <div class="modal-overlay" id="modal-edit-profile">
-  <div class="modal extra-wide">
+  <div class="modal extra-wide" style="position:relative;">
     <div class="modal-header">
       <h2><i class="bi bi-person-gear"></i> Edit Profile</h2>
       <button class="modal-close" onclick="closeModal('modal-edit-profile')">×</button>
@@ -2755,6 +2755,25 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Inline save-confirmation, confined to this card (position:relative
+         on .modal above + position:absolute here) instead of the app-wide
+         modal-confirm-action overlay — so it visibly overlaps just this
+         form instead of covering the whole page. -->
+    <div id="ep-save-confirm-overlay" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,.55);border-radius:inherit;align-items:center;justify-content:center;padding:20px;z-index:5;">
+      <div style="background:var(--ds-surface-card);border-radius:var(--ds-radius-lg);box-shadow:var(--ds-shadow-xl);max-width:340px;width:100%;padding:1.5rem;">
+        <h3 style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;margin:0 0 10px;">
+          <i class="bi bi-check-circle-fill" style="color:var(--brand);"></i> Save Changes?
+        </h3>
+        <p id="ep-save-confirm-body" style="font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 1.25rem;">
+          Do you want to save these changes to your profile?
+        </p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="cancelSavePersonalInfo()">Cancel</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="proceedSavePersonalInfo()">Yes, Save</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -6799,19 +6818,6 @@ function openConfirmModal(action) {
     btn.textContent = 'Yes, Deactivate';
     typeWrap.style.display = 'none';
     typeInput.value = '';
-  } else if (action === 'save-personal-info') {
-    const fullNameInput = document.getElementById('ep-fullname').value.trim();
-    const nameChanging = !!(workerProfile?.full_name && fullNameInput && fullNameInput !== workerProfile.full_name);
-    title.innerHTML = '<i class="bi bi-check-circle-fill" style="color:var(--brand);"></i> Save Changes';
-    body.innerHTML = nameChanging
-      ? 'Do you want to save these changes to your profile?<br><br><strong>Note:</strong> changing your name requires admin approval before it takes effect, and you can only request a name change once every 7 days.'
-      : 'Do you want to save these changes to your profile?';
-    btn.style.background = 'var(--brand)';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-    btn.textContent = 'Yes, Save';
-    typeWrap.style.display = 'none';
-    typeInput.value = '';
   } else {
     title.innerHTML = '<i class="bi bi-trash3-fill" style="color:var(--rose);"></i> Delete Account';
     body.innerHTML = '<strong style="color:var(--rose);">This is permanent and cannot be undone.</strong><br><br>All your profile data, messages, and application history will be marked for deletion. You will be signed out immediately.';
@@ -6895,15 +6901,6 @@ async function executeConfirmAction() {
     showToast('ok', 'bi-trash3', 'Account Deleted', 'Signing you out now…');
     closeModal('modal-confirm-action');
     setTimeout(() => signOut(), 2000);
-
-  } else if (_pendingAction === 'save-personal-info') {
-    closeModal('modal-confirm-action');
-    // Reset the confirm button back to its normal state for next time —
-    // savePersonalInfo() manages its own toasts/errors on the profile form,
-    // it doesn't touch this button.
-    btn.disabled = false;
-    btn.textContent = 'Yes, Save';
-    await savePersonalInfo();
   }
 
   _pendingAction = null;
@@ -7052,6 +7049,10 @@ let selectedAvailability = 'available';
 function openEditProfile() {
   if (!workerProfile) { showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.'); return; }
 
+  // Reset any leftover save-confirmation state from a previous visit
+  const saveConfirmOverlay = document.getElementById('ep-save-confirm-overlay');
+  if (saveConfirmOverlay) saveConfirmOverlay.style.display = 'none';
+
   // Populate fields
   document.getElementById('ep-fullname').value = workerProfile.full_name || '';
   const fnPending = document.getElementById('ep-fullname-pending');
@@ -7106,7 +7107,22 @@ function checkPwStrength(pw) {
 function confirmSavePersonalInfo() {
   const fullName = document.getElementById('ep-fullname').value.trim();
   if (!fullName) { showToast('err', 'bi-exclamation-circle', 'Required', 'Please enter your full name.'); return; }
-  openConfirmModal('save-personal-info');
+
+  const nameChanging = !!(workerProfile?.full_name && fullName !== workerProfile.full_name);
+  document.getElementById('ep-save-confirm-body').innerHTML = nameChanging
+    ? 'Do you want to save these changes to your profile?<br><br><strong>Note:</strong> changing your name requires admin approval before it takes effect, and you can only request a name change once every 7 days.'
+    : 'Do you want to save these changes to your profile?';
+
+  document.getElementById('ep-save-confirm-overlay').style.display = 'flex';
+}
+
+function cancelSavePersonalInfo() {
+  document.getElementById('ep-save-confirm-overlay').style.display = 'none';
+}
+
+async function proceedSavePersonalInfo() {
+  document.getElementById('ep-save-confirm-overlay').style.display = 'none';
+  await savePersonalInfo();
 }
 
 async function savePersonalInfo() {
