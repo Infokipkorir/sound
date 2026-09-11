@@ -2585,6 +2585,12 @@
         <div class="form-group">
           <label>Full Name</label>
           <input type="text" id="ep-fullname" placeholder="Your full name">
+          <div id="ep-fullname-pending" style="display:none;margin-top:6px;">
+            <span class="ed-pill pending"><i class="bi bi-hourglass-split"></i> Waiting Approval</span>
+            <span class="form-hint" style="display:block;margin-top:4px;">
+              Requested name: <strong id="ep-fullname-pending-value" style="color:var(--ink);"></strong> — pending admin review.
+            </span>
+          </div>
         </div>
         <div class="form-group">
           <label>Email</label>
@@ -2610,7 +2616,7 @@
             <option value="false">No – Not looking right now</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-full" onclick="savePersonalInfo()">
+        <button class="btn btn-primary btn-full" onclick="confirmSavePersonalInfo()">
           <i class="bi bi-check-circle"></i> Save Personal Info
         </button>
       </div>
@@ -3086,7 +3092,7 @@ async function loadDashboard() {
     // Attempt 1: session_id match — use limit(2) so duplicate rows never cause a 406 crash
     console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
     const { data: bySessionRows, error: e1 } = await sb.from('worker_profiles')
-      .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
+      .select('id, full_name, pending_full_name, identity_change_status, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
       .eq('session_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(2);
@@ -3102,7 +3108,7 @@ async function loadDashboard() {
       // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
       console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
       const { data: byEmailRows, error: e2 } = await sb.from('worker_profiles')
-        .select('id, full_name, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
+        .select('id, full_name, pending_full_name, identity_change_status, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
         .eq('email', currentUser.email)
         .order('created_at', { ascending: false })
         .limit(2);
@@ -5700,14 +5706,34 @@ async function reapplyToApplication() {
   loadApplications();
 }
 
-function openApplicationMessages() {
+async function openApplicationMessages() {
   if (!activeApplication) return;
-  const employerId = activeApplication.job_postings?.employer_id;
-  if (!employerId) {
+  // job_postings.employer_id is employer_profiles.id (the profile's own PK),
+  // NOT the employer's auth user_id — see the matching note in
+  // loadEdHiringHistoryDetailed. conversations.employer_id IS the auth
+  // user_id (that's what RLS checks against auth.uid() everywhere in
+  // messages/conversations). Comparing the two directly, as this used to do,
+  // meant a matching conversation could never be found even when message
+  // history with this employer already existed.
+  const employerProfileId = activeApplication.job_postings?.employer_id;
+  if (!employerProfileId) {
     showToast('err', 'bi-exclamation-circle', 'Unavailable', 'No employer is linked to this application yet.');
     return;
   }
-  const conv = allConversations.find(c => c.employer_id === employerId && !c.is_admin_thread);
+
+  const { data: mapRows, error: mapErr } = await sb.rpc('get_employer_user_id_by_profile_id', { profile_ids: [employerProfileId] });
+  if (mapErr) {
+    console.error('❌ get_employer_user_id_by_profile_id failed:', mapErr.message);
+    showToast('err', 'bi-exclamation-circle', 'Error', 'Could not look up this employer. Please try again.');
+    return;
+  }
+  const employerUserId = mapRows?.[0]?.user_id;
+  if (!employerUserId) {
+    showToast('err', 'bi-exclamation-circle', 'Unavailable', 'No employer is linked to this application yet.');
+    return;
+  }
+
+  const conv = allConversations.find(c => c.employer_id === employerUserId && !c.is_admin_thread);
   if (!conv) {
     showToast('info', 'bi-chat-dots', 'No Conversation Yet', 'This employer hasn\'t messaged you yet. They\'ll reach out here once they review your application.');
     return;
@@ -6773,6 +6799,19 @@ function openConfirmModal(action) {
     btn.textContent = 'Yes, Deactivate';
     typeWrap.style.display = 'none';
     typeInput.value = '';
+  } else if (action === 'save-personal-info') {
+    const fullNameInput = document.getElementById('ep-fullname').value.trim();
+    const nameChanging = !!(workerProfile?.full_name && fullNameInput && fullNameInput !== workerProfile.full_name);
+    title.innerHTML = '<i class="bi bi-check-circle-fill" style="color:var(--brand);"></i> Save Changes';
+    body.innerHTML = nameChanging
+      ? 'Do you want to save these changes to your profile?<br><br><strong>Note:</strong> changing your name requires admin approval before it takes effect, and you can only request a name change once every 7 days.'
+      : 'Do you want to save these changes to your profile?';
+    btn.style.background = 'var(--brand)';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.textContent = 'Yes, Save';
+    typeWrap.style.display = 'none';
+    typeInput.value = '';
   } else {
     title.innerHTML = '<i class="bi bi-trash3-fill" style="color:var(--rose);"></i> Delete Account';
     body.innerHTML = '<strong style="color:var(--rose);">This is permanent and cannot be undone.</strong><br><br>All your profile data, messages, and application history will be marked for deletion. You will be signed out immediately.';
@@ -6856,6 +6895,15 @@ async function executeConfirmAction() {
     showToast('ok', 'bi-trash3', 'Account Deleted', 'Signing you out now…');
     closeModal('modal-confirm-action');
     setTimeout(() => signOut(), 2000);
+
+  } else if (_pendingAction === 'save-personal-info') {
+    closeModal('modal-confirm-action');
+    // Reset the confirm button back to its normal state for next time —
+    // savePersonalInfo() manages its own toasts/errors on the profile form,
+    // it doesn't touch this button.
+    btn.disabled = false;
+    btn.textContent = 'Yes, Save';
+    await savePersonalInfo();
   }
 
   _pendingAction = null;
@@ -7006,6 +7054,11 @@ function openEditProfile() {
 
   // Populate fields
   document.getElementById('ep-fullname').value = workerProfile.full_name || '';
+  const fnPending = document.getElementById('ep-fullname-pending');
+  const fnPendingVal = document.getElementById('ep-fullname-pending-value');
+  const hasPendingNameChange = (workerProfile.identity_change_status || '').toLowerCase() === 'pending' && !!workerProfile.pending_full_name;
+  fnPending.style.display = hasPendingNameChange ? 'block' : 'none';
+  fnPendingVal.textContent = workerProfile.pending_full_name || '';
   document.getElementById('ep-email').value = currentUser.email || '';
   document.getElementById('ep-phone').value = workerProfile.phone || workerProfile.phone_number || '';
   document.getElementById('ep-location').value = workerProfile.location || '';
@@ -7050,6 +7103,12 @@ function checkPwStrength(pw) {
   else { bar.className = 'pw-strength strong'; label.textContent = 'Strong'; }
 }
 
+function confirmSavePersonalInfo() {
+  const fullName = document.getElementById('ep-fullname').value.trim();
+  if (!fullName) { showToast('err', 'bi-exclamation-circle', 'Required', 'Please enter your full name.'); return; }
+  openConfirmModal('save-personal-info');
+}
+
 async function savePersonalInfo() {
   const fullName = document.getElementById('ep-fullname').value.trim();
   const phone = document.getElementById('ep-phone').value.trim();
@@ -7087,7 +7146,13 @@ async function savePersonalInfo() {
 
     if (error) {
       console.error('Personal info save failed:', error);
-      showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message);
+      // The identity_change_approval trigger raises a plain-English cooldown
+      // message (see enforce_identity_change_approval in the DB) when a name
+      // change is requested again within 7 days of the last request — surface
+      // that distinctly instead of the generic "Save Failed" wording.
+      const isCooldown = /once every 7 days/i.test(error.message || '');
+      showToast('err', isCooldown ? 'bi-hourglass-split' : 'bi-exclamation-circle',
+        isCooldown ? 'Too Soon' : 'Save Failed', error.message);
       return;
     }
 
@@ -7111,30 +7176,57 @@ async function savePersonalInfo() {
       // since the update reported no error either way.
       workerProfile = { ...workerProfile, ...(data?.[0] || update) };
 
+      // The identity_change_status trigger intercepts full_name edits
+      // server-side: if fullName differs from what's now on the row, the
+      // trigger routed it into pending_full_name and left full_name (and
+      // identity_change_status) reflecting that — it did NOT apply live.
+      // Never optimistically paint the requested name into the header/
+      // avatars in that case; only the row Postgres actually returned
+      // decides what's displayed.
+      const nameIsPending = (workerProfile.identity_change_status || '').toLowerCase() === 'pending'
+        && !!workerProfile.pending_full_name;
+      const displayName = nameIsPending ? (workerProfile.full_name || fullName) : fullName;
+
       const welcomeName = document.getElementById('welcome-name');
       if (welcomeName) {
-        welcomeName.innerHTML = 'Welcome back, ' + esc(fullName) + ' <i class="bi bi-emoji-smile-fill" style="font-size:0.75em;vertical-align:middle;"></i>';
+        welcomeName.innerHTML = 'Welcome back, ' + esc(displayName) + ' <i class="bi bi-emoji-smile-fill" style="font-size:0.75em;vertical-align:middle;"></i>';
       }
       const accountName = document.getElementById('account-name');
-      if (accountName) accountName.textContent = fullName;
+      if (accountName) accountName.textContent = displayName;
 
       const navAvatarInit = document.getElementById('nav-avatar-init');
-      if (navAvatarInit) navAvatarInit.textContent = fullName[0].toUpperCase();
+      if (navAvatarInit) navAvatarInit.textContent = displayName[0].toUpperCase();
 
       const accountAvatarInit = document.getElementById('account-avatar-init');
-      if (accountAvatarInit) accountAvatarInit.textContent = fullName[0].toUpperCase();
+      if (accountAvatarInit) accountAvatarInit.textContent = displayName[0].toUpperCase();
 
       const epAvatarInit = document.getElementById('ep-avatar-init');
-      if (epAvatarInit) epAvatarInit.textContent = fullName[0].toUpperCase();
+      if (epAvatarInit) epAvatarInit.textContent = displayName[0].toUpperCase();
 
       const edProfileName = document.getElementById('ed-profile-name');
-      if (edProfileName?.childNodes[0]) edProfileName.childNodes[0].textContent = fullName + ' ';
+      if (edProfileName?.childNodes[0]) edProfileName.childNodes[0].textContent = displayName + ' ';
+
+      // Refresh the "Waiting Approval" indicator on the form itself, and
+      // put the field back to the live value rather than leaving the
+      // just-typed (unapproved) name sitting in the input.
+      const fnPending = document.getElementById('ep-fullname-pending');
+      const fnPendingVal = document.getElementById('ep-fullname-pending-value');
+      if (fnPending && fnPendingVal) {
+        fnPending.style.display = nameIsPending ? 'block' : 'none';
+        fnPendingVal.textContent = nameIsPending ? workerProfile.pending_full_name : '';
+      }
+      const fnInput = document.getElementById('ep-fullname');
+      if (fnInput && nameIsPending) fnInput.value = workerProfile.full_name || '';
     } catch (uiErr) {
       console.error('Personal info saved to the database, but refreshing the UI threw:', uiErr);
     }
 
     console.log('Personal info saved successfully');
-    showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
+    if ((workerProfile.identity_change_status || '').toLowerCase() === 'pending' && workerProfile.pending_full_name) {
+      showToast('info', 'bi-hourglass-split', 'Submitted for Approval', 'Your name change is pending admin review; other fields were saved.');
+    } else {
+      showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
+    }
   } catch (err) {
     console.error('Personal info save — unexpected exception:', err);
     showToast('err', 'bi-exclamation-circle', 'Save Failed', err?.message || 'Unexpected error while saving.');
@@ -7975,7 +8067,6 @@ function setupWelcomeBgRotation() {
   }, 8000);
 }
 document.addEventListener('DOMContentLoaded', setupWelcomeBgRotation);
-javascript:(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);s.onload=function(){eruda.init();}})();
 </script>
 </body>
 </html>
