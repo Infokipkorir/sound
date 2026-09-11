@@ -1617,11 +1617,9 @@
        visibility, employee details, recent messages/interviews, ongoing/
        bided/saved jobs, quick actions) has moved into the full-screen
        "My Profile" modal (#modal-account) or is one tap away via the
-       sidebar, so Overview is just the Welcome section now. The elements
-       those hidden previews used to populate (stat-messages, stat-jobs,
-       ongoing-jobs-preview, bided-jobs-preview, saved-jobs-preview, etc.)
-       are gone from the DOM; the loader functions were updated to guard
-       with `?.`/null-checks so they no-op quietly instead of throwing. -->
+       sidebar, so Overview is just the Welcome section now. The JS that
+       used to populate those removed stat/preview elements has been
+       removed from the loader functions below. -->
 
   <!-- QUICK NAVIGATION — fills the space below the banner with one-tap
        shortcuts to every section, instead of leaving it empty. -->
@@ -3220,7 +3218,6 @@ async function loadDashboard() {
       document.getElementById('msg-badge').textContent = totalUnread;
       document.getElementById('msg-badge').classList.add('show');
     }
-    setText('stat-messages', allConversations.length);
 
     try {
       await renderConversationList();
@@ -3246,7 +3243,6 @@ async function loadDashboard() {
     }
     console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
-    setText('stat-jobs', allJobs.length);
 
     // 3a. Payment-verified badge — has the employer already funded escrow for
     // this job? Best-effort: some RLS setups may not let a worker read escrow
@@ -3306,9 +3302,6 @@ async function loadDashboard() {
         savedJobIds = new Set((saved || []).map(r => r.job_id));
         lovedJobIds = new Set((loved || []).map(r => r.job_id));
         myApplications = apps || [];
-        setText('stat-saved-jobs', savedJobIds.size);
-        setText('stat-applications', myApplications.length);
-        setText('stat-interviewed', interviewCount ?? 0);
         // Loves count — shown as a pill inside the welcome banner
         document.getElementById('welcome-loves-count').textContent = lovedJobIds.size;
         // Saved Jobs dashboard section preview
@@ -3366,7 +3359,6 @@ async function loadDashboard() {
     if (wallet) {
       const bal = (wallet.balance || 0);
       document.getElementById('wallet-balance').textContent = 'KES ' + bal.toLocaleString('en-KE');
-      setText('stat-wallet', 'KES ' + bal.toLocaleString('en-KE'));
       document.getElementById('wallet-acct').textContent = 'Acct: ' + (wallet.account_number || '—');
       updateFeeStatus(wallet);
       if (!wallet.account_number) {
@@ -3376,7 +3368,6 @@ async function loadDashboard() {
     } else {
       // Try worker_profiles for fee status fallback
       if (workerProfile) updateFeeStatus(workerProfile);
-      setText('stat-wallet', 'KES 0');
     }
     document.getElementById('wd-avail-balance').textContent = 'KES ' + ((wallet?.balance || 0)).toLocaleString('en-KE');
 
@@ -5186,8 +5177,6 @@ async function submitBid() {
 
   showToast('ok', 'bi-check-circle', 'Bid Submitted!', `Your ${pricingMode === 'negotiable' ? 'offer of KES ' + bidAmount.toLocaleString('en-KE') : 'bid'} has been sent to the employer.`);
   myApplications.push({ job_id: jobId, status: 'pending', bid_amount: bidAmount, applied_at: new Date().toISOString() });
-  const statEl = document.getElementById('stat-applications');
-  if (statEl) statEl.textContent = (parseInt(statEl.textContent) || 0) + 1;
   closeModal('modal-bid');
   renderJobs(allJobs);
   renderBidedJobs();
@@ -5217,8 +5206,6 @@ async function toggleSaveJob(jobId, btn) {
     }
     btn.classList.toggle('active', !wasSaved);
     btn.querySelector('i').className = `bi ${!wasSaved ? 'bi-bookmark-check-fill' : 'bi-bookmark'}`;
-    const statEl = document.getElementById('stat-saved-jobs');
-    if (statEl) statEl.textContent = savedJobIds.size;
   } catch (err) {
     showToast('err', 'bi-exclamation-circle', 'Error', err.message);
   } finally {
@@ -5228,11 +5215,8 @@ async function toggleSaveJob(jobId, btn) {
 
 async function loadSavedJobs() {
   const el = document.getElementById('saved-jobs-list');
-  const previewEl = document.getElementById('saved-jobs-preview');
   if (!workerProfile?.id) {
-    const msg = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Complete your profile to save jobs.</p></div>';
-    if (el) el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    if (el) el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Complete your profile to save jobs.</p></div>';
     return;
   }
   el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>Loading saved jobs…</p></div>';
@@ -5243,20 +5227,15 @@ async function loadSavedJobs() {
 
   if (error) {
     console.error('❌ loadSavedJobs error:', error.message);
-    const msg = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
-    el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
     return;
   }
   const jobs = (data || []).map(r => r.job_postings).filter(Boolean);
   if (!jobs.length) {
-    const msg = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>You haven\'t saved any jobs yet.</p></div>';
-    el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-bookmark"></i><p>You haven\'t saved any jobs yet.</p></div>';
     return;
   }
   el.innerHTML = jobs.map(j => jobCardHtml(j)).join('');
-  if (previewEl) previewEl.innerHTML = jobs.slice(0, 3).map(j => jobCardHtml(j)).join('');
 }
 
 function jobCardHtml(j) {
@@ -5506,7 +5485,6 @@ async function loadApplications() {
   }
 
   myApplications = data || [];
-  setText('stat-applications', myApplications.length);
 
   if (!myApplications.length) {
     el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>You haven\'t applied to any jobs yet.</p></div>';
@@ -5572,23 +5550,16 @@ function bidCardHtml(a) {
 
 function renderBidedJobs() {
   const el = document.getElementById('bided-jobs-list');
-  const previewEl = document.getElementById('bided-jobs-preview');
   if (!workerProfile?.id) {
-    const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>Complete your profile to place bids.</p></div>';
-    if (el) el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    if (el) el.innerHTML = '<div class="empty-state"><i class="bi bi-tag"></i><p>Complete your profile to place bids.</p></div>';
     return;
   }
   const bids = (myApplications || []).slice().sort((x, y) => new Date(y.applied_at) - new Date(x.applied_at));
-  setText('stat-bids', bids.length);
   if (!bids.length) {
-    const msg = '<div class="empty-state"><i class="bi bi-tag"></i><p>You haven\'t placed any bids yet.</p></div>';
-    if (el) el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    if (el) el.innerHTML = '<div class="empty-state"><i class="bi bi-tag"></i><p>You haven\'t placed any bids yet.</p></div>';
     return;
   }
   if (el) el.innerHTML = bids.map(bidCardHtml).join('');
-  if (previewEl) previewEl.innerHTML = bids.slice(0, 3).map(bidCardHtml).join('');
 }
 
 // ════════════════════════════════════════════════════════
@@ -5642,14 +5613,10 @@ function ongoingJobCardHtml(o) {
 
 function renderOngoingJobs() {
   const el = document.getElementById('ongoing-jobs-list');
-  const previewEl = document.getElementById('ongoing-jobs-preview');
   if (!allOngoingJobs.length) {
-    const msg = '<div class="empty-state"><i class="bi bi-activity"></i><p>No ongoing jobs right now.</p></div>';
-    if (el) el.innerHTML = msg;
-    if (previewEl) previewEl.innerHTML = msg;
+    if (el) el.innerHTML = '<div class="empty-state"><i class="bi bi-activity"></i><p>No ongoing jobs right now.</p></div>';
   } else {
     if (el) el.innerHTML = allOngoingJobs.map(ongoingJobCardHtml).join('');
-    if (previewEl) previewEl.innerHTML = allOngoingJobs.slice(0, 3).map(ongoingJobCardHtml).join('');
   }
   updateHeldFundsUI();
 }
@@ -5663,8 +5630,6 @@ function updateHeldFundsUI() {
     .filter(o => o.escrow && o.escrow.status === 'held')
     .reduce((sum, o) => sum + (+o.escrow.net_amount || +o.escrow.amount || 0), 0);
   const text = 'KES ' + held.toLocaleString('en-KE');
-  const statEl = document.getElementById('stat-held');
-  if (statEl) statEl.textContent = text;
   const walletEl = document.getElementById('wallet-held');
   if (walletEl) walletEl.textContent = text;
   // Welcome banner pill — real data from job_escrow_payments (via
@@ -5991,7 +5956,6 @@ async function payFromWallet() {
 
     // 4. Update local UI
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    setText('stat-wallet', 'KES ' + newBalance.toLocaleString('en-KE'));
     document.getElementById('wallet-pay-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
     updateFeeStatus({
       interview_fee_paid: feeType === 'interview_fee' || workerProfile?.interview_fee_paid,
@@ -6148,9 +6112,8 @@ async function requestWithdrawal() {
       return;
     }
 
-    // 3. Reflect the new balance across the UI (wallet modal, stat tile, withdraw form).
+    // 3. Reflect the new balance across the UI (wallet modal, withdraw form).
     document.getElementById('wallet-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
-    setText('stat-wallet', 'KES ' + newBalance.toLocaleString('en-KE'));
     document.getElementById('wd-avail-balance').textContent = 'KES ' + newBalance.toLocaleString('en-KE');
 
     document.getElementById('wd-amount').value = '';
@@ -6604,7 +6567,6 @@ function subscribeToRealtime() {
       filter: `user_id=eq.${currentUser.id}` }, (payload) => {
       const w = payload.new;
       document.getElementById('wallet-balance').textContent = 'KES ' + (w.balance || 0).toLocaleString('en-KE');
-      setText('stat-wallet', 'KES ' + (w.balance || 0).toLocaleString('en-KE'));
       updateFeeStatus(w);
     })
     .subscribe();
@@ -6731,14 +6693,6 @@ function timeAgo(d) {
 function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
-// Safe DOM setters — several elements this dashboard used to update lived
-// in Overview-page preview sections (stats grid, ongoing/bided/saved-jobs
-// previews) that were removed when Overview was trimmed down to just the
-// Welcome banner (those views are still one tap away via the sidebar).
-// These helpers no-op quietly instead of throwing when an id is gone.
-function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-function setHTML(id, val) { const el = document.getElementById(id); if (el) el.innerHTML = val; }
 
 function showToast(type, icon, title, body) {
   const stack = document.getElementById('toast-stack');
