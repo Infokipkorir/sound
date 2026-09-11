@@ -6463,13 +6463,42 @@ async function markNotifRead(id, el) {
 //  REALTIME SUBSCRIPTIONS
 // ════════════════════════════════════════════════════════
 function subscribeToRealtime() {
+  // Brand-new conversations (e.g. an employer messaging this worker for the
+  // very first time). Without this, allConversations only ever gets refreshed
+  // on a full page load, so the emp-messages handler below has nothing to
+  // attach the first message to and silently drops it (see !conv check).
+  sb.channel('emp-new-conversations')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `employee_id=eq.${currentUser.id}` }, async (payload) => {
+      const conv = payload.new;
+      if (allConversations.some(c => c.id === conv.id)) return; // already known
+      allConversations.unshift(conv);
+      try {
+        await renderConversationList();
+        renderRecentMessagesPreview();
+      } catch (renderErr) {
+        console.error('❌ renderConversationList failed (new conversation):', renderErr.message);
+      }
+    })
+    .subscribe();
+
   // New messages in conversations the employee is part of
   sb.channel('emp-messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
       const msg = payload.new;
       // Only handle if this conversation belongs to current user
-      const conv = allConversations.find(c => c.id === msg.conversation_id);
-      if (!conv) return;
+      let conv = allConversations.find(c => c.id === msg.conversation_id);
+      if (!conv) {
+        // Race fallback: the message event beat the conversations-INSERT
+        // event above (or that channel hasn't finished subscribing yet).
+        // RLS (employee_id = auth.uid()) means this fetch only ever returns
+        // a row if it's actually this worker's conversation.
+        const { data: fetchedConv } = await sb.from('conversations')
+          .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status, is_admin_thread, employer_blocked, employee_blocked, not_interested_at, employer_whitelisted')
+          .eq('id', msg.conversation_id).maybeSingle();
+        if (!fetchedConv) return; // not this worker's conversation
+        allConversations.unshift(fetchedConv);
+        conv = fetchedConv;
+      }
 
       // Update conversation preview
       conv.last_message_text = msg.body || msg.content || '';
