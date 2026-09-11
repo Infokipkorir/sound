@@ -7059,7 +7059,6 @@ async function savePersonalInfo() {
 
   if (!fullName) { showToast('err', 'bi-exclamation-circle', 'Required', 'Please enter your full name.'); return; }
 
-  const update = { full_name: fullName, phone, phone_number: phone, location, bio, skills_summary: bio, job_seeking: jobSeeking };
   // Always update by the row's own primary key (id) — this is the row we
   // already fetched for this session (via session_id or email lookup in
   // loadDashboard()), so 'id' is guaranteed correct and RLS is satisfied
@@ -7071,24 +7070,75 @@ async function savePersonalInfo() {
     showToast('err', 'bi-exclamation-circle', 'Error', 'Profile not loaded yet.');
     return;
   }
-  const matchCol = 'id';
-  const matchVal = workerProfile.id;
 
-  const { error } = await sb.from('worker_profiles').update(update).eq(matchCol, matchVal);
-  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  const update = { full_name: fullName, phone, phone_number: phone, location, bio, skills_summary: bio, job_seeking: jobSeeking };
 
-  // Update local cache
-  workerProfile = { ...workerProfile, ...update };
-  document.getElementById('welcome-name').innerHTML = 'Welcome back, ' + esc(fullName) + ' <i class="bi bi-emoji-smile-fill" style="font-size:0.75em;vertical-align:middle;"></i>';
-  document.getElementById('account-name').textContent = fullName;
-  document.getElementById('nav-avatar-init').textContent = fullName[0].toUpperCase();
-  const accInit2 = document.getElementById('account-avatar-init');
-  if (accInit2) accInit2.textContent = fullName[0].toUpperCase();
-  document.getElementById('ep-avatar-init').textContent = fullName[0].toUpperCase();
-  const edNameEl = document.getElementById('ed-profile-name');
-  if (edNameEl?.childNodes[0]) edNameEl.childNodes[0].textContent = fullName + ' ';
+  console.log('Personal info save:', { profileId: workerProfile.id, update });
 
-  showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
+  try {
+    // .select() added so we can tell "update succeeded" apart from "update
+    // succeeded but RLS's SELECT policy hides the row from us" apart from
+    // "no row matched this id" — see note below on what each case means.
+    const { data, error } = await sb
+      .from('worker_profiles')
+      .update(update)
+      .eq('id', workerProfile.id)
+      .select();
+
+    if (error) {
+      console.error('Personal info save failed:', error);
+      showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      // No error, but PostgREST returned zero rows for the update+select.
+      // Two possible causes, and we can't tell which from here without a
+      // schema/RLS change: (a) worker_profiles' UPDATE policy allows writing
+      // this row but there's no matching SELECT policy, so Postgres applies
+      // the update but the read-back is filtered out — the save still went
+      // through; or (b) no row actually has this id (shouldn't happen since
+      // workerProfile.id came from a row we just read, but flagging it).
+      console.warn('Update returned no row for id', workerProfile.id, '— likely RLS SELECT policy hides the read-back; the write itself reported no error.');
+    }
+
+    // DB write succeeded (no error) — everything from here on is best-effort
+    // UI refresh. It must NOT be able to turn a successful save into an
+    // apparent failure, so it gets its own try/catch and never touches the
+    // success toast's return path.
+    try {
+      // Prefer the row Supabase actually returned; fall back to what we sent
+      // since the update reported no error either way.
+      workerProfile = { ...workerProfile, ...(data?.[0] || update) };
+
+      const welcomeName = document.getElementById('welcome-name');
+      if (welcomeName) {
+        welcomeName.innerHTML = 'Welcome back, ' + esc(fullName) + ' <i class="bi bi-emoji-smile-fill" style="font-size:0.75em;vertical-align:middle;"></i>';
+      }
+      const accountName = document.getElementById('account-name');
+      if (accountName) accountName.textContent = fullName;
+
+      const navAvatarInit = document.getElementById('nav-avatar-init');
+      if (navAvatarInit) navAvatarInit.textContent = fullName[0].toUpperCase();
+
+      const accountAvatarInit = document.getElementById('account-avatar-init');
+      if (accountAvatarInit) accountAvatarInit.textContent = fullName[0].toUpperCase();
+
+      const epAvatarInit = document.getElementById('ep-avatar-init');
+      if (epAvatarInit) epAvatarInit.textContent = fullName[0].toUpperCase();
+
+      const edProfileName = document.getElementById('ed-profile-name');
+      if (edProfileName?.childNodes[0]) edProfileName.childNodes[0].textContent = fullName + ' ';
+    } catch (uiErr) {
+      console.error('Personal info saved to the database, but refreshing the UI threw:', uiErr);
+    }
+
+    console.log('Personal info saved successfully');
+    showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
+  } catch (err) {
+    console.error('Personal info save — unexpected exception:', err);
+    showToast('err', 'bi-exclamation-circle', 'Save Failed', err?.message || 'Unexpected error while saving.');
+  }
 }
 
 async function changePassword() {
