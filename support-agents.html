@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Agents | SoundsCare Support</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+:root{
+  --teal:#0F766E; --teal-deep:#0B4F49; --aqua:#14B8A6; --mist:#EAF6F4;
+  --coral:#E0724A; --coral-deep:#B85A38; --gold:#D8A73D; --cream:#FAFAF8;
+  --ink:#182420; --ink-soft:#57655F; --line:rgba(20,30,26,0.09);
+  --danger:#C0432E; --ok:#2ECC71; --warn:#D8A73D; --sidebar-w:230px;
+  --body:'Inter','Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{font-family:var(--body); color:var(--ink); background:var(--cream); display:flex; overflow:hidden;}
+button{font-family:inherit;} a{color:var(--teal); text-decoration:none;}
+::-webkit-scrollbar{width:7px; height:7px;}
+::-webkit-scrollbar-thumb{background:rgba(15,118,110,.18); border-radius:999px;}
+
+/* ---- sidebar (duplicated intentionally — every page is self-contained) ---- */
+.sd-sidebar{width:var(--sidebar-w); flex-shrink:0; background:linear-gradient(180deg,var(--teal-deep),var(--teal) 70%); color:#fff; display:flex; flex-direction:column; height:100vh;}
+.sd-brand{display:flex; align-items:center; gap:.6rem; padding:1.1rem 1.1rem .9rem; font-weight:800; font-size:1.02rem;}
+.sd-brand .ic{width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:1.1rem;}
+.sd-nav{flex:1; overflow-y:auto; padding:.4rem .7rem;}
+.sd-nav-label{font-size:.66rem; text-transform:uppercase; letter-spacing:.09em; opacity:.6; font-weight:700; margin:.9rem .5rem .35rem;}
+.sd-nav a{display:flex; align-items:center; gap:.65rem; width:100%; text-align:left; border:none; background:none; color:rgba(255,255,255,.86); padding:.55rem .6rem; border-radius:10px; font-size:.85rem; font-weight:600; cursor:pointer; margin-bottom:.15rem; transition:background .15s ease;}
+.sd-nav a:hover{background:rgba(255,255,255,.1); color:#fff;}
+.sd-nav a.active{background:rgba(255,255,255,.18); color:#fff;}
+.sd-nav i{width:18px; text-align:center; font-size:1rem;}
+.sd-presence{padding:.9rem 1rem; border-top:1px solid rgba(255,255,255,.15); font-size:.78rem; font-weight:700; display:flex; align-items:center; gap:.5rem;}
+.sd-dot{width:9px; height:9px; border-radius:50%; background:var(--ok); flex-shrink:0;}
+.sd-dot.away{background:var(--warn);} .sd-dot.offline{background:#9aa;}
+
+.sd-shell{flex:1; display:flex; flex-direction:column; min-width:0; height:100vh;}
+.sd-topbar{flex-shrink:0; background:#fff; border-bottom:1px solid var(--line); padding:.85rem 1.4rem; display:flex; align-items:center; gap:1rem; justify-content:space-between;}
+.sd-title{font-size:1.05rem; font-weight:800; color:var(--teal-deep);}
+.sd-search{flex:1; max-width:380px; display:flex; align-items:center; gap:.5rem; background:var(--mist); border-radius:10px; padding:.5rem .8rem; color:var(--ink-soft); font-size:.85rem;}
+.sd-search input{border:none; background:none; outline:none; flex:1; font-size:.85rem; color:var(--ink);}
+.sd-body{flex:1; overflow-y:auto; padding:1.4rem;}
+.sd-mobile-toggle{display:none;}
+@media (max-width:900px){
+  .sd-sidebar{position:fixed; z-index:40; transform:translateX(-100%); transition:transform .2s ease;}
+  .sd-sidebar.open{transform:translateX(0);}
+  .sd-mobile-toggle{display:flex;}
+}
+
+.sd-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:1.1rem 1.2rem; margin-bottom:1.1rem;}
+.sd-card h3{margin:0 0 .8rem; font-size:.95rem; font-weight:800; color:var(--teal-deep); display:flex; align-items:center; gap:.5rem; justify-content:space-between; flex-wrap:wrap;}
+.sd-chiprow{display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1rem;}
+.sd-chip{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:.4rem .85rem; font-size:.78rem; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+.sd-chip.active{background:var(--teal); border-color:var(--teal); color:#fff;}
+
+table.sd-table{width:100%; border-collapse:collapse; font-size:.83rem;}
+table.sd-table th{text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:.5rem .6rem; border-bottom:1px solid var(--line);}
+table.sd-table td{padding:.65rem .6rem; border-bottom:1px solid var(--line); vertical-align:middle;}
+table.sd-table tr:last-child td{border-bottom:none;}
+.sd-empty, .sd-loading{padding:1.6rem; text-align:center; color:var(--ink-soft); font-size:.85rem;}
+
+.sd-avatar{width:34px; height:34px; border-radius:50%; background:var(--mist); color:var(--teal-deep); display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; flex-shrink:0; overflow:hidden;}
+.sd-avatar img{width:100%; height:100%; object-fit:cover;}
+.sd-agentcell{display:flex; align-items:center; gap:.6rem;}
+
+.sd-pill{display:inline-flex; align-items:center; gap:.3rem; font-size:.7rem; font-weight:700; border-radius:999px; padding:.2rem .6rem;}
+.sd-pill.online{background:#e6f9ee; color:#188a4c;}
+.sd-pill.away{background:#fdf1e0; color:#8a6413;}
+.sd-pill.offline{background:#eee; color:#777;}
+.sd-pill.role-owner, .sd-pill.role-admin{background:#fde3de; color:var(--coral-deep);}
+.sd-pill.role-manager{background:#fdf1e0; color:#8a6413;}
+.sd-pill.role-agent{background:var(--mist); color:var(--teal-deep);}
+.sd-pill.role-viewer{background:#eee; color:#666;}
+.sd-pill.dept{background:var(--mist); color:var(--teal-deep); margin:0 .2rem .2rem 0;}
+
+.sd-btn{border:none; border-radius:10px; background:var(--teal); color:#fff; font-weight:700; font-size:.82rem; padding:.5rem .9rem; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;}
+.sd-btn:hover{background:var(--teal-deep);}
+.sd-btn.secondary{background:var(--mist); color:var(--teal-deep);}
+.sd-btn.secondary:hover{background:#dff2ef;}
+.sd-btn.danger{background:#fde3de; color:var(--danger);}
+.sd-btn.danger:hover{background:#fbd2ca;}
+.sd-btn:disabled{opacity:.55; cursor:default;}
+.sd-btn.xs{padding:.32rem .65rem; font-size:.74rem;}
+
+.sd-input, .sd-select, textarea.sd-input{width:100%; border:1.5px solid var(--line); border-radius:10px; padding:.55rem .7rem; font-size:.85rem; font-family:inherit; color:var(--ink); background:#fff;}
+.sd-input:focus, .sd-select:focus{outline:none; border-color:var(--teal);}
+.sd-field{margin-bottom:.8rem;}
+.sd-field label{display:block; font-size:.74rem; font-weight:700; color:var(--ink-soft); margin-bottom:.3rem;}
+.sd-checkrow{display:flex; align-items:center; gap:.5rem; padding:.35rem 0; font-size:.83rem;}
+.sd-checkrow input{width:16px; height:16px;}
+
+.sd-actionrow{display:flex; gap:.4rem; flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<aside class="sd-sidebar" id="sdSidebar">
+  <div class="sd-brand"><span class="ic"><i class="bi bi-headset"></i></span> SoundsCare Support</div>
+  <nav class="sd-nav">
+    <div class="sd-nav-label">Monitor</div>
+    <a href="support-dashboard.html"><i class="bi bi-grid-1x2"></i> Overview</a>
+    <a href="support-visitors.html"><i class="bi bi-broadcast"></i> Live Visitors</a>
+    <div class="sd-nav-label">Conversations</div>
+    <a href="support-dashboard.html"><i class="bi bi-inboxes"></i> Inbox</a>
+    <div class="sd-nav-label">Manage</div>
+    <a href="support-agents.html" class="active"><i class="bi bi-people"></i> Agents</a>
+    <a href="support-dashboard.html"><i class="bi bi-diagram-3"></i> Departments</a>
+    <a href="support-dashboard.html"><i class="bi bi-journal-text"></i> Knowledge Base</a>
+    <div class="sd-nav-label">More</div>
+    <a href="support-insights.html"><i class="bi bi-bar-chart-line"></i> Insights</a>
+    <a href="support-settings.html"><i class="bi bi-gear"></i> Settings</a>
+  </nav>
+  <div class="sd-presence"><span class="sd-dot online" id="sdMyDot"></span><span id="sdMyName">Loading…</span></div>
+</aside>
+
+<div class="sd-shell">
+  <header class="sd-topbar">
+    <div style="display:flex; align-items:center; gap:.7rem;">
+      <button class="sd-btn secondary sd-mobile-toggle" id="sdMobileToggle" style="width:36px; padding:0; justify-content:center;"><i class="bi bi-list"></i></button>
+      <div class="sd-title">Agents</div>
+    </div>
+    <div class="sd-search"><i class="bi bi-search"></i><input id="agentSearch" placeholder="Search agents by name or email…"></div>
+    <button class="sd-btn" id="agentInviteBtn"><i class="bi bi-person-plus"></i> Invite agent</button>
+  </header>
+
+  <main class="sd-body">
+    <div class="sd-card">
+      <h3>Support team <span style="font-weight:600; font-size:.75rem; color:var(--ink-soft);" id="agentCountLabel"></span></h3>
+      <div class="sd-chiprow" id="roleChips">
+        <button class="sd-chip active" data-role="all">All roles</button>
+        <button class="sd-chip" data-role="owner">Owner</button>
+        <button class="sd-chip" data-role="admin">Admin</button>
+        <button class="sd-chip" data-role="manager">Manager</button>
+        <button class="sd-chip" data-role="agent">Agent</button>
+        <button class="sd-chip" data-role="viewer">Viewer</button>
+      </div>
+      <div id="agentsTableWrap" class="sd-loading">Loading…</div>
+    </div>
+
+    <div class="sd-card">
+      <h3>Recent agent activity <button class="sd-btn secondary xs" id="activityRefreshBtn"><i class="bi bi-arrow-clockwise"></i></button></h3>
+      <div id="activityWrap" class="sd-loading">Loading…</div>
+    </div>
+  </main>
+</div>
+
+<div id="sdModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(10,20,18,.45); z-index:60; align-items:center; justify-content:center; padding:1rem;">
+  <div id="sdModalCard" style="background:#fff; border-radius:18px; padding:1.4rem; width:100%; max-width:460px; max-height:88vh; overflow-y:auto;"></div>
+</div>
+<div id="sdToasts" style="position:fixed; bottom:1rem; right:1rem; z-index:70; display:flex; flex-direction:column; gap:.5rem;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var sb = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+  );
+
+  var me = { authUser:null, agent:null };
+  var state = { agents:[], departments:[], roleFilter:'all', search:'' };
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function initials(name){ return (name||'?').trim().split(/\s+/).slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase(); }
+  function timeAgo(ts){
+    if(!ts) return 'Never';
+    var d=(Date.now()-new Date(ts).getTime())/1000;
+    if(d<60) return 'just now'; if(d<3600) return Math.floor(d/60)+'m ago';
+    if(d<86400) return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago';
+  }
+  function toast(msg, kind){
+    var t=document.createElement('div');
+    t.style.cssText='background:#fff;border:1px solid var(--line);border-left:4px solid '+(kind==='error'?'var(--danger)':'var(--teal)')+';border-radius:10px;padding:.7rem 1rem;font-size:.83rem;box-shadow:0 12px 30px -14px rgba(0,0,0,.25);max-width:320px;';
+    t.textContent=msg; $('sdToasts').appendChild(t); setTimeout(function(){t.remove();},4200);
+  }
+  function logErr(scope, err){ console.error('[Support]', scope, err); }
+  function openModal(html){ $('sdModalCard').innerHTML=html; $('sdModalBackdrop').style.display='flex'; }
+  function closeModal(){ $('sdModalBackdrop').style.display='none'; $('sdModalCard').innerHTML=''; }
+  $('sdModalBackdrop').addEventListener('click', function(e){ if(e.target===$('sdModalBackdrop')) closeModal(); });
+  $('sdMobileToggle').addEventListener('click', function(){ $('sdSidebar').classList.toggle('open'); });
+
+  var CAN_MANAGE_ROLES = { owner:true, admin:true };
+  function canManage(){ return me.agent && CAN_MANAGE_ROLES[me.agent.role]; }
+
+  async function init(){
+    try{
+      var { data:{ session } } = await sb.auth.getSession();
+      if(!session){ return showUnauthorized('Please sign in with an agent account to manage the support team.'); }
+      me.authUser = session.user;
+      var { data: agentRow, error } = await sb.from('support_agents').select('*').eq('user_id', me.authUser.id).maybeSingle();
+      if(error) throw error;
+      if(!agentRow || !agentRow.is_active) return showUnauthorized('Your account is not an active support agent.');
+      me.agent = agentRow;
+      $('sdMyName').textContent = agentRow.display_name + ' · ' + agentRow.role;
+
+      if(!canManage() && agentRow.role !== 'manager'){
+        // Agent/Viewer: read-only list, no invite button
+        $('agentInviteBtn').style.display = 'none';
+      }
+      wireUi();
+      await Promise.all([loadDepartments(), loadAgents(), loadActivity()]);
+    }catch(err){
+      logErr('init', err);
+      toast('Could not load the agents page.', 'error');
+    }
+  }
+  function showUnauthorized(msg){
+    document.body.innerHTML = '<div style="margin:auto;padding:2rem;text-align:center;font-family:sans-serif;"><h2>Not authorized</h2><p>'+esc(msg)+'</p></div>';
+  }
+
+  function wireUi(){
+    document.querySelectorAll('.sd-chip[data-role]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('.sd-chip[data-role]').forEach(function(c){c.classList.remove('active');});
+        chip.classList.add('active'); state.roleFilter = chip.dataset.role; renderAgents();
+      });
+    });
+    $('agentSearch').addEventListener('input', function(){ state.search = this.value.trim().toLowerCase(); renderAgents(); });
+    $('activityRefreshBtn').addEventListener('click', loadActivity);
+    $('agentInviteBtn').addEventListener('click', openInviteModal);
+  }
+
+  // ---------------------------------------------------------------- data
+  async function loadDepartments(){
+    try{
+      var { data, error } = await sb.from('support_departments').select('id, name, is_active').order('name');
+      if(error) throw error;
+      state.departments = data || [];
+    }catch(err){ logErr('loadDepartments', err); }
+  }
+
+  async function loadAgents(){
+    var wrap = $('agentsTableWrap');
+    wrap.innerHTML = '<div class="sd-loading">Loading…</div>';
+    try{
+      var { data, error } = await sb.from('support_agents').select('*').order('created_at', { ascending:false });
+      if(error) throw error;
+      state.agents = data || [];
+      $('agentCountLabel').textContent = state.agents.length + ' total';
+      renderAgents();
+    }catch(err){
+      logErr('loadAgents', err);
+      wrap.innerHTML = '<div class="sd-empty">Could not load agents.</div>';
+    }
+  }
+
+  function deptNames(ids){
+    if(!ids || !ids.length) return '<span style="color:var(--ink-soft);">Unassigned</span>';
+    return ids.map(function(id){
+      var d = state.departments.find(function(x){return x.id===id;});
+      return d ? '<span class="sd-pill dept">'+esc(d.name)+'</span>' : '';
+    }).join('');
+  }
+
+  function renderAgents(){
+    var wrap = $('agentsTableWrap');
+    var rows = state.agents.filter(function(a){
+      if(state.roleFilter!=='all' && a.role!==state.roleFilter) return false;
+      if(state.search && !(a.display_name.toLowerCase().indexOf(state.search)>-1 || a.email.toLowerCase().indexOf(state.search)>-1)) return false;
+      return true;
+    });
+    if(!rows.length){ wrap.innerHTML = '<div class="sd-empty">No agents match this view.</div>'; return; }
+    wrap.innerHTML = '<table class="sd-table"><thead><tr><th>Agent</th><th>Role</th><th>Departments</th><th>Presence</th><th>Status</th><th>Last seen</th><th></th></tr></thead><tbody>'+
+      rows.map(function(a){
+        var canEditThis = canManage() && a.id !== me.agent.id;
+        return '<tr>'+
+          '<td><div class="sd-agentcell"><div class="sd-avatar">'+(a.avatar_url?'<img src="'+esc(a.avatar_url)+'">':esc(initials(a.display_name)))+'</div>'+
+            '<div><strong>'+esc(a.display_name)+'</strong>'+(a.id===me.agent.id?' <span style="font-size:.7rem;color:var(--ink-soft);">(you)</span>':'')+'<div style="font-size:.72rem;color:var(--ink-soft);">'+esc(a.email)+'</div></div></div></td>'+
+          '<td><span class="sd-pill role-'+esc(a.role)+'">'+esc(a.role)+'</span></td>'+
+          '<td>'+deptNames(a.department_ids)+'</td>'+
+          '<td><span class="sd-pill '+(a.presence||'offline')+'">'+esc(a.presence||'offline')+'</span></td>'+
+          '<td>'+(a.is_active?'<span class="sd-pill online">Active</span>':'<span class="sd-pill offline">Disabled</span>')+'</td>'+
+          '<td style="color:var(--ink-soft); font-size:.78rem;">'+timeAgo(a.last_seen_at)+'</td>'+
+          '<td><div class="sd-actionrow">'+
+            (canEditThis ? '<button class="sd-btn secondary xs sd-edit-agent" data-id="'+a.id+'"><i class="bi bi-pencil"></i></button>' : '')+
+            (canEditThis ? '<button class="sd-btn xs '+(a.is_active?'danger':'')+' sd-toggle-agent" data-id="'+a.id+'" data-active="'+a.is_active+'">'+(a.is_active?'Disable':'Enable')+'</button>' : '')+
+          '</div></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>';
+
+    wrap.querySelectorAll('.sd-edit-agent').forEach(function(btn){ btn.addEventListener('click', function(){ openEditModal(btn.dataset.id); }); });
+    wrap.querySelectorAll('.sd-toggle-agent').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var id = btn.dataset.id, nowActive = btn.dataset.active==='true';
+        var agent = state.agents.find(function(a){return a.id===id;});
+        btn.disabled = true;
+        try{
+          var { error } = await sb.from('support_agents').update({ is_active: !nowActive }).eq('id', id);
+          if(error) throw error;
+          await sb.from('support_agent_activity').insert({
+            agent_id: me.agent.id, action: nowActive?'disabled_agent':'enabled_agent',
+            target_type:'agent', target_id:id, metadata:{ email: agent && agent.email }
+          }).catch(function(e){ logErr('audit log', e); });
+          toast('Agent '+(nowActive?'disabled':'enabled')); loadAgents(); loadActivity();
+        }catch(err){ logErr('toggle agent', err); toast('Could not update agent', 'error'); btn.disabled=false; }
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------- invite
+  function departmentCheckboxes(selectedIds){
+    selectedIds = selectedIds || [];
+    if(!state.departments.length) return '<div style="font-size:.78rem;color:var(--ink-soft);">No departments yet.</div>';
+    return state.departments.map(function(d){
+      return '<label class="sd-checkrow"><input type="checkbox" value="'+d.id+'" '+(selectedIds.indexOf(d.id)>-1?'checked':'')+'> '+esc(d.name)+'</label>';
+    }).join('');
+  }
+
+  function openInviteModal(){
+    openModal(
+      '<h3 style="margin-top:0;">Invite agent</h3>'+
+      '<div class="sd-field"><label>Name</label><input class="sd-input" id="invName"></div>'+
+      '<div class="sd-field"><label>Email</label><input class="sd-input" id="invEmail" type="email"></div>'+
+      '<div class="sd-field"><label>Role</label><select class="sd-select" id="invRole">'+
+        ['agent','manager','admin','viewer'].map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join('')+'</select></div>'+
+      '<div class="sd-field"><label>Departments</label>'+departmentCheckboxes([])+'</div>'+
+      '<p style="font-size:.76rem;color:var(--ink-soft);">This creates the agent record. They sign in once they create/confirm a SoundsCare account using this exact email.</p>'+
+      '<div style="display:flex; gap:.5rem; justify-content:flex-end;">'+
+        '<button class="sd-btn secondary" id="invCancel">Cancel</button>'+
+        '<button class="sd-btn" id="invSubmit"><i class="bi bi-send"></i> Send invite</button></div>'
+    );
+    $('invCancel').addEventListener('click', closeModal);
+    $('invSubmit').addEventListener('click', async function(){
+      var name = $('invName').value.trim(), email = $('invEmail').value.trim().toLowerCase(), role = $('invRole').value;
+      var depts = Array.prototype.slice.call($('sdModalCard').querySelectorAll('input[type=checkbox]:checked')).map(function(c){return c.value;});
+      if(!name || !email){ toast('Name and email are required', 'error'); return; }
+      this.disabled = true;
+      try{
+        var { data, error } = await sb.from('support_agents').insert({
+          display_name:name, email:email, role:role, department_ids:depts,
+          invited_by: me.authUser.id, is_active:true, presence:'offline'
+        }).select('id').single();
+        if(error) throw error;
+        await sb.from('support_agent_activity').insert({ agent_id: me.agent.id, action:'invited_agent', target_type:'agent', target_id:data.id, metadata:{ email:email, role:role } }).catch(function(e){logErr('audit log',e);});
+        toast('Invite created for '+email);
+        closeModal(); loadAgents(); loadActivity();
+      }catch(err){
+        logErr('invite agent', err);
+        toast('Could not invite agent — email may already be in use', 'error');
+        this.disabled = false;
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- edit
+  function openEditModal(id){
+    var a = state.agents.find(function(x){return x.id===id;});
+    if(!a) return;
+    openModal(
+      '<h3 style="margin-top:0;">Edit agent</h3>'+
+      '<div class="sd-field"><label>Name</label><input class="sd-input" id="editName" value="'+esc(a.display_name)+'"></div>'+
+      '<div class="sd-field"><label>Avatar URL</label><input class="sd-input" id="editAvatar" value="'+esc(a.avatar_url||'')+'" placeholder="https://…"></div>'+
+      '<div class="sd-field"><label>Role</label><select class="sd-select" id="editRole">'+
+        ['agent','manager','admin','owner','viewer'].map(function(r){return '<option value="'+r+'" '+(a.role===r?'selected':'')+'>'+r+'</option>';}).join('')+'</select></div>'+
+      '<div class="sd-field"><label>Departments</label>'+departmentCheckboxes(a.department_ids)+'</div>'+
+      '<div style="display:flex; gap:.5rem; justify-content:flex-end;">'+
+        '<button class="sd-btn secondary" id="editCancel">Cancel</button>'+
+        '<button class="sd-btn" id="editSubmit"><i class="bi bi-check-lg"></i> Save changes</button></div>'
+    );
+    $('editCancel').addEventListener('click', closeModal);
+    $('editSubmit').addEventListener('click', async function(){
+      var name = $('editName').value.trim(), avatar = $('editAvatar').value.trim(), role = $('editRole').value;
+      var depts = Array.prototype.slice.call($('sdModalCard').querySelectorAll('input[type=checkbox]:checked')).map(function(c){return c.value;});
+      if(!name){ toast('Name is required', 'error'); return; }
+      this.disabled = true;
+      try{
+        var { error } = await sb.from('support_agents').update({
+          display_name:name, avatar_url: avatar||null, role:role, department_ids:depts
+        }).eq('id', id);
+        if(error) throw error;
+        await sb.from('support_agent_activity').insert({ agent_id: me.agent.id, action:'updated_agent', target_type:'agent', target_id:id, metadata:{ role:role } }).catch(function(e){logErr('audit log',e);});
+        toast('Agent updated'); closeModal(); loadAgents(); loadActivity();
+      }catch(err){ logErr('edit agent', err); toast('Could not save changes', 'error'); this.disabled=false; }
+    });
+  }
+
+  // ---------------------------------------------------------------- audit log
+  async function loadActivity(){
+    var wrap = $('activityWrap');
+    wrap.innerHTML = '<div class="sd-loading">Loading…</div>';
+    try{
+      var { data, error } = await sb.from('support_agent_activity')
+        .select('action, target_type, metadata, created_at, support_agents(display_name)')
+        .order('created_at', { ascending:false }).limit(25);
+      if(error) throw error;
+      if(!data || !data.length){ wrap.innerHTML = '<div class="sd-empty">No agent activity recorded yet.</div>'; return; }
+      wrap.innerHTML = '<table class="sd-table"><tbody>'+data.map(function(a){
+        return '<tr><td>'+esc((a.support_agents&&a.support_agents.display_name)||'System')+'</td>'+
+          '<td>'+esc(a.action.replace(/_/g,' '))+'</td>'+
+          '<td style="color:var(--ink-soft);">'+timeAgo(a.created_at)+'</td></tr>';
+      }).join('')+'</tbody></table>';
+    }catch(err){
+      logErr('loadActivity', err);
+      wrap.innerHTML = '<div class="sd-empty">Could not load activity.</div>';
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
