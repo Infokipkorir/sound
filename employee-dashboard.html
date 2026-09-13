@@ -3223,37 +3223,8 @@ async function loadDashboard() {
       : 'You are not appearing in employer searches';
 
     // 2. conversations (RLS: employee_id = auth.uid()) — get threads
-    console.log('🔍 Loading conversations where employee_id =', currentUser.id);
-    const { data: convs, error: convErr } = await sb.from('conversations')
-      .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status, is_admin_thread, employer_blocked, employee_blocked, not_interested_at, employer_whitelisted')
-      .eq('employee_id', currentUser.id)
-      .eq('is_deleted', false)
-      .order('last_message_at', { ascending: false })
-      .limit(30);
-
-    if (convErr) {
-      console.error('❌ CONVERSATIONS ERROR:', convErr.message, '—', convErr.code);
-      console.error('   This blocks message loading. Check RLS policy on conversations table.');
-    }
-    console.log('✅ conversations loaded:', convs?.length || 0, 'threads');
-    allConversations = convs || [];
-
-    // Count unread
-    const totalUnread = allConversations.reduce((s, c) => s + (c.employee_unread || 0), 0);
-    if (totalUnread > 0) {
-      document.getElementById('msg-badge').textContent = totalUnread;
-      document.getElementById('msg-badge').classList.add('show');
-    }
-
-    try {
-      await renderConversationList();
-      console.log('✅ Conversation list rendered');
-      renderRecentMessagesPreview();
-      await loadRecentInterviews();
-    } catch (renderErr) {
-      console.error('❌ renderConversationList failed:', renderErr.message);
-      document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
-    }
+    await refreshEmployeeMessages();
+    await loadRecentInterviews();
 
     // 3. job_postings (public read policy on status='active')
     console.log('🔍 Loading active job_postings');
@@ -3525,6 +3496,52 @@ function twoWordName(full) {
   if (!full) return 'Employer';
   const parts = full.trim().split(/\s+/);
   return parts.slice(0, 2).join(' ');
+}
+
+// ════════════════════════════════════════════════════════
+//  MESSAGES REFRESH — fetches conversations fresh from the DB.
+//  Called on dashboard init, on opening the Messages modal, and after
+//  Realtime events that touch the conversation list — so the UI never
+//  relies solely on a possibly-stale in-memory allConversations.
+// ════════════════════════════════════════════════════════
+async function refreshEmployeeMessages() {
+  console.log('[MESSAGES] refreshEmployeeMessages: loading conversations for', currentUser?.id);
+  if (!currentUser?.id) { console.error('[MESSAGES] refreshEmployeeMessages: no currentUser, aborting'); return; }
+
+  const { data: convs, error: convErr } = await sb.from('conversations')
+    .select('id, employer_id, employee_id, last_message_text, last_message_at, employee_unread, status, is_admin_thread, employer_blocked, employee_blocked, not_interested_at, employer_whitelisted')
+    .eq('employee_id', currentUser.id)
+    .eq('is_deleted', false)
+    .order('last_message_at', { ascending: false })
+    .limit(30);
+
+  if (convErr) {
+    console.error('[MESSAGES] CONVERSATIONS ERROR:', convErr);
+    showToast('err', 'bi-exclamation-circle', 'Could not load messages', convErr.message || 'Check your connection and try again.');
+    return;
+  }
+  console.log('[MESSAGES] conversations loaded:', convs?.length || 0);
+  allConversations = convs || [];
+
+  // Recalculate the badge from scratch every time — this is the single
+  // source of truth for its visible state, so it correctly shows AND
+  // hides/resets to 0, instead of only ever being set upward.
+  const badge = document.getElementById('msg-badge');
+  if (badge) {
+    const totalUnread = allConversations.reduce((s, c) => s + (c.employee_unread || 0), 0);
+    badge.textContent = totalUnread;
+    badge.classList.toggle('show', totalUnread > 0);
+  }
+
+  try {
+    await renderConversationList();
+    renderRecentMessagesPreview();
+    console.log('[MESSAGES] Conversation list rendered, count:', allConversations.length);
+  } catch (renderErr) {
+    console.error('[MESSAGES] renderConversationList failed:', renderErr);
+    const inbox = document.getElementById('messages-inbox');
+    if (inbox) inbox.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
+  }
 }
 
 async function renderConversationList() {
@@ -4021,26 +4038,56 @@ async function openConversation(convId) {
   document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
   document.querySelector(`.sidebar-msg-item[onclick*="${convId}"]`)?.classList.add('active');
 
+  console.log('[MESSAGES] Loading conversation:', convId);
+
   const { data: msgs, error } = await sb.from('messages')
     .select('id, sender_id, body, content, message, is_read, delivery_status, created_at, msg_type, file_url, is_from_admin')
     .eq('conversation_id', convId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true });
 
+  console.log('[MESSAGES] Messages returned:', msgs?.length);
+
   if (error) {
-    showToast('err', 'bi-exclamation-circle', 'Error', error.message);
+    console.error('[MESSAGES] Failed to load messages for conversation', convId, error);
+    showToast('err', 'bi-exclamation-circle', 'Could not load messages', error.message || 'Please try again.');
     return;
   }
 
   const convEl = document.getElementById('conversation-messages');
+  if (!convEl) {
+    console.error('[MESSAGES] #conversation-messages element is missing from the DOM — cannot render messages.');
+    showToast('err', 'bi-exclamation-circle', 'Display error', 'Messages area not found on this page.');
+    return;
+  }
   convEl.innerHTML = (msgs || []).map(renderMessageBubble).join('');
   convEl.scrollTop = convEl.scrollHeight;
   refreshCallBubbleStatuses(msgs);
 
-  // Mark incoming messages as seen + clear unread badge
-  await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() })
+  // Mark incoming messages as seen + clear unread — only after messages have
+  // successfully loaded and rendered above (never before, so a failed/slow
+  // load can't clear a badge for content the employee hasn't actually seen).
+  const { error: readErr } = await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() })
     .eq('conversation_id', convId).neq('sender_id', currentUser.id).eq('is_read', false);
-  await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
+  if (readErr) console.error('[MESSAGES] Failed to mark messages read:', readErr);
+
+  const { error: unreadErr } = await sb.from('conversations').update({ employee_unread: 0 }).eq('id', convId).eq('employee_id', currentUser.id);
+  if (unreadErr) console.error('[MESSAGES] Failed to clear conversation unread count:', unreadErr);
+
+  // Reflect the clear locally too — the DB row alone doesn't update the
+  // in-memory allConversations copy or the visible #msg-badge, which
+  // previously left the badge stuck showing stale unread counts.
+  if (!readErr && !unreadErr) {
+    const convObj = allConversations.find(c => c.id === convId);
+    if (convObj) convObj.employee_unread = 0;
+    const badge = document.getElementById('msg-badge');
+    if (badge) {
+      const totalUnread = allConversations.reduce((s, c) => s + (c.employee_unread || 0), 0);
+      badge.textContent = totalUnread;
+      badge.classList.toggle('show', totalUnread > 0);
+    }
+    try { await renderConversationList(); } catch (renderErr) { console.error('[MESSAGES] renderConversationList failed after mark-as-read:', renderErr); }
+  }
 
   if (!document.getElementById('modal-messages').classList.contains('open')) {
     navTo('modal-messages');
@@ -6525,13 +6572,22 @@ function subscribeToRealtime() {
         });
       }
 
-      // If conversation is open, append message live
+      // If conversation is open, append message live — guarded against
+      // duplicates (e.g. this same message already rendered by a
+      // concurrent openConversation() DB fetch beating this event).
       if (activeConvId === msg.conversation_id) {
-        document.querySelector('.msg-bubble[data-id^="temp-"]')?.remove();
+        console.log('[MESSAGES] Realtime INSERT for open conversation, message id:', msg.id);
         const convEl = document.getElementById('conversation-messages');
-        convEl.insertAdjacentHTML('beforeend', renderMessageBubble(msg));
-        convEl.scrollTop = convEl.scrollHeight;
-        document.getElementById('typing-indicator').classList.remove('show');
+        if (!convEl) {
+          console.error('[MESSAGES] Realtime INSERT: #conversation-messages missing, cannot render.');
+        } else if (convEl.querySelector(`.msg-bubble[data-id="${msg.id}"]`)) {
+          console.log('[MESSAGES] Realtime INSERT: message', msg.id, 'already rendered, skipping duplicate.');
+        } else {
+          document.querySelector('.msg-bubble[data-id^="temp-"]')?.remove();
+          convEl.insertAdjacentHTML('beforeend', renderMessageBubble(msg));
+          convEl.scrollTop = convEl.scrollHeight;
+          document.getElementById('typing-indicator').classList.remove('show');
+        }
         // If this message is from the employer and the conversation is open, mark it seen immediately
         if (msg.sender_id !== currentUser.id) {
           await sb.from('messages').update({ is_read: true, delivery_status: 'seen', read_at: new Date().toISOString() }).eq('id', msg.id);
@@ -6672,6 +6728,7 @@ function openModal(id) {
   if (id === 'modal-bids') renderBidedJobs();
   if (id === 'modal-ongoing-jobs') renderOngoingJobs();
   if (id === 'modal-calls') loadCallHistory();
+  if (id === 'modal-messages') refreshEmployeeMessages();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
