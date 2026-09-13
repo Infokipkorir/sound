@@ -1753,11 +1753,11 @@
 </div>
 
 <!-- ═══════════════════════════ CALLS PANEL ═══════════════════════════
-     No call-history table exists in the current schema, so this panel
-     doesn't fabricate a call log. Voice/video calls happen from inside a
-     conversation exactly as before (see startCall() in Messages), and
-     that's still the real call engine — this panel just orients the
-     employee there instead of showing invented data. ═══════════════════ -->
+     Backed by the real `calls` table (caller_id/receiver_id/status/
+     started_at/duration, with denormalized caller_name/receiver_name/
+     *_avatar columns — no join needed). Populated by loadCallHistory(),
+     hooked into openModal() above. Falls back to the empty state below
+     when the worker has no calls yet. ═══════════════════════════════ -->
 <div class="modal-overlay panel-mode" id="modal-calls">
   <div class="modal wide" style="margin:0 auto;">
     <div class="modal-header">
@@ -1765,10 +1765,11 @@
       <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
     <div class="modal-body">
-      <div class="calls-info">
+      <div id="call-history-list"></div>
+      <div class="calls-info" id="call-history-empty" style="display:none;">
         <i class="bi bi-telephone-outbound"></i>
-        <p style="font-weight:700;color:var(--ink);margin-bottom:6px;">Calls happen inside a conversation</p>
-        <p style="font-size:12.5px;max-width:340px;margin:0 auto 16px;">Open a conversation in Messages and use the voice or video call buttons there to call an employer. There's no separate call log yet — recent calls will appear here once that's added.</p>
+        <p style="font-weight:700;color:var(--ink);margin-bottom:6px;">No calls yet</p>
+        <p style="font-size:12.5px;max-width:340px;margin:0 auto 16px;">Open a conversation in Messages and use the voice or video call buttons there to call an employer.</p>
         <button class="btn btn-secondary" onclick="navTo('modal-messages')"><i class="bi bi-chat-dots"></i> Go to Messages</button>
       </div>
     </div>
@@ -6670,8 +6671,61 @@ function openModal(id) {
   if (id === 'modal-notifications') updatePushBanner();
   if (id === 'modal-bids') renderBidedJobs();
   if (id === 'modal-ongoing-jobs') renderOngoingJobs();
+  if (id === 'modal-calls') loadCallHistory();
 }
 function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+async function loadCallHistory() {
+  const listEl = document.getElementById('call-history-list');
+  const emptyEl = document.getElementById('call-history-empty');
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="calls-info"><i class="bi bi-hourglass-split"></i><p style="font-size:12.5px;">Loading calls…</p></div>';
+  emptyEl.style.display = 'none';
+
+  const { data: calls, error } = await sb.from('calls')
+    .select('id, call_type, status, started_at, ended_at, duration, caller_id, receiver_id, caller_name, receiver_name, caller_avatar, receiver_avatar, is_missed, is_rejected')
+    .or(`caller_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    listEl.innerHTML = `<div class="calls-info"><i class="bi bi-exclamation-circle"></i><p style="font-size:12.5px;">DIAG: ${esc(error.message)}</p></div>`;
+    return;
+  }
+  if (!calls || calls.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+
+  listEl.innerHTML = calls.map(c => {
+    const isOutgoing = c.caller_id === currentUser.id;
+    const otherName = isOutgoing ? (c.receiver_name || 'Employer') : (c.caller_name || 'Employer');
+    const otherAvatar = isOutgoing ? c.receiver_avatar : c.caller_avatar;
+    const icon = c.call_type === 'video' ? 'camera-video' : 'telephone';
+    const dirIcon = isOutgoing ? 'arrow-up-right' : 'arrow-down-left';
+    let statusLabel, statusClass;
+    if (c.is_missed) { statusLabel = 'Missed'; statusClass = 'bad'; }
+    else if (c.is_rejected) { statusLabel = 'Declined'; statusClass = 'bad'; }
+    else if (c.status === 'ended' || c.status === 'completed') { statusLabel = 'Completed'; statusClass = 'ok'; }
+    else { statusLabel = c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Unknown'; statusClass = ''; }
+    const durText = c.duration ? `${Math.floor(c.duration / 60)}m ${c.duration % 60}s` : '';
+    const when = c.started_at ? new Date(c.started_at).toLocaleString() : '';
+    return `
+      <div class="ed-entry" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line,#eee);">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--line,#eee);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+          ${otherAvatar ? `<img src="${esc(otherAvatar)}" style="width:100%;height:100%;object-fit:cover;">` : `<i class="bi bi-${icon}"></i>`}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:6px;">
+            <i class="bi bi-${dirIcon}"></i> ${esc(otherName)}
+          </div>
+          <div style="font-size:12px;color:var(--muted);">${when}${durText ? ' · ' + durText : ''}</div>
+        </div>
+        <span class="ed-pill ${statusClass}" style="font-size:11px;">${statusLabel}</span>
+      </div>`;
+  }).join('');
+}
 
 // ── SIDEBAR NAVIGATION ──
 // The panels below are the SAME modal-overlay elements/functions as before
