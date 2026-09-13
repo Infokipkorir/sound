@@ -579,6 +579,104 @@
   var isEmbedded = (window.self !== window.top);
   document.body.classList.add(isEmbedded ? 'embedded' : 'standalone');
 
+  // =====================================================================
+  // VISITOR / SESSION TRACKING — lives inline here instead of a separate
+  // support.js file. Covers spec sections 4, 29, 39, 40: visitor identity,
+  // session, page view, UTM capture, and the support_events stream. Every
+  // call is fire-and-forget and wrapped so a tracking failure can NEVER
+  // block or break the actual support widget above.
+  // =====================================================================
+  var Tracker = (function(){
+    var visitorId = null, sessionId = null, ready = false, pageEnteredAt = Date.now();
+
+    function uuidish(){
+      return 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+    function getOrCreate(key, gen){
+      try{
+        var v = localStorage.getItem(key);
+        if (!v){ v = gen(); localStorage.setItem(key, v); }
+        return v;
+      }catch(e){ return gen(); } // storage blocked (private mode etc.) — still works, just not persisted
+    }
+    function sessionKey(){
+      try{
+        var v = sessionStorage.getItem('ssc_session_key');
+        if (!v){ v = uuidish(); sessionStorage.setItem('ssc_session_key', v); }
+        return v;
+      }catch(e){ return uuidish(); }
+    }
+    function parseUA(){
+      var ua = navigator.userAgent || '';
+      var os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iOS' :
+        /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Unknown';
+      var browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' :
+        /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Unknown';
+      var device = /Mobi|Android/i.test(ua) ? 'mobile' : (/Tablet|iPad/i.test(ua) ? 'tablet' : 'desktop');
+      return { os: os, browser: browser, device: device };
+    }
+    function utmParams(){
+      try{
+        var p = new URLSearchParams(window.location.search);
+        return { source: p.get('utm_source'), medium: p.get('utm_medium'), campaign: p.get('utm_campaign'),
+          term: p.get('utm_term'), content: p.get('utm_content') };
+      }catch(e){ return {}; }
+    }
+
+    async function init(){
+      try{
+        var visitorKey = getOrCreate('ssc_visitor_key', uuidish);
+        var vRes = await sb.rpc('support_upsert_visitor', { p_visitor_key: visitorKey });
+        if (vRes.error) throw vRes.error;
+        visitorId = vRes.data;
+
+        var ua = parseUA();
+        var sRes = await sb.rpc('support_start_session', {
+          p_session_key: sessionKey(), p_visitor_id: visitorId,
+          p_landing_page: window.location.href, p_referrer: document.referrer || null,
+          p_utm: utmParams(), p_browser: ua.browser, p_os: ua.os, p_device_type: ua.device,
+          p_screen_width: window.screen ? window.screen.width : null, p_screen_height: window.screen ? window.screen.height : null,
+          p_language: navigator.language || null
+        });
+        if (sRes.error) throw sRes.error;
+        sessionId = sRes.data;
+
+        await sb.rpc('support_track_page_view', { p_session_id: sessionId, p_visitor_id: visitorId, p_url: window.location.href, p_title: document.title });
+        ready = true;
+
+        // Heartbeat so this session doesn't look "active" forever after the tab closes.
+        setInterval(function(){
+          if (sessionId) sb.rpc('support_session_heartbeat', { p_session_id: sessionId }).catch(function(e){ console.warn('[Support] heartbeat failed:', e); });
+        }, 30000);
+        document.addEventListener('visibilitychange', function(){
+          if (document.visibilityState === 'hidden') log('session_end', {}); 
+        });
+      }catch(err){
+        console.warn('[Support] visitor tracking failed to initialize (widget continues normally):', err);
+      }
+    }
+
+    async function log(eventType, metadata, ticketId){
+      try{
+        if (!ready) return; // don't block on tracking; simply skip if init hasn't finished
+        await sb.rpc('support_log_event', {
+          p_visitor_id: visitorId, p_session_id: sessionId, p_ticket_id: ticketId || null,
+          p_event_type: eventType, p_metadata: metadata || {}
+        });
+      }catch(err){ console.warn('[Support] event log failed:', eventType, err); }
+    }
+
+    async function linkTicket(ticketId, guestToken){
+      try{
+        if (!ready || !visitorId) return;
+        await sb.rpc('support_link_visitor_to_ticket', { p_ticket_id: ticketId, p_visitor_id: visitorId, p_guest_token: guestToken || null });
+      }catch(err){ console.warn('[Support] could not link visitor to ticket:', err); }
+    }
+
+    return { init: init, log: log, linkTicket: linkTicket, getVisitorId: function(){ return visitorId; } };
+  })();
+  Tracker.init(); // fire-and-forget; never awaited by the main widget flow
+
   var el = {
     backBtn: document.getElementById('sscBackBtn'),
     closeInline: document.getElementById('sscCloseInline'),
@@ -761,6 +859,7 @@
         guestInfo = null;
         showView('viewStart');
         el.stName.focus();
+        Tracker.log('chat_started', { mode: 'guest' });
         return;
       }
       currentUser = session.user;
@@ -776,6 +875,7 @@
 
       await loadTicketList();
       showView('viewList');
+      Tracker.log('chat_started', { mode: 'logged_in' });
     }catch(err){
       console.error('Support widget init failed:', err);
       showView('viewStart');
@@ -1046,6 +1146,8 @@
         if (msgErr) throw msgErr;
 
         await enterTicket(ticket);
+        Tracker.linkTicket(ticket.id, null);
+        Tracker.log('ticket_created', { category: ticket.category, priority: ticket.priority }, ticket.id);
         sendAutoReply(ticket.id, msgText);
       } else {
         // Guest path: create_guest_ticket() is a SECURITY DEFINER RPC that
@@ -1067,6 +1169,8 @@
         guestTicket = { id: row.id, token: row.guest_token, subject: el.ntSubject.value.trim(), category: el.ntCategory.value };
 
         await enterGuestTicket();
+        Tracker.linkTicket(guestTicket.id, guestTicket.token);
+        Tracker.log('ticket_created', { category: guestTicket.category }, guestTicket.id);
         sendGuestAutoReply(msgText);
       }
     }catch(err){
@@ -1207,6 +1311,7 @@
         if (gErr) throw gErr;
         currentTicket.status = newStatus;
       }
+      if (newStatus === 'resolved') Tracker.log('conversation_closed', {}, currentTicket.id);
       updateThreadSub();
       updateResolveBtn();
     }catch(err){
@@ -1226,12 +1331,16 @@
           sender_type: 'user',
           message: "🙋 I'd like to speak with a human team member, please."
         });
-        await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress' }).eq('id', currentTicket.id);
+        await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress', human_requested_at: new Date().toISOString() }).eq('id', currentTicket.id);
+        Tracker.log('support_requested', {}, currentTicket.id);
+        Tracker.log('ai_handoff', {}, currentTicket.id);
       } else if (guestTicket) {
         var { error: gErr } = await sb.rpc('guest_request_human', {
           p_ticket_id: guestTicket.id, p_token: guestTicket.token
         });
         if (gErr) throw gErr;
+        Tracker.log('support_requested', {}, guestTicket.id);
+        Tracker.log('ai_handoff', {}, guestTicket.id);
         await refreshGuestTicket(false);
       }
       currentTicket.priority = newPriority;
@@ -1380,6 +1489,7 @@
         }).select('id, sender_id, sender_type, message, created_at').single();
         if (error) throw error;
         renderMessage(row);
+        Tracker.log('message_sent', { sender: 'user' }, currentTicket.id);
 
         if (currentTicket.status === 'resolved' || currentTicket.status === 'closed'){
           await sb.from('support_tickets').update({ status: 'open', closed_at: null }).eq('id', currentTicket.id);
@@ -1399,6 +1509,7 @@
         });
         if (gErr) throw gErr;
         renderMessage(gRow);
+        Tracker.log('message_sent', { sender: 'guest' }, currentTicket.id);
 
         if (!currentTicket.assigned_admin_id){
           sendGuestAutoReply(text);
