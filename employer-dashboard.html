@@ -1554,8 +1554,8 @@ async function loadAll() {
     convsRes, availRes, jobsRes, ivsRes, paysRes, escRes,
     walletRes, tariffRes, notifsRes, callsRes, verifReqRes,
   ] = await Promise.all([
-    sb.from('conversations')
-      .select('id,employee_id,last_message_text,last_message_at,last_msg_at,employer_unread,status,is_admin_thread,employer_blocked,employee_blocked,not_interested_at')
+    sb.from('chat_threads')
+      .select('id,employee_id,last_message_preview,last_message_at,employer_unread,status,is_admin_thread,employer_blocked,employee_blocked,not_interested_at')
       .eq('employer_id', currentUser.id).order('last_message_at', { ascending: false }),
     sb.from('worker_profiles')
       .select('id,session_id,full_name,preferred_role,profile_photo_url,county,work_arrangement,is_verified,availability,salary_min,salary_max,about_text,created_at,edu_level,experience,languages,is_deleted,status')
@@ -1584,7 +1584,7 @@ async function loadAll() {
     safeFire(sb.from('profile_verification_requests').select('id,status,created_at').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1)),
   ]);
 
-  allConvs = convsRes.data || [];
+  allConvs = (convsRes.data || []).map(c => ({ ...c, last_message_text: c.last_message_preview }));
   allWorkers = availRes.data || [];
   allJobs = jobsRes.data || [];
   allInterviews = ivsRes.data || [];
@@ -1871,23 +1871,26 @@ async function openConv(convId) {
 
   // Load messages
   if (!convMessages[convId]) {
-    const { data: msgs } = await sb.from('messages')
-      .select('id,sender_id,body,content,message,created_at,is_from_admin,msg_type,delivery_status,is_read,sender_type')
-      .eq('conversation_id', convId).order('created_at', { ascending: true });
+    const { data: msgs, error: msgsErr } = await sb.from('chat_messages')
+      .select('id,sender_id,sender_role,body,created_at,msg_type,delivery_status,is_read')
+      .eq('thread_id', convId).eq('is_deleted', false).order('created_at', { ascending: true });
+    if (msgsErr) { showToast('err', 'bi-exclamation-circle', 'Could not load messages', 'DIAG: ' + msgsErr.message); }
     convMessages[convId] = (msgs||[]).map(m => ({
       id: m.id,
-      from: m.is_from_admin ? 'admin' : m.sender_id === currentUser.id ? 'employer' : 'worker',
-      text: m.body || m.content || m.message || '',
+      from: m.sender_role === 'admin' ? 'admin' : m.sender_id === currentUser.id ? 'employer' : 'worker',
+      text: m.body || '',
       t: new Date(m.created_at).getTime(),
       status: m.delivery_status || 'sent',
-      senderType: m.sender_type,
+      senderType: m.sender_role,
     }));
   }
 
   renderMessages(convId);
 
-  // Mark read
-  await sb.from('conversations').update({ employer_unread: 0 }).eq('id', convId).eq('employer_id', currentUser.id);
+  // Mark as read + clear unread atomically (one RPC, one transaction) —
+  // shared with employee-dashboard.html's messaging rebuild.
+  const { error: markErr } = await sb.rpc('mark_chat_thread_read', { p_thread_id: convId });
+  if (markErr) console.error('[MESSAGES] mark_chat_thread_read failed:', markErr);
   const c = allConvs.find(x => x.id === convId);
   if (c) c.employer_unread = 0;
   updateBadges();
@@ -1963,19 +1966,6 @@ async function sendMsg(convId) {
   const text = input.value.trim();
   if (!text) return;
 
-  // Charge before sending, not after, and before clearing the input — if
-  // this fails, the user's typed message should still be sitting there to
-  // retry, not silently gone.
-  const debit = await debitConnects('message', 1, 'conversation', convId);
-  if (!debit.success) {
-    if (debit.error === 'insufficient_balance') {
-      showToast('err', 'bi-wallet2', 'Out of Connects', `You need ${debit.required} Connect(s) to send this — you have ${debit.balance}. Buy more from Payments.`);
-    } else {
-      showToast('err', 'bi-exclamation-circle', 'Send Failed', debit.message || 'Could not process Connects charge.');
-    }
-    return;
-  }
-  updateConnectsWidget(debit.balance);
   input.value = '';
 
   // Optimistic
@@ -1984,16 +1974,15 @@ async function sendMsg(convId) {
   convMessages[convId].push({ id: tmpId, from: 'employer', text, t: Date.now(), status: 'waiting' });
   renderMessages(convId);
 
-  let newMsg, error;
+  // send_chat_message does the Connects debit + insert + thread-preview/
+  // unread update as ONE database transaction — if the insert fails for
+  // any reason, the debit rolls back with it, so a message can never be
+  // charged for and not actually sent.
+  let result, error;
   try {
-    ({ data: newMsg, error } = await sb.from('messages').insert({
-      conversation_id: convId,
-      sender_id: currentUser.id,
-      body: text,
-      sender_type: 'employer',
-      delivery_status: 'sent',
-      employer_id: currentUser.id,
-    }).select('id,created_at,delivery_status').maybeSingle());
+    ({ data: result, error } = await sb.rpc('send_chat_message', {
+      p_thread_id: convId, p_body: text, p_msg_type: 'text',
+    }));
   } catch (ex) {
     const msgs = convMessages[convId];
     const tmp = msgs.find(m => m.id === tmpId);
@@ -2003,28 +1992,28 @@ async function sendMsg(convId) {
     return;
   }
 
-  if (error) {
+  if (error || !result?.success) {
     const msgs = convMessages[convId];
     const tmp = msgs.find(m => m.id === tmpId);
     if (tmp) tmp.status = 'waiting';
     renderMessages(convId);
-    showToast('err', 'bi-x-circle', 'Send Failed', 'DIAG: ' + error.message);
+    if (result?.error === 'insufficient_balance') {
+      showToast('err', 'bi-wallet2', 'Out of Connects', `You need ${result.required} Connect(s) to send this — you have ${result.balance}. Buy more from Payments.`);
+    } else {
+      showToast('err', 'bi-x-circle', 'Send Failed', 'DIAG: ' + (error?.message || result?.error || 'unknown'));
+    }
     return;
   }
+  if (result.balance != null) updateConnectsWidget(result.balance);
 
   // Replace tmp with real
   const msgs = convMessages[convId];
   const idx = msgs.findIndex(m => m.id === tmpId);
-  if (idx !== -1) { msgs[idx].id = newMsg.id; msgs[idx].status = 'sent'; }
+  if (idx !== -1) { msgs[idx].id = result.message.id; msgs[idx].status = 'sent'; }
   renderMessages(convId);
 
-  await sb.from('conversations').update({
-    last_message_text: text,
-    last_message_at: new Date().toISOString(),
-    employer_unread: 0,
-    employee_unread: (conv.employee_unread || 0) + 1,
-  }).eq('id', convId);
-
+  // Thread preview/last_message_at/unread are updated automatically by the
+  // trg_update_chat_thread_on_message DB trigger — no manual follow-up needed.
   conv.last_message_text = text;
   conv.last_message_at = new Date().toISOString();
   renderConvList();
@@ -2075,16 +2064,16 @@ async function startConversation(workerSessionId, workerName) {
   const existing = allConvs.find(c => c.employee_id === workerSessionId);
   if (existing) { openConvInMessages(existing.id); return; }
 
-  const { data: conv, error } = await sb.from('conversations').insert({
+  const { data: conv, error } = await sb.from('chat_threads').insert({
     employer_id: currentUser.id,
     employee_id: workerSessionId,
     status: 'active',
     employer_unread: 0,
     employee_unread: 1,
-  }).select('id,employee_id,last_message_text,last_message_at,employer_unread,status').maybeSingle();
+  }).select('id,employee_id,last_message_preview,last_message_at,employer_unread,status').maybeSingle();
 
   if (error) { showToast('err','bi-x-circle','Error',error.message); return; }
-  allConvs.unshift({ ...conv, employer_blocked: false, employee_blocked: false });
+  allConvs.unshift({ ...conv, last_message_text: conv.last_message_preview, employer_blocked: false, employee_blocked: false });
   renderConvList();
   showToast('ok','bi-chat-dots-fill','Conversation Started','You can now message '+workerName);
   openConvInMessages(conv.id);
@@ -2093,7 +2082,7 @@ async function startConversation(workerSessionId, workerName) {
 // ── CONVERSATION ACTIONS ──
 async function endConversation(convId) {
   if (!confirm('End this interview? Messages will be view-only.')) return;
-  await sb.from('conversations').update({ status: 'closed' }).eq('id', convId);
+  await sb.from('chat_threads').update({ status: 'closed' }).eq('id', convId);
   const c = allConvs.find(x => x.id === convId);
   if (c) c.status = 'closed';
   openConv(convId);
@@ -2101,7 +2090,7 @@ async function endConversation(convId) {
 }
 async function blockWorker(convId) {
   if (!confirm('Block this worker? They cannot message you.')) return;
-  await sb.from('conversations').update({ employer_blocked: true }).eq('id', convId);
+  await sb.from('chat_threads').update({ employer_blocked: true }).eq('id', convId);
   const c = allConvs.find(x => x.id === convId);
   if (c) c.employer_blocked = true;
   openConv(convId);
@@ -2109,7 +2098,7 @@ async function blockWorker(convId) {
 }
 async function markNotInterested(convId) {
   if (!confirm('Mark this worker as "not interested"? You can still view the conversation.')) return;
-  await sb.from('conversations').update({ not_interested_at: new Date().toISOString() }).eq('id', convId);
+  await sb.from('chat_threads').update({ not_interested_at: new Date().toISOString() }).eq('id', convId);
   const c = allConvs.find(x => x.id === convId);
   if (c) c.not_interested_at = new Date().toISOString();
   openConv(convId);
@@ -2153,8 +2142,8 @@ async function hireWorker(workerSessionId, convId) {
   const wp = workerMap[workerSessionId];
   if (!wp) { showToast('err','bi-x-circle','Error','Worker not found.'); return; }
 
-  // Update conversation to closed and increment hiring_history
-  await sb.from('conversations').update({ status: 'closed' }).eq('id', convId);
+  // Update thread to closed and increment hiring_history
+  await sb.from('chat_threads').update({ status: 'closed' }).eq('id', convId);
   if (employerProfileId) {
     await sb.from('employer_profiles').update({ hiring_history: (employerProfile?.hiring_history||0) + 1 }).eq('id', employerProfileId);
   }
@@ -3250,41 +3239,41 @@ function shakeIcon(btnId) {
 // ── REALTIME ──
 function setupRealtime() {
   sb.channel('employer-realtime-'+currentUser.id)
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages' }, async (payload) => {
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages' }, async (payload) => {
       const msg = payload.new;
-      if (!msg?.conversation_id) return;
-      const conv = allConvs.find(c => c.id === msg.conversation_id);
+      if (!msg?.thread_id) return;
+      const conv = allConvs.find(c => c.id === msg.thread_id);
       if (!conv) return;
       if (msg.sender_id === currentUser.id) return; // own msg already optimistically added
       const newMsg = {
         id: msg.id,
-        from: msg.is_from_admin ? 'admin' : 'worker',
-        text: msg.body || msg.content || msg.message || '',
+        from: msg.sender_role === 'admin' ? 'admin' : 'worker',
+        text: msg.body || '',
         t: new Date(msg.created_at).getTime(),
         status: 'delivered',
       };
-      if (!convMessages[msg.conversation_id]) convMessages[msg.conversation_id] = [];
-      convMessages[msg.conversation_id].push(newMsg);
+      if (!convMessages[msg.thread_id]) convMessages[msg.thread_id] = [];
+      convMessages[msg.thread_id].push(newMsg);
       conv.last_message_text = newMsg.text;
       conv.last_message_at = msg.created_at;
-      if (activeConvId !== msg.conversation_id) {
+      if (activeConvId !== msg.thread_id) {
         conv.employer_unread = (conv.employer_unread || 0) + 1;
         shakeIcon('nav-msg-btn');
       } else {
-        renderMessages(msg.conversation_id);
-        await sb.from('conversations').update({ employer_unread: 0 }).eq('id', msg.conversation_id);
+        renderMessages(msg.thread_id);
+        await sb.rpc('mark_chat_thread_read', { p_thread_id: msg.thread_id });
       }
       renderConvList();
       updateBadges();
     })
-    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'messages' }, (payload) => {
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'chat_messages' }, (payload) => {
       const msg = payload.new;
-      if (!msg?.conversation_id) return;
-      const msgs = convMessages[msg.conversation_id];
+      if (!msg?.thread_id) return;
+      const msgs = convMessages[msg.thread_id];
       if (!msgs) return;
       const m = msgs.find(x => x.id === msg.id);
       if (m) { m.status = msg.delivery_status || m.status; }
-      if (activeConvId === msg.conversation_id) renderMessages(msg.conversation_id);
+      if (activeConvId === msg.thread_id) renderMessages(msg.thread_id);
     })
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${currentUser.id}` }, (payload) => {
       allNotifs.unshift(payload.new);
@@ -3633,17 +3622,15 @@ async function startCall(type) {
     await peerConnection.setLocalDescription(offer);
     await sb.from('calls').update({ sdp_offer: JSON.stringify(offer) }).eq('id', callRow.id);
 
-    // Drop a chat message so realtime reaches the worker
-    await safeFire(sb.from('messages').insert({
-      conversation_id: activeConvId,
-      sender_id:       currentUser.id,
-      msg_type:        'call',
-      call_type:       type,
-      call_status:     'initiated',
-      call_id:         callRow.id,
-      room_id:         roomId,
-      content: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
-      body:    `${type} call`,
+    // Drop a chat message so realtime reaches the worker. call_type/status
+    // live on the `calls` row (call_id) now, not on the message itself.
+    await safeFire(sb.from('chat_messages').insert({
+      thread_id:   activeConvId,
+      sender_id:   currentUser.id,
+      sender_role: 'employer',
+      msg_type:    'call',
+      call_id:     callRow.id,
+      body: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
     }));
 
     missedCallTimeout = setTimeout(() => missedCall(), 30000);
