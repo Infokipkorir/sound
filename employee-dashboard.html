@@ -3541,6 +3541,18 @@ async function refreshEmployeeMessages() {
     badge.classList.toggle('show', totalUnread > 0);
   }
 
+  // Catch-up: flip any messages still stuck at delivery_status='sent' to
+  // 'delivered' now that we know this device has actually loaded them.
+  // Realtime only flips this live if the employee was connected at the
+  // exact moment the message was inserted — this covers everyone else
+  // (closed tab, dead connection, phone locked) without needing them to
+  // open the specific conversation first. Fire-and-forget: never block
+  // rendering on it, and a failure here shouldn't surface as a toast.
+  sb.rpc('mark_employee_messages_delivered').then(({ data, error }) => {
+    if (error) console.error('[MESSAGES] mark_employee_messages_delivered failed:', error);
+    else if (data?.updated) console.log('[MESSAGES] marked delivered:', data.updated);
+  });
+
   try {
     await renderConversationList();
     renderRecentMessagesPreview();
@@ -8205,7 +8217,6 @@ function setupWelcomeBgRotation() {
   }, 8000);
 }
 document.addEventListener('DOMContentLoaded', setupWelcomeBgRotation);
-  javascript:(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);s.onload=function(){eruda.init();}})();
 </script>
 </body>
 </html>
