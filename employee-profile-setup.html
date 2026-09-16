@@ -272,8 +272,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
             </span>
 
             <div id="verifyStartBlock">
-              <button type="button" class="btn btn-secondary btn-sm" id="genCodeBtn" onclick="generateVerificationCode()">
-                <i class="bi bi-shuffle"></i> Generate my verification code
+              <button type="button" class="btn btn-whatsapp btn-sm" id="genCodeBtn" style="width:100%;" onclick="generateVerificationCode()">
+                <i class="bi bi-whatsapp"></i> Verify via WhatsApp
               </button>
             </div>
 
@@ -282,12 +282,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
                 <div class="verify-code" id="verifyCodeDisplay"></div>
               </div>
               <div class="verify-steps">
-                1. Open WhatsApp on <b>your</b> WhatsApp number above.<br>
-                2. Send the code above to our business number: <b id="verifyBizNumber">—</b><br>
+                1. WhatsApp opens automatically to our business number <b id="verifyBizNumber">—</b> with your code and profile details filled in.<br>
+                2. Just hit send on WhatsApp.<br>
                 3. Tap "I've sent it" below — our team confirms it manually, usually within 24 hours.
               </div>
               <button type="button" class="btn btn-whatsapp btn-sm" id="waSendBtn" style="width:100%;margin-bottom:8px;">
-                <i class="bi bi-whatsapp"></i> Open WhatsApp with code filled in
+                <i class="bi bi-whatsapp"></i> Open WhatsApp again
               </button>
               <button type="button" class="btn btn-secondary btn-sm" style="width:100%;" onclick="markCodeSent()">
                 <i class="bi bi-check2"></i> I've sent it
@@ -345,11 +345,12 @@ const COUNTRY_LIST = [
   { code: 'OTHER', name: 'Other' }
 ];
 const VERIFY_WORDS = ['TIGER','MANGO','ZEBRA','CORAL','AMBER','OLIVE','PEARL','MAPLE','RIVER','FALCON','CEDAR','SUNSET'];
+const BUSINESS_WHATSAPP_NUMBER = '+254738123425'; // fixed SoundsCare verification number
 
 let currentUser = null;
 let existingProfile = null;
-let cvFile = null;          // selected File, uploaded on submit
-let businessWhatsapp = '';  // from settings table
+let cvFile = null;                       // selected File, uploaded on submit
+let businessWhatsapp = BUSINESS_WHATSAPP_NUMBER;
 
 // ============================================================
 // SESSION CHECK
@@ -365,15 +366,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     currentUser = data.session.user;
 
-    const [{ data: profileRow }, { data: settingsRow }] = await Promise.all([
-      dbClient.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
-      dbClient.from('settings').select('verification_whatsapp_number, phone').maybeSingle()
-    ]);
+    const { data: profileRow } = await dbClient.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle();
 
-    businessWhatsapp = (settingsRow && (settingsRow.verification_whatsapp_number || settingsRow.phone)) || 'contact support';
     document.getElementById('verifyBizNumber').textContent = businessWhatsapp;
 
     existingProfile = profileRow || null;
+
+    // This page is only for completing a profile — once it's already complete
+    // and verified, there's nothing left to do here, so send the user on.
+    if (existingProfile && existingProfile.profile_setup_completed && existingProfile.phone_verification_status === 'verified') {
+      window.location.href = 'employee-dashboard.html';
+      return;
+    }
+
     prefillFromExisting();
     detectCountryFromIP(); // only auto-selects if nothing already saved
 
@@ -534,16 +539,34 @@ function generateVerificationCode() {
   });
 
   refreshVerifyUI();
+  openWhatsappVerification();
+}
+
+function buildVerificationMessage() {
+  const code = (existingProfile && existingProfile.phone_verification_code) || '';
+  const name = (existingProfile && existingProfile.full_name) || '';
+  const whatsapp = document.getElementById('whatsapp').value.trim() || (existingProfile && existingProfile.whatsapp_number) || '';
+  const countryCode = document.getElementById('homeCountry').value;
+  const countryName = (COUNTRY_LIST.find(c => c.code === countryCode) || {}).name || '';
+  const email = (currentUser && currentUser.email) || (existingProfile && existingProfile.email) || '';
+
+  const lines = ['SoundsCare — Phone Verification', 'Code: ' + code];
+  if (name) lines.push('Name: ' + name);
+  if (email) lines.push('Email: ' + email);
+  if (whatsapp) lines.push('WhatsApp number: ' + whatsapp);
+  if (countryName) lines.push('Country: ' + countryName);
+  return lines.join('\n');
+}
+
+function openWhatsappVerification() {
+  const digits = (businessWhatsapp || '').replace(/[^0-9]/g, '');
+  const msg = encodeURIComponent(buildVerificationMessage());
+  window.open('https://wa.me/' + digits + '?text=' + msg, '_blank');
 }
 
 function wireWhatsappSendButton() {
   const btn = document.getElementById('waSendBtn');
-  btn.onclick = function () {
-    const code = existingProfile.phone_verification_code;
-    const digits = (businessWhatsapp || '').replace(/[^0-9]/g, '');
-    const msg = encodeURIComponent('SoundsCare verification code: ' + code);
-    window.open('https://wa.me/' + digits + '?text=' + msg, '_blank');
-  };
+  btn.onclick = openWhatsappVerification;
 }
 
 function renderVerifyLink() {
@@ -573,8 +596,27 @@ async function markCodeSent() {
     showAlert('error', 'Could not update verification status — please try again.');
     return;
   }
+
+  notifyAdminVerificationSubmitted();
+
   refreshVerifyUI();
-  showAlert('success', "Thanks — we'll confirm your code and verify your profile within 24 hours.");
+  showAlert('success', "Sent to admin — we'll confirm your code and verify your profile within 24 hours.");
+}
+
+// Best-effort admin ping. Never blocks the user's flow if it fails.
+async function notifyAdminVerificationSubmitted() {
+  try {
+    await dbClient.from('admin_notifications').insert({
+      type: 'phone_verification_submitted',
+      session_id: currentUser.id,
+      email: currentUser.email,
+      message: 'User has submitted verification — code sent via WhatsApp, awaiting admin confirmation.',
+      status: 'unread',
+      created_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('[SoundsCare] Could not notify admin:', err);
+  }
 }
 
 // ============================================================
