@@ -7,8 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -18,7 +16,6 @@
   --surface:#FFFFFF;--bg:#F6F8F7;
   --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
   --amber:#D97706;--blue:#2563EB;--success:#10B981;
-  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
   --shadow-lg:0 16px 50px rgba(17,75,48,.14);
   --radius:12px;--radius-sm:8px;--radius-lg:22px;
   --font:'DM Sans',system-ui,sans-serif;
@@ -32,86 +29,80 @@ body{
     radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
     var(--bg);
 }
-.page-wrap{width:100%;max-width:620px}
+.page-wrap{width:100%;max-width:600px}
 
 @keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.fade-in{animation:fadeIn .4s ease-out}
-.slide-in{animation:slideInUp .4s cubic-bezier(.34,.1,.64,.1)}
 
 /* BRAND */
-.brand{text-align:center;margin-bottom:1.4rem;animation:fadeIn .6s ease-out}
-.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
-.brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain}
-.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px}
-
-/* PROGRESS */
-.progress-wrap{width:100%;margin-bottom:1.2rem;animation:fadeIn .5s ease-out}
-.progress-track{height:6px;background:var(--green-mid);border-radius:10px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:10px;transition:width .35s cubic-bezier(.34,.1,.64,.1)}
-.progress-label{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;color:var(--text-muted);font-weight:600}
-.progress-label span.cur{color:var(--green-dark)}
+.brand{text-align:center;margin-bottom:1.2rem;animation:fadeIn .5s ease-out}
+.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
+.brand-logo img{width:40px;height:40px;border-radius:12px;object-fit:contain}
+.back-link{display:block;text-align:center;font-size:12.5px;color:var(--text-muted);text-decoration:none;margin-top:6px}
+.back-link:hover{color:var(--green)}
 
 /* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem 1.9rem 1.8rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem 1.9rem 1.8rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
 
-/* STEP HEADER */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px}
-.step-title{font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
+.step-title{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif)}
 .step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.4rem;line-height:1.5}
 
 /* SECTION LABELS */
-.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:6px}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:16px 0 10px;border-top:1px solid var(--border);margin-top:4px}
 .sec-lbl.no-border{border-top:none;padding-top:0;margin-top:0}
+.sec-lbl .sec-hint{display:block;text-transform:none;letter-spacing:normal;font-weight:500;font-size:12px;color:var(--text-muted);margin-top:3px}
 
 /* FORM */
 .fg{margin-bottom:.95rem}
 .fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
-.fg .hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
 @media (max-width:480px){.row2{grid-template-columns:1fr}}
 .iw{position:relative;display:flex;align-items:center}
 .iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-input[type=text],input[type=number],input[type=date],input[type=tel],select,textarea{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+input[type=text],input[type=number],input[type=tel],select,textarea{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 select{appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 textarea{resize:vertical;min-height:88px;line-height:1.5}
 .iw.has-ico input,.iw.has-ico select{padding-left:38px}
 input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
 .char-count{font-size:11px;color:var(--text-muted);text-align:right;margin-top:3px}
+.field-hint{font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4}
 
-/* PREFILLED CONTEXT CHIP */
-.context-box{background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.3rem;display:flex;gap:10px;align-items:flex-start}
+/* CONTEXT CHIP */
+.context-box{background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.3rem;display:none;gap:10px;align-items:flex-start}
+.context-box.show{display:flex}
 .context-box i{color:var(--green);font-size:16px;margin-top:1px}
 .context-box .cb-title{font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:2px}
 .context-box .cb-body{font-size:12.5px;color:var(--text-mid);line-height:1.5}
 
-/* PILL SELECT (single-choice chips) */
-.pill-group{display:flex;flex-wrap:wrap;gap:8px}
-.pill{border:1.5px solid var(--border);border-radius:20px;padding:8px 15px;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .15s;user-select:none;background:var(--surface)}
-.pill:hover{border-color:var(--green)}
-.pill.active{background:var(--green);border-color:var(--green);color:#fff}
-
-/* UPLOAD BOX */
-.upload-box{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+/* UPLOAD BOX (CV) */
+.upload-box{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:18px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
 .upload-box:hover{border-color:var(--green);background:var(--green-light)}
 .upload-box.filled{border-style:solid;border-color:var(--success);background:var(--green-light)}
-.upload-box i{font-size:20px;color:var(--text-muted);margin-bottom:6px;display:block}
+.upload-box i{font-size:22px;color:var(--text-muted);margin-bottom:6px;display:block}
 .upload-box.filled i{color:var(--success)}
-.upload-box .ub-text{font-size:12.5px;color:var(--text-mid);font-weight:600}
-.upload-box .ub-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.upload-box .ub-text{font-size:13px;color:var(--text-mid);font-weight:600}
+.upload-box .ub-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px}
 .upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
-@media (max-width:480px){.upload-grid{grid-template-columns:1fr}}
 
-/* DYNAMIC ROWS (work experience / referees) */
-.dyn-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;position:relative}
-.dyn-card .dyn-remove{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:2px}
-.dyn-card .dyn-remove:hover{color:var(--red)}
-.dyn-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.add-row-btn{width:100%;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:11px;background:none;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
-.add-row-btn:hover{background:var(--green-light);border-color:var(--green)}
+/* VERIFICATION PANEL */
+.verify-panel{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:16px}
+.verify-status{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:5px 12px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px}
+.verify-status.not_started{background:#F3F4F6;color:var(--text-muted)}
+.verify-status.pending_review{background:#FFFBEB;color:var(--amber)}
+.verify-status.verified{background:var(--green-light);color:var(--green-dark)}
+.verify-status.rejected{background:var(--red-bg);color:var(--red)}
+.verify-code-box{background:var(--bg);border:1.5px dashed var(--green-mid);border-radius:var(--radius-sm);padding:14px;text-align:center;margin:10px 0}
+.verify-code{font-family:monospace;font-size:22px;font-weight:800;letter-spacing:.08em;color:var(--green-dark)}
+.verify-steps{font-size:12.5px;color:var(--text-mid);line-height:1.7;margin:10px 0}
+.verify-steps b{color:var(--text)}
+.verify-divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:11.5px;font-weight:600;margin:14px 0}
+.verify-divider::before,.verify-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.link-copy-row{display:flex;gap:8px;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;margin-top:8px}
+.link-copy-row span{flex:1;font-size:12px;color:var(--text-mid);word-break:break-all}
+.icon-btn{border:none;background:var(--green-light);color:var(--green-dark);border-radius:6px;padding:6px 9px;cursor:pointer;font-size:13px;flex-shrink:0}
+.icon-btn:hover{background:var(--green-mid)}
 
 /* ALERTS */
 .alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
@@ -123,500 +114,203 @@ input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0
 
 /* BUTTONS */
 .btn{border:none;border-radius:var(--radius-sm);padding:12px 20px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px}
-.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22);width:100%}
 .btn-primary:hover:not(:disabled){background:var(--green-dark)}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 .btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text)}
 .btn-secondary:hover{border-color:var(--green);background:var(--green-light)}
-.step-nav{display:flex;gap:10px;margin-top:1.6rem}
-.step-nav .btn{flex:1}
+.btn-sm{padding:9px 14px;font-size:13px}
+.btn-whatsapp{background:#25D366;color:#fff}
+.btn-whatsapp:hover{background:#1DA851}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
-
-/* REVIEW STEP */
-.review-block{margin-bottom:14px}
-.review-block .rb-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
-.review-block .rb-val{font-size:13.5px;color:var(--text);line-height:1.5}
-.review-block .rb-val.muted{color:var(--text-muted);font-style:italic}
 
 /* CENTER LOADER (session check) */
 .center-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center}
-.center-loader .spinner{display:block;width:32px;height:32px;border-width:3px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:14px}
-.center-loader p{font-size:14px;color:var(--text-muted)}
-
-/* ============================================================
-   CV UPLOAD + AI AUTO-FILL
-   ============================================================ */
-.cv-dropzone{border:1.5px dashed var(--green-mid);border-radius:var(--radius-sm);padding:2.2rem 1.4rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--green-light)}
-.cv-dropzone:hover{border-color:var(--green);background:#E4F3EA}
-.cv-dropzone i{font-size:30px;color:var(--green);display:block;margin-bottom:10px}
-.cv-dropzone .cv-title{font-size:14.5px;font-weight:700;color:var(--text)}
-.cv-dropzone .cv-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
-.cv-dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.cv-skip{display:block;text-align:center;font-size:12.5px;color:var(--text-muted);margin-top:14px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit}
-.cv-skip:hover{color:var(--green-dark)}
-.cv-or{text-align:center;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0}
-
-.cv-reading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.6rem 1rem;text-align:center}
-.cv-reading .spinner{display:block;width:34px;height:34px;border-width:3px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:16px}
-.cv-reading p{font-size:14px;font-weight:600;color:var(--text)}
-.cv-reading .cv-reading-sub{font-size:12.5px;color:var(--text-muted);margin-top:5px;font-weight:400}
-
-.cv-found-banner{display:flex;gap:10px;align-items:flex-start;background:var(--green-light);border:1px solid var(--green-mid);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.2rem}
-.cv-found-banner i{color:var(--green);font-size:17px;margin-top:1px}
-.cv-found-banner .cfb-title{font-size:13.5px;font-weight:700;color:var(--green-dark)}
-.cv-found-banner .cfb-body{font-size:12px;color:var(--text-mid);margin-top:2px;line-height:1.5}
-
-.cv-warnings{background:var(--accent-light);border:1px solid #F5D9A8;border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:1.2rem;font-size:12px;color:#92620E;line-height:1.5}
-.cv-warnings ul{margin:4px 0 0 16px}
-
-.low-conf{position:relative}
-.low-conf label{color:var(--amber)!important}
-.low-conf input,.low-conf select{border-color:#F0C77E!important;background:#FFFBF3}
-.low-conf .conf-tag{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--amber);background:var(--accent-light);border-radius:10px;padding:1px 7px;margin-left:6px}
-
-.cv-summary-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-size:12.5px;color:var(--text-mid);margin-top:.6rem}
-.cv-summary-row strong{color:var(--text)}
-
-.cv-readonly-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:1.2rem;font-size:12.5px;color:var(--text-mid);line-height:1.7}
-.cv-readonly-box b{color:var(--text)}
+.center-loader .spinner{display:inline-block;width:26px;height:26px;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:14px}
+.center-loader p{font-size:13.5px;color:var(--text-muted)}
 </style>
 </head>
 <body>
 
 <div class="page-wrap">
 
-  <!-- BRAND -->
   <div class="brand">
-    <a class="brand-logo" href="index.html">
-      <img src="sound_logo.png" alt="SoundsCare Logo">
+    <a class="brand-logo" href="employee-dashboard.html">
+      <img src="sound_logo.jpg" alt="SoundsCare Logo">
       SoundsCare
     </a>
-    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
-  </div>
-
-  <!-- PROGRESS -->
-  <div class="progress-wrap" id="progressWrap" style="display:none">
-    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:12.5%"></div></div>
-    <div class="progress-label">
-      <span>Step <span class="cur" id="progressStepNum">1</span> of 8</span>
-      <span id="progressStepName">Upload CV</span>
-    </div>
   </div>
 
   <div class="card">
 
-    <!-- SESSION CHECK LOADER -->
+    <!-- SESSION LOADER -->
     <div class="center-loader" id="sessionLoader">
       <div class="spinner"></div>
-      <p>Checking your session…</p>
+      <p>Loading your profile…</p>
     </div>
 
-    <!-- MAIN WIZARD (hidden until session confirmed) -->
-    <div id="wizard" style="display:none">
+    <!-- MAIN FORM -->
+    <div id="profileForm" style="display:none;">
 
-      <!-- ============ STEP 1: UPLOAD CV (required) ============ -->
-      <div class="wizard-step" data-step="1">
+      <div class="step-title">Complete Your Profile</div>
+      <p class="step-sub">A few extra details that help employers find and trust you. You can update this anytime from your dashboard.</p>
 
-        <!-- STAGE: upload -->
-        <div id="cvStageUpload">
-          <div class="step-badge"><i class="bi bi-magic"></i> STEP 1 OF 8</div>
-          <h1 class="step-title">Upload your CV</h1>
-          <p class="step-sub">Required to continue. We'll try to pick out a few details (phone, email, skills, etc.) — you'll get a chance to review and correct them before anything is saved.</p>
-
-          <div class="cv-dropzone" id="cvDropzone" onclick="document.getElementById('cvFileInput').click()">
-            <input type="file" id="cvFileInput" accept=".pdf,.docx" onchange="handleCvFileSelect(this)">
-            <i class="bi bi-file-earmark-arrow-up"></i>
-            <div class="cv-title">Tap to upload your CV</div>
-            <div class="cv-sub">PDF or DOCX &middot; up to 8MB &middot; required</div>
-          </div>
-
-          <div class="alert error" id="cvError"><i class="bi bi-exclamation-circle-fill"></i><span id="cvErrorText"></span></div>
-        </div>
-
-        <!-- STAGE: reading (parsing the CV) -->
-        <div id="cvStageReading" style="display:none">
-          <div class="step-badge"><i class="bi bi-magic"></i> STEP 1 OF 8</div>
-          <div class="cv-reading">
-            <div class="spinner"></div>
-            <p>Reading your CV…</p>
-            <div class="cv-reading-sub">This usually takes a few seconds.</div>
-          </div>
-        </div>
-
-        <!-- STAGE: review (editable extracted fields before anything is saved) -->
-        <div id="cvStageReview" style="display:none">
-          <div class="step-badge"><i class="bi bi-search"></i> WE FOUND YOUR INFORMATION</div>
-          <h1 class="step-title">Review &amp; correct</h1>
-          <p class="step-sub">Check the details below — fields marked <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span> are ones we're less sure about. Anything left blank you can fill in on the next steps.</p>
-
-          <div class="cv-warnings" id="cvWarningsBox" style="display:none">
-            <strong><i class="bi bi-info-circle-fill"></i> A few notes from the CV reader:</strong>
-            <ul id="cvWarningsList"></ul>
-          </div>
-
-          <div class="cv-readonly-box" id="cvContactBox"></div>
-
-          <div class="sec-lbl no-border">About you</div>
-          <div class="fg" id="cvfg-preferredRole"><label>Preferred role</label>
-            <select id="cv-preferredRole">
-              <option value="">Select a role</option>
-              <option>House Manager / Nanny</option><option>Nanny / Babysitter</option><option>Housekeeper</option>
-              <option>Cook / Chef</option><option>Cleaner</option><option>Gardener</option><option>Driver</option>
-              <option>Elderly Caregiver</option><option>Security Guard</option><option>General Domestic Worker</option>
-            </select>
-          </div>
-          <div class="row2">
-            <div class="fg" id="cvfg-experienceLevel"><label>Experience</label>
-              <select id="cv-experienceLevel"><option value="">Select</option>
-                <option value="0-1">Less than 1 year</option><option value="1-3">1 – 3 years</option>
-                <option value="3-5">3 – 5 years</option><option value="5-10">5 – 10 years</option><option value="10+">10+ years</option>
-              </select>
-            </div>
-            <div class="fg" id="cvfg-workArrangement"><label>Work arrangement</label>
-              <select id="cv-workArrangement"><option value="">Select</option>
-                <option>Live-In</option><option>Live-Out</option><option>Part-Time</option><option>Contract</option><option>Flexible</option>
-              </select>
-            </div>
-          </div>
-          <div class="fg" id="cvfg-keySkills"><label>Key skills</label><input type="text" id="cv-keySkills" placeholder="e.g., cooking, childcare, laundry"></div>
-          <div class="fg" id="cvfg-languages"><label>Languages spoken</label><input type="text" id="cv-languages" placeholder="e.g., Swahili, English"></div>
-          <div class="fg" id="cvfg-aboutText"><label>Short bio</label><textarea id="cv-aboutText" maxlength="500"></textarea></div>
-
-          <div class="sec-lbl">Location</div>
-          <div class="row2">
-            <div class="fg" id="cvfg-currentTown"><label>Current town/area</label><input type="text" id="cv-currentTown"></div>
-            <div class="fg" id="cvfg-county"><label>County</label><input type="text" id="cv-county"></div>
-          </div>
-
-          <div class="sec-lbl">Education</div>
-          <div class="fg" id="cvfg-eduLevel"><label>Highest education level</label>
-            <select id="cv-eduLevel"><option value="">Select</option>
-              <option>None</option><option>Primary</option><option>Secondary (KCSE)</option><option>Certificate</option><option>Diploma</option><option>Degree</option>
-            </select>
-          </div>
-          <div class="row2">
-            <div class="fg" id="cvfg-eduInstitution"><label>Institution</label><input type="text" id="cv-eduInstitution"></div>
-            <div class="fg" id="cvfg-eduYear"><label>Year completed</label><input type="number" id="cv-eduYear" min="1970" max="2030"></div>
-          </div>
-
-          <div class="sec-lbl">Identity</div>
-          <div class="row2">
-            <div class="fg" id="cvfg-dob"><label>Date of birth</label><input type="date" id="cv-dob"></div>
-            <div class="fg" id="cvfg-gender"><label>Gender</label>
-              <select id="cv-gender"><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select>
-            </div>
-          </div>
-
-          <div class="cv-summary-row"><span><i class="bi bi-briefcase"></i> Work experience found</span><strong id="cvExpCount">0 entries</strong></div>
-          <div class="cv-summary-row"><span><i class="bi bi-people"></i> Referees found</span><strong id="cvRefCount">0 entries</strong></div>
-          <p class="fg" style="margin-top:.6rem;font-size:11.5px;color:var(--text-muted)">You'll be able to review, edit or add to these in the next steps.</p>
-
-          <button type="button" class="cv-skip" onclick="setCvStage('upload')"><i class="bi bi-arrow-repeat"></i> Upload a different CV</button>
-        </div>
-
-      </div>
-
-      <div class="alert error" id="alertError"><i class="bi bi-exclamation-circle-fill"></i><span id="alertErrorText"></span></div>
-      <div class="alert success" id="alertSuccess"><i class="bi bi-check-circle-fill"></i><span id="alertSuccessText"></span></div>
-
-      <div class="context-box" id="contextBox" style="display:none">
-        <i class="bi bi-person-check-fill"></i>
+      <div class="context-box" id="contextBox">
+        <i class="bi bi-info-circle-fill"></i>
         <div>
-          <div class="cb-title">Signed in as <span id="ctxName"></span></div>
-          <div class="cb-body">Completing this profile lets employers find and contact you. Your account details (<span id="ctxEmail"></span>) are already saved — this just fills in the rest.</div>
+          <div class="cb-title">Picking up where you left off</div>
+          <div class="cb-body">Signed in as <strong id="ctxEmail"></strong>. Anything you've already saved is pre-filled below.</div>
         </div>
       </div>
 
-      <!-- ============ STEP 2: ABOUT YOU ============ -->
-      <div class="wizard-step" data-step="2" style="display:none">
-        <div class="step-badge"><i class="bi bi-person-badge"></i> STEP 2 OF 8</div>
-        <h1 class="step-title">About You</h1>
-        <p class="step-sub">Tell employers what kind of work you're looking for.</p>
+      <div class="alert error" id="alertError">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span id="alertErrorText"></span>
+      </div>
+      <div class="alert success" id="alertSuccess">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="alertSuccessText"></span>
+      </div>
 
+      <form id="setupForm" onsubmit="submitProfile(event)">
+
+        <!-- HOME COUNTRY -->
+        <div class="sec-lbl no-border">Location</div>
         <div class="fg">
-          <label>Profile photo (optional, but profiles with photos get more views)</label>
-          <div class="upload-box" id="ubPhoto" onclick="document.getElementById('filePhoto').click()">
-            <input type="file" id="filePhoto" accept="image/*" onchange="handleFileSelect(this,'profile_photo_url','Media',true)">
-            <i class="bi bi-camera-fill"></i>
-            <div class="ub-text" id="ubPhotoText">Tap to upload a clear photo of yourself</div>
-          </div>
-        </div>
-
-        <div class="fg">
-          <label for="preferredRole">What role are you looking for? <span style="color:var(--red)">*</span></label>
-          <select id="preferredRole" required>
-            <option value="">Select a role</option>
-            <option>House Manager / Nanny</option>
-            <option>Nanny / Babysitter</option>
-            <option>Housekeeper</option>
-            <option>Cook / Chef</option>
-            <option>Cleaner</option>
-            <option>Gardener</option>
-            <option>Driver</option>
-            <option>Elderly Caregiver</option>
-            <option>Security Guard</option>
-            <option>General Domestic Worker</option>
-          </select>
-        </div>
-
-        <div class="row2">
-          <div class="fg">
-            <label for="experienceLevel">Years of experience</label>
-            <select id="experienceLevel">
-              <option value="">Select</option>
-              <option value="0-1">Less than 1 year</option>
-              <option value="1-3">1 – 3 years</option>
-              <option value="3-5">3 – 5 years</option>
-              <option value="5-10">5 – 10 years</option>
-              <option value="10+">10+ years</option>
+          <label for="homeCountry">Home Country</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-flag-fill"></i>
+            <select id="homeCountry" required>
+              <option value="" disabled>Select your country</option>
             </select>
           </div>
-          <div class="fg">
-            <label for="workArrangement">Work arrangement</label>
-            <select id="workArrangement">
-              <option value="">Select</option>
-              <option>Live-In</option>
-              <option>Live-Out</option>
-              <option>Part-Time</option>
-              <option>Contract</option>
-              <option>Flexible</option>
-            </select>
+          <div class="field-hint" id="countryAutoHint" style="display:none;">
+            <i class="bi bi-geo-alt-fill"></i> Auto-detected from your connection — change it if this isn't right.
           </div>
         </div>
 
-        <div class="row2">
-          <div class="fg">
-            <label for="salaryMin">Expected salary — min (KES)</label>
-            <input type="number" id="salaryMin" placeholder="e.g., 12000" min="0">
-          </div>
-          <div class="fg">
-            <label for="salaryMax">Expected salary — max (KES)</label>
-            <input type="number" id="salaryMax" placeholder="e.g., 20000" min="0">
+        <!-- WHATSAPP -->
+        <div class="fg">
+          <label for="whatsapp">WhatsApp Number</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-whatsapp"></i>
+            <input type="tel" id="whatsapp" placeholder="+254712345678" required>
           </div>
         </div>
 
+        <!-- ABOUT -->
+        <div class="sec-lbl">About You</div>
         <div class="fg">
-          <label for="keySkills">Key skills (comma separated)</label>
-          <input type="text" id="keySkills" placeholder="e.g., cooking, childcare, laundry, ironing">
-        </div>
-
-        <div class="fg">
-          <label for="languages">Languages spoken (comma separated)</label>
-          <input type="text" id="languages" placeholder="e.g., Swahili, English, Kikuyu">
-        </div>
-
-        <div class="fg">
-          <label for="aboutText">Short bio <span style="color:var(--red)">*</span></label>
-          <textarea id="aboutText" maxlength="500" placeholder="Introduce yourself to potential employers — your experience, what you're good at, and what you're looking for." oninput="updateCharCount()"></textarea>
+          <label for="aboutText">About</label>
+          <textarea id="aboutText" maxlength="500" placeholder="Tell employers a bit about yourself and the kind of work you're looking for…" oninput="updateCharCount()"></textarea>
           <div class="char-count"><span id="aboutCharCount">0</span>/500</div>
         </div>
-      </div>
 
-      <!-- ============ STEP 3: LOCATION ============ -->
-      <div class="wizard-step" data-step="3" style="display:none">
-        <div class="step-badge"><i class="bi bi-geo-alt-fill"></i> STEP 3 OF 8</div>
-        <h1 class="step-title">Where You're Based</h1>
-        <p class="step-sub">Helps us match you with nearby jobs.</p>
-
-        <div class="row2">
-          <div class="fg">
-            <label for="currentTown">Current town/area <span style="color:var(--red)">*</span></label>
-            <input type="text" id="currentTown" placeholder="e.g., Kilimani" required>
-          </div>
-          <div class="fg">
-            <label for="county">County <span style="color:var(--red)">*</span></label>
-            <input type="text" id="county" placeholder="e.g., Nairobi" required>
-          </div>
-        </div>
-
-        <div class="sec-lbl">Home area (optional)</div>
+        <!-- EDUCATION -->
         <div class="fg">
-          <label for="homeAddress">Home address</label>
-          <input type="text" id="homeAddress" placeholder="e.g., Kangemi, near the market">
-        </div>
-        <div class="row2">
-          <div class="fg">
-            <label for="homeVillage">Home village</label>
-            <input type="text" id="homeVillage" placeholder="e.g., Karura">
-          </div>
-          <div class="fg">
-            <label for="homeCounty">Home county</label>
-            <input type="text" id="homeCounty" placeholder="e.g., Kiambu">
-          </div>
-        </div>
-
-        <div class="fg">
-          <label>Willing to relocate for the right job?</label>
-          <div class="pill-group" id="pillRelocate">
-            <div class="pill" data-val="true" onclick="selectPill('pillRelocate',this)">Yes</div>
-            <div class="pill" data-val="false" onclick="selectPill('pillRelocate',this)">No</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============ STEP 4: EDUCATION ============ -->
-      <div class="wizard-step" data-step="4" style="display:none">
-        <div class="step-badge"><i class="bi bi-mortarboard-fill"></i> STEP 4 OF 8</div>
-        <h1 class="step-title">Education</h1>
-        <p class="step-sub">Optional, but it helps build trust with employers.</p>
-
-        <div class="fg">
-          <label for="eduLevel">Highest education level</label>
-          <select id="eduLevel">
-            <option value="">Select</option>
-            <option>None</option>
-            <option>Primary</option>
-            <option>Secondary (KCSE)</option>
-            <option>Certificate</option>
-            <option>Diploma</option>
-            <option>Degree</option>
-          </select>
-        </div>
-
-        <div class="row2">
-          <div class="fg">
-            <label for="eduInstitution">Institution name</label>
-            <input type="text" id="eduInstitution" placeholder="e.g., Nairobi Technical College">
-          </div>
-          <div class="fg">
-            <label for="eduYear">Year completed</label>
-            <input type="number" id="eduYear" placeholder="e.g., 2019" min="1970" max="2030">
-          </div>
-        </div>
-
-        <div class="fg">
-          <label for="eduField">Field of study</label>
-          <input type="text" id="eduField" placeholder="e.g., Catering, Early Childhood Development">
-        </div>
-
-        <div class="fg">
-          <label>Certificate copy (optional)</label>
-          <div class="upload-box" id="ubCert" onclick="document.getElementById('fileCert').click()">
-            <input type="file" id="fileCert" accept="image/*,application/pdf" onchange="handleFileSelect(this,'edu_cert_url','Certificate',false)">
-            <i class="bi bi-file-earmark-text-fill"></i>
-            <div class="ub-text" id="ubCertText">Tap to upload certificate</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============ STEP 5: WORK EXPERIENCE ============ -->
-      <div class="wizard-step" data-step="5" style="display:none">
-        <div class="step-badge"><i class="bi bi-briefcase-fill"></i> STEP 5 OF 8</div>
-        <h1 class="step-title">Work Experience</h1>
-        <p class="step-sub">Add past employers, most recent first. Optional but boosts your profile.</p>
-
-        <div id="expList"></div>
-        <button type="button" class="add-row-btn" onclick="addExperienceRow()">
-          <i class="bi bi-plus-circle"></i> Add work experience
-        </button>
-      </div>
-
-      <!-- ============ STEP 6: IDENTITY VERIFICATION ============ -->
-      <div class="wizard-step" data-step="6" style="display:none">
-        <div class="step-badge"><i class="bi bi-shield-check"></i> STEP 6 OF 8</div>
-        <h1 class="step-title">Identity Verification</h1>
-        <p class="step-sub">Verified profiles get shortlisted more often. Your documents are kept private and only reviewed by our admin team.</p>
-
-        <div class="row2">
-          <div class="fg">
-            <label for="dob">Date of birth <span style="color:var(--red)">*</span></label>
-            <input type="date" id="dob" required>
-          </div>
-          <div class="fg">
-            <label for="gender">Gender <span style="color:var(--red)">*</span></label>
-            <select id="gender" required>
-              <option value="">Select</option>
-              <option>Female</option>
-              <option>Male</option>
-              <option>Other</option>
+          <label for="eduLevel">Education Level</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-mortarboard-fill"></i>
+            <select id="eduLevel">
+              <option value="">Select level</option>
+              <option value="None">None</option>
+              <option value="Primary">Primary</option>
+              <option value="Secondary">Secondary</option>
+              <option value="Certificate">Certificate</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Bachelor's Degree">Bachelor's Degree</option>
+              <option value="Postgraduate">Postgraduate</option>
             </select>
           </div>
         </div>
 
+        <!-- LAST EXPERIENCE -->
+        <div class="sec-lbl">Most Recent Work Experience</div>
         <div class="fg">
-          <label>Do you have any disability?</label>
-          <div class="pill-group" id="pillDisability">
-            <div class="pill" data-val="No" onclick="selectPill('pillDisability',this)">No</div>
-            <div class="pill" data-val="Yes" onclick="selectPill('pillDisability',this)">Yes</div>
+          <label for="expEmployer">Employer Name</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-building"></i>
+            <input type="text" id="expEmployer" placeholder="e.g., Mwangi Family">
           </div>
         </div>
-
         <div class="row2">
           <div class="fg">
-            <label for="idType">ID type</label>
-            <select id="idType">
-              <option value="">Select</option>
-              <option>National ID</option>
-              <option>Passport</option>
-              <option>Alien ID</option>
-              <option>Huduma Namba</option>
-            </select>
+            <label for="expTitle">Job Title</label>
+            <input type="text" id="expTitle" placeholder="e.g., Housekeeper">
           </div>
           <div class="fg">
-            <label for="nationalId">ID number</label>
-            <input type="text" id="nationalId" placeholder="e.g., 3xxxxxxx">
+            <label for="expYears">Years Worked</label>
+            <input type="number" id="expYears" min="0" max="60" placeholder="e.g., 2">
           </div>
         </div>
-
         <div class="fg">
-          <label>ID photos</label>
-          <div class="upload-grid">
-            <div class="upload-box" id="ubIdFront" onclick="document.getElementById('fileIdFront').click()">
-              <input type="file" id="fileIdFront" accept="image/*" onchange="handleFileSelect(this,'id_front_url','id_verification',false)">
-              <i class="bi bi-card-image"></i>
-              <div class="ub-text" id="ubIdFrontText">ID front</div>
-            </div>
-            <div class="upload-box" id="ubIdBack" onclick="document.getElementById('fileIdBack').click()">
-              <input type="file" id="fileIdBack" accept="image/*" onchange="handleFileSelect(this,'id_back_url','id_verification',false)">
-              <i class="bi bi-card-image"></i>
-              <div class="ub-text" id="ubIdBackText">ID back</div>
-            </div>
-          </div>
+          <label for="expDesc">Brief Description</label>
+          <textarea id="expDesc" maxlength="300" placeholder="What did your role involve?"></textarea>
         </div>
 
+        <!-- CV UPLOAD -->
+        <div class="sec-lbl">CV / Resume</div>
         <div class="fg">
-          <label>Selfie holding your ID</label>
-          <div class="upload-box" id="ubSelfie" onclick="document.getElementById('fileSelfie').click()">
-            <input type="file" id="fileSelfie" accept="image/*" capture="user" onchange="handleFileSelect(this,'selfie_url','selfie-verification',false)">
-            <i class="bi bi-person-bounding-box"></i>
-            <div class="ub-text" id="ubSelfieText">Tap to upload selfie</div>
+          <label class="upload-box" id="cvUploadBox" for="cvFile">
+            <i class="bi bi-file-earmark-arrow-up-fill"></i>
+            <div class="ub-text" id="cvUploadText">Upload your CV</div>
+            <div class="ub-sub">PDF or Word document — max 8MB</div>
+            <input type="file" id="cvFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          </label>
+          <div class="field-hint" id="cvExistingHint" style="display:none;"></div>
+        </div>
+
+        <!-- PHONE VERIFICATION -->
+        <div class="sec-lbl">
+          Phone Verification
+          <span class="sec-hint">Manually reviewed by our team — send a code from your own WhatsApp number, or share your profile link.</span>
+        </div>
+        <div class="fg">
+          <div class="verify-panel">
+            <span class="verify-status not_started" id="verifyStatusBadge">
+              <i class="bi bi-dash-circle"></i> <span id="verifyStatusText">Not started</span>
+            </span>
+
+            <div id="verifyStartBlock">
+              <button type="button" class="btn btn-secondary btn-sm" id="genCodeBtn" onclick="generateVerificationCode()">
+                <i class="bi bi-shuffle"></i> Generate my verification code
+              </button>
+            </div>
+
+            <div id="verifyCodeBlock" style="display:none;">
+              <div class="verify-code-box">
+                <div class="verify-code" id="verifyCodeDisplay"></div>
+              </div>
+              <div class="verify-steps">
+                1. Open WhatsApp on <b>your</b> WhatsApp number above.<br>
+                2. Send the code above to our business number: <b id="verifyBizNumber">—</b><br>
+                3. Tap "I've sent it" below — our team confirms it manually, usually within 24 hours.
+              </div>
+              <button type="button" class="btn btn-whatsapp btn-sm" id="waSendBtn" style="width:100%;margin-bottom:8px;">
+                <i class="bi bi-whatsapp"></i> Open WhatsApp with code filled in
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" style="width:100%;" onclick="markCodeSent()">
+                <i class="bi bi-check2"></i> I've sent it
+              </button>
+
+              <div class="verify-divider">or</div>
+              <div style="font-size:12.5px;color:var(--text-mid);">Prefer not to use WhatsApp? Share your profile verification link instead — our team matches the code embedded in it.</div>
+              <div class="link-copy-row">
+                <span id="verifyLinkText"></span>
+                <button type="button" class="icon-btn" onclick="copyVerifyLink()"><i class="bi bi-clipboard"></i></button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- ============ STEP 7: REFEREES ============ -->
-      <div class="wizard-step" data-step="7" style="display:none">
-        <div class="step-badge"><i class="bi bi-people-fill"></i> STEP 7 OF 8</div>
-        <h1 class="step-title">Referees</h1>
-        <p class="step-sub">People who can vouch for your work. Optional but strongly recommended.</p>
-
-        <div id="refList"></div>
-        <button type="button" class="add-row-btn" id="addRefBtn" onclick="addRefereeRow()">
-          <i class="bi bi-plus-circle"></i> Add a referee
+        <button type="submit" class="btn btn-primary" id="submitBtn" style="margin-top:1.6rem;">
+          <span id="submitBtnText">Save Profile</span>
+          <div class="spinner" id="submitSpinner"></div>
         </button>
-      </div>
+      </form>
 
-      <!-- ============ STEP 8: REVIEW & SUBMIT ============ -->
-      <div class="wizard-step" data-step="8" style="display:none">
-        <div class="step-badge"><i class="bi bi-clipboard-check"></i> STEP 8 OF 8</div>
-        <h1 class="step-title">Review &amp; Submit</h1>
-        <p class="step-sub">Quick check before we save your profile.</p>
-        <div id="reviewContent"></div>
-      </div>
-
-      <!-- NAV -->
-      <div class="step-nav">
-        <button class="btn btn-secondary" id="backBtn" onclick="prevStep()" type="button" style="display:none">
-          <i class="bi bi-arrow-left"></i> Back
-        </button>
-        <button class="btn btn-primary" id="nextBtn" onclick="nextStep()" type="button">
-          <span id="nextBtnText">Continue</span>
-          <i class="bi bi-arrow-right" id="nextBtnIcon"></i>
-          <div class="spinner" id="nextSpinner"></div>
-        </button>
-      </div>
-
-    </div><!-- end wizard -->
+      <a class="back-link" href="employee-dashboard.html">Skip for now — go to dashboard</a>
+    </div>
 
   </div>
 
@@ -631,1155 +325,334 @@ var SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 var dbClient = window._sbClient || (window._sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY));
 
 // ============================================================
-// STATE
+// CONFIG
 // ============================================================
-const TOTAL_STEPS = 8;
-const STEP_NAMES = ['Upload CV','About You','Location','Education','Work Experience','Identity Verification','Referees','Review & Submit'];
-let currentStep = 1;
+const COUNTRY_LIST = [
+  { code: 'KE', name: 'Kenya' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'ET', name: 'Ethiopia' },
+  { code: 'SO', name: 'Somalia' },
+  { code: 'DJ', name: 'Djibouti' },
+  { code: 'ER', name: 'Eritrea' },
+  { code: 'MW', name: 'Malawi' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'ZM', name: 'Zambia' },
+  { code: 'CD', name: 'DR Congo' },
+  { code: 'OTHER', name: 'Other' }
+];
+const VERIFY_WORDS = ['TIGER','MANGO','ZEBRA','CORAL','AMBER','OLIVE','PEARL','MAPLE','RIVER','FALCON','CEDAR','SUNSET'];
+
 let currentUser = null;
 let existingProfile = null;
-let workExperiences = [];
-let referees = [];
-const uploadedUrls = { profile_photo_url:null, edu_cert_url:null, id_front_url:null, id_back_url:null, selfie_url:null };
+let cvFile = null;          // selected File, uploaded on submit
+let businessWhatsapp = '';  // from settings table
 
 // ============================================================
-// SESSION CHECK — this is the hand-off point from register.html.
-// Supabase persists the session in localStorage by default, so as
-// long as this page is served from the same origin as register.html,
-// the session carries over automatically with no token-passing needed.
+// SESSION CHECK
 // ============================================================
 document.addEventListener('DOMContentLoaded', async function () {
+  populateCountrySelect();
+
   try {
     const { data, error } = await dbClient.auth.getSession();
-
     if (error || !data || !data.session) {
-      window.location.href = 'register.html?msg=session_required';
+      window.location.href = 'login.html?next=employee-profile-setup.html';
       return;
     }
-
     currentUser = data.session.user;
 
-    // Pull whatever register.html already saved (full_name, email, phone,
-    // country, county, current_town) plus any partially-completed profile
-    // if the person left and came back.
-    const { data: profileRow } = await dbClient
-      .from('worker_profiles')
-      .select('*')
-      .eq('session_id', currentUser.id)
-      .maybeSingle();
+    const [{ data: profileRow }, { data: settingsRow }] = await Promise.all([
+      dbClient.from('worker_profiles').select('*').eq('session_id', currentUser.id).maybeSingle(),
+      dbClient.from('settings').select('verification_whatsapp_number, phone').maybeSingle()
+    ]);
 
-    // This page is for INITIAL setup only. Once a profile has been
-    // completed, editing happens from the dashboard — send them there
-    // instead of letting them re-run the wizard.
-    if (profileRow && profileRow.profile_setup_completed) {
-      window.location.href = 'employee-dashboard.html';
-      return;
-    }
+    businessWhatsapp = (settingsRow && (settingsRow.verification_whatsapp_number || settingsRow.phone)) || 'contact support';
+    document.getElementById('verifyBizNumber').textContent = businessWhatsapp;
 
     existingProfile = profileRow || null;
     prefillFromExisting();
+    detectCountryFromIP(); // only auto-selects if nothing already saved
 
     document.getElementById('sessionLoader').style.display = 'none';
-    document.getElementById('wizard').style.display = 'block';
-    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('profileForm').style.display = 'block';
 
-    if (existingProfile) {
-      document.getElementById('contextBox').style.display = 'flex';
-      document.getElementById('ctxName').textContent = existingProfile.full_name || currentUser.email;
+    if (existingProfile && existingProfile.full_name) {
+      document.getElementById('contextBox').classList.add('show');
       document.getElementById('ctxEmail').textContent = existingProfile.email || currentUser.email;
     }
-
-    if (workExperiences.length === 0) addExperienceRow();
-    if (referees.length === 0) { addRefereeRow(); addRefereeRow(); }
-
-    // CV upload is required for every worker profile. If a CV was
-    // already uploaded and parsed on a prior visit, preload that
-    // extraction into the review stage so the person isn't forced
-    // to re-upload — they can still replace it if they want to.
-    if (existingProfile && existingProfile.cv_parsed_at && existingProfile.cv_parsed_data) {
-      cvExtracted = existingProfile.cv_parsed_data;
-      renderCvReview();
-      setCvStage('review');
-    } else {
-      setCvStage('upload');
-    }
-
-    renderStep();
-  } catch (e) {
-    console.error('[SoundsCare] Session check failed:', e);
-    window.location.href = 'register.html?msg=session_required';
+  } catch (err) {
+    console.error('[SoundsCare] Session check failed:', err);
+    window.location.href = 'login.html?next=employee-profile-setup.html';
   }
 });
+
+function populateCountrySelect() {
+  const sel = document.getElementById('homeCountry');
+  COUNTRY_LIST.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.code; opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+}
+
+// IP-based only — no GPS prompt, keeps this page frictionless.
+async function detectCountryFromIP() {
+  const sel = document.getElementById('homeCountry');
+  if (sel.value) return; // already prefilled from a saved profile — don't override
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    const data = await res.json();
+    const code = (data.country_code || '').toUpperCase();
+    if (COUNTRY_LIST.find(c => c.code === code)) {
+      sel.value = code;
+      document.getElementById('countryAutoHint').style.display = 'block';
+    }
+  } catch (err) {
+    console.warn('[SoundsCare] IP country detection failed:', err);
+  }
+}
 
 function prefillFromExisting() {
   if (!existingProfile) return;
   const p = existingProfile;
 
-  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== null && val !== undefined) el.value = val; };
-
-  set('preferredRole', p.preferred_role);
-  set('experienceLevel', p.experience_level);
-  set('workArrangement', p.work_arrangement);
-  set('salaryMin', p.salary_min);
-  set('salaryMax', p.salary_max);
-  set('keySkills', p.key_skills);
-  set('languages', p.languages);
-  set('aboutText', p.about_text);
-  set('currentTown', p.current_town);
-  set('county', p.county);
-  set('homeAddress', p.home_address);
-  set('homeVillage', p.home_village);
-  set('homeCounty', p.home_county);
-  set('eduLevel', p.edu_level);
-  set('eduInstitution', p.edu_institution);
-  set('eduYear', p.edu_year);
-  set('eduField', p.edu_field);
-  set('dob', p.date_of_birth);
-  set('gender', p.gender);
-  set('idType', p.id_type);
-  set('nationalId', p.national_id || p.id_number);
-
-  updateCharCount();
-
-  if (p.willing_to_relocate !== null && p.willing_to_relocate !== undefined) {
-    const val = String(p.willing_to_relocate);
-    const pill = document.querySelector('#pillRelocate .pill[data-val="' + val + '"]');
-    if (pill) selectPill('pillRelocate', pill);
+  if (p.country) {
+    const match = COUNTRY_LIST.find(c => c.name === p.country || c.code === p.country);
+    if (match) document.getElementById('homeCountry').value = match.code;
   }
-  if (p.disability) {
-    const pill = document.querySelector('#pillDisability .pill[data-val="' + p.disability + '"]');
-    if (pill) selectPill('pillDisability', pill);
+  if (p.whatsapp_number) document.getElementById('whatsapp').value = p.whatsapp_number;
+  else if (p.phone) document.getElementById('whatsapp').value = p.phone;
+
+  if (p.about_text || p.bio) {
+    document.getElementById('aboutText').value = p.about_text || p.bio;
+    updateCharCount();
+  }
+  if (p.edu_level) document.getElementById('eduLevel').value = p.edu_level;
+
+  const exp = (Array.isArray(p.work_experience) && p.work_experience[0]) ||
+              (Array.isArray(p.experiences) && p.experiences[0]) || null;
+  if (exp) {
+    document.getElementById('expEmployer').value = exp.employer_name || '';
+    document.getElementById('expTitle').value = exp.job_title || '';
+    document.getElementById('expYears').value = exp.years_worked || '';
+    document.getElementById('expDesc').value = exp.job_description || '';
   }
 
-  ['profile_photo_url','edu_cert_url','id_front_url','id_back_url','selfie_url'].forEach(function (col) {
-    if (p[col]) {
-      uploadedUrls[col] = p[col];
-      markUploadFilled(col);
-    }
-  });
-
-  if (Array.isArray(p.work_experience) && p.work_experience.length) {
-    workExperiences = p.work_experience.slice();
+  if (p.cv_url && p.cv_file_name) {
+    document.getElementById('cvUploadBox').classList.add('filled');
+    document.getElementById('cvUploadText').textContent = 'Replace CV';
+    document.getElementById('cvExistingHint').style.display = 'block';
+    document.getElementById('cvExistingHint').innerHTML =
+      '<i class="bi bi-file-earmark-check-fill"></i> Current file: ' + escHtml(p.cv_file_name);
   }
-  if (Array.isArray(p.referees) && p.referees.length) {
-    referees = p.referees.slice();
-  }
+
+  refreshVerifyUI();
 }
 
-function markUploadFilled(col) {
-  const map = {
-    profile_photo_url: ['ubPhoto','ubPhotoText','Photo uploaded ✓'],
-    edu_cert_url: ['ubCert','ubCertText','Certificate uploaded ✓'],
-    id_front_url: ['ubIdFront','ubIdFrontText','ID front uploaded ✓'],
-    id_back_url: ['ubIdBack','ubIdBackText','ID back uploaded ✓'],
-    selfie_url: ['ubSelfie','ubSelfieText','Selfie uploaded ✓']
-  };
-  const m = map[col];
-  if (!m) return;
-  document.getElementById(m[0]).classList.add('filled');
-  document.getElementById(m[1]).textContent = m[2];
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-// ============================================================
-// CV UPLOAD + AI AUTO-FILL
-// ============================================================
-let cvExtracted = null; // last parse-cv result, kept for applyCvDataToFields()
-
-let cvStage = 'upload';
-
-function setCvStage(stage) {
-  cvStage = stage;
-  document.getElementById('cvStageUpload').style.display = stage === 'upload' ? 'block' : 'none';
-  document.getElementById('cvStageReading').style.display = stage === 'reading' ? 'block' : 'none';
-  document.getElementById('cvStageReview').style.display = stage === 'review' ? 'block' : 'none';
+function updateCharCount() {
+  document.getElementById('aboutCharCount').textContent = document.getElementById('aboutText').value.length;
 }
 
-function showCvError(msg) {
-  document.getElementById('cvErrorText').textContent = msg;
-  document.getElementById('cvError').classList.add('show');
-}
-
-async function handleCvFileSelect(inputEl) {
-  const file = inputEl.files[0];
+document.getElementById('cvFile').addEventListener('change', function () {
+  const file = this.files && this.files[0];
   if (!file) return;
-  document.getElementById('cvError').classList.remove('show');
-
-  const ext = (file.name.split('.').pop() || '').toLowerCase();
-  if (ext !== 'pdf' && ext !== 'docx') {
-    showCvError('Please upload a PDF or DOCX file.');
-    inputEl.value = '';
+  const okTypes = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const okExt = /\.(pdf|doc|docx)$/i.test(file.name);
+  if (!okTypes.includes(file.type) && !okExt) {
+    showAlert('error', 'Please upload a PDF or Word document (.pdf, .doc, .docx).');
+    this.value = '';
     return;
   }
   if (file.size > 8 * 1024 * 1024) {
-    showCvError('That file is larger than 8MB — please upload a smaller version of your CV.');
-    inputEl.value = '';
+    showAlert('error', 'CV file must be under 8MB.');
+    this.value = '';
     return;
   }
+  cvFile = file;
+  document.getElementById('cvUploadBox').classList.add('filled');
+  document.getElementById('cvUploadText').textContent = file.name;
+  document.getElementById('cvExistingHint').style.display = 'none';
+});
 
-  setCvStage('reading');
+// ============================================================
+// PHONE VERIFICATION (manual, admin-reviewed — not an automated OTP)
+// ============================================================
+function refreshVerifyUI() {
+  const status = (existingProfile && existingProfile.phone_verification_status) || 'not_started';
+  const badge = document.getElementById('verifyStatusBadge');
+  const text = document.getElementById('verifyStatusText');
+  badge.className = 'verify-status ' + status;
 
-  try {
-    let text;
-    if (ext === 'pdf') {
-      text = await extractTextFromPdf(file);
-    } else {
-      const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      text = (result.value || '').trim();
-    }
+  const labels = { not_started: 'Not started', pending_review: 'Pending review', verified: 'Verified', rejected: 'Needs a retry' };
+  const icons  = { not_started: 'bi-dash-circle', pending_review: 'bi-clock-history', verified: 'bi-patch-check-fill', rejected: 'bi-exclamation-circle' };
+  text.textContent = labels[status] || status;
+  badge.querySelector('i').className = 'bi ' + (icons[status] || 'bi-dash-circle');
 
-    if (!text) {
-      showCvError("We couldn't read any text from that file. Try a different file, or fill the form manually.");
-      setCvStage('upload');
-      return;
-    }
+  const hasCode = existingProfile && existingProfile.phone_verification_code;
+  document.getElementById('verifyStartBlock').style.display = hasCode ? 'none' : 'block';
+  document.getElementById('verifyCodeBlock').style.display = hasCode ? 'block' : 'none';
 
-    cvExtracted = extractCvWithPatterns(text);
-    renderCvReview();
-    setCvStage('review');
+  if (hasCode) {
+    document.getElementById('verifyCodeDisplay').textContent = existingProfile.phone_verification_code;
+    renderVerifyLink();
+    wireWhatsappSendButton();
+  }
 
-    // Best-effort: store the raw CV + extraction result, non-blocking.
-    // Doesn't stop the flow if either step fails.
-    uploadCvFileAndSaveMeta(file, ext, cvExtracted).catch(function (e) {
-      console.warn('[SoundsCare] CV storage/meta save failed (non-fatal):', e);
-    });
-  } catch (e) {
-    console.error('[SoundsCare] CV read/parse error:', e);
-    showCvError('Something went wrong reading that file. You can try again, or fill the form manually.');
-    setCvStage('upload');
-  } finally {
-    inputEl.value = '';
+  if (status === 'verified' || status === 'pending_review') {
+    document.getElementById('genCodeBtn').style.display = 'none';
   }
 }
 
-// ============================================================
-// PDF TEXT EXTRACTION (pdf.js) — client-side only, no API call
-// ============================================================
-async function extractTextFromPdf(file) {
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    fullText += content.items.map(function (it) { return it.str; }).join(' ') + '\n';
-  }
-  return fullText.trim();
-}
+function generateVerificationCode() {
+  const word = VERIFY_WORDS[Math.floor(Math.random() * VERIFY_WORDS.length)];
+  const num = Math.floor(1000 + Math.random() * 9000);
+  const code = word + '-' + num;
+  const token = (currentUser.id.slice(0, 8) + '-' + num).toUpperCase();
 
-// ============================================================
-// REGEX / KEYWORD-BASED CV EXTRACTION — no AI, no external API.
-// Deliberately conservative: only fills a field when a pattern
-// clearly matches, everything else is left null for the worker
-// to fill in manually on the review screen. All confidence is
-// marked "low" since this is naive pattern matching, not
-// contextual understanding — the review step is not optional.
-// ============================================================
-const CV_ROLE_KEYWORDS = [
-  { role: 'House Manager / Nanny', patterns: [/house\s*manager/i] },
-  { role: 'Nanny / Babysitter', patterns: [/\bnanny\b/i, /babysit/i] },
-  { role: 'Housekeeper', patterns: [/housekeep/i] },
-  { role: 'Cook / Chef', patterns: [/\bchef\b/i, /\bcook(ing)?\b/i] },
-  { role: 'Elderly Caregiver', patterns: [/elderly/i, /care\s*giver/i, /caregiver/i] },
-  { role: 'Security Guard', patterns: [/security guard/i, /watchman/i, /\bguard\b/i] },
-  { role: 'Driver', patterns: [/\bdriver\b/i, /driving/i] },
-  { role: 'Gardener', patterns: [/garden/i] },
-  { role: 'Cleaner', patterns: [/\bcleaner\b/i, /\bcleaning\b/i] },
-  { role: 'General Domestic Worker', patterns: [/domestic work/i, /house\s*help/i, /\bmaid\b/i] }
-];
-const CV_ARRANGEMENT_KEYWORDS = [
-  { val: 'Live-In', patterns: [/live[\s-]?in/i] },
-  { val: 'Live-Out', patterns: [/live[\s-]?out/i] },
-  { val: 'Part-Time', patterns: [/part[\s-]?time/i] },
-  { val: 'Contract', patterns: [/\bcontract\b/i] },
-  { val: 'Flexible', patterns: [/flexible/i] }
-];
-const CV_EDU_KEYWORDS = [
-  { val: 'Degree', patterns: [/\bdegree\b/i, /bachelor/i] },
-  { val: 'Diploma', patterns: [/\bdiploma\b/i] },
-  { val: 'Certificate', patterns: [/certificate/i] },
-  { val: 'Secondary (KCSE)', patterns: [/\bkcse\b/i, /secondary school/i] },
-  { val: 'Primary', patterns: [/\bkcpe\b/i, /primary school/i] }
-];
-const CV_SKILL_KEYWORDS = [
-  'cooking', 'cleaning', 'childcare', 'laundry', 'ironing', 'gardening',
-  'driving', 'babysitting', 'housekeeping', 'elderly care', 'first aid',
-  'meal preparation', 'grocery shopping'
-];
-const CV_LANGUAGE_KEYWORDS = [
-  'English', 'Swahili', 'Kikuyu', 'Luo', 'Kamba', 'Kalenjin', 'Luhya',
-  'Kisii', 'Meru', 'Somali', 'French', 'Arabic'
-];
-// Not exhaustive — covers common counties/towns likely to appear on a CV.
-const CV_KENYA_LOCATIONS = [
-  'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Kiambu', 'Machakos',
-  'Meru', 'Nyeri', 'Kakamega', 'Kericho', 'Thika', 'Naivasha', 'Kitui',
-  'Bungoma', 'Garissa', 'Malindi', 'Kajiado', 'Murang\'a', 'Embu'
-];
+  existingProfile = existingProfile || {};
+  existingProfile.phone_verification_code = code;
+  existingProfile.verification_link_token = token;
+  existingProfile.phone_verification_status = 'not_started';
 
-function extractCvWithPatterns(text) {
-  const warnings = ["This is a basic pattern-matching reader (no AI) — please double-check every field below carefully."];
-  const findFirst = function (list) {
-    for (const item of list) {
-      if (item.patterns.some(function (p) { return p.test(text); })) return item.role || item.val;
-    }
-    return null;
-  };
-  const matchAll = function (words) {
-    const found = words.filter(function (w) { return new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text); });
-    return found.length ? found.join(', ') : null;
-  };
-
-  const emailMatch = text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
-  const phoneMatch = text.match(/(?:\+254|254|0)7\d{8}|(?:\+254|254|0)1\d{8}/);
-  const dobMatch = text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
-  let dob = null;
-  if (dobMatch) {
-    const d = dobMatch[1].padStart(2, '0'), m = dobMatch[2].padStart(2, '0'), y = dobMatch[3];
-    if (Number(m) <= 12 && Number(d) <= 31) dob = y + '-' + m + '-' + d;
-  }
-  const genderMatch = text.match(/\b(Female|Male)\b/i);
-  const yearsMatch = text.match(/(\d{1,2})\s*\+?\s*years?\s*(of\s*)?experience/i);
-  let experienceLevel = null;
-  if (yearsMatch) {
-    const yrs = Number(yearsMatch[1]);
-    experienceLevel = yrs <= 1 ? '0-1' : yrs <= 3 ? '1-3' : yrs <= 5 ? '3-5' : yrs <= 10 ? '5-10' : '10+';
-  }
-  const location = CV_KENYA_LOCATIONS.find(function (loc) { return new RegExp('\\b' + loc + '\\b', 'i').test(text); }) || null;
-
-  if (!emailMatch) warnings.push('Could not find an email address.');
-  if (!phoneMatch) warnings.push('Could not find a phone number.');
-  if (!dob) warnings.push('Could not find a date of birth.');
-
-  return {
-    personal: {
-      full_name: null, // names aren't reliably distinguishable by pattern alone — left for manual entry
-      phone: phoneMatch ? phoneMatch[0] : null,
-      email: emailMatch ? emailMatch[0] : null,
-      current_town: location,
-      county: location,
-      home_address: null,
-      home_village: null,
-      home_county: null
-    },
-    about: {
-      preferred_role: findFirst(CV_ROLE_KEYWORDS),
-      experience_level: experienceLevel,
-      work_arrangement: findFirst(CV_ARRANGEMENT_KEYWORDS),
-      key_skills: matchAll(CV_SKILL_KEYWORDS),
-      languages: matchAll(CV_LANGUAGE_KEYWORDS),
-      about_text: null // synthesizing a bio needs actual comprehension, not just pattern matching
-    },
-    education: {
-      edu_level: findFirst(CV_EDU_KEYWORDS),
-      edu_institution: null,
-      edu_year: null,
-      edu_field: null
-    },
-    work_experience: [], // unstructured employer/role/date parsing isn't reliable without AI
-    identity: {
-      date_of_birth: dob,
-      gender: genderMatch ? (genderMatch[1][0].toUpperCase() + genderMatch[1].slice(1).toLowerCase()) : null
-    },
-    referees: [],
-    confidence: {
-      full_name: 'low', phone: 'low', email: 'low', preferred_role: 'low', date_of_birth: 'low'
-    },
-    warnings: warnings
-  };
-}
-
-async function uploadCvFileAndSaveMeta(file, ext, extracted) {
-  const path = currentUser.id + '/cv-' + Date.now() + '.' + ext;
-  const { error: upErr } = await dbClient.storage.from('cv-uploads').upload(path, file, { upsert: true });
-  if (upErr) throw upErr;
-
-  const nowIso = new Date().toISOString();
-  const { error: dbErr } = await dbClient.from('worker_profiles').upsert({
+  dbClient.from('worker_profiles').upsert({
     session_id: currentUser.id,
     email: currentUser.email,
-    cv_url: path,
-    cv_file_name: file.name,
-    cv_uploaded_at: nowIso,
-    cv_parsed_data: extracted,
-    cv_parsed_at: nowIso
+    phone_verification_code: code,
+    verification_link_token: token,
+    phone_verification_status: 'not_started',
+    phone_verification_requested_at: new Date().toISOString()
+  }, { onConflict: 'session_id' }).then(function (res) {
+    if (res.error) console.warn('[SoundsCare] Could not save verification code:', res.error.message);
+  });
+
+  refreshVerifyUI();
+}
+
+function wireWhatsappSendButton() {
+  const btn = document.getElementById('waSendBtn');
+  btn.onclick = function () {
+    const code = existingProfile.phone_verification_code;
+    const digits = (businessWhatsapp || '').replace(/[^0-9]/g, '');
+    const msg = encodeURIComponent('SoundsCare verification code: ' + code);
+    window.open('https://wa.me/' + digits + '?text=' + msg, '_blank');
+  };
+}
+
+function renderVerifyLink() {
+  const token = existingProfile.verification_link_token;
+  const link = window.location.origin + '/employee-dashboard.html?verify=' + encodeURIComponent(token || '');
+  document.getElementById('verifyLinkText').textContent = link;
+}
+
+function copyVerifyLink() {
+  const text = document.getElementById('verifyLinkText').textContent;
+  navigator.clipboard.writeText(text).then(function () {
+    showAlert('success', 'Verification link copied.');
+  }).catch(function () {
+    showAlert('error', 'Could not copy — please select and copy the link manually.');
+  });
+}
+
+async function markCodeSent() {
+  existingProfile.phone_verification_status = 'pending_review';
+  const res = await dbClient.from('worker_profiles').upsert({
+    session_id: currentUser.id,
+    email: currentUser.email,
+    phone_verification_status: 'pending_review'
   }, { onConflict: 'session_id' });
-  if (dbErr) throw dbErr;
-}
 
-function cvSet(id, val) {
-  const el = document.getElementById(id);
-  if (el && val !== null && val !== undefined && val !== '') el.value = val;
-}
-
-function cvFlagLowConfidence(fgId, isLow) {
-  const el = document.getElementById(fgId);
-  if (!el) return;
-  el.classList.toggle('low-conf', !!isLow);
-  const label = el.querySelector('label');
-  if (label) {
-    const existingTag = label.querySelector('.conf-tag');
-    if (isLow && !existingTag) {
-      label.insertAdjacentHTML('beforeend', ' <span class="conf-tag"><i class="bi bi-exclamation-triangle-fill"></i> check this</span>');
-    } else if (!isLow && existingTag) {
-      existingTag.remove();
-    }
-  }
-}
-
-function renderCvReview() {
-  const d = cvExtracted || {};
-  const personal = d.personal || {};
-  const about = d.about || {};
-  const education = d.education || {};
-  const identity = d.identity || {};
-  const confidence = d.confidence || {};
-  const workExp = Array.isArray(d.work_experience) ? d.work_experience : [];
-  const refs = Array.isArray(d.referees) ? d.referees : [];
-  const warnings = Array.isArray(d.warnings) ? d.warnings : [];
-
-  // Read-only contact summary — these aren't wizard fields (name/phone/
-  // email come from registration), shown for the worker's own review;
-  // saved alongside cv_parsed_data and picked up in submitProfile() only
-  // if the account doesn't already have them.
-  const contactParts = [];
-  if (personal.full_name) contactParts.push('<b>Name:</b> ' + escapeHtml(personal.full_name));
-  if (personal.phone) contactParts.push('<b>Phone:</b> ' + escapeHtml(personal.phone));
-  if (personal.email) contactParts.push('<b>Email:</b> ' + escapeHtml(personal.email));
-  const contactBox = document.getElementById('cvContactBox');
-  if (contactParts.length) {
-    contactBox.style.display = 'block';
-    contactBox.innerHTML = contactParts.join('<br>');
-  } else {
-    contactBox.style.display = 'none';
-  }
-
-  cvSet('cv-preferredRole', about.preferred_role);
-  cvSet('cv-experienceLevel', about.experience_level);
-  cvSet('cv-workArrangement', about.work_arrangement);
-  cvSet('cv-keySkills', about.key_skills);
-  cvSet('cv-languages', about.languages);
-  cvSet('cv-aboutText', about.about_text);
-  cvSet('cv-currentTown', personal.current_town);
-  cvSet('cv-county', personal.county);
-  cvSet('cv-eduLevel', education.edu_level);
-  cvSet('cv-eduInstitution', education.edu_institution);
-  cvSet('cv-eduYear', education.edu_year);
-  cvSet('cv-dob', identity.date_of_birth);
-  cvSet('cv-gender', identity.gender);
-
-  cvFlagLowConfidence('cvfg-preferredRole', confidence.preferred_role === 'low');
-  cvFlagLowConfidence('cvfg-dob', confidence.date_of_birth === 'low');
-
-  document.getElementById('cvExpCount').textContent = workExp.length + (workExp.length === 1 ? ' entry' : ' entries');
-  document.getElementById('cvRefCount').textContent = refs.length + (refs.length === 1 ? ' entry' : ' entries');
-
-  const warnBox = document.getElementById('cvWarningsBox');
-  if (warnings.length) {
-    warnBox.style.display = 'block';
-    document.getElementById('cvWarningsList').innerHTML = warnings.map(function (w) { return '<li>' + escapeHtml(w) + '</li>'; }).join('');
-  } else {
-    warnBox.style.display = 'none';
-  }
-}
-
-function applyCvDataToFields() {
-  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
-
-  set('preferredRole', val('cv-preferredRole'));
-  set('experienceLevel', val('cv-experienceLevel'));
-  set('workArrangement', val('cv-workArrangement'));
-  set('keySkills', val('cv-keySkills'));
-  set('languages', val('cv-languages'));
-  set('aboutText', val('cv-aboutText'));
-  set('currentTown', val('cv-currentTown'));
-  set('county', val('cv-county'));
-  set('eduLevel', val('cv-eduLevel'));
-  set('eduInstitution', val('cv-eduInstitution'));
-  set('eduYear', val('cv-eduYear'));
-  set('dob', val('cv-dob'));
-  set('gender', val('cv-gender'));
-  updateCharCount();
-
-  function set(id, v) { const el = document.getElementById(id); if (el && v) el.value = v; }
-
-  const d = cvExtracted || {};
-  const workExp = Array.isArray(d.work_experience) ? d.work_experience : [];
-  const refs = Array.isArray(d.referees) ? d.referees : [];
-
-  if (workExp.length) {
-    workExperiences = workExp
-      .filter(function (e) { return e && e.employer_name; })
-      .map(function (e) { return { employer_name: e.employer_name || '', years_worked: e.years_worked || '', job_description: e.job_description || '' }; });
-    if (!workExperiences.length) workExperiences = [{ employer_name: '', years_worked: '', job_description: '' }];
-    renderExperienceRows();
-  }
-  if (refs.length) {
-    referees = refs
-      .slice(0, 3)
-      .filter(function (r) { return r && r.full_name; })
-      .map(function (r) { return { full_name: r.full_name || '', relationship: r.relationship || '', phone: r.phone || '' }; });
-    if (referees.length) {
-      renderRefereeRows();
-      document.getElementById('addRefBtn').style.display = referees.length >= 3 ? 'none' : 'flex';
-    }
-  }
-
-  // Contact details the wizard doesn't have fields for (name/phone) —
-  // fill in silently on the account record only where it's currently
-  // blank, never overwriting anything the worker already has saved.
-  const personal = d.personal || {};
-  if (personal.full_name || personal.phone) {
-    cvContactToSave = {
-      full_name: (!existingProfile || !existingProfile.full_name) ? personal.full_name : null,
-      phone: (!existingProfile || !existingProfile.phone) ? personal.phone : null
-    };
-  }
-}
-
-let cvContactToSave = null;
-
-// ============================================================
-// STEP RENDERING / NAVIGATION
-// ============================================================
-function renderStep() {
-  document.querySelectorAll('.wizard-step').forEach(function (el) {
-    el.style.display = (parseInt(el.dataset.step, 10) === currentStep) ? 'block' : 'none';
-  });
-
-  document.getElementById('progressFill').style.width = ((currentStep / TOTAL_STEPS) * 100) + '%';
-  document.getElementById('progressStepNum').textContent = currentStep;
-  document.getElementById('progressStepName').textContent = STEP_NAMES[currentStep - 1];
-
-  document.getElementById('backBtn').style.display = currentStep === 1 ? 'none' : 'flex';
-
-  const nextText = document.getElementById('nextBtnText');
-  const nextIcon = document.getElementById('nextBtnIcon');
-  if (currentStep === TOTAL_STEPS) {
-    nextText.textContent = 'Submit Profile';
-    nextIcon.className = 'bi bi-check-circle';
-  } else if (currentStep === TOTAL_STEPS - 1) {
-    nextText.textContent = 'Review';
-    nextIcon.className = 'bi bi-arrow-right';
-  } else {
-    nextText.textContent = 'Continue';
-    nextIcon.className = 'bi bi-arrow-right';
-  }
-
-  if (currentStep === TOTAL_STEPS) buildReview();
-
-  hideAllAlerts();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function prevStep() {
-  if (currentStep > 1) { currentStep--; renderStep(); }
-}
-
-async function nextStep() {
-  if (!validateStep(currentStep)) return;
-
-  if (currentStep === 1) {
-    applyCvDataToFields();
-  }
-
-  if (currentStep < TOTAL_STEPS) {
-    currentStep++;
-    renderStep();
+  if (res.error) {
+    showAlert('error', 'Could not update verification status — please try again.');
     return;
   }
-
-  // Final step -> submit
-  await submitProfile();
+  refreshVerifyUI();
+  showAlert('success', "Thanks — we'll confirm your code and verify your profile within 24 hours.");
 }
 
-function validateStep(step) {
+// ============================================================
+// SUBMIT
+// ============================================================
+async function submitProfile(event) {
+  event.preventDefault();
   hideAllAlerts();
 
-  if (step === 1) {
-    if (cvStage === 'reading') { showCvError('Still reading your CV — one moment.'); return false; }
-    if (!cvExtracted) { showCvError('Please upload your CV to continue — it\'s required.'); return false; }
-  }
+  const countryCode = document.getElementById('homeCountry').value;
+  const countryName = (COUNTRY_LIST.find(c => c.code === countryCode) || {}).name || countryCode;
+  const whatsapp = document.getElementById('whatsapp').value.trim();
 
-  if (step === 2) {
-    const role = document.getElementById('preferredRole').value;
-    const about = document.getElementById('aboutText').value.trim();
-    if (!role) { showAlert('error', 'Please select the role you\'re looking for.'); return false; }
-    if (!about || about.length < 20) { showAlert('error', 'Please write a short bio (at least 20 characters) so employers know a bit about you.'); return false; }
-    const min = document.getElementById('salaryMin').value;
-    const max = document.getElementById('salaryMax').value;
-    if (min && max && parseInt(min, 10) > parseInt(max, 10)) { showAlert('error', 'Minimum salary can\'t be higher than maximum salary.'); return false; }
-  }
+  if (!countryCode) { showAlert('error', 'Please select your home country.'); return; }
+  if (!whatsapp) { showAlert('error', 'Please enter your WhatsApp number.'); return; }
 
-  if (step === 3) {
-    const town = document.getElementById('currentTown').value.trim();
-    const county = document.getElementById('county').value.trim();
-    if (!town || !county) { showAlert('error', 'Please tell us your current town and county.'); return false; }
-  }
+  setSubmitLoading(true);
 
-  if (step === 6) {
-    const dob = document.getElementById('dob').value;
-    const gender = document.getElementById('gender').value;
-    if (!dob) { showAlert('error', 'Please enter your date of birth.'); return false; }
-    if (!gender) { showAlert('error', 'Please select your gender.'); return false; }
-    const age = calcAge(dob);
-    if (age < 18) { showAlert('error', 'You must be at least 18 years old to register as a worker.'); return false; }
-  }
+  try {
+    let cvUrl = existingProfile ? existingProfile.cv_url : null;
+    let cvFileName = existingProfile ? existingProfile.cv_file_name : null;
 
-  return true;
-}
-
-function calcAge(dobStr) {
-  const dob = new Date(dobStr);
-  const now = new Date();
-  let age = now.getFullYear() - dob.getFullYear();
-  const m = now.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
-  return age;
-}
-
-// ============================================================
-// PILL SELECT
-// ============================================================
-function selectPill(groupId, el) {
-  document.querySelectorAll('#' + groupId + ' .pill').forEach(function (p) { p.classList.remove('active'); });
-  el.classList.add('active');
-}
-function getPillValue(groupId) {
-  const active = document.querySelector('#' + groupId + ' .pill.active');
-  return active ? active.dataset.val : null;
-}
-
-// ============================================================
-// CHAR COUNTER
-// ============================================================
-function updateCharCount() {
-  const el = document.getElementById('aboutText');
-  document.getElementById('aboutCharCount').textContent = el.value.length;
-}
-
-// ============================================================
-// WORK EXPERIENCE — dynamic rows
-// ============================================================
-function addExperienceRow() {
-  const idx = workExperiences.length;
-  workExperiences.push({ employer_name:'', years_worked:'', job_description:'' });
-  renderExperienceRows();
-  setTimeout(function () {
-    const el = document.getElementById('exp-employer-' + idx);
-    if (el) el.focus();
-  }, 50);
-}
-
-function removeExperienceRow(idx) {
-  workExperiences.splice(idx, 1);
-  renderExperienceRows();
-}
-
-function renderExperienceRows() {
-  const wrap = document.getElementById('expList');
-  wrap.innerHTML = '';
-  workExperiences.forEach(function (exp, idx) {
-    const card = document.createElement('div');
-    card.className = 'dyn-card';
-    card.innerHTML =
-      '<button type="button" class="dyn-remove" onclick="removeExperienceRow(' + idx + ')"><i class="bi bi-x-lg"></i></button>' +
-      '<div class="dyn-title">Employer ' + (idx + 1) + '</div>' +
-      '<div class="fg"><label>Employer name</label><input type="text" id="exp-employer-' + idx + '" placeholder="e.g., Mrs. Wanjiru, Karen" value="' + escapeAttr(exp.employer_name) + '" onchange="updateExpField(' + idx + ',\'employer_name\',this.value)"></div>' +
-      '<div class="row2"><div class="fg"><label>Years worked</label><input type="number" min="0" id="exp-years-' + idx + '" placeholder="e.g., 2" value="' + escapeAttr(exp.years_worked) + '" onchange="updateExpField(' + idx + ',\'years_worked\',this.value)"></div></div>' +
-      '<div class="fg"><label>What did you do there?</label><textarea id="exp-desc-' + idx + '" placeholder="e.g., Cooking, cleaning, childcare for 2 kids" onchange="updateExpField(' + idx + ',\'job_description\',this.value)">' + escapeHtml(exp.job_description) + '</textarea></div>';
-    wrap.appendChild(card);
-  });
-}
-
-function updateExpField(idx, field, value) {
-  if (workExperiences[idx]) workExperiences[idx][field] = value;
-}
-
-// ============================================================
-// REFEREES — dynamic rows (max 3)
-// ============================================================
-function addRefereeRow() {
-  if (referees.length >= 3) return;
-  const idx = referees.length;
-  referees.push({ full_name:'', relationship:'', phone:'' });
-  renderRefereeRows();
-  document.getElementById('addRefBtn').style.display = referees.length >= 3 ? 'none' : 'flex';
-  setTimeout(function () {
-    const el = document.getElementById('ref-name-' + idx);
-    if (el) el.focus();
-  }, 50);
-}
-
-function removeRefereeRow(idx) {
-  referees.splice(idx, 1);
-  renderRefereeRows();
-  document.getElementById('addRefBtn').style.display = 'flex';
-}
-
-function renderRefereeRows() {
-  const wrap = document.getElementById('refList');
-  wrap.innerHTML = '';
-  referees.forEach(function (ref, idx) {
-    const card = document.createElement('div');
-    card.className = 'dyn-card';
-    card.innerHTML =
-      '<button type="button" class="dyn-remove" onclick="removeRefereeRow(' + idx + ')"><i class="bi bi-x-lg"></i></button>' +
-      '<div class="dyn-title">Referee ' + (idx + 1) + '</div>' +
-      '<div class="fg"><label>Full name</label><input type="text" id="ref-name-' + idx + '" placeholder="e.g., Mary Achieng" value="' + escapeAttr(ref.full_name) + '" onchange="updateRefField(' + idx + ',\'full_name\',this.value)"></div>' +
-      '<div class="row2">' +
-      '<div class="fg"><label>Relationship</label><input type="text" id="ref-rel-' + idx + '" placeholder="e.g., Former employer" value="' + escapeAttr(ref.relationship) + '" onchange="updateRefField(' + idx + ',\'relationship\',this.value)"></div>' +
-      '<div class="fg"><label>Phone number</label><input type="tel" id="ref-phone-' + idx + '" placeholder="+254712345678" value="' + escapeAttr(ref.phone) + '" onchange="updateRefField(' + idx + ',\'phone\',this.value)"></div>' +
-      '</div>';
-    wrap.appendChild(card);
-  });
-}
-
-function updateRefField(idx, field, value) {
-  if (referees[idx]) referees[idx][field] = value;
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>]/g, function (c) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]; });
-}
-function escapeAttr(str) {
-  if (str === null || str === undefined) return '';
-  return String(str).replace(/"/g, '&quot;');
-}
-
-// ============================================================
-// IMAGE COMPRESSION — downscale + re-encode before upload so a
-// full-resolution phone camera capture (ID front/back, selfie,
-// profile photo) doesn't exhaust memory on lower-end Android
-// devices ("Unable to complete previous operation due to low
-// memory"). Used by ID front/back, selfie, and profile photo
-// uploads alike — same pipeline for all of them.
-//
-// Design notes (why it's structured this way):
-//  - The source file is decoded exactly ONCE, via a plain
-//    HTMLImageElement + object URL. We never call
-//    createImageBitmap() on the raw file at full resolution —
-//    that's the single biggest cause of the low-memory crash,
-//    because it forces the browser to allocate a full decoded
-//    raster of a 12MP+ camera photo in one shot.
-//  - Downscaling happens by drawing that already-decoded <img>
-//    onto a small canvas sized to the target dimensions. If we
-//    need to retry at a smaller size/quality (to hit the byte
-//    budget), we redraw from the SAME decoded <img> — we never
-//    re-decode the original file bytes.
-//  - Every temporary object (object URL, <img>, canvas, bitmap)
-//    is released as soon as we're done with it, in a finally
-//    block, so nothing lingers in memory across uploads.
-// ============================================================
-
-const IMAGE_MAX_SOURCE_BYTES = 25 * 1024 * 1024; // reject outright above this — decoding a file this size is itself what triggers low-memory failures
-const IMAGE_TARGET_MAX_DIMENSION = 1600;         // longest side, first attempt
-const IMAGE_TARGET_MIN_DIMENSION = 1200;         // longest side, smallest we'll fall back to
-const IMAGE_TARGET_BYTES = 900 * 1024;           // ~0.9MB soft budget we try to land under
-const IMAGE_HARD_MAX_BYTES = 1024 * 1024;        // 1MB hard ceiling we keep retrying against
-const IMAGE_QUALITY_STEPS = [0.8, 0.72, 0.6, 0.5]; // tried in order until under budget or steps exhausted
-
-// Validates the raw file BEFORE any decoding is attempted, so an
-// obviously-too-large or wrong-type file never reaches the decode step.
-function validateImageFile(file) {
-  if (!file) return { ok: false, message: 'No file selected.' };
-  if (!file.type || !file.type.startsWith('image/')) {
-    return { ok: false, message: 'Please choose an image file (JPG, PNG, etc.).' };
-  }
-  if (file.size <= 0) {
-    return { ok: false, message: 'That file looks empty — please try again.' };
-  }
-  if (file.size > IMAGE_MAX_SOURCE_BYTES) {
-    return { ok: false, message: 'That image is too large (' + Math.round(file.size / (1024 * 1024)) + 'MB). Please retake the photo at a lower resolution, or choose a smaller file.' };
-  }
-  return { ok: true };
-}
-
-// Decodes `file` into an HTMLImageElement via an object URL (cheaper on
-// low-memory Android WebViews than createImageBitmap on the raw file)
-// and resolves with the element plus its natural dimensions. Caller is
-// responsible for calling the returned `release()` to revoke the URL.
-function loadImageElement(file) {
-  return new Promise(function (resolve, reject) {
-    let objectUrl;
-    try {
-      objectUrl = URL.createObjectURL(file);
-    } catch (e) {
-      reject(e);
-      return;
+    if (cvFile) {
+      const ext = (cvFile.name.split('.').pop() || 'pdf').toLowerCase();
+      const path = currentUser.id + '/cv-' + Date.now() + '.' + ext;
+      const uploadResult = await dbClient.storage.from('cv-uploads').upload(path, cvFile, { upsert: true, contentType: cvFile.type });
+      if (uploadResult.error) throw uploadResult.error;
+      const { data } = dbClient.storage.from('cv-uploads').getPublicUrl(path);
+      cvUrl = data ? data.publicUrl : cvUrl;
+      cvFileName = cvFile.name;
     }
-    const img = new Image();
-    const release = function () {
-      try { URL.revokeObjectURL(objectUrl); } catch (e) { /* ignore */ }
-      img.src = '';
+
+    const employer = document.getElementById('expEmployer').value.trim();
+    const experience = employer ? [{
+      employer_name: employer,
+      job_title: document.getElementById('expTitle').value.trim() || null,
+      years_worked: document.getElementById('expYears').value ? Number(document.getElementById('expYears').value) : null,
+      job_description: document.getElementById('expDesc').value.trim() || null
+    }] : [];
+
+    const payload = {
+      session_id: currentUser.id,
+      email: currentUser.email,
+      country: countryName,
+      whatsapp_number: whatsapp,
+      about_text: document.getElementById('aboutText').value.trim() || null,
+      bio: document.getElementById('aboutText').value.trim() || null,
+      edu_level: document.getElementById('eduLevel').value || null,
+      education: document.getElementById('eduLevel').value || null,
+      work_experience: experience,
+      experiences: experience,
+      cv_url: cvUrl,
+      cv_file_name: cvFileName,
+      cv_uploaded_at: cvFile ? new Date().toISOString() : (existingProfile ? existingProfile.cv_uploaded_at : null),
+      profile_setup_completed: true,
+      last_updated_at: new Date().toISOString()
     };
-    img.onload = function () {
-      if (!img.naturalWidth || !img.naturalHeight) {
-        release();
-        reject(new Error('Decoded image has no dimensions'));
-        return;
-      }
-      resolve({ img: img, width: img.naturalWidth, height: img.naturalHeight, release: release });
-    };
-    img.onerror = function (e) {
-      release();
-      reject(e instanceof Error ? e : new Error('Image failed to decode'));
-    };
-    img.src = objectUrl;
-  });
-}
 
-// Draws `img` at (targetW x targetH) onto a fresh canvas and returns a
-// JPEG blob at the given quality. Fully releases the canvas afterwards
-// (width/height reset to 0) so its backing buffer isn't held onto.
-function drawAndEncode(img, targetW, targetH, quality) {
-  return new Promise(function (resolve, reject) {
-    let canvas;
-    try {
-      canvas = document.createElement('canvas');
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('2D canvas context unavailable');
-      ctx.drawImage(img, 0, 0, targetW, targetH);
-      canvas.toBlob(function (blob) {
-        canvas.width = 0;
-        canvas.height = 0;
-        canvas = null;
-        if (!blob) {
-          reject(new Error('canvas.toBlob returned null'));
-          return;
-        }
-        resolve(blob);
-      }, 'image/jpeg', quality);
-    } catch (e) {
-      if (canvas) { canvas.width = 0; canvas.height = 0; }
-      reject(e);
-    }
-  });
-}
-
-// Main entry point used by handleFileSelect(). Always resolves — on any
-// failure it logs the reason via console.error and falls back to the
-// original file so a compression problem never blocks the upload
-// outright (validateImageFile() is what handles the "reject" case for
-// files that are unsafe to even attempt decoding).
-async function compressImageFile(file, maxDimension, quality) {
-  if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml') return file;
-
-  const targetMaxDim = maxDimension || IMAGE_TARGET_MAX_DIMENSION;
-  let loaded = null;
-
-  try {
-    loaded = await loadImageElement(file);
-  } catch (e) {
-    console.error('[SoundsCare] Image decode failed — uploading original file instead:', file.name, e);
-    return file; // graceful fallback: don't crash, just skip compression
-  }
-
-  try {
-    const longestSide = Math.max(loaded.width, loaded.height);
-    let dim = Math.min(targetMaxDim, longestSide);
-    if (dim < 1) dim = targetMaxDim;
-
-    let bestBlob = null;
-
-    // Outer loop: shrink the target dimension if we can't hit the byte
-    // budget on quality alone. Inner loop: step quality down. Both loops
-    // redraw from the SAME already-decoded <img> — no re-decoding of the
-    // original file happens at any point here.
-    outer:
-    for (let dimAttempt = 0; dimAttempt < 3; dimAttempt++) {
-      const scale = Math.min(1, dim / longestSide);
-      const w = Math.max(1, Math.round(loaded.width * scale));
-      const h = Math.max(1, Math.round(loaded.height * scale));
-
-      for (let i = 0; i < IMAGE_QUALITY_STEPS.length; i++) {
-        const q = (dimAttempt === 0 && i === 0 && typeof quality === 'number') ? quality : IMAGE_QUALITY_STEPS[i];
-        let blob;
-        try {
-          blob = await drawAndEncode(loaded.img, w, h, q);
-        } catch (e) {
-          console.error('[SoundsCare] Canvas encode failed for', file.name, 'at', w + 'x' + h, 'quality', q, e);
-          continue; // try the next quality step
-        }
-        if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
-        if (blob.size <= IMAGE_HARD_MAX_BYTES) break outer; // good enough, stop
-      }
-
-      if (dim <= IMAGE_TARGET_MIN_DIMENSION) break;
-      dim = Math.max(IMAGE_TARGET_MIN_DIMENSION, Math.round(dim * 0.8));
-    }
-
-    if (!bestBlob) {
-      console.error('[SoundsCare] All compression attempts failed for', file.name, '— uploading original file instead.');
-      return file;
-    }
-    if (bestBlob.size >= file.size) {
-      // Compression didn't actually help (e.g. already a small/efficient
-      // JPEG) — keep the original rather than uploading a larger file.
-      return file;
-    }
-    if (bestBlob.size > IMAGE_TARGET_BYTES) {
-      console.error('[SoundsCare] Compressed image still above target size for', file.name, '(' + Math.round(bestBlob.size / 1024) + 'KB) — uploading best effort anyway.');
-    }
-
-    bestBlob.name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
-    return bestBlob;
-  } catch (e) {
-    console.error('[SoundsCare] Unexpected error while compressing image — uploading original file instead:', file.name, e);
-    return file;
-  } finally {
-    // Always release the decoded <img> / object URL, even on the
-    // success path, so nothing from this capture lingers in memory.
-    if (loaded && loaded.release) loaded.release();
-  }
-}
-
-// ============================================================
-// FILE UPLOAD
-// ============================================================
-async function handleFileSelect(inputEl, column, bucket, isPublicBucket) {
-  const file = inputEl.files[0];
-  if (!file) return;
-
-  const boxId = {
-    profile_photo_url: 'ubPhoto',
-    edu_cert_url: 'ubCert',
-    id_front_url: 'ubIdFront',
-    id_back_url: 'ubIdBack',
-    selfie_url: 'ubSelfie'
-  }[column];
-  const textId = boxId + 'Text';
-  const box = document.getElementById(boxId);
-  const textEl = document.getElementById(textId);
-  const originalText = textEl.textContent;
-
-  // Only images (profile photo, ID front/back, selfie) go through the
-  // memory-safe compression pipeline and its pre-checks below. The
-  // certificate field also accepts PDFs, which pass straight through —
-  // compressImageFile() already no-ops on non-image types.
-  if (file.type && file.type.startsWith('image/')) {
-    const check = validateImageFile(file);
-    if (!check.ok) {
-      console.error('[SoundsCare] Image rejected before processing:', column, file.name, file.size, check.message);
-      textEl.textContent = originalText;
-      showAlert('error', check.message);
-      inputEl.value = '';
-      return;
-    }
-  }
-
-  textEl.textContent = 'Preparing…';
-
-  try {
-    // Shrink large camera photos before upload — this is what avoids
-    // the "low memory" failures on full-resolution ID/selfie captures.
-    let uploadFile;
-    try {
-      uploadFile = await compressImageFile(file, 1600, 0.8);
-    } catch (compressErr) {
-      // compressImageFile() is designed to swallow its own errors and
-      // fall back to `file`, but guard here too in case of an
-      // unexpected throw so the upload can still proceed.
-      console.error('[SoundsCare] Image compression threw unexpectedly — falling back to original file:', column, file.name, compressErr);
-      uploadFile = file;
-    }
-
-    textEl.textContent = 'Uploading…';
-
-    const ext = ((uploadFile && uploadFile.name) || file.name).split('.').pop();
-    const path = currentUser.id + '/' + column + '-' + Date.now() + '.' + ext;
-
-    const { error: upErr } = await dbClient.storage.from(bucket).upload(path, uploadFile, { upsert: true, contentType: uploadFile.type || file.type });
-    if (upErr) {
-      console.error('[SoundsCare] Supabase upload failed:', column, path, 'size:', uploadFile.size, upErr);
-      throw upErr;
-    }
-
-    let storedValue = path;
-    if (isPublicBucket) {
-      const { data: pub } = dbClient.storage.from(bucket).getPublicUrl(path);
-      storedValue = pub.publicUrl;
-    }
-
-    uploadedUrls[column] = storedValue;
-    box.classList.add('filled');
-    textEl.textContent = originalText.replace('Tap to upload', '').trim() ? '✓ Uploaded' : '✓ Uploaded';
-    textEl.textContent = '✓ ' + file.name.slice(0, 24) + (file.name.length > 24 ? '…' : '');
-  } catch (e) {
-    console.error('[SoundsCare] Upload failed:', column, file.name, e);
-    textEl.textContent = originalText;
-    showAlert('error', 'Upload failed for ' + column.replace(/_/g, ' ') + '. Please try again.');
-  }
-}
-
-// ============================================================
-// REVIEW STEP
-// ============================================================
-function buildReview() {
-  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const block = (label, value) => {
-    const shown = value ? escapeHtml(value) : '<span class="rb-val muted">Not provided</span>';
-    return '<div class="review-block"><div class="rb-label">' + label + '</div><div class="rb-val">' + (value ? escapeHtml(value) : '<span class="muted">Not provided</span>') + '</div></div>';
-  };
-
-  let html = '';
-  html += block('Looking for', val('preferredRole'));
-  html += block('Experience', val('experienceLevel'));
-  html += block('Work arrangement', val('workArrangement'));
-  const min = val('salaryMin'), max = val('salaryMax');
-  html += block('Expected salary', (min || max) ? ('KES ' + (min || '?') + ' – ' + (max || '?')) : '');
-  html += block('Skills', val('keySkills'));
-  html += block('Languages', val('languages'));
-  html += block('Bio', val('aboutText'));
-  html += block('Location', [val('currentTown'), val('county')].filter(Boolean).join(', '));
-  html += block('Education', [val('eduLevel'), val('eduInstitution')].filter(Boolean).join(' — '));
-  html += block('Work experience entries', workExperiences.filter(function(e){return e.employer_name;}).length + ' added');
-  html += block('Date of birth', val('dob'));
-  html += block('Gender', val('gender'));
-  html += block('ID number', val('nationalId'));
-  html += block('Referees', referees.filter(function(r){return r.full_name;}).length + ' added');
-  html += block('Documents uploaded', Object.keys(uploadedUrls).filter(function(k){return uploadedUrls[k];}).length + ' of 5');
-
-  document.getElementById('reviewContent').innerHTML = html;
-}
-
-// ============================================================
-// SUBMIT — upsert into worker_profiles keyed by session_id
-// ============================================================
-async function submitProfile() {
-  setNextLoading(true);
-  hideAllAlerts();
-
-  const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const numOrNull = (v) => (v === '' || v === null || v === undefined) ? null : Number(v);
-
-  const relocate = getPillValue('pillRelocate');
-  const disability = getPillValue('pillDisability') || 'No';
-
-  const salaryMin = numOrNull(val('salaryMin'));
-  const salaryMax = numOrNull(val('salaryMax'));
-  const salaryRange = (salaryMin || salaryMax) ? ((salaryMin || '') + '-' + (salaryMax || '')) : null;
-
-  const cleanExperiences = workExperiences
-    .filter(function (e) { return e.employer_name && e.employer_name.trim(); })
-    .map(function (e) { return { employer_name: e.employer_name, years_worked: e.years_worked ? Number(e.years_worked) : null, job_description: e.job_description || '' }; });
-
-  const cleanReferees = referees
-    .filter(function (r) { return r.full_name && r.full_name.trim(); })
-    .map(function (r) { return { full_name: r.full_name, relationship: r.relationship || '', phone: r.phone || '' }; });
-
-  const hasAllVerificationDocs = !!(uploadedUrls.id_front_url && uploadedUrls.id_back_url && uploadedUrls.selfie_url);
-
-  const payload = {
-    session_id: currentUser.id,
-    email: currentUser.email,
-
-    // Filled in from an uploaded CV only when the account didn't
-    // already have these (see applyCvDataToFields) — never overwrites
-    // data the worker already saved or entered at registration.
-    ...(cvContactToSave && cvContactToSave.full_name ? { full_name: cvContactToSave.full_name } : {}),
-    ...(cvContactToSave && cvContactToSave.phone ? { phone: cvContactToSave.phone, phone_number: cvContactToSave.phone } : {}),
-
-    preferred_role: val('preferredRole') || null,
-    job_title: val('preferredRole') || null,
-    experience_level: val('experienceLevel') || null,
-    work_arrangement: val('workArrangement') || null,
-    preferred_job_type: val('workArrangement') || null,
-    salary_min: salaryMin,
-    salary_max: salaryMax,
-    salary_range: salaryRange,
-    key_skills: val('keySkills') || null,
-    skills_summary: val('keySkills') || null,
-    languages: val('languages') || null,
-    about_text: val('aboutText') || null,
-    bio: val('aboutText') || null,
-
-    current_town: val('currentTown') || null,
-    county: val('county') || null,
-    location: val('currentTown') || val('county') || null,
-    home_address: val('homeAddress') || null,
-    home_village: val('homeVillage') || null,
-    home_county: val('homeCounty') || null,
-    willing_to_relocate: relocate,
-    willing_relocate: relocate,
-
-    edu_level: val('eduLevel') || null,
-    edu_institution: val('eduInstitution') || null,
-    edu_year: val('eduYear') ? Number(val('eduYear')) : null,
-    edu_field: val('eduField') || null,
-    education: val('eduLevel') || null,
-
-    work_experience: cleanExperiences,
-    experiences: cleanExperiences,
-
-    date_of_birth: val('dob') || null,
-    dob: val('dob') || null,
-    gender: val('gender') || null,
-    disability: disability,
-    id_type: val('idType') || null,
-    national_id: val('nationalId') || null,
-    id_number: val('nationalId') || null,
-
-    referees: cleanReferees,
-
-    profile_photo_url: uploadedUrls.profile_photo_url,
-    edu_cert_url: uploadedUrls.edu_cert_url,
-    id_front_url: uploadedUrls.id_front_url,
-    id_back_url: uploadedUrls.id_back_url,
-    selfie_url: uploadedUrls.selfie_url,
-
-    verification_stage: hasAllVerificationDocs ? 'submitted' : 'unverified',
-    verification_requested_at: hasAllVerificationDocs ? new Date().toISOString() : null,
-    profile_visible: true,
-    job_seeking: true,
-    looking_for_job: true,
-    profile_setup_completed: true,
-    last_updated_at: new Date().toISOString()
-  };
-
-  try {
     const { error } = await dbClient.from('worker_profiles').upsert(payload, { onConflict: 'session_id' });
     if (error) throw error;
 
-    // Welcome-to-profile notification (best effort, non-blocking)
-    dbClient.from('notifications').insert({
-      user_id: currentUser.id,
-      user_email: currentUser.email,
-      type: 'profile_completed',
-      title: 'Profile submitted! 🎉',
-      message: hasAllVerificationDocs
-        ? 'Your profile is complete and pending verification review.'
-        : 'Your profile is saved. Add your ID documents anytime to get verified faster.',
-      is_read: false
-    }).then(function(){}, function(){});
-
     showAlert('success', 'Profile saved! Redirecting to your dashboard…');
-    setTimeout(function () {
-      window.location.href = 'employee-dashboard.html';
-    }, 1500);
+    setTimeout(function () { window.location.href = 'employee-dashboard.html'; }, 1400);
   } catch (e) {
     console.error('[SoundsCare] Profile submit failed:', e);
     showAlert('error', e.message || 'Something went wrong saving your profile. Please try again.');
-    setNextLoading(false);
+    setSubmitLoading(false);
   }
 }
 
-function setNextLoading(loading) {
-  document.getElementById('nextBtn').disabled = loading;
-  document.getElementById('backBtn').disabled = loading;
-  document.getElementById('nextSpinner').style.display = loading ? 'inline-block' : 'none';
-  document.getElementById('nextBtnText').style.display = loading ? 'none' : 'inline';
-  document.getElementById('nextBtnIcon').style.display = loading ? 'none' : 'inline';
+function setSubmitLoading(loading) {
+  document.getElementById('submitBtn').disabled = loading;
+  document.getElementById('submitSpinner').style.display = loading ? 'inline-block' : 'none';
+  document.getElementById('submitBtnText').textContent = loading ? 'Saving…' : 'Save Profile';
 }
 
 // ============================================================
-// ALERT UTILITIES
+// ALERTS
 // ============================================================
 function showAlert(type, message) {
   const id = type === 'error' ? 'alertError' : 'alertSuccess';
