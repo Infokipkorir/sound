@@ -594,7 +594,7 @@ async function markCodeSent() {
 
   if (res.error) {
     console.error('[SoundsCare] markCodeSent upsert failed:', res.error);
-    showAlert('error', 'Could not update verification status: ' + (res.error.message || 'unknown error') + (res.error.code ? ' (code: ' + res.error.code + ')' : ''));
+    showAlert('error', 'Could not update verification status — please try again.');
     return;
   }
 
@@ -607,13 +607,14 @@ async function markCodeSent() {
 // Best-effort admin ping. Never blocks the user's flow if it fails.
 async function notifyAdminVerificationSubmitted() {
   try {
-    await dbClient.from('admin_notifications').insert({
-      type: 'phone_verification_submitted',
-      session_id: currentUser.id,
-      email: currentUser.email,
-      message: 'User has submitted verification — code sent via WhatsApp, awaiting admin confirmation.',
-      status: 'unread',
-      created_at: new Date().toISOString()
+    const workerId = existingProfile && existingProfile.id;
+    const name = (existingProfile && existingProfile.full_name) || currentUser.email || 'A worker';
+    await dbClient.rpc('fn_notify_admin', {
+      p_type: 'phone_verification_submitted',
+      p_title: 'Phone verification submitted',
+      p_message: name + ' has submitted phone verification via WhatsApp — awaiting admin confirmation.',
+      p_source_type: 'worker_profiles',
+      p_source_id: workerId
     });
   } catch (err) {
     console.warn('[SoundsCare] Could not notify admin:', err);
