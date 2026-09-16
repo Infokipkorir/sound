@@ -133,6 +133,44 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
 .checkbox-wrap a{color:var(--green);text-decoration:none;font-weight:600}
 .checkbox-wrap a:hover{text-decoration:underline}
 
+/* SELECT (country / role) */
+select{width:100%;padding:10.5px 34px 10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none;cursor:pointer}
+.iw.has-ico select{padding-left:38px}
+select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+select.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
+select.valid{border-color:var(--success)}
+.iw .sel-arrow{position:absolute;right:12px;color:var(--text-muted);pointer-events:none;font-size:13px}
+.field-hint{font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.4}
+
+/* FIELD STATUS (generic — city, dob, role) */
+.field-status{margin-top:7px;padding:9px 11px;border-radius:var(--radius-sm);font-size:12.5px;font-weight:500;display:none;align-items:flex-start;gap:7px;line-height:1.5}
+.field-status.show{display:flex}
+.field-status i{font-size:14px;flex-shrink:0;margin-top:1px}
+.field-status.ok{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
+.field-status.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
+.field-status.bad{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
+
+/* PASSPORT PHOTO UPLOAD */
+.photo-upload{display:flex;align-items:center;gap:14px}
+.photo-preview{width:76px;height:76px;border-radius:var(--radius-sm);border:1.5px dashed var(--border);background:var(--green-light);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--text-muted);font-size:24px}
+.photo-preview img{width:100%;height:100%;object-fit:cover}
+.photo-preview.has-img{border-style:solid;border-color:var(--success)}
+.photo-upload-btn{flex:1}
+.photo-upload-btn input[type=file]{display:none}
+.photo-upload-label{display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:13.5px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .15s}
+.photo-upload-label:hover{border-color:var(--green);background:var(--green-light);color:var(--green-dark)}
+.photo-filename{font-size:11.5px;color:var(--text-muted);margin-top:5px;word-break:break-all}
+
+/* OTP STEP */
+#step-otp{display:none;text-align:center;padding:.5rem 0}
+.otp-icon{width:64px;height:64px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px;color:var(--green)}
+.otp-boxes{display:flex;gap:9px;justify-content:center;margin:1.3rem 0 .6rem}
+.otp-box{width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+.otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+.otp-box.err{border-color:var(--red);animation:shake .3s ease-out}
+.otp-resend{font-size:13px;color:var(--text-muted);margin:.9rem 0 1.2rem}
+.otp-resend .action-link.disabled{color:var(--text-muted);cursor:default;pointer-events:none;text-decoration:none}
+
 /* BUTTONS */
 .btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .6s both}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
@@ -270,6 +308,48 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
           </div>
         </div>
 
+        <!-- COUNTRY -->
+        <div class="fg">
+          <label for="regCountry">Country</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-flag-fill"></i>
+            <select id="regCountry" name="country" required>
+              <option value="" disabled selected>Select your country</option>
+            </select>
+            <i class="bi bi-chevron-down sel-arrow"></i>
+          </div>
+          <div class="field-hint" id="countryAutoHint" style="display:none;">
+            <i class="bi bi-geo-alt-fill"></i> Auto-selected from your location — change it if this isn't right.
+          </div>
+        </div>
+
+        <!-- CITY / TOWN -->
+        <div class="fg">
+          <label for="regCity">City / Town</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-pin-map-fill"></i>
+            <input type="text" id="regCity" name="city" list="cityListOptions" placeholder="e.g., Nairobi" autocomplete="off" required>
+          </div>
+          <datalist id="cityListOptions"></datalist>
+          <div class="field-status" id="cityStatus">
+            <i id="cityStatusIcon"></i>
+            <span id="cityStatusText"></span>
+          </div>
+        </div>
+
+        <!-- DATE OF BIRTH -->
+        <div class="fg">
+          <label for="regDob">Date of Birth</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-calendar-heart-fill"></i>
+            <input type="date" id="regDob" name="dob" required>
+          </div>
+          <div class="field-status" id="dobStatus">
+            <i id="dobStatusIcon"></i>
+            <span id="dobStatusText"></span>
+          </div>
+        </div>
+
         <!-- PASSWORD -->
         <div class="fg">
           <label for="regPassword">Password</label>
@@ -291,6 +371,46 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
             <button type="button" class="sfx" id="togglePwdConfirm" onclick="togglePasswordVisibility('confirmPassword')">
               <i class="bi bi-eye-fill"></i>
             </button>
+          </div>
+        </div>
+
+        <!-- ROLE -->
+        <div class="sec-lbl">Work Details</div>
+        <div class="fg">
+          <label for="regRole">Role you're looking for</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-briefcase-fill"></i>
+            <select id="regRole" name="role" required>
+              <option value="" disabled selected>Select a role</option>
+            </select>
+            <i class="bi bi-chevron-down sel-arrow"></i>
+          </div>
+        </div>
+        <div class="fg" id="regRoleOtherWrap" style="display:none;">
+          <label for="regRoleOther">Tell us the role</label>
+          <div class="iw has-ico">
+            <i class="ico bi bi-pencil-fill"></i>
+            <input type="text" id="regRoleOther" name="roleOther" placeholder="e.g., Elderly Companion" maxlength="60">
+          </div>
+        </div>
+
+        <!-- VERIFICATION -->
+        <div class="sec-lbl">Verification</div>
+        <div class="fg">
+          <label for="passportPhoto">Passport Photo</label>
+          <div class="photo-upload">
+            <div class="photo-preview" id="photoPreview"><i class="bi bi-person-fill"></i></div>
+            <div class="photo-upload-btn">
+              <label class="photo-upload-label" for="passportPhoto">
+                <i class="bi bi-camera-fill"></i> <span id="photoUploadLabelText">Upload photo</span>
+              </label>
+              <input type="file" id="passportPhoto" name="passportPhoto" accept="image/png,image/jpeg,image/webp" required>
+              <div class="photo-filename" id="photoFilename"></div>
+            </div>
+          </div>
+          <div class="field-status" id="photoStatus">
+            <i id="photoStatusIcon"></i>
+            <span id="photoStatusText"></span>
           </div>
         </div>
 
@@ -324,6 +444,42 @@ input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08
         Already have an account? <a href="login.html">Sign In</a>
       </div>
       </div><!-- end step-form -->
+
+      <!-- ===== OTP VERIFICATION STEP ===== -->
+      <div id="step-otp">
+        <div class="otp-icon"><i class="bi bi-envelope-paper-heart-fill"></i></div>
+        <div class="success-title" style="font-size:21px;">Verify Your Email</div>
+        <div class="success-body" style="margin-bottom:1.1rem;">
+          Enter the 6-digit code we sent to<br><strong id="otpEmailDisplay"></strong>
+        </div>
+
+        <div class="alert error" id="otpAlertError">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span id="otpAlertErrorText"></span>
+        </div>
+
+        <div class="otp-boxes" id="otpBoxes">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="0">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="1">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="2">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="3">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="4">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="5">
+        </div>
+
+        <div class="otp-resend">
+          Didn't get a code? <a class="action-link" id="otpResendLink" onclick="resendOtpCode()">Resend code</a>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="otpVerifyBtn" onclick="verifyOtpCode()">
+          <span id="otpVerifyBtnText">Verify & Continue</span>
+          <div class="spinner" id="otpVerifySpinner"></div>
+        </button>
+
+        <div class="auth-foot">
+          Wrong email? <a href="javascript:void(0)" onclick="backToRegisterForm()">Go back</a>
+        </div>
+      </div><!-- end step-otp -->
 
       <!-- ===== SUCCESS STEP ===== -->
       <div id="step-success">
@@ -375,6 +531,59 @@ const EAST_AFRICA_REGIONS = {
   'BI': {name: 'Burundi', lat: [-4.5, -2.3], lng: [28.8, 30.8]},
 };
 
+// COUNTRY DROPDOWN — code -> display name, ordered with East Africa first
+const COUNTRY_LIST = [
+  { code: 'KE', name: 'Kenya' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'ET', name: 'Ethiopia' },
+  { code: 'SO', name: 'Somalia' },
+  { code: 'DJ', name: 'Djibouti' },
+  { code: 'ER', name: 'Eritrea' },
+  { code: 'MW', name: 'Malawi' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'ZM', name: 'Zambia' },
+  { code: 'CD', name: 'DR Congo' },
+  { code: 'OTHER', name: 'Other' }
+];
+
+// KNOWN CITIES/TOWNS — used for autocomplete + a soft "known city" check.
+// Not exhaustive — anything typed that isn't on this list still passes
+// as long as it looks like a real place name (see validateCityInput).
+const TOWNS_BY_COUNTRY = {
+  KE: ['Nairobi','Mombasa','Kisumu','Nakuru','Eldoret','Thika','Malindi','Kitale','Garissa','Kakamega','Nyeri','Machakos','Meru','Kericho','Naivasha','Ruiru','Kiambu','Kajiado','Kilifi','Embu'],
+  TZ: ['Dar es Salaam','Dodoma','Mwanza','Arusha','Mbeya','Morogoro','Tanga','Zanzibar City','Kigoma','Moshi'],
+  UG: ['Kampala','Gulu','Mbarara','Jinja','Mbale','Entebbe','Masaka','Arua','Lira','Soroti'],
+  RW: ['Kigali','Butare','Gitarama','Musanze','Ruhengeri','Gisenyi'],
+  BI: ['Bujumbura','Gitega','Muyinga','Ngozi'],
+  SS: ['Juba','Wau','Malakal'],
+  ET: ['Addis Ababa','Dire Dawa','Mekelle','Gondar','Hawassa'],
+  SO: ['Mogadishu','Hargeisa','Kismayo'],
+  DJ: ['Djibouti City'],
+  ER: ['Asmara','Keren'],
+  MW: ['Lilongwe','Blantyre','Mzuzu'],
+  MZ: ['Maputo','Beira','Nampula'],
+  ZM: ['Lusaka','Ndola','Kitwe'],
+  CD: ['Kinshasa','Lubumbashi','Goma','Bukavu']
+};
+
+// ROLE DROPDOWN
+const ROLE_LIST = [
+  'Housekeeper / Domestic Worker',
+  'Nanny / Babysitter',
+  'Cook / Chef',
+  'Gardener',
+  'Driver / Chauffeur',
+  'Caregiver / Nurse Aide',
+  'Cleaner',
+  'Laundry Attendant',
+  'Security Guard',
+  'Other'
+];
+
 let userLocation = null;
 let userIP = null;
 let emailValidationTimeout = null;
@@ -382,6 +591,10 @@ let emailCheckStatus = null; // Track email validation status
 let usernameValidationTimeout = null;
 let usernameCheckStatus = null; // Track username generation/uniqueness status
 let generatedUsername = null;
+let pendingPhotoFile = null;  // Passport photo File object — uploaded only after OTP verification
+let cityCheckStatus = null;   // 'known' | 'accepted' | 'invalid' | null
+let dobCheckStatus = null;    // true/false — 18+ check
+let otpResendTimer = null;
 
 // ============================================================
 // GEOLOCATION - Detect user's real-time location
@@ -465,7 +678,221 @@ function validateRegion(countryCode) {
     document.getElementById('registerForm').style.opacity = '0.5';
     document.getElementById('registerForm').style.pointerEvents = 'none';
   }
+  autoSelectCountry(countryCode);
 }
+
+// ============================================================
+// COUNTRY / CITY / DOB / ROLE — populate + validate
+// ============================================================
+function populateCountrySelect() {
+  const sel = document.getElementById('regCountry');
+  COUNTRY_LIST.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.code;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+}
+
+function populateRoleSelect() {
+  const sel = document.getElementById('regRole');
+  ROLE_LIST.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    sel.appendChild(opt);
+  });
+}
+
+// Called once geolocation/IP detection resolves a country code — pre-selects
+// the dropdown but leaves it fully editable, and refreshes the city datalist
+// to match so autocomplete suggestions are relevant right away.
+function autoSelectCountry(countryCode) {
+  const sel = document.getElementById('regCountry');
+  const hint = document.getElementById('countryAutoHint');
+  if (!sel || sel.value) return; // don't override a manual choice
+  const match = COUNTRY_LIST.find(c => c.code === countryCode);
+  if (match) {
+    sel.value = match.code;
+    hint.style.display = 'block';
+    updateCityDatalist(match.code);
+  }
+}
+
+document.getElementById('regCountry').addEventListener('change', function() {
+  document.getElementById('countryAutoHint').style.display = 'none';
+  updateCityDatalist(this.value);
+  // Re-validate whatever city text is already there against the new country
+  if (document.getElementById('regCity').value.trim()) validateCityInput();
+});
+
+function updateCityDatalist(countryCode) {
+  const list = document.getElementById('cityListOptions');
+  list.innerHTML = '';
+  const towns = TOWNS_BY_COUNTRY[countryCode] || [];
+  towns.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    list.appendChild(opt);
+  });
+}
+
+// City name check: known-list match -> "ok", else a light well-formed
+// heuristic (letters/spaces/hyphens/apostrophes, 2–50 chars) -> "accepted
+// but unverified", else -> blocked as invalid.
+function validateCityInput() {
+  const input = document.getElementById('regCity');
+  const country = document.getElementById('regCountry').value;
+  const value = input.value.trim();
+  const status = document.getElementById('cityStatus');
+  const icon = document.getElementById('cityStatusIcon');
+  const text = document.getElementById('cityStatusText');
+
+  status.classList.remove('show', 'ok', 'warn', 'bad');
+  input.classList.remove('err', 'valid');
+
+  if (!value) { cityCheckStatus = null; return; }
+
+  const towns = TOWNS_BY_COUNTRY[country] || [];
+  const knownMatch = towns.find(t => t.toLowerCase() === value.toLowerCase());
+  const wellFormed = /^[A-Za-z\u00C0-\u024F' -]{2,50}$/.test(value);
+
+  if (knownMatch) {
+    cityCheckStatus = 'known';
+    input.classList.add('valid');
+    icon.className = 'bi bi-check-circle-fill';
+    status.classList.add('show', 'ok');
+    text.textContent = 'Recognized town';
+  } else if (wellFormed) {
+    cityCheckStatus = 'accepted';
+    input.classList.add('valid');
+    icon.className = 'bi bi-info-circle-fill';
+    status.classList.add('show', 'warn');
+    text.textContent = "Not in our list yet, but looks like a valid town name — that's fine.";
+  } else {
+    cityCheckStatus = 'invalid';
+    input.classList.add('err');
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'Please enter a valid city or town name (letters only).';
+  }
+}
+document.getElementById('regCity').addEventListener('blur', validateCityInput);
+document.getElementById('regCity').addEventListener('input', function() {
+  // Clear stale status while typing; full check happens on blur so we don't
+  // flag "invalid" on every half-typed keystroke.
+  if (!this.value.trim()) {
+    cityCheckStatus = null;
+    document.getElementById('cityStatus').classList.remove('show');
+    this.classList.remove('err', 'valid');
+  }
+});
+
+// Date of birth: must be a real past date and the applicant must be 18–70.
+function validateDobInput() {
+  const input = document.getElementById('regDob');
+  const status = document.getElementById('dobStatus');
+  const icon = document.getElementById('dobStatusIcon');
+  const text = document.getElementById('dobStatusText');
+  status.classList.remove('show', 'ok', 'warn', 'bad');
+  input.classList.remove('err', 'valid');
+
+  if (!input.value) { dobCheckStatus = null; return false; }
+
+  const dob = new Date(input.value + 'T00:00:00');
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+
+  if (isNaN(dob.getTime()) || dob > today) {
+    dobCheckStatus = false;
+    input.classList.add('err');
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'Please enter a valid date of birth.';
+    return false;
+  }
+  if (age < 18) {
+    dobCheckStatus = false;
+    input.classList.add('err');
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'You must be at least 18 years old to register.';
+    return false;
+  }
+  if (age > 70) {
+    dobCheckStatus = false;
+    input.classList.add('err');
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'Please double-check this date of birth.';
+    return false;
+  }
+  dobCheckStatus = true;
+  input.classList.add('valid');
+  return true;
+}
+document.getElementById('regDob').addEventListener('change', validateDobInput);
+
+// Role select: show a free-text field when "Other" is chosen
+document.getElementById('regRole').addEventListener('change', function() {
+  const otherWrap = document.getElementById('regRoleOtherWrap');
+  const otherInput = document.getElementById('regRoleOther');
+  if (this.value === 'Other') {
+    otherWrap.style.display = 'block';
+    otherInput.required = true;
+  } else {
+    otherWrap.style.display = 'none';
+    otherInput.required = false;
+    otherInput.value = '';
+  }
+});
+
+// Passport photo: client-side validate + preview. Actual upload is deferred
+// until after OTP verification, once the user has an authenticated session.
+document.getElementById('passportPhoto').addEventListener('change', function() {
+  const file = this.files && this.files[0];
+  const status = document.getElementById('photoStatus');
+  const icon = document.getElementById('photoStatusIcon');
+  const text = document.getElementById('photoStatusText');
+  const preview = document.getElementById('photoPreview');
+  const filenameEl = document.getElementById('photoFilename');
+  status.classList.remove('show', 'ok', 'warn', 'bad');
+
+  if (!file) { pendingPhotoFile = null; return; }
+
+  const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    pendingPhotoFile = null;
+    this.value = '';
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'Please upload a JPG, PNG, or WEBP image.';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    pendingPhotoFile = null;
+    this.value = '';
+    icon.className = 'bi bi-x-circle-fill';
+    status.classList.add('show', 'bad');
+    text.textContent = 'Photo must be under 5MB.';
+    return;
+  }
+
+  pendingPhotoFile = file;
+  filenameEl.textContent = file.name;
+  icon.className = 'bi bi-check-circle-fill';
+  status.classList.add('show', 'ok');
+  text.textContent = 'Photo ready to upload';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    preview.innerHTML = '<img src="' + e.target.result + '" alt="Passport photo preview">';
+    preview.classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+});
 
 function updateLocationBadge(countryCode, status) {
   const badge = document.getElementById('locationBadge');
@@ -836,6 +1263,49 @@ async function handleRegister(event) {
     return;
   }
   
+  const countrySel = document.getElementById('regCountry');
+  const countryCode = countrySel.value;
+  const countryName = countryCode ? (COUNTRY_LIST.find(c => c.code === countryCode) || {}).name : '';
+  if (!countryCode) {
+    showAlert('alertError', 'alertErrorText', 'Please select your country.');
+    countrySel.focus();
+    return;
+  }
+
+  const city = document.getElementById('regCity').value.trim();
+  validateCityInput();
+  if (!city || cityCheckStatus === 'invalid') {
+    showAlert('alertError', 'alertErrorText', 'Please enter a valid city or town.');
+    document.getElementById('regCity').focus();
+    return;
+  }
+
+  if (!validateDobInput()) {
+    showAlert('alertError', 'alertErrorText', document.getElementById('dobStatusText').textContent || 'Please enter a valid date of birth.');
+    document.getElementById('regDob').focus();
+    return;
+  }
+  const dob = document.getElementById('regDob').value;
+
+  const roleSel = document.getElementById('regRole').value;
+  const roleOther = document.getElementById('regRoleOther').value.trim();
+  if (!roleSel) {
+    showAlert('alertError', 'alertErrorText', 'Please select the role you\'re looking for.');
+    document.getElementById('regRole').focus();
+    return;
+  }
+  if (roleSel === 'Other' && !roleOther) {
+    showAlert('alertError', 'alertErrorText', 'Please tell us the role you\'re looking for.');
+    document.getElementById('regRoleOther').focus();
+    return;
+  }
+  const role = roleSel === 'Other' ? roleOther : roleSel;
+
+  if (!pendingPhotoFile) {
+    showAlert('alertError', 'alertErrorText', 'Please upload a passport photo.');
+    return;
+  }
+
   if (!termsCheck || !dataCheck) {
     showAlert('alertError', 'alertErrorText', 'Please agree to the terms and data collection policy.');
     return;
@@ -862,9 +1332,11 @@ async function handleRegister(event) {
   // Store pending registration data — used right after account creation
   pendingUser = {
     fullName, username, email, phone,
-    country:      userLocation && userLocation.countryName || null,
+    country:      countryName || (userLocation && userLocation.countryName) || null,
     county:       userLocation && userLocation.county || null,
-    town:         userLocation && userLocation.town || null,
+    town:         city || (userLocation && userLocation.town) || null,
+    dob:          dob,
+    role:         role,
     termsAccepted:  true,
     receiveUpdates: updatesCheck
   };
@@ -895,8 +1367,168 @@ async function handleRegister(event) {
     return;
   }
 
-  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Setting up your account…');
-  await finalizeWorkerAccount(signUpResult.data);
+  setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+  showOtpStep(email);
+}
+
+// ============================================================
+// OTP EMAIL VERIFICATION — a 6-digit code, not a magic link.
+// Requires the Supabase "Confirm signup" email template to include
+// {{ .Token }} so the user actually receives a code to type in.
+// ============================================================
+function showOtpStep(email) {
+  document.getElementById('step-form').style.display = 'none';
+  document.getElementById('step-otp').style.display = 'block';
+  document.getElementById('otpEmailDisplay').textContent = email;
+  document.getElementById('otpAlertError').classList.remove('show');
+
+  const boxes = document.querySelectorAll('.otp-box');
+  boxes.forEach(b => { b.value = ''; b.classList.remove('err'); });
+  boxes[0].focus();
+
+  startOtpResendCooldown();
+}
+
+function backToRegisterForm() {
+  document.getElementById('step-otp').style.display = 'none';
+  document.getElementById('step-form').style.display = 'block';
+  clearInterval(otpResendTimer);
+}
+
+// Auto-advance / backspace / paste handling for the 6 OTP boxes
+(function setupOtpBoxes() {
+  const boxes = () => Array.from(document.querySelectorAll('.otp-box'));
+  document.getElementById('otpBoxes').addEventListener('input', function(e) {
+    const t = e.target;
+    if (!t.classList.contains('otp-box')) return;
+    t.value = t.value.replace(/[^0-9]/g, '').slice(0, 1);
+    t.classList.remove('err');
+    if (t.value) {
+      const idx = parseInt(t.dataset.otpIndex, 10);
+      const next = boxes()[idx + 1];
+      if (next) next.focus();
+    }
+  });
+  document.getElementById('otpBoxes').addEventListener('keydown', function(e) {
+    const t = e.target;
+    if (!t.classList.contains('otp-box')) return;
+    if (e.key === 'Backspace' && !t.value) {
+      const idx = parseInt(t.dataset.otpIndex, 10);
+      const prev = boxes()[idx - 1];
+      if (prev) { prev.focus(); prev.value = ''; }
+    }
+  });
+  document.getElementById('otpBoxes').addEventListener('paste', function(e) {
+    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+    if (!paste) return;
+    e.preventDefault();
+    const b = boxes();
+    paste.split('').forEach((digit, i) => { if (b[i]) b[i].value = digit; });
+    const last = b[Math.min(paste.length, 6) - 1];
+    if (last) last.focus();
+  });
+})();
+
+function getOtpCode() {
+  return Array.from(document.querySelectorAll('.otp-box')).map(b => b.value).join('');
+}
+
+async function verifyOtpCode() {
+  const code = getOtpCode();
+  if (code.length !== 6) {
+    document.getElementById('otpAlertErrorText').textContent = 'Please enter all 6 digits.';
+    document.getElementById('otpAlertError').classList.add('show');
+    document.querySelectorAll('.otp-box').forEach(b => { if (!b.value) b.classList.add('err'); });
+    return;
+  }
+
+  const btn = document.getElementById('otpVerifyBtn');
+  const spinner = document.getElementById('otpVerifySpinner');
+  const btnText = document.getElementById('otpVerifyBtnText');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+  btnText.textContent = 'Verifying…';
+  document.getElementById('otpAlertError').classList.remove('show');
+
+  const email = pendingUser ? pendingUser.email : document.getElementById('otpEmailDisplay').textContent;
+
+  const result = await dbClient.auth.verifyOtp({
+    email: email,
+    token: code,
+    type: 'signup'
+  });
+
+  if (result.error) {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = 'Verify & Continue';
+    document.getElementById('otpAlertErrorText').textContent =
+      result.error.message && result.error.message.toLowerCase().includes('expired')
+        ? 'This code has expired. Tap "Resend code" for a new one.'
+        : 'Incorrect code. Please check and try again.';
+    document.getElementById('otpAlertError').classList.add('show');
+    document.querySelectorAll('.otp-box').forEach(b => b.classList.add('err'));
+    return;
+  }
+
+  btnText.textContent = 'Setting up your account…';
+  await finalizeWorkerAccount(result.data);
+}
+
+function startOtpResendCooldown() {
+  clearInterval(otpResendTimer);
+  let seconds = 60;
+  const link = document.getElementById('otpResendLink');
+  link.classList.add('disabled');
+  const tick = () => {
+    link.textContent = 'Resend code (' + seconds + 's)';
+    if (seconds <= 0) {
+      clearInterval(otpResendTimer);
+      link.textContent = 'Resend code';
+      link.classList.remove('disabled');
+    }
+    seconds--;
+  };
+  tick();
+  otpResendTimer = setInterval(tick, 1000);
+}
+
+async function resendOtpCode() {
+  const link = document.getElementById('otpResendLink');
+  if (link.classList.contains('disabled')) return;
+  const email = pendingUser ? pendingUser.email : document.getElementById('otpEmailDisplay').textContent;
+
+  const result = await dbClient.auth.resend({ type: 'signup', email: email });
+  if (result.error) {
+    document.getElementById('otpAlertErrorText').textContent = 'Could not resend the code — please try again shortly.';
+    document.getElementById('otpAlertError').classList.add('show');
+    return;
+  }
+  document.getElementById('otpAlertError').classList.remove('show');
+  startOtpResendCooldown();
+}
+
+// Uploads the passport photo to the worker-documents bucket. Deferred until
+// after OTP verification, since storage RLS requires an authenticated
+// session (auth.uid()) that doesn't exist until signup is confirmed.
+async function uploadPassportPhoto(userId) {
+  if (!pendingPhotoFile) return null;
+  try {
+    const ext = (pendingPhotoFile.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = userId + '/passport-photo-' + Date.now() + '.' + ext;
+
+    const uploadResult = await dbClient.storage
+      .from('worker-documents')
+      .upload(path, pendingPhotoFile, { upsert: true, contentType: pendingPhotoFile.type });
+
+    if (uploadResult.error) throw uploadResult.error;
+
+    const { data } = dbClient.storage.from('worker-documents').getPublicUrl(path);
+    return data ? data.publicUrl : null;
+  } catch (e) {
+    console.warn('[SoundsCare] Passport photo upload failed:', e);
+    return null; // non-fatal — account setup continues without the photo
+  }
 }
 
 function friendlyAuthError(msg) {
@@ -942,6 +1574,10 @@ async function finalizeWorkerAccount(authData) {
     // Write the worker_profiles row so the worker dashboard can load,
     // including location data captured during registration
     if (user) {
+      // Passport photo upload needs an authenticated session, which only
+      // exists now that the OTP step has confirmed the account.
+      const photoUrl = await uploadPassportPhoto(user.id);
+
       const wpResult = await dbClient.from('worker_profiles').upsert({
         session_id:    user.id,
         full_name:     p.fullName,
@@ -953,6 +1589,15 @@ async function finalizeWorkerAccount(authData) {
         county:        p.county,
         current_town:  p.town,
         location:      p.town || p.county || p.country,
+        date_of_birth: p.dob || null,
+        dob:           p.dob || null,
+        preferred_role: p.role || null,
+        job_title:     p.role || null,
+        profile_photo_url: photoUrl,
+        email_verified: true,
+        verification_stage: 'submitted',
+        verification_requested_at: new Date().toISOString(),
+        profile_setup_completed: true,
         notif_email:   p.receiveUpdates,
         job_seeking:   true,
         looking_for_job: true,
@@ -1051,6 +1696,8 @@ function setBtnLoading(btnId, spinnerId, textId, loading, text) {
 // INITIALIZE ON PAGE LOAD
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
+  populateCountrySelect();
+  populateRoleSelect();
   detectUserLocation();
   updateRegisterButtonState();
 });
