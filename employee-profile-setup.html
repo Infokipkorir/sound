@@ -593,7 +593,8 @@ async function markCodeSent() {
   }, { onConflict: 'session_id' });
 
   if (res.error) {
-    showAlert('error', 'Could not update verification status — please try again.');
+    console.error('[SoundsCare] markCodeSent upsert failed:', res.error);
+    showAlert('error', 'Could not update verification status: ' + (res.error.message || 'unknown error') + (res.error.code ? ' (code: ' + res.error.code + ')' : ''));
     return;
   }
 
