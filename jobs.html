@@ -569,12 +569,14 @@
   </div>
 </div>
 
-<!-- ADD MY SPOT MODAL — lets a worker register the specific area they work from (e.g. Kangemi, Pipeline) -->
+<!-- ADD MY SPOT MODAL — Mama Fua Mtaani only. Lets a worker pick an existing registered
+     spot (e.g. Kangemi, Pipeline) or create a new one, then saves it as their own
+     worker_profiles.spot_id so the Jobs page can recommend jobs near it. -->
 <div class="modal-overlay" id="spot-modal">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
       <div>
-        <div class="modal-title"><i class="bi bi-pin-map-fill"></i> Add Your Spot</div>
+        <div class="modal-title"><i class="bi bi-pin-map-fill"></i> Your Spot</div>
         <div class="modal-subtitle">The specific area you work from, so nearby jobs can find you</div>
       </div>
       <button class="modal-close" onclick="closeModal('spot-modal')">&#215;</button>
@@ -587,26 +589,45 @@
           <button class="btn-small blue" style="width:100%" onclick="window.location.href='employee-login.html'">Log In</button>
         </div>
       </div>
+      <div id="spot-role-gate" style="display:none">
+        <div class="profile-gate-box">
+          <i class="bi bi-basket2-fill"></i>
+          <p>The Spot feature is for Mama Fua Mtaani workers only — it's how nearby laundry jobs find you.</p>
+        </div>
+      </div>
       <div id="spot-form-wrap" style="display:none">
         <div class="spot-field">
           <label>Country</label>
-          <select id="spot-country"></select>
+          <select id="spot-country" onchange="onSpotAreaChange()"></select>
         </div>
         <div class="spot-field">
           <label>City / County</label>
-          <input type="text" id="spot-city" placeholder="e.g. Nairobi">
+          <input type="text" id="spot-city" placeholder="e.g. Nairobi" onchange="onSpotAreaChange()">
         </div>
-        <div class="spot-field">
-          <label>Spot name</label>
-          <input type="text" id="spot-name" placeholder="e.g. Kangemi, Pipeline, Kawangware">
+        <div class="spot-field" id="spot-existing-wrap" style="display:none">
+          <label>Pick your spot</label>
+          <select id="spot-existing" onchange="onExistingSpotChange()">
+            <option value="">+ Create a new spot</option>
+          </select>
         </div>
-        <p class="spot-hint"><i class="bi bi-info-circle"></i> New spots are reviewed before they appear in the location filter. You'll see it right away in your own listings.</p>
+        <div id="spot-new-fields">
+          <div class="spot-field">
+            <label>Spot name</label>
+            <input type="text" id="spot-name" placeholder="e.g. Kangemi, Pipeline, Kawangware">
+          </div>
+          <div class="spot-field">
+            <label>Exact location <span style="font-weight:400;color:var(--text-muted)">(optional — enables "how far" on job cards)</span></label>
+            <button type="button" class="btn-small outline" style="width:100%" id="spot-geo-btn" onclick="useSpotLocation()"><i class="bi bi-crosshair"></i> Use My Current Location</button>
+            <div id="spot-geo-confirm" style="display:none;font-size:11.5px;color:var(--green-dark);margin-top:.4rem"><i class="bi bi-check-circle-fill"></i> Location captured</div>
+          </div>
+        </div>
+        <p class="spot-hint" id="spot-hint"><i class="bi bi-info-circle"></i> New spots are reviewed before they appear in the location filter. You'll see it right away in your own listings.</p>
         <div class="bid-error" id="spot-error"></div>
       </div>
     </div>
     <div class="modal-footer" id="spot-form-footer" style="display:none">
       <button class="btn-small outline" onclick="closeModal('spot-modal')">Cancel</button>
-      <button class="btn-small blue" id="spot-submit-btn" onclick="submitSpot()"><i class="bi bi-check-lg"></i> Add Spot</button>
+      <button class="btn-small blue" id="spot-submit-btn" onclick="submitSpot()"><i class="bi bi-check-lg"></i> Save My Spot</button>
     </div>
   </div>
 </div>
@@ -703,9 +724,19 @@ function updateLocCrumb(){
 }
 toggleSpotVisibility();
 
-/* ── ADD MY SPOT ── */
-function openSpotModal(){
+/* ── ADD MY SPOT ── Mama Fua Mtaani only. Lets the worker pick an existing spot or
+   create a new one, then saves the choice to worker_profiles.spot_id. */
+let SPOT_SELECTED_COORDS = null; // {lat,lng} captured via "Use My Current Location", for a newly created spot
+
+function isMamaFua(worker){
+  if(!worker) return false;
+  if(worker.is_mama_fua_worker) return true; // reliable flag, once the dashboard sets it
+  return String(worker.preferred_role||worker.job_title||'').toLowerCase().includes('mama fua');
+}
+
+async function openSpotModal(){
   document.getElementById('spot-gate').style.display='none';
+  document.getElementById('spot-role-gate').style.display='none';
   document.getElementById('spot-form-wrap').style.display='none';
   document.getElementById('spot-form-footer').style.display='none';
   openModal('spot-modal');
@@ -714,30 +745,113 @@ function openSpotModal(){
     document.getElementById('spot-gate').style.display='block';
     return;
   }
+  const worker = await getWorkerProfile();
+  if(!isMamaFua(worker)){
+    document.getElementById('spot-role-gate').style.display='block';
+    return;
+  }
   const csel = document.getElementById('spot-country');
   csel.innerHTML = COUNTRIES.map(c=>`<option value="${c.code}">${c.flag} ${esc(c.name)}</option>`).join('');
-  document.getElementById('spot-city').value = '';
+  document.getElementById('spot-city').value = worker.county || worker.current_town || '';
   document.getElementById('spot-name').value = '';
+  document.getElementById('spot-existing-wrap').style.display = 'none';
+  document.getElementById('spot-existing').innerHTML = '<option value="">+ Create a new spot</option>';
+  document.getElementById('spot-new-fields').style.display = 'block';
+  document.getElementById('spot-geo-confirm').style.display = 'none';
+  SPOT_SELECTED_COORDS = null;
   document.getElementById('spot-error').style.display='none';
   document.getElementById('spot-form-wrap').style.display='block';
   document.getElementById('spot-form-footer').style.display='flex';
+  onSpotAreaChange();
+}
+
+/* Once country + city are filled in, offer existing active spots in that area to pick from,
+   so two workers in the same neighbourhood land on the same spot_id instead of duplicates. */
+async function onSpotAreaChange(){
+  const country_code = document.getElementById('spot-country').value;
+  const city = document.getElementById('spot-city').value.trim();
+  const existingSel = document.getElementById('spot-existing');
+  const existingWrap = document.getElementById('spot-existing-wrap');
+  existingSel.innerHTML = '<option value="">+ Create a new spot</option>';
+  if(!city){ existingWrap.style.display='none'; return; }
+  const { data } = await sb.from('spots').select('id,name,latitude,longitude')
+    .eq('status','active').eq('country_code', country_code).eq('city', city)
+    .order('jobs_count', {ascending:false});
+  if(data && data.length){
+    data.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; existingSel.appendChild(o); });
+    existingWrap.style.display='block';
+  } else {
+    existingWrap.style.display='none';
+  }
+  onExistingSpotChange();
+}
+function onExistingSpotChange(){
+  const picked = document.getElementById('spot-existing').value;
+  document.getElementById('spot-new-fields').style.display = picked ? 'none' : 'block';
+  document.getElementById('spot-hint').style.display = picked ? 'none' : 'block';
+}
+async function useSpotLocation(){
+  const btn = document.getElementById('spot-geo-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Locating…';
+  const ok = await requestUserLocation();
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
+  if(ok){
+    SPOT_SELECTED_COORDS = { lat: USER_LAT, lng: USER_LNG };
+    document.getElementById('spot-geo-confirm').style.display = 'block';
+  } else {
+    showToast('Could not get your location. Check browser permissions.', 'error');
+  }
 }
 async function submitSpot(){
   const errEl = document.getElementById('spot-error');
   errEl.style.display='none';
-  const country_code = document.getElementById('spot-country').value;
-  const city = document.getElementById('spot-city').value.trim();
-  const name = document.getElementById('spot-name').value.trim();
-  if(!city || !name){ errEl.textContent='Enter both a city/county and a spot name.'; errEl.style.display='block'; return; }
   const worker = await getWorkerProfile();
   if(!worker){ errEl.textContent='Could not verify your worker profile.'; errEl.style.display='block'; return; }
+
+  const country_code = document.getElementById('spot-country').value;
+  const city = document.getElementById('spot-city').value.trim();
+  const existingSpotId = document.getElementById('spot-existing').value;
   const btn = document.getElementById('spot-submit-btn');
-  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding…';
-  const { error } = await sb.from('spots').insert({ name, city, country_code, created_by_worker_id: worker.id, status: country_code?'pending':'pending' });
-  btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg"></i> Add Spot';
-  if(error){ errEl.textContent = error.message; errEl.style.display='block'; return; }
-  showToast('Spot added! It will appear once reviewed.', 'success');
+
+  let finalSpotId = existingSpotId || null;
+
+  if(!finalSpotId){
+    // Creating a new spot
+    const name = document.getElementById('spot-name').value.trim();
+    if(!city || !name){ errEl.textContent='Enter both a city/county and a spot name.'; errEl.style.display='block'; return; }
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+    const { data: newSpot, error } = await sb.from('spots').insert({
+      name, city, country_code, created_by_worker_id: worker.id, status: 'pending',
+      latitude: SPOT_SELECTED_COORDS ? SPOT_SELECTED_COORDS.lat : null,
+      longitude: SPOT_SELECTED_COORDS ? SPOT_SELECTED_COORDS.lng : null
+    }).select('id').single();
+    if(error){
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg"></i> Save My Spot';
+      // Someone already registered this exact name in this area — point them at "pick existing" instead
+      errEl.textContent = error.code === '23505'
+        ? 'That spot name already exists in this area — pick it from the list above instead.'
+        : error.message;
+      errEl.style.display='block';
+      if(error.code === '23505') onSpotAreaChange();
+      return;
+    }
+    finalSpotId = newSpot.id;
+  } else {
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving…';
+  }
+
+  // Save the choice onto the worker's own profile
+  const { error: profErr } = await sb.from('worker_profiles').update({ spot_id: finalSpotId }).eq('id', worker.id);
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg"></i> Save My Spot';
+  if(profErr){ errEl.textContent = profErr.message; errEl.style.display='block'; return; }
+
+  showToast(existingSpotId ? 'Your spot is set!' : 'Spot saved! It appears in the filter once reviewed — you\'ll see it in your own listings right away.', 'success');
   closeModal('spot-modal');
+
+  // Refresh anything on-page that depends on the worker's spot
+  WORKER_PROFILE_FETCHED = false; WORKER_PROFILE = null;
+  loadMySpotSection();
+  fillSpots();
 }
 
 /* ── UTILS ── */
@@ -917,7 +1031,7 @@ async function getWorkerProfile(){
   // (Mama Fua Mtaani only) is wired up. If the dashboard instead saves multiple spots per worker,
   // swap this for a `worker_spots` join table select — see loadMySpotSection() below.
   const { data } = await sb.from('worker_profiles')
-    .select('id, preferred_role, job_title, skills, work_type, full_name, phone, phone_number, profile_setup_completed, spot_id, spot:spot_id(id,name,city,country_code,latitude,longitude)')
+    .select('id, preferred_role, job_title, skills, work_type, full_name, phone, phone_number, profile_setup_completed, is_mama_fua_worker, county, current_town, spot_id, spot:spot_id(id,name,city,country_code,latitude,longitude)')
     .eq('id', workerId).maybeSingle();
   WORKER_PROFILE = data || null;
   return WORKER_PROFILE;
@@ -1172,7 +1286,7 @@ async function loadMySpotSection(){
   const section = document.getElementById('my-spot-section');
   const worker = await getWorkerProfile();
 
-  const isMamaFuaWorker = !!worker && String(worker.preferred_role||worker.job_title||'').toLowerCase().includes('mama fua');
+  const isMamaFuaWorker = isMamaFua(worker);
   if(!worker || !isMamaFuaWorker || !worker.spot_id){
     section.style.display = 'none'; // no spot on file → show no spot section at all
     return;
