@@ -44,6 +44,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
+  <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXX with the real publisher ID before going live -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+
   <!-- Breadcrumb Schema -->
   <script type="application/ld+json">
   {
@@ -74,6 +77,38 @@
 
   <!-- JobPosting list schema, filled in by JS once jobs load (id="jobposting-jsonld") -->
   <script type="application/ld+json" id="jobposting-jsonld">{}</script>
+
+  <!-- Category ItemList Schema — helps search engines understand the browsable job categories -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"ItemList",
+    "name":"Domestic Worker Job Categories",
+    "itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Nanny / Childcare Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Nanny"},
+      {"@type":"ListItem","position":2,"name":"Driver Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Driver"},
+      {"@type":"ListItem","position":3,"name":"Gardener Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Gardener"},
+      {"@type":"ListItem","position":4,"name":"Security Guard Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Security+Guard"},
+      {"@type":"ListItem","position":5,"name":"Housekeeper Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Housekeeper"},
+      {"@type":"ListItem","position":6,"name":"Cook Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Cook"},
+      {"@type":"ListItem","position":7,"name":"Caregiver Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Caregiver"},
+      {"@type":"ListItem","position":8,"name":"Mama Fua (Cloth Washing) Jobs","url":"https://www.sounds.co.ke/jobs.html?category=Mama+Fua"}
+    ]
+  }
+  </script>
+
+  <!-- FAQ Schema — targets common "near me" / category search intent -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"FAQPage",
+    "mainEntity":[
+      {"@type":"Question","name":"How do I find domestic worker jobs near me?","acceptedAnswer":{"@type":"Answer","text":"Use the Country and City/County filters on the SoundsCare Jobs page, or tap \"Near Me\" to sort jobs by distance from your current location."}},
+      {"@type":"Question","name":"What is a Mama Fua spot on SoundsCare?","acceptedAnswer":{"@type":"Answer","text":"A spot is a specific working area, like Kangemi or Pipeline, that a Mama Fua worker registers so employers in that exact area can find and hire them."}},
+      {"@type":"Question","name":"Are SoundsCare job listings verified?","acceptedAnswer":{"@type":"Answer","text":"Internal job postings come from background-checked employers on SoundsCare. Partner listings from other job boards show a Verified badge once SoundsCare has manually vetted that source."}}
+    ]
+  }
+  </script>
 </head>
 <style>
   :root{
@@ -119,14 +154,51 @@
 
   /* ── FILTER BAR ── */
   .filter-bar{max-width:1100px;margin:-1.6rem auto 0;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:1.1rem;display:flex;flex-wrap:wrap;gap:.7rem;position:relative;z-index:5}
+  .search-wrap{position:relative;flex:2;min-width:200px}
+  .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none}
+  .search-wrap input{width:100%;padding-left:32px!important}
   .filter-bar input,.filter-bar select{border:1.5px solid var(--border);border-radius:9px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text);background:var(--surface);flex:1;min-width:140px}
   .filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--green)}
-  .filter-bar input[type=text]{flex:2;min-width:200px}
   .filter-bar button{border:none;border-radius:9px;background:var(--green);color:#fff;font-weight:600;font-size:13px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:.4rem;white-space:nowrap}
   .filter-bar button:hover{background:var(--green-dark)}
   .filter-bar button.btn-loc{background:var(--blue)}
   .filter-bar button.btn-loc:hover{background:var(--blue-dark)}
   .filter-bar button.btn-loc.active{background:var(--green-mid)}
+  .filter-bar button.btn-spot{background:var(--amber)}
+  .filter-bar button.btn-spot:hover{background:#c98420}
+
+  /* ── CATEGORY CHIP STRIP ── */
+  .category-strip{max-width:1100px;margin:.9rem auto 0;padding:0 1.1rem}
+  .category-scroll{display:flex;gap:.6rem;overflow-x:auto;padding-bottom:.3rem;scrollbar-width:thin}
+  .category-scroll::-webkit-scrollbar{height:5px}
+  .category-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+  .cat-chip{display:flex;flex-direction:column;align-items:center;gap:.35rem;flex-shrink:0;background:#fff;border:1.5px solid var(--border);border-radius:13px;padding:.7rem .9rem;cursor:pointer;min-width:78px;transition:all .15s}
+  .cat-chip i{font-size:18px;color:var(--green)}
+  .cat-chip span{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap}
+  .cat-chip:hover{border-color:var(--green);transform:translateY(-2px)}
+  .cat-chip.active{background:var(--green);border-color:var(--green)}
+  .cat-chip.active i,.cat-chip.active span{color:#fff}
+
+  /* ── LOCATION BREADCRUMB (Country → City → Spot) ── */
+  .loc-crumb{max-width:1100px;margin:.7rem auto 0;padding:0 1.1rem;display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;font-size:12.5px;color:var(--text-muted)}
+  .loc-crumb .lc-item{display:flex;align-items:center;gap:.3rem;background:var(--green-light);color:var(--green-dark);padding:4px 10px;border-radius:20px;font-weight:600}
+  .loc-crumb .lc-item i{font-size:11px;cursor:pointer}
+  .loc-crumb .lc-sep{opacity:.5}
+
+  /* ── AD CARD (custom sponsored, sits inline in the jobs grid) ── */
+  .ad-card{position:relative;background:linear-gradient(135deg,#fff,var(--surface-alt));border:1.5px dashed var(--amber);border-radius:14px;padding:1.2rem;display:flex;flex-direction:column;cursor:pointer;transition:all .2s}
+  .ad-card:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(233,162,59,.18)}
+  .ad-card .ad-label{position:absolute;top:.7rem;right:.7rem;font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--amber);background:#FFF3E0;padding:2px 7px;border-radius:5px}
+  .ad-card img{width:100%;border-radius:9px;object-fit:cover;max-height:120px;margin-bottom:.7rem}
+  .ad-card .ad-sponsor{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:.3rem;margin-top:auto}
+  .adsense-slot{max-width:1100px;margin:1.4rem auto 0;padding:0 1.1rem;text-align:center}
+
+  /* ── SPOT MODAL ── */
+  .spot-field{margin-bottom:.9rem}
+  .spot-field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:.35rem}
+  .spot-field input,.spot-field select{width:100%;border:1.5px solid var(--border);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;background:var(--surface)}
+  .spot-field input:focus,.spot-field select:focus{outline:none;border-color:var(--green)}
+  .spot-hint{font-size:11.5px;color:var(--text-muted);line-height:1.5;margin-top:-.3rem;margin-bottom:.9rem}
 
   /* ── RESULTS BAR ── */
   .container{max-width:1200px;margin:0 auto;padding:2.2rem 1.5rem}
@@ -181,6 +253,8 @@
   .tag.deadline.soon{background:#FEE2E2;color:#B91C1C;font-weight:700}
   .tag.mamafua{background:#FFF3E0;color:#B5720F}
   .tag.match{background:var(--green-light);color:var(--green-dark)}
+  .tag.spot{background:#FFF3E0;color:#B5720F}
+  .card-avatar.cat-icon{background:var(--green-light);color:var(--green-dark);font-size:1.3rem}
 
   .card-distance{display:inline-flex;align-items:center;gap:.3rem;font-size:11px;color:var(--blue-dark);font-weight:600}
   .payment-badge{display:inline-flex;align-items:center;gap:.3rem;background:var(--blue-light);color:var(--blue-dark);padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
@@ -316,24 +390,15 @@
 <!-- PAGE HEADER -->
 <header class="jobs-header">
   <div class="crumbs"><a href="index.html">Home</a> / Jobs</div>
-  <h1>Find Your Next <em>Job</em></h1>
-  <p>Browse verified domestic work opportunities across Kenya, Uganda, Tanzania and East Africa — from trusted, background-checked employers.</p>
+  <h1>Find Your Next <em>Domestic Work Job</em></h1>
+  <p>Browse verified nanny, driver, gardener, security guard, housekeeper, cook and Mama Fua jobs by country, city and working spot — from trusted, background-checked employers across Kenya, Uganda, Tanzania and East Africa.</p>
 </header>
 
 <div class="filter-bar">
-  <input type="text" id="f-search" placeholder="🔍 Search job title or company…" oninput="debounceSearch()">
-  <select id="f-role">
-    <option value="">All Roles</option>
-    <option value="Nanny">Nanny</option>
-    <option value="Driver">Driver</option>
-    <option value="Gardener">Gardener</option>
-    <option value="Security Guard">Security Guard</option>
-    <option value="Housekeeper">Housekeeper</option>
-    <option value="Cook">Cook</option>
-    <option value="Caregiver">Caregiver</option>
-    <option value="Mama Fua">🧺 Mama Fua (Cloth Washing)</option>
-  </select>
-  <select id="f-county"><option value="">All Counties</option></select>
+  <div class="search-wrap"><i class="bi bi-search"></i><input type="text" id="f-search" placeholder="Search job title or company…" oninput="debounceSearch()"></div>
+  <select id="f-country" onchange="onCountryChange()"></select>
+  <select id="f-city" onchange="onCityChange()"><option value="">All Cities / Counties</option></select>
+  <select id="f-spot" onchange="applyFilters()"><option value="">All Spots</option></select>
   <select id="f-type">
     <option value="">Any Type</option>
     <option value="Full-time">Full-time</option>
@@ -342,7 +407,22 @@
     <option value="Live-out">Live-out</option>
   </select>
   <button class="btn-loc" id="near-me-btn" onclick="useMyLocation()" title="Sort jobs by distance from you"><i class="bi bi-geo-alt-fill"></i> Near Me</button>
+  <button class="btn-spot" onclick="openSpotModal()" title="Add the spot you work from"><i class="bi bi-pin-map-fill"></i> Add My Spot</button>
   <button onclick="applyFilters()"><i class="bi bi-funnel-fill"></i> Filter</button>
+</div>
+
+<!-- CATEGORY CHIP STRIP -->
+<div class="category-strip">
+  <h2 style="font-family:'Playfair Display',serif;font-size:1.05rem;margin-bottom:.6rem;color:var(--text)">Browse by Category</h2>
+  <div class="category-scroll" id="category-scroll"></div>
+</div>
+
+<!-- LOCATION BREADCRUMB -->
+<div class="loc-crumb" id="loc-crumb" style="display:none"></div>
+
+<!-- GOOGLE ADSENSE — replace ca-pub-XXXXXXXXXXXXXXXX with the real publisher ID before going live -->
+<div class="adsense-slot">
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
 </div>
 
 <div class="container">
@@ -478,22 +558,176 @@
   </div>
 </div>
 
+<!-- ADD MY SPOT MODAL — lets a worker register the specific area they work from (e.g. Kangemi, Pipeline) -->
+<div class="modal-overlay" id="spot-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title"><i class="bi bi-pin-map-fill"></i> Add Your Spot</div>
+        <div class="modal-subtitle">The specific area you work from, so nearby jobs can find you</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('spot-modal')">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div id="spot-gate" style="display:none">
+        <div class="profile-gate-box">
+          <i class="bi bi-person-fill-exclamation"></i>
+          <p>Log in as a worker to add a spot.</p>
+          <button class="btn-small blue" style="width:100%" onclick="window.location.href='employee-login.html'">Log In</button>
+        </div>
+      </div>
+      <div id="spot-form-wrap" style="display:none">
+        <div class="spot-field">
+          <label>Country</label>
+          <select id="spot-country"></select>
+        </div>
+        <div class="spot-field">
+          <label>City / County</label>
+          <input type="text" id="spot-city" placeholder="e.g. Nairobi">
+        </div>
+        <div class="spot-field">
+          <label>Spot name</label>
+          <input type="text" id="spot-name" placeholder="e.g. Kangemi, Pipeline, Kawangware">
+        </div>
+        <p class="spot-hint"><i class="bi bi-info-circle"></i> New spots are reviewed before they appear in the location filter. You'll see it right away in your own listings.</p>
+        <div class="bid-error" id="spot-error"></div>
+      </div>
+    </div>
+    <div class="modal-footer" id="spot-form-footer" style="display:none">
+      <button class="btn-small outline" onclick="closeModal('spot-modal')">Cancel</button>
+      <button class="btn-small blue" id="spot-submit-btn" onclick="submitSpot()"><i class="bi bi-check-lg"></i> Add Spot</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ── SUPABASE ── */
 const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ── KENYA COUNTIES ── */
+/* ── KENYA COUNTIES (used as the "City" level for Kenya, since KE jobs use counties) ── */
 const KE_COUNTIES = ['Baringo','Bomet','Bungoma','Busia','Elgeyo-Marakwet','Embu','Garissa','Homa Bay','Isiolo',
   'Kajiado','Kakamega','Kericho','Kiambu','Kilifi','Kirinyaga','Kisii','Kisumu','Kitui','Kwale',
   'Laikipia','Lamu','Machakos','Makueni','Mandera','Marsabit','Meru','Migori','Mombasa','Murang\'a',
   'Nairobi','Nakuru','Nandi','Narok','Nyamira','Nyandarua','Nyeri','Samburu','Siaya','Taita-Taveta',
   'Tana River','Tharaka-Nithi','Trans Nzoia','Turkana','Uasin Gishu','Vihiga','Wajir','West Pokot'];
-(function fillCounties(){
-  const sel = document.getElementById('f-county');
-  KE_COUNTIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+
+/* ── CATEGORIES (mapped to job_role values already used in the DB) — pure Bootstrap Icons only ── */
+const CATEGORIES = [
+  { role:'', label:'All Jobs', icon:'bi-grid-fill' },
+  { role:'Nanny', label:'Nanny', icon:'bi-person-hearts' },
+  { role:'Driver', label:'Driver', icon:'bi-car-front-fill' },
+  { role:'Gardener', label:'Gardener', icon:'bi-tree-fill' },
+  { role:'Security Guard', label:'Security', icon:'bi-shield-fill-check' },
+  { role:'Housekeeper', label:'Housekeeper', icon:'bi-house-heart-fill' },
+  { role:'Cook', label:'Cook', icon:'bi-egg-fried' },
+  { role:'Caregiver', label:'Caregiver', icon:'bi-heart-pulse-fill' },
+  { role:'Mama Fua', label:'Mama Fua', icon:'bi-basket2-fill' }
+];
+function categoryIcon(role){ return (CATEGORIES.find(c=>c.role===role)||{icon:'bi-briefcase-fill'}).icon; }
+let currentCategory = '';
+
+function renderCategoryStrip(){
+  const wrap = document.getElementById('category-scroll');
+  wrap.innerHTML = CATEGORIES.map(c=>`
+    <div class="cat-chip${currentCategory===c.role?' active':''}" onclick="selectCategory('${escJs(c.role)}')">
+      <i class="bi ${c.icon}"></i><span>${esc(c.label)}</span>
+    </div>`).join('');
+}
+function selectCategory(role){ currentCategory = role; renderCategoryStrip(); toggleSpotVisibility(); applyFilters(); }
+function toggleSpotVisibility(){
+  document.getElementById('f-spot').style.display = currentCategory==='Mama Fua' ? '' : 'none';
+}
+renderCategoryStrip();
+
+/* ── COUNTRY → CITY/COUNTY → SPOT CASCADE ── */
+(function fillCountries(){
+  const sel = document.getElementById('f-country');
+  sel.innerHTML = `<option value="">All Countries</option>` +
+    COUNTRIES.map(c=>`<option value="${c.code}">${c.flag} ${esc(c.name)}</option>`).join('');
 })();
+
+async function onCountryChange(){
+  const country = document.getElementById('f-country').value;
+  const citySel = document.getElementById('f-city');
+  citySel.innerHTML = '<option value="">All Cities / Counties</option>';
+  document.getElementById('f-spot').innerHTML = '<option value="">All Spots</option>';
+  if(country==='KE'){
+    KE_COUNTIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; citySel.appendChild(o); });
+  } else if(country){
+    const { data } = await sb.from('job_postings').select('city').eq('country_code', country).not('city','is',null);
+    const cities = [...new Set((data||[]).map(r=>r.city).filter(Boolean))].sort();
+    cities.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; citySel.appendChild(o); });
+  }
+  updateLocCrumb();
+  applyFilters();
+}
+async function onCityChange(){
+  await fillSpots();
+  updateLocCrumb();
+  applyFilters();
+}
+async function fillSpots(){
+  const country = document.getElementById('f-country').value || 'KE';
+  const city = document.getElementById('f-city').value;
+  const spotSel = document.getElementById('f-spot');
+  spotSel.innerHTML = '<option value="">All Spots</option>';
+  if(!city) return;
+  const { data } = await sb.from('spots').select('id,name,jobs_count').eq('status','active').eq('country_code', country).eq('city', city).order('jobs_count',{ascending:false});
+  (data||[]).forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name+(s.jobs_count?` (${s.jobs_count})`:''); spotSel.appendChild(o); });
+}
+function updateLocCrumb(){
+  const country = document.getElementById('f-country'), city = document.getElementById('f-city'), spot = document.getElementById('f-spot');
+  const crumb = document.getElementById('loc-crumb');
+  const parts = [];
+  if(country.value) parts.push({label: country.options[country.selectedIndex].text, clear:()=>{country.value='';onCountryChange();}});
+  if(city.value) parts.push({label: city.value, clear:()=>{city.value='';onCityChange();}});
+  if(spot.value) parts.push({label: spot.options[spot.selectedIndex].text, clear:()=>{spot.value='';applyFilters();}});
+  if(!parts.length){ crumb.style.display='none'; crumb.innerHTML=''; return; }
+  crumb.style.display='flex';
+  crumb.innerHTML = `<i class="bi bi-signpost-split-fill"></i>` + parts.map((p,i)=>
+    `${i>0?'<span class="lc-sep">/</span>':''}<span class="lc-item">${esc(p.label)} <i class="bi bi-x-circle-fill" onclick="(${p.clear.toString()})()"></i></span>`
+  ).join('');
+}
+toggleSpotVisibility();
+
+/* ── ADD MY SPOT ── */
+function openSpotModal(){
+  document.getElementById('spot-gate').style.display='none';
+  document.getElementById('spot-form-wrap').style.display='none';
+  document.getElementById('spot-form-footer').style.display='none';
+  openModal('spot-modal');
+  const workerId = getWorkerId();
+  if(!workerId){
+    document.getElementById('spot-gate').style.display='block';
+    return;
+  }
+  const csel = document.getElementById('spot-country');
+  csel.innerHTML = COUNTRIES.map(c=>`<option value="${c.code}">${c.flag} ${esc(c.name)}</option>`).join('');
+  document.getElementById('spot-city').value = '';
+  document.getElementById('spot-name').value = '';
+  document.getElementById('spot-error').style.display='none';
+  document.getElementById('spot-form-wrap').style.display='block';
+  document.getElementById('spot-form-footer').style.display='flex';
+}
+async function submitSpot(){
+  const errEl = document.getElementById('spot-error');
+  errEl.style.display='none';
+  const country_code = document.getElementById('spot-country').value;
+  const city = document.getElementById('spot-city').value.trim();
+  const name = document.getElementById('spot-name').value.trim();
+  if(!city || !name){ errEl.textContent='Enter both a city/county and a spot name.'; errEl.style.display='block'; return; }
+  const worker = await getWorkerProfile();
+  if(!worker){ errEl.textContent='Could not verify your worker profile.'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('spot-submit-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding…';
+  const { error } = await sb.from('spots').insert({ name, city, country_code, created_by_worker_id: worker.id, status: country_code?'pending':'pending' });
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg"></i> Add Spot';
+  if(error){ errEl.textContent = error.message; errEl.style.display='block'; return; }
+  showToast('Spot added! It will appear once reviewed.', 'success');
+  closeModal('spot-modal');
+}
 
 /* ── UTILS ── */
 function initials(n){ return (n||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
@@ -501,27 +735,30 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function escJs(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function go(url){ window.location.href = url; }
 
-/* ── SHORT, TRUSTED SHARE LINKS ── e.g. sounds.co.ke/job/nanny-needed-karen--<id>
-   Requires a host-level rewrite of /job/* to jobs.html (see _redirects / vercel.json).
-   On load we parse the id back out of the slug and open that job automatically. */
+/* ── HASHED SHORT SHARE LINKS ── e.g. sounds.co.ke/j/aB3f9Kx
+   Requires a host-level rewrite of /j/* to jobs.html (see _redirects / vercel.json).
+   short_code is generated server-side (DB trigger) for every job, so the URL never
+   reveals the raw row id. On load we look up the job by its short_code. */
 function slugify(s){
   return String(s||'job').toLowerCase().trim()
     .replace(/[^a-z0-9]+/g,'-')
     .replace(/(^-+|-+$)/g,'')
     .slice(0,60) || 'job';
 }
-function buildJobShareUrl(id, title){
-  return `https://www.sounds.co.ke/job/${slugify(title)}--${id}`;
+function buildJobShareUrl(shortCode){
+  return `https://www.sounds.co.ke/j/${shortCode}`;
 }
-function extractJobIdFromPath(){
-  const m = window.location.pathname.match(/\/job\/([^\/?#]+)/i);
-  if(!m) return null;
-  const seg = decodeURIComponent(m[1]);
-  const idx = seg.lastIndexOf('--');
-  return idx>-1 ? seg.slice(idx+2) : seg;
+function extractJobShortCodeFromPath(){
+  const m = window.location.pathname.match(/\/j\/([^\/?#]+)/i);
+  return m ? decodeURIComponent(m[1]) : null;
 }
-async function shareJobLink(id, title){
-  const url = buildJobShareUrl(id, title);
+async function shareJobLink(shortCodeOrId, title){
+  let code = shortCodeOrId;
+  if(!code || code.length > 12){ // looks like a uuid, not a short_code — look it up
+    const { data } = await sb.from('job_postings').select('short_code').eq('id', shortCodeOrId).maybeSingle();
+    code = data && data.short_code ? data.short_code : shortCodeOrId;
+  }
+  const url = buildJobShareUrl(code);
   if(navigator.share){
     try{ await navigator.share({ title: title||'Job on SoundsCare', text: `${title||'A job'} — via SoundsCare`, url }); }
     catch(e){ /* user cancelled share sheet — no-op */ }
@@ -635,7 +872,7 @@ let currentPage = 0;
 const PAGE_SIZE = 12;
 let searchDebounce = null;
 function debounceSearch(){ clearTimeout(searchDebounce); searchDebounce=setTimeout(applyFilters, 400); }
-function applyFilters(){ currentPage = 0; loadJobs(); }
+function applyFilters(){ currentPage = 0; loadJobs(); refreshExternalJobs(); }
 function changePage(delta){ currentPage = Math.max(0, currentPage+delta); loadJobs(); }
 
 async function useMyLocation(){
@@ -684,14 +921,16 @@ async function loadJobs(){
   grid.innerHTML = '<div class="feed-empty"><i class="bi bi-hourglass-split"></i>Loading jobs…</div>';
 
   const search = document.getElementById('f-search').value.trim();
-  const role = document.getElementById('f-role').value;
-  const county = document.getElementById('f-county').value;
+  const role = currentCategory;
+  const country = document.getElementById('f-country').value;
+  const city = document.getElementById('f-city').value;
+  const spotId = document.getElementById('f-spot').value;
   const type = document.getElementById('f-type').value;
   const sort = document.getElementById('f-sort').value;
   const todayISO = new Date().toISOString().slice(0,10);
 
   let q = sb.from('job_postings')
-    .select('*, agent:posted_by_agent_id(id,full_name,status)', {count:'exact'})
+    .select('*, agent:posted_by_agent_id(id,full_name,status), spot:spot_id(id,name)', {count:'exact'})
     .eq('status','active')
     .eq('is_paused', false)
     .eq('is_closed', false)
@@ -700,7 +939,9 @@ async function loadJobs(){
   if(search) q = q.or(`title.ilike.%${search}%,company_name.ilike.%${search}%`);
   if(role==='Mama Fua') q = q.eq('is_mama_fua', true);
   else if(role) q = q.eq('job_role', role);
-  if(county) q = q.eq('county', county);
+  if(country) q = q.eq('country_code', country);
+  if(city) q = country==='KE' || !country ? q.eq('county', city) : q.eq('city', city);
+  if(spotId) q = q.eq('spot_id', spotId);
   if(type) q = q.eq('work_type', type);
 
   if(sort==='deadline') q = q.order('deadline', {ascending:true, nullsFirst:false});
@@ -710,6 +951,7 @@ async function loadJobs(){
 
   q = q.range(currentPage*PAGE_SIZE, currentPage*PAGE_SIZE + PAGE_SIZE - 1);
 
+  await getAdSlots();
   const { data: jobsRaw, count, error } = await q;
   if(error){ console.error('Jobs load error:', error); grid.innerHTML = '<div class="feed-empty"><i class="bi bi-exclamation-triangle"></i>Could not load jobs right now.</div>'; return; }
 
@@ -745,15 +987,61 @@ async function loadJobs(){
   const lovedSet = new Set(getLovedJobIds());
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
 
-  grid.innerHTML = jobs.map(j=>jobCardHTML(j, {
+  const cards = jobs.map(j=>jobCardHTML(j, {
     applicationCount: appCounts[j.id]||0,
     interviewCount: ivCounts[j.id]||0,
     loved: lovedSet.has(j.id),
     paymentVerified: paidMap[j.id]==='held' || paidMap[j.id]==='released',
     matchPct: profileMatchPct(j, worker)
-  })).join('');
+  }));
+
+  grid.innerHTML = interleaveAds(cards).join('');
+  logVisibleAdImpressions(grid);
 
   updateJobPostingSchema(jobs);
+}
+
+/* ── CUSTOM SPONSORED ADS (own ad_slots table; weighted, inserted every ~6 cards) ── */
+let AD_SLOTS = [], AD_SLOTS_FETCHED = false;
+async function getAdSlots(){
+  if(AD_SLOTS_FETCHED) return AD_SLOTS;
+  AD_SLOTS_FETCHED = true;
+  const today = new Date().toISOString().slice(0,10);
+  const { data } = await sb.from('ad_slots').select('*').eq('active', true).eq('placement','grid_inline')
+    .or(`start_date.is.null,start_date.lte.${today}`).or(`end_date.is.null,end_date.gte.${today}`);
+  AD_SLOTS = data || [];
+  return AD_SLOTS;
+}
+function weightedAdPick(seed){
+  if(!AD_SLOTS.length) return null;
+  const pool = AD_SLOTS.flatMap(a=>Array(Math.max(1,a.weight||1)).fill(a));
+  return pool[seed % pool.length];
+}
+function adCardHTML(ad){
+  return `
+    <div class="ad-card" data-ad-id="${ad.id}" onclick="clickAd('${ad.id}','${escJs(ad.target_url)}')">
+      <span class="ad-label">Sponsored</span>
+      <img src="${esc(ad.image_url)}" alt="${esc(ad.sponsor_name)}" loading="lazy">
+      <div class="ad-sponsor"><i class="bi bi-megaphone-fill"></i> ${esc(ad.sponsor_name)}</div>
+    </div>`;
+}
+function interleaveAds(cards){
+  if(!AD_SLOTS.length) return cards;
+  const out = [];
+  cards.forEach((c,i)=>{
+    out.push(c);
+    if((i+1)%6===0){ const ad = weightedAdPick(i); if(ad) out.push(adCardHTML(ad)); }
+  });
+  return out;
+}
+function logVisibleAdImpressions(grid){
+  grid.querySelectorAll('.ad-card[data-ad-id]').forEach(el=>{
+    sb.rpc('increment_ad_impression', { ad_id: el.dataset.adId }).then(()=>{}).catch(()=>{});
+  });
+}
+function clickAd(adId, url){
+  sb.rpc('increment_ad_click', { ad_id: adId }).then(()=>{}).catch(()=>{});
+  window.open(url, '_blank', 'noopener');
 }
 
 /* ── SHARED JOB CARD TEMPLATE (used by main grid + Recommended Near You) ── */
@@ -780,26 +1068,27 @@ function jobCardHTML(j, opts){
       <button class="job-love${loved?' loved':''}" onclick="event.stopPropagation();toggleLoveJob('${j.id}', this)" aria-label="Save job">
         <i class="bi bi-heart${loved?'-fill':''}"></i>
       </button>
-      <button class="job-share" onclick="event.stopPropagation();shareJobLink('${j.id}','${escJs(j.title||'Job')}')" aria-label="Share job">
+      <button class="job-share" onclick="event.stopPropagation();shareJobLink('${j.short_code||j.id}','${escJs(j.title||'Job')}')" aria-label="Share job">
         <i class="bi bi-share-fill"></i>
       </button>
       <div class="card-header">
-        <div class="card-avatar" title="${esc(getCountry(j.country_code).name)}">${getCountry(j.country_code).flag}</div>
+        <div class="card-avatar cat-icon" title="${esc(j.job_role||'Job')}"><i class="bi ${categoryIcon(j.job_role)}"></i></div>
         <div class="card-meta">
           <div class="card-title">${esc(j.title||'—')}</div>
           <div class="card-subtitle">
             ${j.company_verified?'<span class="verified-dot"><i class="bi bi-check-lg"></i></span>':''}
-            ${esc(company)} &middot; ${esc(j.county||j.location||'East Africa')}
+            ${esc(company)} &middot; <i class="bi bi-flag-fill" style="font-size:9px"></i> ${esc(getCountry(j.country_code).name)} &middot; ${esc(j.county||j.city||j.location||'East Africa')}
             ${km!==null?` &middot; <span class="card-distance"><i class="bi bi-signpost-2-fill"></i> ${fmtDistance(km)}</span>`:''}
           </div>
         </div>
       </div>
       <div class="card-tags">
         ${sourceBadge}
-        ${j.job_role?`<span class="tag blue">${esc(j.job_role)}</span>`:''}
-        ${j.is_mama_fua?'<span class="tag mamafua">🧺 Mama Fua</span>':''}
+        ${j.job_role?`<span class="tag blue"><i class="bi ${categoryIcon(j.job_role)}"></i> ${esc(j.job_role)}</span>`:''}
+        ${j.is_mama_fua?'<span class="tag mamafua"><i class="bi bi-basket2-fill"></i> Mama Fua</span>':''}
+        ${j.spot?`<span class="tag spot"><i class="bi bi-pin-map-fill"></i> ${esc(j.spot.name)}</span>`:''}
         ${j.work_type?`<span class="tag">${esc(j.work_type)}</span>`:''}
-        ${j.is_urgent?'<span class="tag urgent">🔥 Urgent</span>':''}
+        ${j.is_urgent?'<span class="tag urgent"><i class="bi bi-lightning-charge-fill"></i> Urgent</span>':''}
         ${matchPct!==null?`<span class="tag match"><i class="bi bi-person-check-fill"></i> ${matchPct}% match</span>`:''}
         ${j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
         ${deadlineTag(j.deadline)}
@@ -877,12 +1166,12 @@ function mapEmbed(lat, lon){
 /* ── JOB DETAIL MODAL + DEEP LINK (?job=ID from index.html card clicks) ── */
 async function openJobDetail(id){
   const [{ data: j, error }, { data: escrowRow }] = await Promise.all([
-    sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status)').eq('id', id).single(),
+    sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status), spot:spot_id(id,name)').eq('id', id).single(),
     sb.from('job_payment_status').select('status').eq('job_id', id).maybeSingle()
   ]);
   if(error || !j){ showToast('Could not load that job.', 'error'); return; }
   document.getElementById('jd-title').textContent = j.title||'Job';
-  document.getElementById('jd-subtitle').textContent = getCountry(j.country_code).flag+' '+(j.company_name||'Employer')+' · '+(j.county||j.location||'East Africa');
+  document.getElementById('jd-subtitle').textContent = (j.company_name||'Employer')+' · '+getCountry(j.country_code).name+' · '+(j.county||j.city||j.location||'East Africa');
   const days = daysUntil(j.deadline);
   const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
   const paymentVerified = escrowRow && (escrowRow.status==='held' || escrowRow.status==='released');
@@ -897,7 +1186,7 @@ async function openJobDetail(id){
     ${isExternal?`<h4>Source</h4><p style="display:inline-flex">${sourceBadge}</p>`:''}
     ${j.posted_by_agent_id?`<h4>Posted Via</h4><p class="agent-tag" style="display:inline-flex">${j.agent&&j.agent.status==='active'?'<span class="verified-dot blue"><i class="bi bi-check-lg"></i></span>':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}${j.agent&&j.agent.status==='active'?' · Verified Agent':''}</p>`:''}
     <h4>Location</h4>
-    <p><i class="bi bi-geo-alt-fill"></i> ${esc(j.county||j.location||'East Africa')}${km!==null?` &middot; <span class="card-distance">${fmtDistance(km)} from you</span>`:''}</p>
+    <p><i class="bi bi-geo-alt-fill"></i> ${esc(getCountry(j.country_code).name)} &middot; ${esc(j.county||j.city||j.location||'East Africa')}${j.spot?` &middot; <i class="bi bi-pin-map-fill"></i> ${esc(j.spot.name)}`:''}${km!==null?` &middot; <span class="card-distance">${fmtDistance(km)} from you</span>`:''}</p>
     ${mapEmbed(j.latitude, j.longitude)}
     <h4>Date Posted</h4><p>${postedDate} &middot; ${timeAgo(j.created_at)}</p>
     <h4>Salary</h4><p>${salary(j.salary_min,j.salary_max,j.salary_range,j.country_code)}${paymentVerified?' <span class="payment-badge"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>':''}</p>
@@ -915,11 +1204,11 @@ async function openJobDetail(id){
     applyBtn.innerHTML = `<i class="bi bi-tag-fill"></i> Place Bid`;
     applyBtn.onclick = ()=>openBidModal(j.id);
   }
-  document.getElementById('jd-share-btn').onclick = ()=>shareJobLink(j.id, j.title);
+  document.getElementById('jd-share-btn').onclick = ()=>shareJobLink(j.short_code||j.id, j.title);
   openModal('job-detail-modal');
   // reflect a clean, shareable deep link in the address bar without reloading
   const url = new URL(window.location);
-  url.pathname = '/job/' + slugify(j.title) + '--' + j.id;
+  url.pathname = '/j/' + (j.short_code || j.id);
   url.search = '';
   window.history.replaceState({}, '', url);
   document.title = (j.title||'Job') + ' at ' + (j.company_name||'SoundsCare') + ' | SoundsCare';
@@ -1084,15 +1373,26 @@ async function submitBid(){
   applyFilters();
 }
 
-/* ── FUTURE: EXTERNAL JOB BOARDS (Fuzu, BrightMonday, etc.) ──
-   Stub ready for a real integration later. Wire a real fetch() call here and
-   call renderExternalJobs(list) — the section auto-shows once populated.
-   Expected shape per item: { title, company, url, source, verified, deadline }
-   - verified: true once SoundsCare has manually vetted that listing/source → shows the "Verified" badge
-   - deadline: 'YYYY-MM-DD' — items past this date are filtered out automatically, same as internal jobs */
+/* ── PARTNER JOBS ── curated listings from partner boards (Fuzu, BrighterMonday, etc.),
+   added manually via the admin panel into the partner_jobs table.
+   Respects the same country/city/category filters as the main grid. */
 async function fetchExternalJobs(){
-  // TODO: integrate partner APIs/feeds (Fuzu, BrightMonday, ...) here.
-  return [];
+  const country = document.getElementById('f-country').value;
+  const city = document.getElementById('f-city').value;
+  const todayISO = new Date().toISOString().slice(0,10);
+  let q = sb.from('partner_jobs').select('*').eq('status','active')
+    .or(`deadline.is.null,deadline.gte.${todayISO}`)
+    .order('created_at',{ascending:false})
+    .limit(30);
+  if(country) q = q.eq('country_code', country);
+  if(city) q = q.or(`city.eq.${city},county.eq.${city}`);
+  if(currentCategory) q = q.eq('job_role', currentCategory);
+  const { data, error } = await q;
+  if(error){ console.warn('Partner jobs load error:', error.message); return []; }
+  return (data||[]).map(j=>({
+    title: j.title, company: j.company_name, url: j.url, source: j.source_name,
+    verified: j.is_verified_source, deadline: j.deadline, category: j.job_role || j.category, logo: j.logo_url
+  }));
 }
 function renderExternalJobs(list){
   const section = document.getElementById('external-section');
@@ -1108,10 +1408,10 @@ function renderExternalJobs(list){
     return `
     <div class="job-card" onclick="confirmExternalApply('${escJs(j.url)}','${escJs(j.source||'Partner Site')}')">
       <div class="card-header">
-        <div class="card-avatar">${initials(j.company)}</div>
+        <div class="card-avatar cat-icon"><i class="bi ${categoryIcon(j.category)}"></i></div>
         <div class="card-meta">
           <div class="card-title">${esc(j.title)}</div>
-          <div class="card-subtitle">${esc(j.company)}</div>
+          <div class="card-subtitle">${esc(j.company||'Employer')}</div>
         </div>
       </div>
       <div class="card-tags">${sourceBadge}${deadlineTag(j.deadline)}</div>
@@ -1119,6 +1419,7 @@ function renderExternalJobs(list){
     </div>`;
   }).join('');
 }
+function refreshExternalJobs(){ fetchExternalJobs().then(renderExternalJobs); }
 
 /* ── SEO: dynamic JobPosting JSON-LD for the currently listed jobs ── */
 function updateJobPostingSchema(jobs){
@@ -1166,31 +1467,54 @@ async function logCookieConsent(choice){
 document.addEventListener('DOMContentLoaded', async ()=>{
   initCookieBanner();
   await loadJobs();
-  fetchExternalJobs().then(renderExternalJobs);
+  refreshExternalJobs();
 
   const params = new URLSearchParams(window.location.search);
-  const jobId = extractJobIdFromPath() || params.get('job');
-  if(jobId) openJobDetail(jobId);
+  const shortCode = extractJobShortCodeFromPath();
+  const jobIdParam = params.get('job');
+  if(shortCode){
+    const { data } = await sb.from('job_postings').select('id').eq('short_code', shortCode).maybeSingle();
+    if(data) openJobDetail(data.id);
+  } else if(jobIdParam){
+    openJobDetail(jobIdParam);
+  }
+
+  try{
+    if(window.adsbygoogle) (window.adsbygoogle = window.adsbygoogle || []).push({});
+  }catch(e){ /* AdSense not yet configured — no-op until a real publisher ID is set */ }
 });
 </script>
 <style>
   .support-fab{
     position:fixed; left:1.5rem; bottom:1.5rem; z-index:7500;
-    width:52px; height:52px; border-radius:50%;
+    height:52px; min-width:52px; border-radius:26px;
     background:var(--green); color:#fff;
-    display:flex; align-items:center; justify-content:center;
-    font-size:22px; text-decoration:none;
+    display:flex; align-items:center; justify-content:center; gap:0;
+    font-size:20px; text-decoration:none; overflow:hidden;
     box-shadow:0 6px 20px rgba(26,122,94,.35);
-    transition:transform .2s ease, background .2s ease;
+    transition:all .25s ease;
+    padding:0 15px;
   }
-  .support-fab:hover{background:var(--green-dark); transform:translateY(-3px) scale(1.05);}
+  .support-fab::before{
+    content:''; position:absolute; inset:0; border-radius:26px;
+    box-shadow:0 0 0 0 rgba(26,122,94,.45);
+    animation:supportPulse 2.4s infinite;
+  }
+  @keyframes supportPulse{
+    0%{box-shadow:0 0 0 0 rgba(26,122,94,.45)}
+    70%{box-shadow:0 0 0 14px rgba(26,122,94,0)}
+    100%{box-shadow:0 0 0 0 rgba(26,122,94,0)}
+  }
+  .support-fab .fab-label{max-width:0;opacity:0;white-space:nowrap;font-size:13px;font-weight:700;overflow:hidden;transition:all .25s ease}
+  .support-fab:hover{background:var(--green-dark); transform:translateY(-3px);}
+  .support-fab:hover .fab-label{max-width:140px;opacity:1;margin-left:.55rem}
   .support-fab:active{transform:scale(.96);}
   @media (max-width:600px){
-    .support-fab{width:48px; height:48px; font-size:19px; left:1rem; bottom:1rem;}
+    .support-fab{height:48px; min-width:48px; font-size:18px; left:1rem; bottom:1rem;}
   }
 </style>
 <a href="support.html" class="support-fab" aria-label="Contact support" title="Need help? Chat with support">
-  <i class="bi bi-headset"></i>
+  <i class="bi bi-headset"></i><span class="fab-label">Need help?</span>
 </a>
 
 </body>
