@@ -1,5 +1,12 @@
   <style>
     :root {
+      /* Tell every browser this is a light-only design so mobile "forced
+         dark mode" (common on Android Chrome and some browser extensions)
+         doesn't auto-invert colors — that's what was making text hard to
+         read: the browser was darkening backgrounds without correctly
+         re-coloring the (explicitly dark) text on top of them. */
+      color-scheme: light only;
+
       /* ── Design System Token Architecture (see Dashboard UI Enhancement
          Strategy) — surfaces, borders, typography, brand, accent, status,
          elevation, radius and touch-target scales ── */
@@ -79,6 +86,16 @@
       line-height: 1.5;
       min-height: 100vh;
     }
+    /* Explicit colors on form controls — these are the elements most often
+       mangled by a browser's forced-dark-mode heuristics (invisible text in
+       inputs/selects is the most common symptom of that), so we pin them
+       down rather than leaving them to OS/browser defaults. */
+    input, select, textarea, button {
+      color: var(--ink);
+      background-color: var(--ds-surface-card);
+      font-family: inherit;
+    }
+    input::placeholder, textarea::placeholder { color: var(--ds-text-muted); opacity: 1; }
     :focus-visible {
       outline: 2px solid var(--ds-brand-primary);
       outline-offset: 2px;
