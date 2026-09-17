@@ -417,6 +417,17 @@
   <div class="category-scroll" id="category-scroll"></div>
 </div>
 
+<!-- YOUR SPOT(S) — Mama Fua Mtaani only. Populated from the spot(s) the worker set on their
+     dashboard (worker_profiles.spot_id, synced from the "Add My Spot" feature). Hidden entirely
+     when the logged-in worker has no spot on file. -->
+<div class="container" style="padding-top:0">
+  <div class="external-section" id="my-spot-section" style="display:none">
+    <h2><i class="bi bi-pin-map-fill" style="color:var(--amber)"></i> Recommended Near Your Spot</h2>
+    <p class="sub">Jobs around <strong id="my-spot-names">your spot</strong> — closest ones tagged with how far you'd need to go.</p>
+    <div class="jobs-grid" id="my-spot-jobs"></div>
+  </div>
+</div>
+
 <!-- LOCATION BREADCRUMB -->
 <div class="loc-crumb" id="loc-crumb" style="display:none"></div>
 
@@ -891,6 +902,7 @@ async function useMyLocation(){
   }
   applyFilters();
   loadRecommended();
+  loadMySpotSection(); // refresh distances if the spot itself has no lat/lng on file yet
 }
 
 /* ── WORKER PROFILE MATCH % (house-help roles only) ── */
@@ -901,7 +913,12 @@ async function getWorkerProfile(){
   WORKER_PROFILE_FETCHED = true;
   const workerId = getWorkerId();
   if(!workerId) return null;
-  const { data } = await sb.from('worker_profiles').select('id, preferred_role, job_title, skills, work_type, full_name, phone, phone_number, profile_setup_completed').eq('id', workerId).maybeSingle();
+  // NOTE: spot_id (single spot) is expected on worker_profiles once the dashboard's "Spot" picker
+  // (Mama Fua Mtaani only) is wired up. If the dashboard instead saves multiple spots per worker,
+  // swap this for a `worker_spots` join table select — see loadMySpotSection() below.
+  const { data } = await sb.from('worker_profiles')
+    .select('id, preferred_role, job_title, skills, work_type, full_name, phone, phone_number, profile_setup_completed, spot_id, spot:spot_id(id,name,city,country_code,latitude,longitude)')
+    .eq('id', workerId).maybeSingle();
   WORKER_PROFILE = data || null;
   return WORKER_PROFILE;
 }
@@ -1053,7 +1070,9 @@ function jobCardHTML(j, opts){
   const loved = !!opts.loved;
   const paymentVerified = !!opts.paymentVerified;
   const matchPct = opts.matchPct!==undefined ? opts.matchPct : null;
-  const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
+  // distanceKm on opts lets a caller (e.g. the Spot section) supply a distance measured from
+  // somewhere other than the browser's live GPS position — falls back to "Near Me" location.
+  const km = opts.distanceKm!=null ? opts.distanceKm : (USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null);
   const isExternal = j.source_type==='external';
   const sourceBadge = isExternal
     ? (j.is_verified_source
@@ -1142,6 +1161,63 @@ async function loadRecommended(){
     paymentVerified: paidMap[r.j.id]==='held' || paidMap[r.j.id]==='released',
     matchPct: r.match
   })).join('');
+  section.style.display = 'block';
+}
+
+/* ── RECOMMENDED NEAR YOUR SPOT ── Mama Fua Mtaani only.
+   Reads the spot the worker registered on their dashboard (worker_profiles.spot_id, synced from
+   the DB) and surfaces open jobs posted at that spot, tagged with how far each one is.
+   Shows nothing at all if the worker isn't logged in, isn't a Mama Fua worker, or has no spot set. */
+async function loadMySpotSection(){
+  const section = document.getElementById('my-spot-section');
+  const worker = await getWorkerProfile();
+
+  const isMamaFuaWorker = !!worker && String(worker.preferred_role||worker.job_title||'').toLowerCase().includes('mama fua');
+  if(!worker || !isMamaFuaWorker || !worker.spot_id){
+    section.style.display = 'none'; // no spot on file → show no spot section at all
+    return;
+  }
+
+  const spot = worker.spot || null;
+  document.getElementById('my-spot-names').textContent = spot ? spot.name : 'your spot';
+
+  const todayISO = new Date().toISOString().slice(0,10);
+  const { data: jobsRaw, error } = await sb.from('job_postings')
+    .select('*, agent:posted_by_agent_id(id,full_name,status), spot:spot_id(id,name)')
+    .eq('status','active').eq('is_paused', false).eq('is_closed', false)
+    .eq('spot_id', worker.spot_id)
+    .or(`deadline.is.null,deadline.gte.${todayISO}`)
+    .order('created_at', {ascending:false})
+    .limit(6);
+
+  if(error || !jobsRaw || !jobsRaw.length){ section.style.display='none'; return; }
+
+  const jobIds = jobsRaw.map(j=>j.id);
+  const [escrowRes] = await Promise.all([
+    sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds)
+  ]);
+  const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
+  const lovedSet = new Set(getLovedJobIds());
+
+  // Distance shown on each card, in priority order:
+  //  1) job coords vs. the spot's own coords (once spots carry latitude/longitude)
+  //  2) job coords vs. the browser's live location, if "Near Me" has been granted
+  //  3) no distance chip — the job still shows, just without a km figure
+  const cards = jobsRaw.map(j=>{
+    let dKm = null;
+    if(spot && spot.latitude!=null && spot.longitude!=null){
+      dKm = distanceKm(spot.latitude, spot.longitude, j.latitude, j.longitude);
+    } else if(USER_LOCATION_READY){
+      dKm = distanceKm(USER_LAT, USER_LNG, j.latitude, j.longitude);
+    }
+    return jobCardHTML(j, {
+      loved: lovedSet.has(j.id),
+      paymentVerified: paidMap[j.id]==='held' || paidMap[j.id]==='released',
+      distanceKm: dKm
+    });
+  });
+
+  document.getElementById('my-spot-jobs').innerHTML = cards.join('');
   section.style.display = 'block';
 }
 
@@ -1468,6 +1544,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initCookieBanner();
   await loadJobs();
   refreshExternalJobs();
+  loadMySpotSection();
 
   const params = new URLSearchParams(window.location.search);
   const shortCode = extractJobShortCodeFromPath();
