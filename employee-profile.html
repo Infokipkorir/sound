@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile — SoundsCare</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1B6B45;--green-dark:#114B30;--green-light:#EEF7F2;--green-mid:#C8E6D6;
+  --accent:#E8A040;--accent-light:#FEF3E2;
+  --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
+  --surface:#FFFFFF;--bg:#F6F8F7;
+  --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
+  --amber:#D97706;--amber-bg:#FFFBEB;--blue:#2563EB;--success:#10B981;
+  --shadow-lg:0 16px 50px rgba(17,75,48,.10);--shadow-sm:0 1px 3px rgba(17,75,48,.08);
+  --radius:12px;--radius-sm:8px;--radius-lg:20px;
+  --font:'DM Sans',system-ui,sans-serif;--serif:'Playfair Display',serif;
+}
+body{font-family:var(--font);color:var(--text);background:var(--bg);min-height:100vh;padding-bottom:3rem;}
+a{color:inherit}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:.85rem 1.2rem;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.topbar a.back{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-mid);text-decoration:none;background:var(--bg);flex-shrink:0;}
+.topbar a.back:hover{background:var(--green-light);color:var(--green);}
+.topbar h1{font-family:var(--serif);font-size:18px;font-weight:800;flex:1;}
+.topbar-nav{display:flex;gap:4px;}
+.topbar-nav a{font-size:11.5px;font-weight:700;color:var(--text-muted);text-decoration:none;padding:6px 10px;border-radius:8px;}
+.topbar-nav a.active,.topbar-nav a:hover{background:var(--green-light);color:var(--green-dark);}
+
+.wrap{max-width:640px;margin:0 auto;padding:1.2rem 1rem 0;}
+.center-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 1rem;text-align:center;}
+.spinner{width:24px;height:24px;border:2.5px solid rgba(27,107,69,.15);border-top-color:var(--green);border-radius:50%;animation:spin .65s linear infinite;margin-bottom:12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.center-loader p{font-size:13px;color:var(--text-muted);}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--green),var(--green-dark));border-radius:var(--radius-lg);padding:1.8rem 1.2rem;text-align:center;color:#fff;margin-bottom:1rem;position:relative;overflow:hidden;}
+.hero-avatar{width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto 10px;position:relative;overflow:hidden;}
+.hero-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.hero-avatar input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.hero-avatar-edit{position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--green-dark);}
+.hero-name{font-family:var(--serif);font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;}
+.hero-email{font-size:12px;opacity:.75;margin:2px 0 10px;}
+.hero-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;background:rgba(255,255,255,.15);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.15rem;margin-bottom:.9rem;box-shadow:var(--shadow-sm);}
+.card-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+.card-title i{color:var(--green);}
+.card-sub{font-size:12px;color:var(--text-muted);margin-bottom:.9rem;line-height:1.5;}
+
+/* TOGGLE (WhatsApp-style switch) */
+.toggle-row{display:flex;align-items:center;gap:12px;padding:10px 0;}
+.toggle-row+.toggle-row{border-top:1px solid var(--border);}
+.toggle-row .ti{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.toggle-row .tt{flex:1;}
+.toggle-row .tt .lbl{font-size:13.5px;font-weight:700;}
+.toggle-row .tt .sub{font-size:11.5px;color:var(--text-muted);margin-top:1px;line-height:1.4;}
+.switch{position:relative;display:inline-block;width:44px;height:25px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:#D1D5DB;border-radius:34px;transition:.2s;}
+.slider::before{position:absolute;content:"";height:19px;width:19px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.switch input:checked+.slider{background:#25D366;}
+.switch input:checked+.slider::before{transform:translateX(19px);}
+.switch input:disabled+.slider{opacity:.5;cursor:not-allowed;}
+
+/* CHECKLIST */
+.chk-item{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;}
+.chk-item i{font-size:16px;flex-shrink:0;}
+.chk-item.done{color:var(--text-mid);}
+.chk-item.done i{color:var(--success);}
+.chk-item.todo i{color:var(--text-muted);}
+.chk-bar-wrap{height:6px;background:var(--bg);border-radius:20px;overflow:hidden;margin:6px 0 4px;}
+.chk-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:20px;transition:width .3s;}
+
+/* TABS */
+.tabbar{display:flex;gap:2px;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:.9rem;overflow-x:auto;}
+.tabbtn{flex:1;white-space:nowrap;border:none;background:transparent;padding:8px 10px;font-size:12px;font-weight:700;color:var(--text-muted);border-radius:9px;cursor:pointer;font-family:var(--font);}
+.tabbtn.active{background:var(--surface);color:var(--green-dark);box-shadow:var(--shadow-sm);}
+.tabpanel{display:none;}
+.tabpanel.active{display:block;}
+
+/* FORM */
+.fg{margin-bottom:.85rem;}
+.fg label{display:block;font-size:12.5px;font-weight:700;color:var(--text-mid);margin-bottom:5px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+@media (max-width:480px){.row2{grid-template-columns:1fr}}
+input[type=text],input[type=tel],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13.5px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;-webkit-appearance:none;}
+select{appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.6' fill='none' fill-rule='evenodd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;}
+textarea{resize:vertical;min-height:78px;line-height:1.5;}
+input:focus,select:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10);}
+input:disabled{opacity:.6;background:var(--bg);}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;}
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--radius-sm);padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;transition:.15s;}
+.btn-primary{background:var(--green);color:#fff;}
+.btn-primary:hover:not(:disabled){background:var(--green-dark);}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;}
+.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);}
+.btn-secondary:hover{border-color:var(--green);background:var(--green-light);}
+.btn-whatsapp{background:#25D366;color:#fff;}
+.btn-whatsapp:hover{background:#1DA851;}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-border);}
+.btn-danger:hover{background:#FEE2E2;}
+.btn-sm{padding:8px 13px;font-size:12.5px;width:auto;}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;}
+.pill.pending{background:#F3F4F6;color:var(--text-muted);}
+.pill.pending_review{background:var(--amber-bg);color:var(--amber);}
+.pill.verified,.pill.approved{background:var(--green-light);color:var(--green-dark);}
+.pill.rejected{background:var(--red-bg);color:var(--red);}
+.review-note{font-size:11.5px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:7px 9px;margin-top:6px;line-height:1.4;}
+
+/* VERIFY CODE / OTP */
+.verify-code-box{background:var(--bg);border:1.5px dashed var(--green-mid);border-radius:var(--radius-sm);padding:14px;text-align:center;margin:10px 0;}
+.verify-code{font-family:monospace;font-size:20px;font-weight:800;letter-spacing:.08em;color:var(--green-dark);}
+.verify-steps{font-size:12px;color:var(--text-mid);line-height:1.7;margin:8px 0;}
+.otp-row{display:flex;gap:6px;margin-bottom:10px;}
+.otp-box{width:100%;text-align:center;font-size:18px;font-weight:800;padding:10px 0;}
+
+/* UPLOAD BOX */
+.upload-box{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;position:relative;transition:.15s;}
+.upload-box:hover{border-color:var(--green);background:var(--green-light);}
+.upload-box.filled{border-style:solid;border-color:var(--success);}
+.upload-box i{font-size:20px;color:var(--text-muted);margin-bottom:5px;display:block;}
+.upload-box.filled i{color:var(--success);}
+.upload-box .ub-text{font-size:12.5px;font-weight:700;color:var(--text-mid);}
+.upload-box .ub-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+@media (max-width:480px){.doc-grid{grid-template-columns:1fr}}
+.doc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.doc-head .lbl{font-size:12.5px;font-weight:700;}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:1.1rem 0 .6rem;}
+.sec-lbl:first-child{margin-top:0;}
+hr.sep{border:none;border-top:1px solid var(--border);margin:1.1rem 0;}
+
+/* TOAST */
+#toast-stack{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:400px;}
+.toast{background:var(--text);color:#fff;border-radius:10px;padding:11px 14px;font-size:12.5px;display:flex;align-items:flex-start;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:slideUp .25s ease-out;}
+.toast.err{background:var(--red);}
+.toast.ok{background:var(--green-dark);}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back" href="employee-dashboard.html" title="Back to dashboard"><i class="bi bi-arrow-left"></i></a>
+  <h1>My Profile</h1>
+  <div class="topbar-nav">
+    <a class="active" href="employee-profile.html">Profile</a>
+    <a href="employee-messages.html">Messages</a>
+    <a href="employee-jobs.html">Find Jobs</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="center-loader" id="loader">
+    <div class="spinner"></div>
+    <p>Loading your profile…</p>
+  </div>
+
+  <div id="page" style="display:none;">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-avatar" id="hero-avatar">
+        <span id="hero-avatar-init">W</span>
+        <input type="file" accept="image/*" onchange="uploadProfilePhoto(this)" title="Change photo">
+        <span class="hero-avatar-edit"><i class="bi bi-pencil-fill" style="color:#fff;"></i></span>
+      </div>
+      <div class="hero-name"><span id="hero-name">—</span> <i class="bi bi-patch-check-fill" id="hero-verify-icon" style="display:none;color:#4ade80;"></i></div>
+      <div class="hero-email" id="hero-email">—</div>
+      <span class="hero-pill"><i class="bi bi-shield" id="hero-pill-icon"></i> <span id="hero-pill-text">Unverified</span></span>
+    </div>
+
+    <!-- STATUS TOGGLES -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-toggle2-on"></i> Work Status</div>
+      <div class="card-sub">Employers only see workers who are looking and not currently hired.</div>
+      <div class="toggle-row">
+        <span class="ti" style="background:var(--green-light);"><i class="bi bi-search" style="color:var(--green);"></i></span>
+        <div class="tt"><div class="lbl">Looking for Job</div><div class="sub">Show up in employer searches and matches</div></div>
+        <label class="switch"><input type="checkbox" id="tg-looking" onchange="toggleLookingForJob()"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="ti" style="background:var(--accent-light);"><i class="bi bi-briefcase-fill" style="color:var(--accent);"></i></span>
+        <div class="tt"><div class="lbl">Currently Hired</div><div class="sub">Hides your profile from public listings</div></div>
+        <label class="switch"><input type="checkbox" id="tg-hired" onchange="toggleHired()"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span class="ti" style="background:#E0F2FE;"><i class="bi bi-basket3-fill" style="color:#0284C7;"></i></span>
+        <div class="tt"><div class="lbl">Mama Fua Mtaani</div><div class="sub">Opt in to fixed-price laundry/domestic jobs with escrow payment</div></div>
+        <label class="switch"><input type="checkbox" id="tg-mamafua" onchange="toggleMamaFua()"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- COMPLETENESS CHECKLIST -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-list-check"></i> Profile Completeness — <span id="chk-pct">0%</span></div>
+      <div class="chk-bar-wrap"><div class="chk-bar" id="chk-bar" style="width:0%;"></div></div>
+      <div class="card-sub" style="margin-bottom:2px;">Messaging employers unlocks once these are all done.</div>
+      <div id="chk-list"></div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabbar">
+      <button class="tabbtn active" data-tab="tab-profile" onclick="switchTab('tab-profile',this)">Profile</button>
+      <button class="tabbtn" data-tab="tab-verify" onclick="switchTab('tab-verify',this)">Verification</button>
+      <button class="tabbtn" data-tab="tab-docs" onclick="switchTab('tab-docs',this)">Documents</button>
+      <button class="tabbtn" data-tab="tab-settings" onclick="switchTab('tab-settings',this)">Settings</button>
+    </div>
+
+    <!-- TAB: PROFILE -->
+    <div class="tabpanel active" id="tab-profile">
+      <div class="card">
+        <div class="card-title"><i class="bi bi-person-lines-fill"></i> Personal Info</div>
+        <div class="fg">
+          <label>Full Name</label>
+          <input type="text" id="p-fullname" placeholder="Your full name">
+          <div id="p-fullname-pending" style="display:none;" class="form-hint">
+            <i class="bi bi-hourglass-split"></i> Requested change to "<strong id="p-fullname-pending-value"></strong>" is awaiting admin approval.
+          </div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Phone Number</label><input type="tel" id="p-phone" placeholder="+254 7XX XXX XXX"></div>
+          <div class="fg"><label>Location / Town</label><input type="text" id="p-location" placeholder="e.g. Nairobi"></div>
+        </div>
+        <div class="fg"><label>About / Skills Summary</label><textarea id="p-bio" placeholder="Briefly describe your skills and experience…"></textarea></div>
+        <div class="row2">
+          <div class="fg">
+            <label>Education Level</label>
+            <select id="p-edu">
+              <option value="">Select level</option>
+              <option value="None">None</option><option value="Primary">Primary</option>
+              <option value="Secondary">Secondary</option><option value="Certificate">Certificate</option>
+              <option value="Diploma">Diploma</option><option value="Bachelor's Degree">Bachelor's Degree</option>
+              <option value="Postgraduate">Postgraduate</option>
+            </select>
+          </div>
+          <div class="fg"><label>Key Skills (comma separated)</label><input type="text" id="p-skills" placeholder="Cooking, Childcare, Cleaning"></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveProfileInfo()"><i class="bi bi-check-circle"></i> Save Changes</button>
+      </div>
+    </div>
+
+    <!-- TAB: VERIFICATION -->
+    <div class="tabpanel" id="tab-verify">
+
+      <!-- Phone via WhatsApp -->
+      <div class="card">
+        <div class="card-title"><i class="bi bi-whatsapp" style="color:#25D366;"></i> Phone Verification</div>
+        <div class="card-sub">Manually reviewed by our team via WhatsApp.</div>
+        <span class="pill" id="wa-status-pill"><i class="bi bi-dash-circle"></i> <span id="wa-status-text">Not started</span></span>
+
+        <div id="wa-start-block" style="margin-top:10px;">
+          <button class="btn btn-whatsapp" onclick="generateVerificationCode()"><i class="bi bi-whatsapp"></i> Verify via WhatsApp</button>
+        </div>
+
+        <div id="wa-code-block" style="display:none;margin-top:10px;">
+          <div class="verify-code-box"><div class="verify-code" id="wa-code-display"></div></div>
+          <div class="verify-steps">
+            1. WhatsApp opens to our number <b id="wa-biz-number">—</b> with your code + details filled in.<br>
+            2. Just hit send.<br>
+            3. Tap "I've sent it" — our team confirms manually, usually within 24 hours.
+          </div>
+          <button class="btn btn-whatsapp" style="margin-bottom:8px;" onclick="openWhatsappVerification()"><i class="bi bi-whatsapp"></i> Open WhatsApp again</button>
+          <button class="btn btn-secondary" onclick="markCodeSent()"><i class="bi bi-check2"></i> I've sent it</button>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="card">
+        <div class="card-title"><i class="bi bi-envelope-check"></i> Email Verification</div>
+        <div class="card-sub" id="email-current">—</div>
+        <span class="pill" id="email-status-pill"><i class="bi bi-dash-circle"></i> <span id="email-status-text">Unverified</span></span>
+        <div class="fg" style="margin-top:10px;"><label>Email to verify</label><input type="email" id="email-input" placeholder="you@email.com"></div>
+        <button class="btn btn-secondary" id="email-send-btn" onclick="sendEmailOtp()"><i class="bi bi-send"></i> Send Verification Code</button>
+        <div id="email-otp-block" style="display:none;margin-top:10px;">
+          <div class="otp-row">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="0" oninput="otpAdvance(this)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="1" oninput="otpAdvance(this)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="2" oninput="otpAdvance(this)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="3" oninput="otpAdvance(this)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="4" oninput="otpAdvance(this)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" data-otp-idx="5" oninput="otpAdvance(this)">
+          </div>
+          <button class="btn btn-primary" onclick="verifyEmailOtp()"><i class="bi bi-check-circle"></i> Verify Code</button>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <div class="card">
+        <div class="card-title"><i class="bi bi-person-vcard"></i> Identity Verification</div>
+        <div class="card-sub">Reviews your ID and CV under the Documents tab. Verified profiles get priority placement.</div>
+        <span class="pill" id="id-stage-pill"><i class="bi bi-dash-circle"></i> <span id="id-stage-text">Unverified</span></span>
+        <button class="btn btn-primary" id="id-request-btn" style="margin-top:10px;" onclick="requestIdentityVerification()"><i class="bi bi-patch-check"></i> Request Verification</button>
+        <div class="form-hint" id="id-request-hint"></div>
+      </div>
+    </div>
+
+    <!-- TAB: DOCUMENTS -->
+    <div class="tabpanel" id="tab-docs">
+      <div class="card">
+        <div class="doc-head"><span class="lbl"><i class="bi bi-file-earmark-person-fill"></i> CV / Resume</span><span class="pill" id="cv-status-pill"></span></div>
+        <label class="upload-box" id="cv-upload-box">
+          <i class="bi bi-file-earmark-arrow-up-fill"></i>
+          <div class="ub-text" id="cv-upload-text">Upload your CV</div>
+          <div class="ub-sub">PDF or Word document — max 8MB</div>
+          <input type="file" id="cv-file-input" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="uploadCv(this)">
+        </label>
+        <div id="cv-review-note"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:.7rem;"><i class="bi bi-card-image"></i> ID Document <span class="pill" id="id-doc-status-pill" style="margin-left:6px;"></span></div>
+        <div class="doc-grid">
+          <div>
+            <div class="doc-head"><span class="lbl">Front</span></div>
+            <label class="upload-box" id="idf-upload-box">
+              <i class="bi bi-camera-fill"></i>
+              <div class="ub-text" id="idf-upload-text">Upload front</div>
+              <input type="file" accept="image/*" onchange="uploadIdDoc(this,'front')">
+            </label>
+          </div>
+          <div>
+            <div class="doc-head"><span class="lbl">Back</span></div>
+            <label class="upload-box" id="idb-upload-box">
+              <i class="bi bi-camera-fill"></i>
+              <div class="ub-text" id="idb-upload-text">Upload back</div>
+              <input type="file" accept="image/*" onchange="uploadIdDoc(this,'back')">
+            </label>
+          </div>
+        </div>
+        <div id="id-review-note"></div>
+      </div>
+
+      <div class="card">
+        <div class="doc-head"><span class="lbl"><i class="bi bi-person-badge-fill"></i> Selfie</span><span class="pill" id="selfie-status-pill"></span></div>
+        <label class="upload-box" id="selfie-upload-box">
+          <i class="bi bi-camera-fill"></i>
+          <div class="ub-text" id="selfie-upload-text">Upload a clear selfie</div>
+          <input type="file" accept="image/*" onchange="uploadSelfie(this)">
+        </label>
+        <div id="selfie-review-note"></div>
+      </div>
+    </div>
+
+    <!-- TAB: SETTINGS -->
+    <div class="tabpanel" id="tab-settings">
+
+      <div class="card">
+        <div class="card-title"><i class="bi bi-eye"></i> Visibility & Preferences</div>
+        <div class="toggle-row" style="border-top:none;">
+          <span class="ti" style="background:var(--green-light);"><i class="bi bi-eye" style="color:var(--green);"></i></span>
+          <div class="tt"><div class="lbl" id="vis-label">Profile Visible</div><div class="sub" id="vis-sub">Employers can find you in search</div></div>
+          <label class="switch"><input type="checkbox" id="tg-visible" onchange="toggleVisibility()"><span class="slider"></span></label>
+        </div>
+        <hr class="sep">
+        <div class="row2">
+          <div class="fg"><label>Notification Preference</label>
+            <select id="s-notif-pref"><option value="all">All notifications</option><option value="important">Important only</option><option value="none">None</option></select>
+          </div>
+          <div class="fg"><label>Preferred Job Type</label>
+            <select id="s-job-type"><option value="">Any</option><option value="fulltime">Full-time</option><option value="parttime">Part-time</option><option value="live-in">Live-in</option><option value="live-out">Live-out</option></select>
+          </div>
+        </div>
+        <div class="fg"><label>Preferred County</label><input type="text" id="s-pref-county" placeholder="e.g. Nairobi"></div>
+        <button class="btn btn-primary" onclick="savePreferences()"><i class="bi bi-check-circle"></i> Save Preferences</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="bi bi-calendar-week"></i> Availability</div>
+        <div class="fg">
+          <label>Status</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="avail-grid">
+            <button type="button" class="btn btn-secondary btn-sm avail-chip" data-val="available" onclick="selectAvail(this)">Available Now</button>
+            <button type="button" class="btn btn-secondary btn-sm avail-chip" data-val="available_soon" onclick="selectAvail(this)">Available Soon</button>
+            <button type="button" class="btn btn-secondary btn-sm avail-chip" data-val="employed" onclick="selectAvail(this)">Currently Employed</button>
+            <button type="button" class="btn btn-secondary btn-sm avail-chip" data-val="not_looking" onclick="selectAvail(this)">Not Looking</button>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Available From</label><input type="date" id="s-avail-from"></div>
+          <div class="fg"><label>Expected Salary (KES/mo)</label><input type="number" id="s-salary" min="0" step="500" placeholder="e.g. 15000"></div>
+        </div>
+        <div class="fg"><label>Preferred Work Hours</label>
+          <select id="s-work-hours"><option value="fulltime">Full-time (Mon–Fri)</option><option value="parttime">Part-time (Flexible)</option><option value="weekends">Weekends only</option><option value="live-in">Live-in (24/7)</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="saveAvailability()"><i class="bi bi-check-circle"></i> Save Availability</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="bi bi-lock"></i> Change Password</div>
+        <div class="fg"><label>New Password</label><input type="password" id="s-new-pw" placeholder="Min 8 characters"></div>
+        <div class="fg"><label>Confirm New Password</label><input type="password" id="s-confirm-pw" placeholder="Repeat new password"></div>
+        <button class="btn btn-primary" onclick="changePassword()"><i class="bi bi-lock"></i> Update Password</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="color:var(--red);"><i class="bi bi-exclamation-triangle-fill"></i> Account Actions</div>
+        <div class="fg"><label>Reason for deactivating <span style="font-weight:400;">(optional)</span></label>
+          <select id="s-deact-reason"><option value="">Select…</option><option>Taking a break</option><option>Currently employed</option><option>Personal reasons</option><option>Other</option></select>
+        </div>
+        <button class="btn btn-secondary" style="margin-bottom:8px;" onclick="deactivateAccount()"><i class="bi bi-pause-circle"></i> Deactivate Account</button>
+        <button class="btn btn-danger" onclick="deleteAccount()"><i class="bi bi-trash3"></i> Delete Account</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-stack"></div>
+
+<script>
+// ============================================================
+// SETUP
+// ============================================================
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const BUSINESS_WHATSAPP_NUMBER = '+254738123425';
+const VERIFY_WORDS = ['TIGER','MANGO','ZEBRA','CORAL','AMBER','OLIVE','PEARL','MAPLE','RIVER','FALCON','CEDAR','SUNSET'];
+
+let currentUser = null;
+let workerProfile = null;   // full worker_profiles row for this user
+let selectedAvailability = 'available';
+let edOtpEmailPending = null;
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function showToast(type, icon, title, body) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type === 'err' ? 'err' : type === 'ok' ? 'ok' : '');
+  el.innerHTML = `<i class="bi ${icon}"></i><div><strong>${esc(title)}</strong>${body ? '<div>' + esc(body) + '</div>' : ''}</div>`;
+  document.getElementById('toast-stack').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) { window.location.href = 'login.html'; return; }
+
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+  currentUser = user;
+
+  const { data: acct, error: acctErr } = await sb.from('users').select('role').eq('id', currentUser.id).maybeSingle();
+  if (acctErr || !acct || acct.role !== 'employee') {
+    await sb.auth.signOut();
+    window.location.href = 'login.html?error=wrong_dashboard';
+    return;
+  }
+
+  try {
+    await loadProfile();
+    renderAll();
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('page').style.display = 'block';
+  } catch (err) {
+    console.error('[Profile] load failed:', err);
+    showToast('err', 'bi-exclamation-circle', 'Could not load profile', err.message);
+  }
+});
+
+async function loadProfile() {
+  const { data: bySession } = await sb.from('worker_profiles').select('*').eq('session_id', currentUser.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  let wp = bySession;
+  if (!wp) {
+    const { data: byEmail } = await sb.from('worker_profiles').select('*').eq('email', currentUser.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    wp = byEmail;
+    if (wp) sb.from('worker_profiles').update({ session_id: currentUser.id }).eq('id', wp.id).then(() => {});
+  }
+  if (!wp || !wp.profile_setup_completed) {
+    window.location.href = 'employee-profile-setup.html';
+    throw new Error('Profile setup incomplete');
+  }
+  workerProfile = wp;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderAll() {
+  renderHero();
+  renderChecklist();
+  renderProfileTab();
+  renderToggles();
+  renderPhoneVerify();
+  renderEmailVerify();
+  renderIdentityVerify();
+  renderDocuments();
+  renderSettings();
+}
+
+function renderHero() {
+  const p = workerProfile;
+  const name = p.full_name || currentUser.email?.split('@')[0] || 'Worker';
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'W';
+  document.getElementById('hero-name').textContent = name;
+  document.getElementById('hero-email').textContent = currentUser.email;
+  const avatarEl = document.getElementById('hero-avatar');
+  if (p.profile_photo_url) {
+    avatarEl.innerHTML = `<img src="${esc(p.profile_photo_url)}" alt=""><input type="file" accept="image/*" onchange="uploadProfilePhoto(this)"><span class="hero-avatar-edit"><i class="bi bi-pencil-fill" style="color:#fff;font-size:9px;"></i></span>`;
+  } else {
+    document.getElementById('hero-avatar-init').textContent = initials;
+  }
+  const stage = (p.verification_stage || '').toLowerCase();
+  const isVerified = stage === 'verified';
+  document.getElementById('hero-verify-icon').style.display = isVerified ? 'inline-block' : 'none';
+  const pillIcon = document.getElementById('hero-pill-icon');
+  const pillText = document.getElementById('hero-pill-text');
+  if (isVerified) { pillIcon.className = 'bi bi-patch-check-fill'; pillText.textContent = 'Verified'; }
+  else if (stage.includes('pending')) { pillIcon.className = 'bi bi-hourglass-split'; pillText.textContent = 'Pending Review'; }
+  else if (stage.includes('reject')) { pillIcon.className = 'bi bi-x-circle-fill'; pillText.textContent = 'Rejected'; }
+  else { pillIcon.className = 'bi bi-shield'; pillText.textContent = 'Unverified'; }
+}
+
+function isProfileComplete() {
+  const p = workerProfile;
+  const phoneOk = p.phone_verified === true || (p.phone_verification_status || '') === 'verified';
+  const emailOk = p.email_verified === true;
+  const cvOk = !!p.cv_url;
+  const idOk = (p.verification_stage || '').toLowerCase() === 'verified';
+  return { phoneOk, emailOk, cvOk, idOk };
+}
+
+function renderChecklist() {
+  const { phoneOk, emailOk, cvOk, idOk } = isProfileComplete();
+  const items = [
+    { ok: phoneOk, label: 'Phone verified (WhatsApp)' },
+    { ok: emailOk, label: 'Email verified' },
+    { ok: cvOk, label: 'CV uploaded' },
+    { ok: idOk, label: 'ID verified by admin' },
+  ];
+  const done = items.filter(i => i.ok).length;
+  const pct = Math.round((done / items.length) * 100);
+  document.getElementById('chk-pct').textContent = pct + '%';
+  document.getElementById('chk-bar').style.width = pct + '%';
+  document.getElementById('chk-list').innerHTML = items.map(i => `
+    <div class="chk-item ${i.ok ? 'done' : 'todo'}"><i class="bi ${i.ok ? 'bi-check-circle-fill' : 'bi-circle'}"></i> ${esc(i.label)}</div>
+  `).join('');
+}
+
+function renderProfileTab() {
+  const p = workerProfile;
+  document.getElementById('p-fullname').value = p.full_name || '';
+  document.getElementById('p-phone').value = p.phone || p.phone_number || '';
+  document.getElementById('p-location').value = p.current_town || p.county || '';
+  document.getElementById('p-bio').value = p.about_text || p.bio || '';
+  document.getElementById('p-edu').value = p.edu_level || p.education || '';
+  document.getElementById('p-skills').value = p.key_skills || p.skills_summary || '';
+  if (p.identity_change_status === 'pending' && p.pending_full_name) {
+    document.getElementById('p-fullname-pending').style.display = 'block';
+    document.getElementById('p-fullname-pending-value').textContent = p.pending_full_name;
+  }
+}
+
+function renderToggles() {
+  document.getElementById('tg-looking').checked = workerProfile.job_seeking !== false;
+  document.getElementById('tg-hired').checked = workerProfile.is_currently_hired === true;
+  document.getElementById('tg-mamafua').checked = workerProfile.is_mama_fua_worker === true;
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(id, btn) {
+  document.querySelectorAll('.tabpanel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabbtn').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ============================================================
+// PROFILE PHOTO
+// ============================================================
+async function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('info', 'bi-upload', 'Uploading photo…', '');
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/profile-photos/photo.${ext}`;
+  const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+  await sb.from('worker_profiles').update({ profile_photo_url: pub.publicUrl }).eq('id', workerProfile.id);
+  workerProfile.profile_photo_url = pub.publicUrl;
+  renderHero();
+  showToast('ok', 'bi-check-circle', 'Photo Updated', '');
+}
+
+// ============================================================
+// PERSONAL INFO SAVE
+// ============================================================
+async function saveProfileInfo() {
+  const fullName = document.getElementById('p-fullname').value.trim();
+  const phone = document.getElementById('p-phone').value.trim();
+  const location = document.getElementById('p-location').value.trim();
+  const bio = document.getElementById('p-bio').value.trim();
+  const edu = document.getElementById('p-edu').value;
+  const skills = document.getElementById('p-skills').value.trim();
+
+  const update = {
+    phone, phone_number: phone,
+    current_town: location,
+    about_text: bio, bio,
+    edu_level: edu, education: edu,
+    key_skills: skills, skills_summary: skills,
+  };
+  // A name change goes through the DB's own approval trigger — just send the
+  // new value in `full_name`; the trigger diverts it to pending_full_name
+  // and keeps full_name unchanged until an admin approves it.
+  if (fullName && fullName !== workerProfile.full_name) update.full_name = fullName;
+
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+
+  Object.assign(workerProfile, update);
+  await loadProfile(); // re-pull so pending_full_name / identity_change_status reflect the trigger's result
+  renderHero(); renderProfileTab();
+  showToast('ok', 'bi-check-circle', 'Profile Saved', '');
+}
+
+// ============================================================
+// STATUS TOGGLES
+// ============================================================
+async function toggleLookingForJob() {
+  const on = document.getElementById('tg-looking').checked;
+  const { error } = await sb.from('worker_profiles').update({ job_seeking: on }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message); document.getElementById('tg-looking').checked = !on; return; }
+  workerProfile.job_seeking = on;
+  showToast('ok', 'bi-check-circle', on ? 'You are now looking for work' : 'Looking for work turned off', '');
+}
+
+async function toggleHired() {
+  const on = document.getElementById('tg-hired').checked;
+  const { error } = await sb.from('worker_profiles').update({
+    is_currently_hired: on,
+    last_hired_at: on ? new Date().toISOString() : workerProfile.last_hired_at,
+    status: on ? 'hired' : 'approved',
+  }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message); document.getElementById('tg-hired').checked = !on; return; }
+  workerProfile.is_currently_hired = on;
+  showToast('ok', 'bi-check-circle', on ? 'Marked as Hired' : 'No longer marked as hired', on ? 'Your profile is now hidden from public listings.' : 'Your profile can appear in listings again.');
+}
+
+async function toggleMamaFua() {
+  const on = document.getElementById('tg-mamafua').checked;
+  const { error } = await sb.from('worker_profiles').update({ is_mama_fua_worker: on }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message); document.getElementById('tg-mamafua').checked = !on; return; }
+  workerProfile.is_mama_fua_worker = on;
+  showToast('ok', 'bi-check-circle', on ? 'Opted in to Mama Fua Mtaani' : 'Opted out of Mama Fua Mtaani', on ? "You'll now be matched with fixed-price escrow laundry/domestic jobs." : '');
+}
+
+// ============================================================
+// PHONE VERIFICATION (WhatsApp, manual/admin-reviewed)
+// ============================================================
+function renderPhoneVerify() {
+  const status = workerProfile.phone_verification_status || 'not_started';
+  const labels = { not_started: 'Not started', pending_review: 'Pending review', verified: 'Verified', rejected: 'Needs a retry' };
+  const icons  = { not_started: 'bi-dash-circle', pending_review: 'bi-clock-history', verified: 'bi-patch-check-fill', rejected: 'bi-exclamation-circle' };
+  document.getElementById('wa-status-pill').className = 'pill ' + (status === 'verified' ? 'verified' : status === 'rejected' ? 'rejected' : status === 'pending_review' ? 'pending_review' : 'pending');
+  document.getElementById('wa-status-text').textContent = labels[status] || status;
+  document.querySelector('#wa-status-pill i').className = 'bi ' + (icons[status] || 'bi-dash-circle');
+  document.getElementById('wa-biz-number').textContent = BUSINESS_WHATSAPP_NUMBER;
+
+  const hasCode = !!workerProfile.phone_verification_code;
+  document.getElementById('wa-start-block').style.display = hasCode ? 'none' : 'block';
+  document.getElementById('wa-code-block').style.display = hasCode ? 'block' : 'none';
+  if (hasCode) document.getElementById('wa-code-display').textContent = workerProfile.phone_verification_code;
+}
+
+function buildVerificationMessage() {
+  const p = workerProfile;
+  const lines = ['SoundsCare — Phone Verification', 'Code: ' + (p.phone_verification_code || '')];
+  if (p.full_name) lines.push('Name: ' + p.full_name);
+  if (currentUser.email) lines.push('Email: ' + currentUser.email);
+  const wa = document.getElementById('p-phone').value.trim() || p.phone || p.phone_number || '';
+  if (wa) lines.push('WhatsApp number: ' + wa);
+  return lines.join('\n');
+}
+function openWhatsappVerification() {
+  const digits = BUSINESS_WHATSAPP_NUMBER.replace(/[^0-9]/g, '');
+  window.open('https://wa.me/' + digits + '?text=' + encodeURIComponent(buildVerificationMessage()), '_blank');
+}
+
+async function generateVerificationCode() {
+  const word = VERIFY_WORDS[Math.floor(Math.random() * VERIFY_WORDS.length)];
+  const num = Math.floor(1000 + Math.random() * 9000);
+  const code = word + '-' + num;
+  const token = (currentUser.id.slice(0, 8) + '-' + num).toUpperCase();
+
+  const { error } = await sb.from('worker_profiles').update({
+    phone_verification_code: code,
+    verification_link_token: token,
+    phone_verification_status: 'not_started',
+    phone_verification_requested_at: new Date().toISOString(),
+  }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Could not generate code', error.message); return; }
+
+  workerProfile.phone_verification_code = code;
+  workerProfile.verification_link_token = token;
+  workerProfile.phone_verification_status = 'not_started';
+  renderPhoneVerify();
+  openWhatsappVerification();
+}
+
+async function markCodeSent() {
+  const { error } = await sb.from('worker_profiles').update({ phone_verification_status: 'pending_review' }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Could not update status', error.message); return; }
+  workerProfile.phone_verification_status = 'pending_review';
+  renderPhoneVerify();
+  renderChecklist();
+  notifyAdminVerificationSubmitted();
+  showToast('ok', 'bi-check-circle', 'Sent to admin', "We'll confirm your code within 24 hours.");
+}
+
+async function notifyAdminVerificationSubmitted() {
+  try {
+    await sb.rpc('fn_notify_admin', {
+      p_type: 'phone_verification_submitted',
+      p_title: 'Phone verification submitted',
+      p_message: (workerProfile.full_name || currentUser.email) + ' has submitted phone verification via WhatsApp — awaiting admin confirmation.',
+      p_source_type: 'worker_profiles',
+      p_source_id: workerProfile.id,
+    });
+  } catch (err) { console.warn('[Profile] could not notify admin:', err); }
+}
+
+// ============================================================
+// EMAIL VERIFICATION (Supabase Auth OTP)
+// ============================================================
+function renderEmailVerify() {
+  document.getElementById('email-current').textContent = currentUser.email || '—';
+  document.getElementById('email-input').value = currentUser.email || '';
+  const verified = workerProfile.email_verified === true;
+  document.getElementById('email-status-pill').className = 'pill ' + (verified ? 'verified' : 'pending');
+  document.getElementById('email-status-text').textContent = verified ? 'Verified' : 'Unverified';
+  document.querySelector('#email-status-pill i').className = 'bi ' + (verified ? 'bi-patch-check-fill' : 'bi-dash-circle');
+}
+
+async function sendEmailOtp() {
+  const email = document.getElementById('email-input').value.trim();
+  if (!email || !email.includes('@')) { showToast('err', 'bi-exclamation-circle', 'Invalid Email', 'Enter a valid email address.'); return; }
+  const btn = document.getElementById('email-send-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending…';
+  const { error } = await sb.auth.updateUser({ email });
+  btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Resend Verification Code';
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Could Not Send Code', error.message); return; }
+  edOtpEmailPending = email;
+  document.getElementById('email-otp-block').style.display = 'block';
+  document.querySelector('[data-otp-idx="0"]')?.focus();
+  showToast('ok', 'bi-envelope-check', 'Code Sent', `Check ${email} for a 6-digit code.`);
+}
+
+function otpAdvance(box) {
+  box.value = box.value.replace(/[^0-9]/g, '').slice(0, 1);
+  if (box.value && box.dataset.otpIdx !== '5') {
+    document.querySelector(`[data-otp-idx="${Number(box.dataset.otpIdx) + 1}"]`)?.focus();
+  }
+}
+
+async function verifyEmailOtp() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const token = Array.from(boxes).map(b => b.value).join('');
+  if (token.length !== 6) { showToast('err', 'bi-exclamation-circle', 'Incomplete Code', 'Enter all 6 digits.'); return; }
+  if (!edOtpEmailPending) { showToast('err', 'bi-exclamation-circle', 'Error', 'Send a code first.'); return; }
+  const { error } = await sb.auth.verifyOtp({ email: edOtpEmailPending, token, type: 'email_change' });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Verification Failed', error.message); return; }
+
+  await sb.from('worker_profiles').update({ email_verified: true, email: edOtpEmailPending }).eq('id', workerProfile.id);
+  workerProfile.email_verified = true;
+  workerProfile.email = edOtpEmailPending;
+  currentUser.email = edOtpEmailPending;
+  edOtpEmailPending = null;
+  document.getElementById('email-otp-block').style.display = 'none';
+  renderEmailVerify(); renderChecklist(); renderHero();
+  showToast('ok', 'bi-check-circle', 'Email Verified', '');
+}
+
+// ============================================================
+// IDENTITY VERIFICATION (ID docs → verification_stage)
+// ============================================================
+function renderIdentityVerify() {
+  const p = workerProfile;
+  const stage = (p.verification_stage || '').toLowerCase();
+  const labels = { verified: 'Verified', pending_review: 'Pending Review', rejected: 'Rejected — please re-submit' };
+  const cls = stage === 'verified' ? 'verified' : stage.includes('pending') ? 'pending_review' : stage.includes('reject') ? 'rejected' : 'pending';
+  document.getElementById('id-stage-pill').className = 'pill ' + cls;
+  document.getElementById('id-stage-text').textContent = labels[stage] || 'Unverified';
+  document.querySelector('#id-stage-pill i').className = 'bi ' + (stage === 'verified' ? 'bi-patch-check-fill' : stage.includes('pending') ? 'bi-hourglass-split' : stage.includes('reject') ? 'bi-x-circle-fill' : 'bi-dash-circle');
+
+  const canRequest = stage !== 'verified' && !stage.includes('pending');
+  const btn = document.getElementById('id-request-btn');
+  btn.disabled = !canRequest;
+  btn.innerHTML = `<i class="bi bi-patch-check"></i> ${stage === 'verified' ? 'Already Verified' : stage.includes('pending') ? 'Request Pending…' : 'Request Verification'}`;
+  document.getElementById('id-request-hint').innerHTML = (!p.id_front_url || !p.id_back_url)
+    ? '<i class="bi bi-exclamation-circle"></i> Upload your ID front/back in the Documents tab before requesting verification.' : '';
+}
+
+async function requestIdentityVerification() {
+  const btn = document.getElementById('id-request-btn');
+  btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+  const { error } = await sb.from('worker_profiles').update({ verification_stage: 'pending_review', verification_requested_at: new Date().toISOString() }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Request Failed', error.message); renderIdentityVerify(); return; }
+  workerProfile.verification_stage = 'pending_review';
+  renderIdentityVerify(); renderHero(); renderChecklist();
+  showToast('ok', 'bi-check-circle', 'Verification Requested', 'Our team will review your documents shortly.');
+}
+
+// ============================================================
+// DOCUMENTS (CV / ID front-back / Selfie) — each with admin review status
+// ============================================================
+function docPillHtml(status) {
+  const s = status || 'pending';
+  const labels = { pending: 'Pending review', approved: 'Approved', rejected: 'Rejected' };
+  const icons = { pending: 'bi-hourglass-split', approved: 'bi-check-circle-fill', rejected: 'bi-x-circle-fill' };
+  return { cls: s, html: `<i class="bi ${icons[s]}"></i> ${labels[s]}` };
+}
+
+function renderDocuments() {
+  const p = workerProfile;
+
+  const cv = docPillHtml(p.cv_status);
+  document.getElementById('cv-status-pill').className = 'pill ' + cv.cls;
+  document.getElementById('cv-status-pill').innerHTML = cv.html;
+  document.getElementById('cv-review-note').innerHTML = (p.cv_status === 'rejected' && p.cv_review_note) ? `<div class="review-note"><i class="bi bi-info-circle"></i> ${esc(p.cv_review_note)}</div>` : '';
+  if (p.cv_url) {
+    document.getElementById('cv-upload-box').classList.add('filled');
+    document.getElementById('cv-upload-text').textContent = p.cv_file_name || 'Replace CV';
+  }
+
+  const idPill = docPillHtml(p.id_status);
+  document.getElementById('id-doc-status-pill').className = 'pill ' + idPill.cls;
+  document.getElementById('id-doc-status-pill').innerHTML = idPill.html;
+  document.getElementById('id-review-note').innerHTML = (p.id_status === 'rejected' && p.id_review_note) ? `<div class="review-note"><i class="bi bi-info-circle"></i> ${esc(p.id_review_note)}</div>` : '';
+  if (p.id_front_url) { document.getElementById('idf-upload-box').classList.add('filled'); document.getElementById('idf-upload-text').textContent = 'Front uploaded'; }
+  if (p.id_back_url) { document.getElementById('idb-upload-box').classList.add('filled'); document.getElementById('idb-upload-text').textContent = 'Back uploaded'; }
+
+  const selfie = docPillHtml(p.selfie_status);
+  document.getElementById('selfie-status-pill').className = 'pill ' + selfie.cls;
+  document.getElementById('selfie-status-pill').innerHTML = selfie.html;
+  document.getElementById('selfie-review-note').innerHTML = (p.selfie_status === 'rejected' && p.selfie_review_note) ? `<div class="review-note"><i class="bi bi-info-circle"></i> ${esc(p.selfie_review_note)}</div>` : '';
+  if (p.selfie_url) { document.getElementById('selfie-upload-box').classList.add('filled'); document.getElementById('selfie-upload-text').textContent = 'Replace selfie'; }
+}
+
+async function uploadCv(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const okExt = /\.(pdf|doc|docx)$/i.test(file.name);
+  if (!okExt) { showToast('err', 'bi-exclamation-circle', 'Wrong file type', 'Please upload a PDF or Word document.'); input.value = ''; return; }
+  if (file.size > 8 * 1024 * 1024) { showToast('err', 'bi-exclamation-circle', 'Too large', 'CV file must be under 8MB.'); input.value = ''; return; }
+
+  showToast('info', 'bi-upload', 'Uploading CV…', '');
+  const ext = (file.name.split('.').pop() || 'pdf').toLowerCase();
+  const path = currentUser.id + '/cv-' + Date.now() + '.' + ext;
+  const { error: upErr } = await sb.storage.from('cv-uploads').upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('cv-uploads').getPublicUrl(path);
+
+  // A fresh upload always goes back to pending review.
+  const update = { cv_url: pub.publicUrl, cv_file_name: file.name, cv_uploaded_at: new Date().toISOString(), cv_status: 'pending', cv_review_note: null };
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  Object.assign(workerProfile, update);
+  renderDocuments(); renderChecklist();
+  showToast('ok', 'bi-check-circle', 'CV Uploaded', "It's now pending admin review.");
+}
+
+async function uploadIdDoc(input, side) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('info', 'bi-upload', 'Uploading…', '');
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/documents/id-${side}.${ext}`;
+  const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+
+  const field = side === 'front' ? 'id_front_url' : 'id_back_url';
+  const update = { [field]: pub.publicUrl, id_status: 'pending', id_review_note: null };
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  Object.assign(workerProfile, update);
+  renderDocuments(); renderIdentityVerify();
+  showToast('ok', 'bi-check-circle', 'ID ' + side + ' uploaded', '');
+}
+
+async function uploadSelfie(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('info', 'bi-upload', 'Uploading selfie…', '');
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/documents/selfie.${ext}`;
+  const { error: upErr } = await sb.storage.from('Media').upload(path, file, { contentType: file.type, upsert: true });
+  if (upErr) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', upErr.message); return; }
+  const { data: pub } = sb.storage.from('Media').getPublicUrl(path);
+
+  const update = { selfie_url: pub.publicUrl, selfie_status: 'pending', selfie_review_note: null };
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  Object.assign(workerProfile, update);
+  renderDocuments();
+  showToast('ok', 'bi-check-circle', 'Selfie Uploaded', '');
+}
+
+// ============================================================
+// SETTINGS TAB
+// ============================================================
+function renderSettings() {
+  const p = workerProfile;
+  const visible = p.profile_visible !== false;
+  document.getElementById('tg-visible').checked = visible;
+  document.getElementById('vis-label').textContent = visible ? 'Profile Visible' : 'Profile Hidden';
+  document.getElementById('vis-sub').textContent = visible ? 'Employers can find you in search' : 'You are hidden from employer searches';
+  document.getElementById('s-notif-pref').value = p.notification_preference || 'all';
+  document.getElementById('s-job-type').value = p.preferred_job_type || '';
+  document.getElementById('s-pref-county').value = p.preferred_county || '';
+  document.getElementById('s-avail-from').value = p.available_from || '';
+  document.getElementById('s-salary').value = p.expected_salary || '';
+  document.getElementById('s-work-hours').value = p.preferred_work_hours || 'fulltime';
+  selectedAvailability = p.availability_status || 'available';
+  document.querySelectorAll('.avail-chip').forEach(c => {
+    const on = c.dataset.val === selectedAvailability;
+    c.classList.toggle('btn-primary', on);
+    c.classList.toggle('btn-secondary', !on);
+  });
+}
+
+function selectAvail(el) {
+  selectedAvailability = el.dataset.val;
+  document.querySelectorAll('.avail-chip').forEach(c => {
+    const on = c === el;
+    c.classList.toggle('btn-primary', on);
+    c.classList.toggle('btn-secondary', !on);
+  });
+}
+
+async function toggleVisibility() {
+  const visible = document.getElementById('tg-visible').checked;
+  const { error } = await sb.from('worker_profiles').update({ profile_visible: visible }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Update Failed', error.message); document.getElementById('tg-visible').checked = !visible; return; }
+  workerProfile.profile_visible = visible;
+  renderSettings();
+  showToast('ok', 'bi-check-circle', 'Visibility Updated', '');
+}
+
+async function savePreferences() {
+  const update = {
+    notification_preference: document.getElementById('s-notif-pref').value,
+    preferred_job_type: document.getElementById('s-job-type').value,
+    preferred_county: document.getElementById('s-pref-county').value.trim(),
+  };
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  Object.assign(workerProfile, update);
+  showToast('ok', 'bi-check-circle', 'Preferences Saved', '');
+}
+
+async function saveAvailability() {
+  const update = {
+    availability_status: selectedAvailability,
+    available_from: document.getElementById('s-avail-from').value || null,
+    preferred_work_hours: document.getElementById('s-work-hours').value,
+    expected_salary: document.getElementById('s-salary').value ? parseInt(document.getElementById('s-salary').value, 10) : null,
+  };
+  const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Save Failed', error.message); return; }
+  Object.assign(workerProfile, update);
+  showToast('ok', 'bi-calendar-check', 'Availability Saved', `Status: ${selectedAvailability}`);
+}
+
+async function changePassword() {
+  const newPw = document.getElementById('s-new-pw').value;
+  const confirmPw = document.getElementById('s-confirm-pw').value;
+  if (!newPw || newPw.length < 8) { showToast('err', 'bi-lock', 'Too Short', 'Password must be at least 8 characters.'); return; }
+  if (newPw !== confirmPw) { showToast('err', 'bi-lock', 'Mismatch', 'Passwords do not match.'); return; }
+  const { error } = await sb.auth.updateUser({ password: newPw });
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Failed', error.message); return; }
+  document.getElementById('s-new-pw').value = '';
+  document.getElementById('s-confirm-pw').value = '';
+  showToast('ok', 'bi-shield-check', 'Password Changed', '');
+}
+
+async function deactivateAccount() {
+  const reason = document.getElementById('s-deact-reason').value || 'User requested';
+  if (!confirm('Deactivate your account? Your profile will be hidden until you reactivate.')) return;
+  const { error } = await sb.from('worker_profiles').update({
+    account_deactivated: true, deactivation_reason: reason, profile_visible: false, deactivated_at: new Date().toISOString(),
+  }).eq('id', workerProfile.id);
+  if (error) { showToast('err', 'bi-exclamation-circle', 'Failed', error.message); return; }
+  showToast('ok', 'bi-check-circle', 'Account Deactivated', 'Sign out and back in to reactivate.');
+}
+
+async function deleteAccount() {
+  const confirm1 = prompt('This will permanently delete your account. Type DELETE to confirm:');
+  if (confirm1 !== 'DELETE') { showToast('info', 'bi-info-circle', 'Cancelled', ''); return; }
+  await sb.from('worker_profiles').update({
+    account_deleted: true, deleted_at: new Date().toISOString(), profile_visible: false, account_deactivated: true, deactivation_reason: 'Deleted by user',
+  }).eq('id', workerProfile.id);
+  showToast('ok', 'bi-trash3', 'Account Deleted', 'Signing you out…');
+  setTimeout(async () => { await sb.auth.signOut(); window.location.href = 'login.html'; }, 2000);
+}
+</script>
+</body>
+</html>
