@@ -1152,6 +1152,11 @@ async function openConversation(convId) {
   if (isDesktop) {
     sidebar.classList.add('hidden-desktop');
   }
+  // Mobile: flip to the "conversation open" layout (see common.css's
+  // @media (max-width:700px) rules) — this is what actually reveals the
+  // chat pane and hides the list on phone-width screens. Previously the
+  // list was hidden unconditionally on mobile with nothing to reverse it.
+  document.querySelector('.chat-split')?.classList.add('conv-active');
 
   // Mark active in sidebar
   document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
@@ -1221,6 +1226,8 @@ function closeChatSplit() {
   document.getElementById('chat-no-conv').style.display = 'flex';
   activeConvId = null;
   document.querySelectorAll('.sidebar-msg-item').forEach(el => el.classList.remove('active'));
+  // Mobile: flip back to the "list" layout.
+  document.querySelector('.chat-split')?.classList.remove('conv-active');
 }
 
 // ── VOICE NOTES ──
