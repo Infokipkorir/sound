@@ -3371,13 +3371,18 @@ async function requestWithdrawal() {
     }
 
     // 2. Record the withdrawal request.
+    // Column names match the real worker_withdrawals schema: worker_id (not
+    // user_id — and per the worker_request_withdrawal RLS policy this must
+    // equal auth.uid(), i.e. currentUser.id, NOT workerProfile.id),
+    // phone_number (not phone), and system_reference (there is no
+    // transaction_id column on this table).
     const { error: wdErr } = await sb.from('worker_withdrawals').insert({
-      user_id: currentUser.id,
+      worker_id: currentUser.id,
       amount,
       method,
-      phone: fullPhone,
+      phone_number: fullPhone,
       status: 'pending',
-      transaction_id: txnRef,
+      system_reference: txnRef,
     });
 
     if (wdErr) {
@@ -3410,9 +3415,9 @@ async function loadWithdrawalHistory() {
   const el = document.getElementById('withdrawal-history-list');
   console.log('📍 Loading withdrawal history for user_id =', currentUser.id);
   const { data: withdrawals, error } = await sb.from('worker_withdrawals')
-    .select('id, amount, method, phone, status, transaction_id, created_at')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false })
+    .select('id, amount, method, phone_number, status, system_reference, requested_at')
+    .eq('worker_id', currentUser.id)
+    .order('requested_at', { ascending: false })
     .limit(20);
 
   if (error) {
@@ -3432,12 +3437,12 @@ async function loadWithdrawalHistory() {
     <div style="background:var(--surface); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
       <div>
         <div style="font-weight:700; font-size:13px; margin-bottom:2px;">KES ${parseFloat(w.amount || 0).toLocaleString('en-KE')}</div>
-        <div style="font-size:11px; color:var(--muted);">${(w.method || '').toUpperCase()}${w.phone ? ' · ' + w.phone : ''}</div>
-        <div style="font-size:10px; color:var(--muted);">${w.transaction_id ? 'Ref: ' + w.transaction_id : ''}</div>
+        <div style="font-size:11px; color:var(--muted);">${(w.method || '').toUpperCase()}${w.phone_number ? ' · ' + w.phone_number : ''}</div>
+        <div style="font-size:10px; color:var(--muted);">${w.system_reference ? 'Ref: ' + w.system_reference : ''}</div>
       </div>
       <div>
         <div style="font-size:12px; font-weight:700; color:${statusColors[w.status] || 'var(--muted)'}; text-transform:capitalize;">${w.status || '—'}</div>
-        <div style="font-size:10px; color:var(--muted); text-align:right;">${w.created_at ? new Date(w.created_at).toLocaleDateString('en-KE') : ''}</div>
+        <div style="font-size:10px; color:var(--muted); text-align:right;">${w.requested_at ? new Date(w.requested_at).toLocaleDateString('en-KE') : ''}</div>
       </div>
     </div>`).join('');
 }
@@ -4961,9 +4966,12 @@ function renderEdProfileTab() {
 
 async function setHiredLookingStatus(hired) {
   try {
+    // Note: worker_profiles has no 'hired_at' column (that exists on
+    // job_applications, not here) — last_hired_at is the real column and is
+    // already set below on the 'hired' branch.
     const update = hired
-      ? { is_currently_hired: true, job_seeking: false, looking_for_job: false, status: 'hired', profile_visible: false, hired_at: new Date().toISOString(), last_hired_at: new Date().toISOString() }
-      : { is_currently_hired: false, job_seeking: true, looking_for_job: true, status: 'approved', profile_visible: true, hired_at: null };
+      ? { is_currently_hired: true, job_seeking: false, looking_for_job: false, status: 'hired', profile_visible: false, last_hired_at: new Date().toISOString() }
+      : { is_currently_hired: false, job_seeking: true, looking_for_job: true, status: 'approved', profile_visible: true };
     const { error } = await sb.from('worker_profiles').update(update).eq('id', workerProfile.id);
     if (error) throw error;
     Object.assign(workerProfile, update);
@@ -5107,8 +5115,12 @@ async function loadEdEarnings() {
     const [{ data: wallet }, { data: withdrawals, error: wErr }] = await Promise.all([
       sb.from('wallets').select('balance, total_paid, outstanding_balance').eq('user_id', currentUser.id).maybeSingle(),
       sb.from('worker_withdrawals')
+        // worker_withdrawals.worker_id is the auth user id (see the
+        // worker_request_withdrawal RLS policy: auth.uid() = worker_id) —
+        // unlike job_applications.worker_id below, which is workerProfile.id.
+        // Filtering on workerProfile.id here silently returned zero rows.
         .select('id, amount, method, phone_number, status, requested_at, processed_at, currency, mpesa_receipt_number, net_amount')
-        .eq('worker_id', workerProfile.id)
+        .eq('worker_id', currentUser.id)
         .order('requested_at', { ascending: false })
         .limit(20),
     ]);
