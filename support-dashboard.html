@@ -158,9 +158,26 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
 }
 .sd-mobile-toggle{display:none;}
 @media (max-width:900px){ .sd-mobile-toggle{display:flex;} }
+
+/* ============================== ACCESS GATE ============================== */
+.sd-gate{position:fixed; inset:0; z-index:100; background:var(--cream); display:flex; align-items:center; justify-content:center; padding:1.5rem;}
+.sd-gate-card{background:#fff; border:1px solid var(--line); border-radius:20px; padding:2rem 1.8rem; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(15,25,35,.10);}
+.sd-gate-card .gi{font-size:2rem; color:var(--teal); margin-bottom:.6rem;}
+.sd-gate-card.deny .gi{color:var(--danger);}
+.sd-gate-card h2{margin:0 0 .4rem; font-size:1.1rem; color:var(--teal-deep);}
+.sd-gate-card p{margin:0 0 1.1rem; font-size:.86rem; line-height:1.5; color:var(--ink-soft);}
+.sd-gate-card .sd-btn{text-decoration:none;}
+.sd-gate-actions{display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap;}
+.sd-gate-spin{width:26px; height:26px; margin:0 auto .8rem; border:3px solid var(--mist); border-top-color:var(--teal); border-radius:50%; animation:sdspin .7s linear infinite;}
+@keyframes sdspin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
+
+<!-- ============================== ACCESS GATE (removed once admin check passes) ============================== -->
+<div class="sd-gate" id="sdGate">
+  <div class="sd-gate-card"><div class="sd-gate-spin"></div><h2>Checking access…</h2><p>Verifying your admin account.</p></div>
+</div>
 
 <!-- ============================== SIDEBAR ============================== -->
 <aside class="sd-sidebar" id="sdSidebar">
@@ -298,14 +315,22 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
 (function(){
   'use strict';
 
-  // ---- Same Supabase project/credentials as support.html (anon key; RLS
-  // restricts everything below to authenticated, active support_agents rows).
+  // ---- Same Supabase project/credentials as before (anon key; RLS is the real
+  // enforcement layer). The session storage MUST match admin-login.html, which
+  // keeps the admin session in sessionStorage — with the default localStorage
+  // this page would never see the session created at login.
   var sb = supabase.createClient(
     'https://phoahudvrcelfrykoeuo.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y',
+    { auth: { persistSession:true, autoRefreshToken:true, storage: window.sessionStorage } }
   );
 
-  var me = { authUser:null, agent:null };
+  var LOGIN_URL = 'admin-login.html';
+  var SUPPORT_PAGE = 'support-room'; // value in admin_users.allowed_pages
+
+  // me.admin  = row from admin_users (the gate)
+  // me.agent  = optional support_agents row (only present if this admin is also a chat agent)
+  var me = { authUser:null, admin:null, agent:null };
   var state = {
     view:'overview', inboxFilter:'all', kbTab:'articles',
     tickets:[], agents:[], departments:[], currentTicket:null, msgChannel:null, ticketChannel:null,
@@ -335,30 +360,94 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
   function closeModal(){ $('sdModalBackdrop').style.display='none'; $('sdModalCard').innerHTML=''; }
   $('sdModalBackdrop').addEventListener('click', function(e){ if(e.target===$('sdModalBackdrop')) closeModal(); });
 
-  // ------------------------------------------------------------------ auth / agent bootstrap
+  // ------------------------------------------------------------------ admin gate
+  function isSuperAdmin(row){ return row.access_level==='super_admin' || row.role==='Super Admin'; }
+  function canAccessSupport(row){
+    if(isSuperAdmin(row)) return true;
+    return Array.isArray(row.allowed_pages) && row.allowed_pages.indexOf(SUPPORT_PAGE) !== -1;
+  }
+  function gateShow(opts){
+    var g = $('sdGate'); if(!g) return;
+    g.style.display = 'flex';
+    g.innerHTML = '<div class="sd-gate-card'+(opts.deny?' deny':'')+'">'+
+      '<div class="gi"><i class="bi '+opts.icon+'"></i></div>'+
+      '<h2>'+esc(opts.title)+'</h2><p>'+esc(opts.text)+'</p>'+
+      '<div class="sd-gate-actions">'+(opts.actions||'')+'</div></div>';
+  }
+  function gateOpen(){ var g = $('sdGate'); if(g) g.remove(); }
+  function goLogin(){ window.location.replace(LOGIN_URL); }
+
+  // Fail closed: anything other than an explicit pass leaves the gate up and
+  // no dashboard data is requested.
+  async function adminGate(){
+    var { data:{ session } } = await sb.auth.getSession();
+    if(!session){ goLogin(); return null; }
+
+    // getUser() validates the token with the server (getSession only reads storage).
+    var { data:{ user }, error:userErr } = await sb.auth.getUser();
+    if(userErr || !user){ try{ await sb.auth.signOut(); }catch(e){} goLogin(); return null; }
+
+    var { data:adminRow, error } = await sb.from('admin_users')
+      .select('id, username, email, role, access_level, status, allowed_pages, must_change_password, pin_hash')
+      .eq('user_id', user.id).maybeSingle();
+    if(error){
+      logErr('admin gate lookup', error);
+      gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Could not verify access',
+        text:'We could not check your admin account. Please try again.',
+        actions:'<button class="sd-btn" onclick="location.reload()">Retry</button><a class="sd-btn secondary" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    if(!adminRow){
+      try{ await sb.auth.signOut(); }catch(e){}
+      gateShow({ deny:true, icon:'bi-shield-x', title:'Not an admin account',
+        text:'This account is not registered as a SoundsCare admin.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    if(adminRow.status !== 'Active'){
+      try{ await sb.auth.signOut(); }catch(e){}
+      gateShow({ deny:true, icon:'bi-shield-x', title:'Account not active',
+        text:'This admin account is not active. Contact the Super Admin.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    // Unfinished onboarding (forced password change / PIN not set) is handled on the login page.
+    if(adminRow.must_change_password || !adminRow.pin_hash){ goLogin(); return null; }
+
+    if(!canAccessSupport(adminRow)){
+      gateShow({ deny:true, icon:'bi-lock', title:'No access to Support Dashboard',
+        text:'Your role ('+(adminRow.role||'Admin')+') is not permitted to open this page.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to my dashboards</a>' });
+      return null;
+    }
+    me.authUser = user;
+    me.admin = adminRow;
+    return adminRow;
+  }
+
+  // ------------------------------------------------------------------ bootstrap
   async function init(){
     try{
-      var { data:{ session } } = await sb.auth.getSession();
-      if(!session){
-        document.body.innerHTML = '<div style="margin:auto;padding:2rem;text-align:center;font-family:sans-serif;">'+
-          '<h2>Please sign in</h2><p>You need an agent account to view this dashboard.</p>'+
-          '<a href="/login.html" class="sd-btn" style="display:inline-block;margin-top:.5rem;">Go to login</a></div>';
-        return;
-      }
-      me.authUser = session.user;
-      var { data: agentRow, error } = await sb.from('support_agents').select('*').eq('user_id', me.authUser.id).maybeSingle();
-      if(error) throw error;
-      if(!agentRow || !agentRow.is_active){
-        document.body.innerHTML = '<div style="margin:auto;padding:2rem;text-align:center;font-family:sans-serif;">'+
-          '<h2>Not authorized</h2><p>Your account is not an active support agent. Ask an admin to invite you.</p></div>';
-        return;
-      }
-      me.agent = agentRow;
-      $('sdMyName').textContent = agentRow.display_name + ' · ' + agentRow.role;
-      $('sdPresenceSelect').value = agentRow.presence || 'online';
-      setMyDot(agentRow.presence || 'online');
-      await sb.rpc('support_agent_heartbeat', { p_presence: agentRow.presence || 'online' }).catch(function(e){ logErr('heartbeat', e); });
+      var adminRow = await adminGate();
+      if(!adminRow) return;
 
+      // Optional: is this admin also a chat agent? (Adds presence/assignment features.
+      // Not required to use the dashboard.)
+      var agentRes = await sb.from('support_agents').select('*').eq('user_id', me.authUser.id).maybeSingle();
+      me.agent = (!agentRes.error && agentRes.data && agentRes.data.is_active) ? agentRes.data : null;
+
+      var presence = (me.agent && me.agent.presence) || 'online';
+      $('sdMyName').textContent = (adminRow.username || adminRow.email || 'Admin') + ' · ' + (adminRow.role || 'Admin');
+      $('sdPresenceSelect').value = presence;
+      setMyDot(presence);
+      if(me.agent){
+        try{ await sb.rpc('support_agent_heartbeat', { p_presence: presence }); }catch(e){ logErr('heartbeat', e); }
+      }
+
+      // If the session ends in this or another tab, drop back to the login page.
+      sb.auth.onAuthStateChange(function(evt){ if(evt==='SIGNED_OUT') goLogin(); });
+
+      gateOpen();
       wireNav();
       wireTopbar();
       wireInbox();
@@ -370,7 +459,9 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
       startPolling();
     }catch(err){
       logErr('init', err);
-      toast('Could not load the dashboard. Please refresh.', 'error');
+      gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Could not load the dashboard',
+        text:'Something went wrong while starting up. Please refresh.',
+        actions:'<button class="sd-btn" onclick="location.reload()">Refresh</button>' });
     }
   }
 
@@ -719,7 +810,7 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
         try{
           var { error } = await sb.from('support_agents').insert({ display_name:name, email:email, role:role, invited_by: me.authUser.id, is_active:true, presence:'offline' });
           if(error) throw error;
-          await sb.from('support_agent_activity').insert({ agent_id: me.agent.id, action:'invited_agent', target_type:'agent', metadata:{ email:email } }).catch(function(e){logErr('audit log',e);});
+          await sb.from('support_agent_activity').insert({ agent_id: me.agent ? me.agent.id : null, action:'invited_agent', target_type:'agent', metadata:{ email:email, by_admin:me.admin.email } }).catch(function(e){logErr('audit log',e);});
           toast('Invite created for '+email+' — have them sign up with this email.');
           closeModal(); loadAgents();
         }catch(err){ logErr('invite agent', err); toast('Could not invite agent (email may already exist)', 'error'); this.disabled=false; }
@@ -750,7 +841,7 @@ table.sd-table tr.clickable:hover{background:var(--mist);}
           try{
             var { error } = await sb.from('support_agents').update({ is_active: !nowActive }).eq('id', id);
             if(error) throw error;
-            await sb.from('support_agent_activity').insert({ agent_id: me.agent.id, action: nowActive?'disabled_agent':'enabled_agent', target_type:'agent', target_id:id }).catch(function(e){logErr('audit log',e);});
+            await sb.from('support_agent_activity').insert({ agent_id: me.agent ? me.agent.id : null, action: nowActive?'disabled_agent':'enabled_agent', target_type:'agent', target_id:id, metadata:{ by_admin:me.admin.email } }).catch(function(e){logErr('audit log',e);});
             toast('Agent updated'); loadAgents();
           }catch(err){ logErr('toggle agent', err); toast('Could not update agent', 'error'); btn.disabled=false; }
         });
