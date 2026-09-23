@@ -192,41 +192,10 @@ h1 { text-align: center; font-size: 1.35rem; font-weight: 800; margin-bottom: .2
 </style>
 </head>
 <body>
-
-<!--
-  BACKEND REQUIREMENTS FOR THIS VERSION (Supabase project phoahudvrcelfrykoeuo)
-  ------------------------------------------------------------------------------
-  1. admin_users needs two extra columns:
-       pin_hash text            -- set via RPC only, never written by the client directly
-       phone    text            -- used for SMS OTP identity verification (nullable)
-
-  2. Two SECURITY DEFINER RPCs, following the same pattern as the existing
-     clear_admin_password_change_flag (admin_users has no "update own row"
-     RLS policy by design, so PIN writes/reads must go through RPCs):
-
-       set_admin_pin(new_pin text) returns void
-         -- validates new_pin is exactly 4 digits, then stores
-         -- crypt(new_pin, gen_salt('bf')) into pin_hash for the row
-         -- matching auth.uid().
-
-       verify_admin_pin(pin_attempt text) returns boolean
-         -- returns (pin_hash = crypt(pin_attempt, pin_hash)) for the row
-         -- matching auth.uid(). Consider adding attempt throttling here.
-
-  3. Email OTP and SMS/phone OTP must be enabled in Supabase Auth settings
-     for the "verify by email or phone" identity check during first-time
-     PIN setup (sb.auth.signInWithOtp / sb.auth.verifyOtp).
-
-  4. Social login: enable the Google (and, if wanted, Microsoft/Azure)
-     OAuth providers in Supabase Auth, with this page's URL allow-listed
-     as a redirect URL. A social sign-in still requires a matching, Active
-     admin_users row — accounts without one are signed out immediately.
--->
-
 <!-- STEP 1: LOGIN -->
 <div class="card" id="login-step">
   <div class="logo-wrap">
-    <div class="logo">🎙️</div>
+    <div class="logo"></div>
     <h1>SoundsCare Admin</h1>
     <p class="sub">Control Centre — Authorised access only</p>
   </div>
