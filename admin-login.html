@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundsCare Admin — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --ink: #0f1923;
+  --brand: #1B6B45;
+  --brand-dark: #134f33;
+  --brand-soft: rgba(27,107,69,0.10);
+  --accent: #E8A040;
+  --accent-ink: #a15a1f;
+  --rose: #f43f5e;
+  --green: #16a34a;
+  --sky: #0ea5e9;
+  --violet: #8b5cf6;
+  --amber: #f59e0b;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(27,107,69,.10), transparent 40%),
+    radial-gradient(circle at 88% 88%, rgba(232,160,64,.09), transparent 40%),
+    var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 2.6rem 2.2rem 2rem;
+  box-shadow: 0 20px 60px rgba(15,25,35,.13), 0 2px 8px rgba(15,25,35,.06);
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+}
+
+.logo-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.6rem; }
+.logo {
+  width: 68px; height: 68px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 20px rgba(27,107,69,.18);
+  margin: 0 auto .9rem;
+  font-size: 28px;
+}
+h1 { text-align: center; font-size: 1.35rem; font-weight: 800; margin-bottom: .2rem; letter-spacing: -.3px; }
+.sub { text-align: center; font-size: 12.5px; color: var(--muted); margin-bottom: 1.6rem; line-height: 1.5; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+.form-group input {
+  width: 100%; padding: 10px 12px; font-size: 13px; font-family: inherit;
+  border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg);
+  transition: .15s;
+}
+.form-group input:focus { outline: none; border-color: var(--brand); background: #fff; box-shadow: 0 0 0 3px var(--brand-soft); }
+.form-hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+.error-box, .success-box { font-size: 12.5px; margin-bottom: .8rem; text-align: center; border-radius: 8px; padding: 8px 12px; display: none; }
+.error-box { color: var(--rose); background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.18); }
+.success-box { color: var(--green); background: rgba(22,163,74,.08); border: 1px solid rgba(22,163,74,.2); }
+.error-box.show, .success-box.show { display: block; }
+
+.btn {
+  width: 100%; padding: 11px; border: none; border-radius: 10px;
+  background: var(--brand); color: #fff; font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: .15s;
+}
+.btn:hover { background: var(--brand-dark); }
+.btn:disabled { opacity: .7; cursor: default; }
+.btn-secondary { background: var(--bg); color: var(--ink); border: 1.5px solid var(--border); }
+.btn-secondary:hover { background: #f0f1f3; }
+.spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pw-field { position: relative; }
+.pw-toggle { position: absolute; right: 10px; bottom: 10px; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 2px; }
+
+.footnote { text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 1.2rem; }
+.forgot-link-wrap { text-align: center; margin-top: .9rem; }
+.link-btn { background: none; border: none; color: var(--brand); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: underline; }
+.link-btn:hover { color: var(--brand-dark); }
+
+/* Social sign-in */
+.divider { display: flex; align-items: center; gap: 10px; margin: 1.2rem 0 .9rem; color: var(--muted); font-size: 11.5px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.btn-social { background: #fff; color: var(--ink); border: 1.5px solid var(--border); margin-top: .6rem; }
+.btn-social:hover { background: #f6f7f8; }
+.btn-social i { font-size: 15px; }
+
+/* PIN entry boxes */
+.pin-boxes { display: flex; gap: 10px; justify-content: center; margin: 4px 0 2px; }
+.pin-box {
+  width: 48px; height: 56px; text-align: center; font-size: 22px; font-weight: 700;
+  border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); font-family: inherit;
+}
+.pin-box:focus { outline: none; border-color: var(--brand); background: #fff; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+/* Verification method picker */
+.method-list { display: flex; flex-direction: column; gap: 10px; margin-top: .4rem; }
+.method-btn {
+  display: flex; align-items: center; gap: 12px;
+  border: 1.5px solid var(--border); border-radius: 14px; padding: 13px 15px;
+  background: var(--bg); cursor: pointer; text-align: left; width: 100%;
+  font-family: inherit; transition: .15s;
+}
+.method-btn:hover { border-color: var(--brand); background: var(--brand-soft); }
+.method-btn i { font-size: 17px; color: var(--brand); width: 20px; text-align: center; flex-shrink: 0; }
+.method-btn .m-text strong { font-size: 13px; }
+.method-btn .m-text small { display: block; color: var(--muted); font-size: 11px; margin-top: 1px; }
+
+/* Destination picker (Waiting Bay) */
+.dest-list { display: flex; flex-direction: column; gap: 10px; margin-top: .4rem; }
+.dest-card {
+  display: flex; align-items: center; gap: 14px;
+  border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px;
+  background: var(--bg); cursor: pointer; text-align: left; width: 100%;
+  font-family: inherit; transition: .15s;
+}
+.dest-card:hover { border-color: var(--brand); background: var(--brand-soft); transform: translateY(-1px); }
+.dest-icon {
+  width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff;
+}
+.dest-text h3 { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+.dest-text p { font-size: 11.5px; color: var(--muted); }
+.dest-arrow { margin-left: auto; color: var(--muted); font-size: 15px; }
+
+.who {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 1.4rem;
+  padding-bottom: 1.2rem; border-bottom: 1px solid var(--border);
+}
+.who-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.who-text h3 { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.who-text p { font-size: 11px; color: var(--muted); }
+.role-pill { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark); }
+.role-pill.super { background: rgba(232,160,64,.16); color: var(--accent-ink); }
+.signout-link { margin-left: auto; font-size: 11.5px; color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; font-family: inherit; flex-shrink: 0; }
+.signout-link:hover { color: var(--rose); }
+
+.hidden { display: none !important; }
+.redirect-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 1rem; }
+
+/* Forgot-password / forgot-PIN modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,25,35,.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 80;
+}
+.modal-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+  padding: 1.8rem 1.7rem; max-width: 380px; width: 100%; position: relative;
+  box-shadow: 0 20px 60px rgba(15,25,35,.2);
+}
+.modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--muted); font-size: 17px; cursor: pointer; }
+.modal-card h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: .35rem; }
+.modal-card .sub { text-align: left; margin-bottom: 1.2rem; }
+
+/* Toast */
+.toast {
+  position: fixed; top: 22px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 10px;
+  font-size: 12.5px; font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,.25); z-index: 90;
+  display: flex; align-items: center; gap: 8px;
+}
+</style>
+</head>
+<body>
+
+<!--
+  BACKEND REQUIREMENTS FOR THIS VERSION (Supabase project phoahudvrcelfrykoeuo)
+  ------------------------------------------------------------------------------
+  1. admin_users needs two extra columns:
+       pin_hash text            -- set via RPC only, never written by the client directly
+       phone    text            -- used for SMS OTP identity verification (nullable)
+
+  2. Two SECURITY DEFINER RPCs, following the same pattern as the existing
+     clear_admin_password_change_flag (admin_users has no "update own row"
+     RLS policy by design, so PIN writes/reads must go through RPCs):
+
+       set_admin_pin(new_pin text) returns void
+         -- validates new_pin is exactly 4 digits, then stores
+         -- crypt(new_pin, gen_salt('bf')) into pin_hash for the row
+         -- matching auth.uid().
+
+       verify_admin_pin(pin_attempt text) returns boolean
+         -- returns (pin_hash = crypt(pin_attempt, pin_hash)) for the row
+         -- matching auth.uid(). Consider adding attempt throttling here.
+
+  3. Email OTP and SMS/phone OTP must be enabled in Supabase Auth settings
+     for the "verify by email or phone" identity check during first-time
+     PIN setup (sb.auth.signInWithOtp / sb.auth.verifyOtp).
+
+  4. Social login: enable the Google (and, if wanted, Microsoft/Azure)
+     OAuth providers in Supabase Auth, with this page's URL allow-listed
+     as a redirect URL. A social sign-in still requires a matching, Active
+     admin_users row — accounts without one are signed out immediately.
+-->
+
+<!-- STEP 1: LOGIN -->
+<div class="card" id="login-step">
+  <div class="logo-wrap">
+    <div class="logo">🎙️</div>
+    <h1>SoundsCare Admin</h1>
+    <p class="sub">Control Centre — Authorised access only</p>
+  </div>
+  <div class="error-box" id="login-error"></div>
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label>Email</label>
+      <input id="auth-email" type="email" placeholder="you@soundscare.co.ke" autocomplete="username" required>
+    </div>
+    <div class="form-group pw-field">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" required style="padding-right:40px">
+      <button type="button" class="pw-toggle" onclick="togglePw('auth-password','pw-eye')" title="Show/hide">
+        <i class="bi bi-eye" id="pw-eye"></i>
+      </button>
+    </div>
+    <button type="submit" class="btn" id="login-btn">
+      <span class="spinner hidden" id="login-spinner"></span>
+      <i class="bi bi-box-arrow-in-right" id="login-icon"></i>
+      <span id="login-btn-text">Sign In</span>
+    </button>
+  </form>
+  <div class="forgot-link-wrap">
+    <button type="button" class="link-btn" onclick="openForgotPassword('password')">Forgot password?</button>
+  </div>
+
+  <div class="divider"><span>or continue with</span></div>
+  <button type="button" class="btn btn-social" onclick="socialLogin('google')">
+    <i class="bi bi-google"></i> Continue with Google
+  </button>
+  <button type="button" class="btn btn-social" onclick="socialLogin('azure')">
+    <i class="bi bi-microsoft"></i> Continue with Microsoft
+  </button>
+
+  <p class="footnote"><i class="bi bi-shield-lock" style="margin-right:4px"></i>Secured connection — admin only</p>
+</div>
+
+<!-- STEP 2: FORCED PASSWORD CHANGE (temporary password issued by Super Admin) -->
+<div class="card hidden" id="change-pw-step">
+  <div class="who" style="margin-bottom:1.2rem">
+    <div class="who-avatar" id="cpw-avatar">AD</div>
+    <div class="who-text">
+      <h3 id="cpw-name">Admin</h3>
+      <p id="cpw-role">Admin</p>
+    </div>
+    <button class="signout-link" onclick="signOutAndReset()">Sign out</button>
+  </div>
+  <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.3rem">Set a new password</h1>
+  <p class="sub" style="text-align:left;margin-bottom:1.2rem">You signed in with a temporary password. Choose a new one to continue — only you will know it.</p>
+  <div class="error-box" id="cpw-error"></div>
+  <form id="change-pw-form" onsubmit="handleChangePassword(event)">
+    <div class="form-group pw-field">
+      <label>New password</label>
+      <input id="cpw-new" type="password" placeholder="At least 8 characters" minlength="8" autocomplete="new-password" required style="padding-right:40px">
+      <button type="button" class="pw-toggle" onclick="togglePw('cpw-new','cpw-eye1')"><i class="bi bi-eye" id="cpw-eye1"></i></button>
+    </div>
+    <div class="form-group pw-field">
+      <label>Confirm new password</label>
+      <input id="cpw-confirm" type="password" placeholder="Repeat password" minlength="8" autocomplete="new-password" required style="padding-right:40px">
+      <button type="button" class="pw-toggle" onclick="togglePw('cpw-confirm','cpw-eye2')"><i class="bi bi-eye" id="cpw-eye2"></i></button>
+    </div>
+    <button type="submit" class="btn" id="cpw-btn">
+      <span class="spinner hidden" id="cpw-spinner"></span>
+      <i class="bi bi-check-circle" id="cpw-icon"></i>
+      <span id="cpw-btn-text">Set password &amp; continue</span>
+    </button>
+  </form>
+</div>
+
+<!-- STEP 3: PIN SETUP (first sign-in only) -->
+<div class="card hidden" id="pin-setup-step">
+  <div class="who" style="margin-bottom:1.2rem">
+    <div class="who-avatar" id="pinset-avatar">AD</div>
+    <div class="who-text">
+      <h3 id="pinset-name">Admin</h3>
+      <p id="pinset-role">Admin</p>
+    </div>
+    <button class="signout-link" onclick="signOutAndReset()">Sign out</button>
+  </div>
+
+  <!-- 3a: choose the PIN -->
+  <div id="pinset-choose-view">
+    <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.3rem">Set up a sign-in PIN</h1>
+    <p class="sub" style="text-align:left;margin-bottom:1rem">Pick a 4-digit PIN for faster sign-ins. We'll confirm it's really you before it's saved.</p>
+    <div class="error-box" id="pinset-error"></div>
+    <form id="pinset-choose-form" onsubmit="handlePinChosen(event)">
+      <div class="form-group">
+        <label>New PIN</label>
+        <div class="pin-boxes" id="pinset-new-boxes">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Confirm PIN</label>
+        <div class="pin-boxes" id="pinset-confirm-boxes">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+          <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+      <button type="submit" class="btn">Continue</button>
+    </form>
+  </div>
+
+  <!-- 3b: choose verification method -->
+  <div id="pinset-method-view" class="hidden">
+    <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.3rem">Verify it's you</h1>
+    <p class="sub" style="text-align:left;margin-bottom:1rem">Before your PIN is saved, confirm your identity with a one-time code.</p>
+    <div class="error-box" id="pinmethod-error"></div>
+    <div class="method-list">
+      <button type="button" class="method-btn" onclick="sendPinOtp('email')">
+        <i class="bi bi-envelope"></i>
+        <div class="m-text"><strong>Email</strong><small id="pinmethod-email-label">Send a code by email</small></div>
+      </button>
+      <button type="button" class="method-btn" onclick="sendPinOtp('phone')">
+        <i class="bi bi-phone"></i>
+        <div class="m-text"><strong>Phone</strong><small id="pinmethod-phone-label">Send a code by SMS</small></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3c: enter the code -->
+  <div id="pinset-otp-view" class="hidden">
+    <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.3rem">Enter the code</h1>
+    <p class="sub" style="text-align:left;margin-bottom:1rem" id="pinset-otp-sub">We sent a code — enter it below.</p>
+    <div class="error-box" id="pinotp-error"></div>
+    <form id="pinset-otp-form" onsubmit="verifyPinOtp(event)">
+      <div class="form-group">
+        <label>Verification code</label>
+        <input id="pinset-otp-code" inputmode="numeric" placeholder="6-digit code" required>
+      </div>
+      <button type="submit" class="btn" id="pinotp-btn">
+        <span class="spinner hidden" id="pinotp-spinner"></span>
+        <span id="pinotp-btn-text">Verify &amp; save PIN</span>
+      </button>
+    </form>
+    <div class="forgot-link-wrap">
+      <button type="button" class="link-btn" onclick="resendPinOtp()">Resend code</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4: PIN ENTRY (returning admin, PIN already set) -->
+<div class="card hidden" id="pin-enter-step">
+  <div class="who" style="margin-bottom:1.2rem">
+    <div class="who-avatar" id="pinenter-avatar">AD</div>
+    <div class="who-text">
+      <h3 id="pinenter-name">Admin</h3>
+      <p id="pinenter-role">Admin</p>
+    </div>
+    <button class="signout-link" onclick="signOutAndReset()">Sign out</button>
+  </div>
+  <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.3rem">Enter your PIN</h1>
+  <p class="sub" style="text-align:left;margin-bottom:1rem">Enter your 4-digit PIN to continue.</p>
+  <div class="error-box" id="pinenter-error"></div>
+  <form id="pin-enter-form" onsubmit="handlePinEntry(event)">
+    <div class="pin-boxes" id="pinenter-boxes">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+      <input class="pin-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+    </div>
+    <button type="submit" class="btn" id="pinenter-btn" style="margin-top:1.1rem">
+      <span class="spinner hidden" id="pinenter-spinner"></span>
+      <span id="pinenter-btn-text">Continue</span>
+    </button>
+  </form>
+  <div class="forgot-link-wrap">
+    <button type="button" class="link-btn" onclick="openForgotPassword('pin')">Forgot PIN?</button>
+  </div>
+</div>
+
+<!-- STEP 5: WAITING BAY (destination picker) -->
+<div class="card hidden" id="picker-step">
+  <div class="who">
+    <div class="who-avatar" id="who-avatar">AD</div>
+    <div class="who-text">
+      <h3><span id="who-name">Admin</span> <span class="role-pill" id="who-role-pill">Admin</span></h3>
+      <p id="who-role">Admin</p>
+    </div>
+    <button class="signout-link" onclick="signOutAndReset()">Sign out</button>
+  </div>
+  <h1 style="text-align:left;font-size:1.05rem;margin-bottom:.2rem">Waiting Bay</h1>
+  <p class="sub" style="text-align:left;margin-bottom:1rem">Choose where you'd like to go.</p>
+  <div class="dest-list" id="dest-list"></div>
+  <p class="redirect-note hidden" id="auto-redirect-note">Taking you there…</p>
+</div>
+
+<!-- FORGOT PASSWORD / FORGOT PIN MODAL -->
+<div class="modal-overlay hidden" id="forgot-modal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeForgotPassword()"><i class="bi bi-x-lg"></i></button>
+
+    <div id="forgot-ask-view">
+      <h2 id="forgot-title">Forgot your password?</h2>
+      <p class="sub" id="forgot-sub">There's no self-service reset here. Enter your admin email and we'll notify the Super Admin.</p>
+      <div class="error-box" id="forgot-error"></div>
+      <form id="forgot-form" onsubmit="submitForgotPassword(event)">
+        <div class="form-group">
+          <label>Admin email</label>
+          <input id="forgot-email" type="email" placeholder="you@soundscare.co.ke" required>
+        </div>
+        <button type="submit" class="btn" id="forgot-btn">
+          <span class="spinner hidden" id="forgot-spinner"></span>
+          <i class="bi bi-send" id="forgot-icon"></i>
+          <span id="forgot-btn-text">Notify Super Admin</span>
+        </button>
+      </form>
+    </div>
+
+    <div id="forgot-sent-view" class="hidden">
+      <h2 id="forgot-sent-title"><i class="bi bi-check-circle-fill" style="color:var(--green);margin-right:6px"></i>Request sent</h2>
+      <p class="sub" id="forgot-sent-sub" style="margin-bottom:1.4rem">The Super Admin has been notified.</p>
+      <button type="button" class="btn btn-secondary" onclick="closeForgotPassword()">Back to sign in</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"><i class="bi bi-check-circle-fill"></i> <span id="toast-text"></span></div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+// Session lives in sessionStorage (not localStorage): it survives a
+// same-tab redirect to admin-dashboard.html / support-dashboard.html /
+// accountant-dashboard.html / microtasks.html (and support-dashboard's own
+// support-settings.html / support-insights.html sub-pages), but disappears
+// when the tab or browser closes — no "remembered" admin session lingering
+// on a shared machine.
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
+});
+
+// Registry of every destination an admin might be routed to from the
+// Waiting Bay. `page` matches the values stored in admin_users.allowed_pages
+// (jsonb array of strings). 'cashier' is kept as a legacy alias so existing
+// allowed_pages data still routes correctly after the Accountant Dashboard rename.
+const DESTINATIONS = {
+  'admin-dashboard':      { label: 'Admin Dashboard',       desc: 'Users, jobs, payments, and platform operations', icon: 'bi-speedometer2', color: 'var(--brand)', href: 'admin-dashboard.html' },
+  'support-room':         { label: 'Support Dashboard',     desc: 'Live chat interviews and support tickets',       icon: 'bi-headset',      color: 'var(--sky)',   href: 'support-dashboard.html' },
+  'accountant-dashboard': { label: 'Accountant Dashboard',  desc: 'Invoices, payouts, and reconciliation',           icon: 'bi-cash-coin',    color: 'var(--amber)', href: 'accountant-dashboard.html' },
+  'cashier':              { label: 'Accountant Dashboard',  desc: 'Invoices, payouts, and reconciliation',           icon: 'bi-cash-coin',    color: 'var(--amber)', href: 'accountant-dashboard.html' },
+  'microtasks':           { label: 'Micro Tasks',           desc: 'Create tasks, review submissions, pay taskers',   icon: 'bi-list-check',   color: 'var(--violet)', href: 'microtasks.html' }
+};
+
+let currentAdminRow = null; // set once we know who's signing in, used across PIN / picker steps
+let pendingPin = null;      // PIN chosen during first-time setup, held until identity is verified
+let pinVerifyMethod = null; // 'email' | 'phone' — which OTP channel was used, for resend
+
+function togglePw(inputId, iconId){
+  const inp = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+  else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
+function getInitials(name){ return (name || 'AD').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'AD'; }
+
+function isSuperAdmin(adminRow){
+  return adminRow.access_level === 'super_admin' || adminRow.role === 'Super Admin';
+}
+
+function showToast(text){
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = text;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 4000);
+}
+
+function hideAllSteps(){
+  document.getElementById('login-step').classList.add('hidden');
+  document.getElementById('change-pw-step').classList.add('hidden');
+  document.getElementById('pin-setup-step').classList.add('hidden');
+  document.getElementById('pin-enter-step').classList.add('hidden');
+  document.getElementById('picker-step').classList.add('hidden');
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('login-btn');
+  const spinner = document.getElementById('login-spinner');
+  const icon = document.getElementById('login-icon');
+  const txt = document.getElementById('login-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  icon.classList.add('hidden');
+  txt.textContent = 'Signing in…';
+
+  const showErr = (msg) => {
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    icon.classList.remove('hidden');
+    txt.textContent = 'Sign In';
+  };
+
+  try {
+    // Real Supabase Auth sign-in — never a hand-rolled password comparison.
+    // This also seeds the session that RLS policies (is_admin()) check on
+    // every subsequent request from whichever page the admin lands on.
+    const { data: authData, error: authErr } = await sb.auth.signInWithPassword({ email, password });
+    if (authErr) { showErr('Invalid email or password.'); return; }
+
+    const { data: adminRow, error } = await sb.from('admin_users').select('*').eq('user_id', authData.user.id).maybeSingle();
+    if (error) throw error;
+    if (!adminRow || adminRow.status !== 'Active') {
+      await sb.auth.signOut();
+      showErr('This account is not an active admin.');
+      return;
+    }
+
+    routeAfterAuth(adminRow);
+  } catch (err) {
+    showErr(err.message || 'Sign in failed. Please try again.');
+  }
+}
+
+async function socialLogin(provider){
+  const errEl = document.getElementById('login-error');
+  errEl.classList.remove('show');
+  try {
+    // Redirects out to the provider and back to this same page; the
+    // resulting session is picked up by checkExistingSession() on reload.
+    const { error } = await sb.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.href } });
+    if (error) throw error;
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not start social sign-in. Please try again.';
+    errEl.classList.add('show');
+  }
+}
+
+// Single decision point used by both a fresh login and an existing-session
+// check: forced password change first, then PIN (set up or enter), then
+// role-based routing in the Waiting Bay.
+function routeAfterAuth(adminRow){
+  currentAdminRow = adminRow;
+  if (adminRow.must_change_password) {
+    showChangePasswordStep(adminRow);
+  } else if (!adminRow.pin_hash) {
+    showPinSetupStep(adminRow);
+  } else {
+    showPinEntryStep(adminRow);
+  }
+}
+
+function showChangePasswordStep(adminRow){
+  hideAllSteps();
+  document.getElementById('change-pw-step').classList.remove('hidden');
+  document.getElementById('cpw-avatar').textContent = getInitials(adminRow.username);
+  document.getElementById('cpw-name').textContent = adminRow.username || adminRow.email;
+  document.getElementById('cpw-role').textContent = adminRow.role || 'Admin';
+  document.getElementById('change-pw-form').reset();
+}
+
+async function handleChangePassword(e){
+  e.preventDefault();
+  const pw1 = document.getElementById('cpw-new').value;
+  const pw2 = document.getElementById('cpw-confirm').value;
+  const errEl = document.getElementById('cpw-error');
+  errEl.textContent = '';
+  errEl.classList.remove('show');
+
+  if (pw1 !== pw2) {
+    errEl.textContent = "Passwords don't match.";
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('cpw-btn');
+  const spinner = document.getElementById('cpw-spinner');
+  const icon = document.getElementById('cpw-icon');
+  const txt = document.getElementById('cpw-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  icon.classList.add('hidden');
+  txt.textContent = 'Saving…';
+
+  try {
+    const { error: updateErr } = await sb.auth.updateUser({ password: pw1 });
+    if (updateErr) throw updateErr;
+
+    // Clears must_change_password via a SECURITY DEFINER RPC rather than a
+    // direct UPDATE — admin_users has no "update own row" RLS policy, by
+    // design, so a Manager/Accountant can't rewrite their own role/access_level.
+    const { error: rpcErr } = await sb.rpc('clear_admin_password_change_flag');
+    if (rpcErr) throw rpcErr;
+
+    currentAdminRow.must_change_password = false;
+    showToast('Password updated');
+    if (!currentAdminRow.pin_hash) showPinSetupStep(currentAdminRow);
+    else showPinEntryStep(currentAdminRow);
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not update password. Please try again.';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    icon.classList.remove('hidden');
+    txt.textContent = 'Set password & continue';
+  }
+}
+
+/* ---------------- PIN: shared box helpers ---------------- */
+
+function wirePinBoxes(containerId){
+  const boxes = Array.from(document.querySelectorAll('#' + containerId + ' .pin-box'));
+  boxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+      box.value = box.value.replace(/[^0-9]/g, '').slice(0, 1);
+      if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+    });
+  });
+}
+['pinset-new-boxes', 'pinset-confirm-boxes', 'pinenter-boxes'].forEach(wirePinBoxes);
+
+function readPinBoxes(containerId){
+  return Array.from(document.querySelectorAll('#' + containerId + ' .pin-box')).map(b => b.value).join('');
+}
+function clearPinBoxes(containerId){
+  const boxes = Array.from(document.querySelectorAll('#' + containerId + ' .pin-box'));
+  boxes.forEach(b => b.value = '');
+  if (boxes[0]) boxes[0].focus();
+}
+
+function maskEmail(email){
+  if (!email || email.indexOf('@') === -1) return email || '';
+  const [name, domain] = email.split('@');
+  const shown = name.slice(0, 2);
+  return `${shown}${'*'.repeat(Math.max(name.length - 2, 1))}@${domain}`;
+}
+function maskPhone(phone){
+  if (!phone) return '';
+  return phone.replace(/\d(?=\d{2})/g, '*');
+}
+
+/* ---------------- PIN: first-time setup ---------------- */
+
+function showPinSetupStep(adminRow){
+  hideAllSteps();
+  document.getElementById('pin-setup-step').classList.remove('hidden');
+  document.getElementById('pinset-avatar').textContent = getInitials(adminRow.username);
+  document.getElementById('pinset-name').textContent = adminRow.username || adminRow.email;
+  document.getElementById('pinset-role').textContent = adminRow.role || 'Admin';
+  document.getElementById('pinset-choose-view').classList.remove('hidden');
+  document.getElementById('pinset-method-view').classList.add('hidden');
+  document.getElementById('pinset-otp-view').classList.add('hidden');
+  clearPinBoxes('pinset-new-boxes');
+  clearPinBoxes('pinset-confirm-boxes');
+}
+
+function handlePinChosen(e){
+  e.preventDefault();
+  const pin1 = readPinBoxes('pinset-new-boxes');
+  const pin2 = readPinBoxes('pinset-confirm-boxes');
+  const errEl = document.getElementById('pinset-error');
+  errEl.classList.remove('show');
+
+  if (pin1.length !== 4 || pin2.length !== 4) {
+    errEl.textContent = 'Enter all 4 digits of both PINs.';
+    errEl.classList.add('show');
+    return;
+  }
+  if (pin1 !== pin2) {
+    errEl.textContent = "PINs don't match.";
+    errEl.classList.add('show');
+    clearPinBoxes('pinset-confirm-boxes');
+    return;
+  }
+
+  pendingPin = pin1;
+  document.getElementById('pinset-choose-view').classList.add('hidden');
+  document.getElementById('pinset-method-view').classList.remove('hidden');
+  document.getElementById('pinmethod-email-label').textContent = currentAdminRow.email
+    ? `Send a code to ${maskEmail(currentAdminRow.email)}`
+    : 'Send a code by email';
+  document.getElementById('pinmethod-phone-label').textContent = currentAdminRow.phone
+    ? `Send a code to ${maskPhone(currentAdminRow.phone)}`
+    : 'No phone on file — use email instead';
+}
+
+async function sendPinOtp(method){
+  const errEl = document.getElementById('pinmethod-error');
+  errEl.classList.remove('show');
+  try {
+    if (method === 'email') {
+      const { error } = await sb.auth.signInWithOtp({ email: currentAdminRow.email, options: { shouldCreateUser: false } });
+      if (error) throw error;
+    } else {
+      if (!currentAdminRow.phone) throw new Error('No phone number on file for this account. Use email instead.');
+      const { error } = await sb.auth.signInWithOtp({ phone: currentAdminRow.phone });
+      if (error) throw error;
+    }
+    pinVerifyMethod = method;
+    document.getElementById('pinset-method-view').classList.add('hidden');
+    document.getElementById('pinset-otp-view').classList.remove('hidden');
+    document.getElementById('pinset-otp-sub').textContent = method === 'email'
+      ? `We sent a code to ${maskEmail(currentAdminRow.email)}.`
+      : `We sent a code to ${maskPhone(currentAdminRow.phone)}.`;
+    document.getElementById('pinset-otp-code').value = '';
+    document.getElementById('pinset-otp-code').focus();
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not send the code. Please try again.';
+    errEl.classList.add('show');
+  }
+}
+
+function resendPinOtp(){
+  if (pinVerifyMethod) sendPinOtp(pinVerifyMethod);
+}
+
+async function verifyPinOtp(e){
+  e.preventDefault();
+  const code = document.getElementById('pinset-otp-code').value.trim();
+  const errEl = document.getElementById('pinotp-error');
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('pinotp-btn');
+  const spinner = document.getElementById('pinotp-spinner');
+  const txt = document.getElementById('pinotp-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  txt.textContent = 'Verifying…';
+
+  try {
+    const params = pinVerifyMethod === 'email'
+      ? { email: currentAdminRow.email, token: code, type: 'email' }
+      : { phone: currentAdminRow.phone, token: code, type: 'sms' };
+    const { error: otpErr } = await sb.auth.verifyOtp(params);
+    if (otpErr) throw otpErr;
+
+    // Server-side RPC hashes and stores the PIN — admin_users has no
+    // "update own row" RLS policy, same pattern as the password-change flag.
+    const { error: rpcErr } = await sb.rpc('set_admin_pin', { new_pin: pendingPin });
+    if (rpcErr) throw rpcErr;
+
+    currentAdminRow.pin_hash = 'set';
+    pendingPin = null;
+    showToast('PIN saved — you can use it to sign in faster next time.');
+    showDestinationPicker(currentAdminRow);
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not verify that code. Please try again.';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    txt.textContent = 'Verify & save PIN';
+  }
+}
+
+/* ---------------- PIN: returning-admin entry ---------------- */
+
+function showPinEntryStep(adminRow){
+  hideAllSteps();
+  document.getElementById('pin-enter-step').classList.remove('hidden');
+  document.getElementById('pinenter-avatar').textContent = getInitials(adminRow.username);
+  document.getElementById('pinenter-name').textContent = adminRow.username || adminRow.email;
+  document.getElementById('pinenter-role').textContent = adminRow.role || 'Admin';
+  document.getElementById('pinenter-error').classList.remove('show');
+  clearPinBoxes('pinenter-boxes');
+}
+
+async function handlePinEntry(e){
+  e.preventDefault();
+  const pin = readPinBoxes('pinenter-boxes');
+  const errEl = document.getElementById('pinenter-error');
+  errEl.classList.remove('show');
+
+  if (pin.length !== 4) {
+    errEl.textContent = 'Enter all 4 digits.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('pinenter-btn');
+  const spinner = document.getElementById('pinenter-spinner');
+  const txt = document.getElementById('pinenter-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  txt.textContent = 'Checking…';
+
+  try {
+    // verify_admin_pin runs server-side against the hashed PIN for the
+    // signed-in user and never exposes the hash itself to the client.
+    const { data: ok, error } = await sb.rpc('verify_admin_pin', { pin_attempt: pin });
+    if (error) throw error;
+    if (!ok) {
+      errEl.textContent = 'Incorrect PIN. Please try again.';
+      errEl.classList.add('show');
+      clearPinBoxes('pinenter-boxes');
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      txt.textContent = 'Continue';
+      return;
+    }
+    showDestinationPicker(currentAdminRow);
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not check the PIN. Please try again.';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    txt.textContent = 'Continue';
+  }
+}
+
+/* ---------------- Waiting Bay ---------------- */
+
+function showDestinationPicker(adminRow){
+  hideAllSteps();
+  document.getElementById('picker-step').classList.remove('hidden');
+
+  document.getElementById('who-avatar').textContent = getInitials(adminRow.username);
+  document.getElementById('who-name').textContent = adminRow.username || adminRow.email;
+  document.getElementById('who-role').textContent = adminRow.email || '';
+  const pill = document.getElementById('who-role-pill');
+  pill.textContent = adminRow.role || 'Admin';
+  pill.classList.toggle('super', isSuperAdmin(adminRow));
+
+  let pages;
+  if (isSuperAdmin(adminRow)) {
+    // Admin Dashboard is Super Admin-only, but it's not the ONLY place a
+    // Super Admin can go — they see every destination in the Waiting Bay,
+    // same as anyone else, rather than being forced straight to it.
+    pages = ['admin-dashboard', 'support-room', 'accountant-dashboard', 'microtasks'];
+  } else {
+    // Every other role only ever sees the pages assigned to their account —
+    // allowed_pages is how each role's access is scoped in the database.
+    // admin-dashboard is stripped here too as a second line of defence,
+    // since Admin Dashboard must never be reachable by a non-Super Admin.
+    pages = Array.isArray(adminRow.allowed_pages)
+      ? adminRow.allowed_pages.filter(p => DESTINATIONS[p] && p !== 'admin-dashboard')
+      : [];
+    if (pages.length === 0) {
+      // No usable allowed_pages configured — fall back to Support Dashboard
+      // rather than Admin Dashboard, which stays Super Admin-only.
+      pages.push('support-room');
+    }
+  }
+
+  if (pages.length === 1) {
+    document.getElementById('dest-list').classList.add('hidden');
+    document.getElementById('auto-redirect-note').classList.remove('hidden');
+    setTimeout(() => { window.location.href = DESTINATIONS[pages[0]].href; }, 500);
+    return;
+  }
+
+  document.getElementById('dest-list').classList.remove('hidden');
+  document.getElementById('auto-redirect-note').classList.add('hidden');
+  const list = document.getElementById('dest-list');
+  list.innerHTML = pages.map(p => {
+    const d = DESTINATIONS[p];
+    return `
+      <button class="dest-card" onclick="window.location.href='${d.href}'">
+        <div class="dest-icon" style="background:${d.color}"><i class="bi ${d.icon}"></i></div>
+        <div class="dest-text"><h3>${d.label}</h3><p>${d.desc}</p></div>
+        <i class="bi bi-chevron-right dest-arrow"></i>
+      </button>`;
+  }).join('');
+}
+
+async function signOutAndReset(){
+  try { await sb.auth.signOut(); } catch(e) {}
+  currentAdminRow = null;
+  pendingPin = null;
+  hideAllSteps();
+  document.getElementById('login-step').classList.remove('hidden');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+}
+
+// If an admin already has a live session (e.g. they hit back after landing
+// on a destination page, opened this page in a second tab, or just
+// completed a social-login redirect), skip straight to routing instead of
+// asking them to log in again.
+async function checkExistingSession(){
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data: adminRow, error } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+    if (error || !adminRow || adminRow.status !== 'Active') {
+      await sb.auth.signOut();
+      const errEl = document.getElementById('login-error');
+      errEl.textContent = 'This account is not registered as an admin.';
+      errEl.classList.add('show');
+      return;
+    }
+    routeAfterAuth(adminRow);
+  } catch (err) { /* fall through to the login form */ }
+}
+checkExistingSession();
+
+// ---------- Forgot password / forgot PIN: notify the Super Admin (no self-service reset) ----------
+
+let forgotKind = 'password';
+
+function openForgotPassword(kind){
+  forgotKind = kind === 'pin' ? 'pin' : 'password';
+  document.getElementById('forgot-title').textContent = forgotKind === 'pin' ? 'Forgot your PIN?' : 'Forgot your password?';
+  document.getElementById('forgot-sub').textContent = forgotKind === 'pin'
+    ? "There's no self-service PIN reset. Enter your admin email and we'll notify the Super Admin — they'll clear your PIN so you can set a new one on next sign-in."
+    : "There's no self-service reset here. Enter your admin email and we'll notify the Super Admin — they'll set a temporary password and share it with you directly. You'll be asked to set your own password the first time you sign in with it.";
+  document.getElementById('forgot-ask-view').classList.remove('hidden');
+  document.getElementById('forgot-sent-view').classList.add('hidden');
+  document.getElementById('forgot-error').classList.remove('show');
+  document.getElementById('forgot-form').reset();
+  const typedEmail = document.getElementById('auth-email').value.trim();
+  if (typedEmail) document.getElementById('forgot-email').value = typedEmail;
+  document.getElementById('forgot-modal').classList.remove('hidden');
+}
+
+function closeForgotPassword(){
+  document.getElementById('forgot-modal').classList.add('hidden');
+}
+
+async function submitForgotPassword(e){
+  e.preventDefault();
+  const email = document.getElementById('forgot-email').value.trim();
+  const errEl = document.getElementById('forgot-error');
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('forgot-btn');
+  const spinner = document.getElementById('forgot-spinner');
+  const icon = document.getElementById('forgot-icon');
+  const txt = document.getElementById('forgot-btn-text');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  icon.classList.add('hidden');
+  txt.textContent = 'Sending…';
+
+  try {
+    // Anonymous insert — allowed by the notifications_admin_panel_insert
+    // RLS policy for source_type = 'admin'. No self-service reset link:
+    // the Super Admin sees this in their notifications and resets the
+    // account by hand.
+    const { error } = await sb.from('notifications').insert({
+      user_email: email,
+      type: 'alert',
+      title: forgotKind === 'pin' ? 'Admin PIN reset requested' : 'Admin password reset requested',
+      message: forgotKind === 'pin'
+        ? `${email} requested a PIN reset for SoundsCare Admin. Clear their pin_hash so they can set a new one — they'll be prompted to set a fresh PIN (with identity verification) on next sign-in.`
+        : `${email} requested a password reset for SoundsCare Admin. Set a temporary password for this account and share it with them directly — they'll be prompted to choose their own password on next sign-in.`,
+      source_type: 'admin',
+      target_role: 'admin',
+      is_read: false
+    });
+    if (error) throw error;
+
+    document.getElementById('forgot-sent-email').textContent = email;
+    document.getElementById('forgot-sent-title').innerHTML = '<i class="bi bi-check-circle-fill" style="color:var(--green);margin-right:6px"></i>Request sent';
+    document.getElementById('forgot-sent-sub').innerHTML = forgotKind === 'pin'
+      ? `The Super Admin has been notified and will clear the PIN for <strong>${email}</strong>. Sign in with your password next — you'll be prompted to set a new PIN right away.`
+      : `The Super Admin has been notified and will set a temporary password for <strong>${email}</strong>. They'll share it with you directly. Sign in with it below — you'll be prompted to choose your own password right away.`;
+    document.getElementById('forgot-ask-view').classList.add('hidden');
+    document.getElementById('forgot-sent-view').classList.remove('hidden');
+  } catch (err) {
+    errEl.textContent = err.message || 'Could not send the request. Please try again.';
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    icon.classList.remove('hidden');
+    txt.textContent = 'Notify Super Admin';
+  }
+}
+</script>
+</body>
+</html>
