@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Settings | Support Dashboard | SoundsCare</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+/* ============================== TOKENS (shared with support-dashboard.html) ============================== */
+:root{
+  --teal:#0F766E; --teal-deep:#0B4F49; --aqua:#14B8A6; --mist:#EAF6F4;
+  --coral:#E0724A; --coral-deep:#B85A38; --gold:#D8A73D; --cream:#FAFAF8;
+  --ink:#182420; --ink-soft:#57655F; --line:rgba(20,30,26,0.09);
+  --danger:#C0432E; --ok:#2ECC71; --warn:#D8A73D;
+  --sidebar-w:230px;
+  --body:'Inter','Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:var(--body); color:var(--ink); background:var(--cream);
+  display:flex; overflow:hidden;
+}
+button{font-family:inherit;}
+a{color:var(--teal); text-decoration:none;}
+::-webkit-scrollbar{width:7px; height:7px;}
+::-webkit-scrollbar-thumb{background:rgba(15,118,110,.18); border-radius:999px;}
+
+/* ============================== SIDEBAR ============================== */
+.sd-sidebar{
+  width:var(--sidebar-w); flex-shrink:0; background:linear-gradient(180deg,var(--teal-deep),var(--teal) 70%);
+  color:#fff; display:flex; flex-direction:column; height:100vh;
+}
+.sd-brand{display:flex; align-items:center; gap:.6rem; padding:1.1rem 1.1rem .9rem; font-weight:800; font-size:1.02rem;}
+.sd-brand .ic{width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:1.1rem;}
+.sd-nav{flex:1; overflow-y:auto; padding:.4rem .7rem;}
+.sd-nav-label{font-size:.66rem; text-transform:uppercase; letter-spacing:.09em; opacity:.6; font-weight:700; margin:.9rem .5rem .35rem;}
+.sd-nav a, .sd-nav button.sd-navlink{
+  display:flex; align-items:center; gap:.65rem; width:100%; text-align:left; border:none; background:none;
+  color:rgba(255,255,255,.86); padding:.55rem .6rem; border-radius:10px; font-size:.85rem; font-weight:600; cursor:pointer;
+  margin-bottom:.15rem; transition:background .15s ease;
+}
+.sd-nav a:hover, .sd-nav button.sd-navlink:hover{background:rgba(255,255,255,.1); color:#fff;}
+.sd-nav a.active, .sd-nav button.sd-navlink.active{background:rgba(255,255,255,.18); color:#fff;}
+.sd-nav i{width:18px; text-align:center; font-size:1rem;}
+.sd-navbadge{margin-left:auto; background:var(--coral); color:#fff; font-size:.68rem; font-weight:800; border-radius:999px; padding:.05rem .45rem;}
+.sd-presence{padding:.9rem 1rem; border-top:1px solid rgba(255,255,255,.15);}
+.sd-presence-row{display:flex; align-items:center; gap:.5rem; font-size:.78rem; font-weight:700;}
+.sd-dot{width:9px; height:9px; border-radius:50%; background:var(--ok); flex-shrink:0;}
+.sd-dot.away{background:var(--warn);} .sd-dot.offline{background:#9aa;}
+.sd-avatar{width:30px; height:30px; border-radius:50%; flex-shrink:0; object-fit:cover; background:var(--mist);}
+.sd-avatar.sm{width:22px; height:22px;}
+
+/* ============================== SHELL ============================== */
+.sd-shell{flex:1; display:flex; flex-direction:column; min-width:0; height:100vh;}
+.sd-topbar{
+  flex-shrink:0; background:#fff; border-bottom:1px solid var(--line); padding:.85rem 1.4rem;
+  display:flex; align-items:center; gap:1rem; justify-content:space-between;
+}
+.sd-title{font-size:1.05rem; font-weight:800; color:var(--teal-deep);}
+.sd-top-actions{display:flex; align-items:center; gap:.6rem;}
+.sd-iconbtn{
+  width:36px; height:36px; border-radius:10px; border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
+}
+.sd-iconbtn:hover{background:var(--mist); color:var(--teal-deep);}
+
+.sd-body{flex:1; overflow-y:auto; padding:1.4rem;}
+.sd-view{display:none;}
+.sd-view.active{display:block;}
+
+.sd-card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:1.1rem 1.2rem; margin-bottom:1.1rem;}
+.sd-card h3{margin:0 0 .8rem; font-size:.95rem; font-weight:800; color:var(--teal-deep); display:flex; align-items:center; gap:.5rem; justify-content:space-between; flex-wrap:wrap;}
+
+table.sd-table{width:100%; border-collapse:collapse; font-size:.83rem;}
+table.sd-table th{text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:.5rem .6rem; border-bottom:1px solid var(--line);}
+table.sd-table td{padding:.65rem .6rem; border-bottom:1px solid var(--line); vertical-align:middle;}
+table.sd-table tr:last-child td{border-bottom:none;}
+.sd-empty{padding:1.6rem; text-align:center; color:var(--ink-soft); font-size:.85rem;}
+.sd-loading{padding:1.6rem; text-align:center; color:var(--ink-soft); font-size:.85rem;}
+
+.sd-pill{display:inline-flex; align-items:center; gap:.3rem; font-size:.7rem; font-weight:700; border-radius:999px; padding:.2rem .6rem;}
+.sd-pill.online{background:#e6f9ee; color:#188a4c;}
+.sd-pill.offline{background:#eee; color:#777;}
+
+.sd-btn{border:none; border-radius:10px; background:var(--teal); color:#fff; font-weight:700; font-size:.82rem; padding:.5rem .9rem; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;}
+.sd-btn:hover{background:var(--teal-deep);}
+.sd-btn.secondary{background:var(--mist); color:var(--teal-deep);}
+.sd-btn.secondary:hover{background:#dff2ef;}
+.sd-btn.danger{background:#fde3de; color:var(--danger);}
+.sd-btn.danger:hover{background:#fbd2ca;}
+.sd-btn:disabled{opacity:.55; cursor:default;}
+.sd-input, .sd-select, textarea.sd-input{
+  width:100%; border:1.5px solid var(--line); border-radius:10px; padding:.55rem .7rem; font-size:.85rem;
+  font-family:inherit; color:var(--ink); background:#fff;
+}
+.sd-input:focus, .sd-select:focus{outline:none; border-color:var(--teal);}
+.sd-field{margin-bottom:.8rem;}
+.sd-field label{display:block; font-size:.74rem; font-weight:700; color:var(--ink-soft); margin-bottom:.3rem;}
+
+.sd-chiprow{display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1rem;}
+.sd-chip{border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:.4rem .85rem; font-size:.78rem; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+.sd-chip.active{background:var(--teal); border-color:var(--teal); color:#fff;}
+
+.sd-macro-shortcut{font-family:monospace; font-size:.76rem; background:var(--mist); color:var(--teal-deep); padding:.1rem .45rem; border-radius:6px;}
+
+@media (max-width:900px){
+  .sd-sidebar{position:fixed; z-index:40; transform:translateX(-100%); transition:transform .2s ease;}
+  .sd-sidebar.open{transform:translateX(0);}
+}
+.sd-mobile-toggle{display:none;}
+@media (max-width:900px){ .sd-mobile-toggle{display:flex;} }
+
+/* ============================== ACCESS GATE ============================== */
+.sd-gate{position:fixed; inset:0; z-index:100; background:var(--cream); display:flex; align-items:center; justify-content:center; padding:1.5rem;}
+.sd-gate-card{background:#fff; border:1px solid var(--line); border-radius:20px; padding:2rem 1.8rem; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(15,25,35,.10);}
+.sd-gate-card .gi{font-size:2rem; color:var(--teal); margin-bottom:.6rem;}
+.sd-gate-card.deny .gi{color:var(--danger);}
+.sd-gate-card h2{margin:0 0 .4rem; font-size:1.1rem; color:var(--teal-deep);}
+.sd-gate-card p{margin:0 0 1.1rem; font-size:.86rem; line-height:1.5; color:var(--ink-soft);}
+.sd-gate-card .sd-btn{text-decoration:none;}
+.sd-gate-actions{display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap;}
+.sd-gate-spin{width:26px; height:26px; margin:0 auto .8rem; border:3px solid var(--mist); border-top-color:var(--teal); border-radius:50%; animation:sdspin .7s linear infinite;}
+@keyframes sdspin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ============================== ACCESS GATE (removed once admin check passes) ============================== -->
+<div class="sd-gate" id="sdGate">
+  <div class="sd-gate-card"><div class="sd-gate-spin"></div><h2>Checking access…</h2><p>Verifying your admin account.</p></div>
+</div>
+
+<!-- ============================== SIDEBAR ============================== -->
+<aside class="sd-sidebar" id="sdSidebar">
+  <div class="sd-brand"><span class="ic"><i class="bi bi-headset"></i></span> SoundsCare Support</div>
+  <nav class="sd-nav" id="sdNav">
+    <div class="sd-nav-label">Dashboard</div>
+    <a href="support-dashboard.html"><i class="bi bi-grid-1x2"></i> Overview</a>
+    <a href="support-dashboard.html"><i class="bi bi-inboxes"></i> Inbox</a>
+    <a href="support-dashboard.html"><i class="bi bi-people"></i> Agents</a>
+    <a href="support-dashboard.html"><i class="bi bi-diagram-3"></i> Departments</a>
+    <a href="support-dashboard.html"><i class="bi bi-journal-text"></i> Knowledge Base</a>
+
+    <div class="sd-nav-label">More</div>
+    <a href="support-insights.html"><i class="bi bi-bar-chart-line"></i> Insights</a>
+    <a href="support-settings.html" class="active"><i class="bi bi-gear"></i> Settings</a>
+  </nav>
+  <div class="sd-presence">
+    <div class="sd-presence-row">
+      <img class="sd-avatar sm" id="sdMyAvatar" alt="" style="display:none;">
+      <span class="sd-dot online" id="sdMyDot"></span>
+      <span id="sdMyName">Loading…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================== SHELL ============================== -->
+<div class="sd-shell">
+  <header class="sd-topbar">
+    <div style="display:flex; align-items:center; gap:.7rem;">
+      <button class="sd-iconbtn sd-mobile-toggle" id="sdMobileToggle"><i class="bi bi-list"></i></button>
+      <div class="sd-title">Settings</div>
+      <span style="font-size:.78rem;color:var(--ink-soft)">Team config for the Support Dashboard</span>
+    </div>
+    <div class="sd-top-actions">
+      <a class="sd-btn secondary" href="support-dashboard.html"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="sd-body">
+
+    <div class="sd-chiprow" id="settingsTabs">
+      <button class="sd-chip active" data-tab="departments"><i class="bi bi-diagram-3"></i> Departments</button>
+      <button class="sd-chip" data-tab="macros"><i class="bi bi-chat-square-text"></i> Canned Replies</button>
+      <button class="sd-chip" data-tab="kb"><i class="bi bi-journal-text"></i> Knowledge Base</button>
+    </div>
+
+    <!-- ---------------- DEPARTMENTS ---------------- -->
+    <section class="sd-view active" id="viewDepartments">
+      <div class="sd-card">
+        <h3>Departments <button class="sd-btn" id="deptAddBtn"><i class="bi bi-plus-lg"></i> Add department</button></h3>
+        <p style="font-size:.8rem;color:var(--ink-soft);margin:-0.4rem 0 .9rem">Departments group tickets and agents for routing. Deactivating a department stops new tickets being routed to it.</p>
+        <div id="deptTableWrap" class="sd-loading">Loading…</div>
+      </div>
+    </section>
+
+    <!-- ---------------- CANNED REPLIES (MACROS) ---------------- -->
+    <section class="sd-view" id="viewMacros">
+      <div class="sd-card">
+        <h3>Canned replies <button class="sd-btn" id="macroAddBtn"><i class="bi bi-plus-lg"></i> New canned reply</button></h3>
+        <p style="font-size:.8rem;color:var(--ink-soft);margin:-0.4rem 0 .9rem">Saved macros agents can insert into a ticket reply from the "Quick Reply" dropdown in a conversation.</p>
+        <div id="macroTableWrap" class="sd-loading">Loading…</div>
+      </div>
+    </section>
+
+    <!-- ---------------- KNOWLEDGE BASE ---------------- -->
+    <section class="sd-view" id="viewKb">
+      <div class="sd-chiprow">
+        <button class="sd-chip active" data-kb="articles">Articles</button>
+        <button class="sd-chip" data-kb="faq">FAQ</button>
+      </div>
+      <div class="sd-card">
+        <h3 id="kbTitle">Knowledge base articles <button class="sd-btn" id="kbAddBtn"><i class="bi bi-plus-lg"></i> New article</button></h3>
+        <div id="kbTableWrap" class="sd-loading">Loading…</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================== MODAL (generic) ============================== -->
+<div id="sdModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(10,20,18,.45); z-index:60; align-items:center; justify-content:center; padding:1rem;">
+  <div id="sdModalCard" style="background:#fff; border-radius:18px; padding:1.4rem; width:100%; max-width:460px; max-height:88vh; overflow-y:auto;"></div>
+</div>
+
+<!-- Toasts -->
+<div id="sdToasts" style="position:fixed; bottom:1rem; right:1rem; z-index:70; display:flex; flex-direction:column; gap:.5rem;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // Same Supabase project/credentials as the rest of the admin suite (anon
+  // key; RLS is the real enforcement layer). Session storage MUST match
+  // admin-login.html / support-dashboard.html so the existing session carries over.
+  var sb = supabase.createClient(
+    'https://phoahudvrcelfrykoeuo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBob2FodWR2cmNlbGZyeWtvZXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDY0MTMsImV4cCI6MjA5NDQyMjQxM30.xBKbHIttK__d_jQFLavYyJQilUGUFISiWrh8-hgIA9Y',
+    { auth: { persistSession:true, autoRefreshToken:true, storage: window.sessionStorage } }
+  );
+
+  var LOGIN_URL = 'admin-login.html';
+  var SUPPORT_PAGE = 'support-room'; // value in admin_users.allowed_pages — same gate as support-dashboard.html
+
+  var me = { authUser:null, admin:null };
+  var state = { kbTab:'articles' };
+
+  // ------------------------------------------------------------------ utils
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function toast(msg, kind){
+    var t = document.createElement('div');
+    t.style.cssText = 'background:#fff;border:1px solid var(--line);border-left:4px solid '+(kind==='error'?'var(--danger)':'var(--teal)')+';border-radius:10px;padding:.7rem 1rem;font-size:.83rem;box-shadow:0 12px 30px -14px rgba(0,0,0,.25);max-width:320px;';
+    t.textContent = msg;
+    $('sdToasts').appendChild(t);
+    setTimeout(function(){ t.remove(); }, 4200);
+  }
+  function logErr(scope, err){ console.error('[Support Settings]', scope, err); }
+  function openModal(html){ $('sdModalCard').innerHTML = html; $('sdModalBackdrop').style.display='flex'; }
+  function closeModal(){ $('sdModalBackdrop').style.display='none'; $('sdModalCard').innerHTML=''; }
+  $('sdModalBackdrop').addEventListener('click', function(e){ if(e.target===$('sdModalBackdrop')) closeModal(); });
+  $('sdMobileToggle').addEventListener('click', function(){ $('sdSidebar').classList.toggle('open'); });
+
+  // ------------------------------------------------------------------ admin gate (identical policy to support-dashboard.html)
+  function isSuperAdmin(row){ return row.access_level==='super_admin' || row.role==='Super Admin'; }
+  function canAccessSupport(row){
+    if(isSuperAdmin(row)) return true;
+    return Array.isArray(row.allowed_pages) && row.allowed_pages.indexOf(SUPPORT_PAGE) !== -1;
+  }
+  function gateShow(opts){
+    var g = $('sdGate'); if(!g) return;
+    g.style.display = 'flex';
+    g.innerHTML = '<div class="sd-gate-card'+(opts.deny?' deny':'')+'">'+
+      '<div class="gi"><i class="bi '+opts.icon+'"></i></div>'+
+      '<h2>'+esc(opts.title)+'</h2><p>'+esc(opts.text)+'</p>'+
+      '<div class="sd-gate-actions">'+(opts.actions||'')+'</div></div>';
+  }
+  function gateOpen(){ var g = $('sdGate'); if(g) g.remove(); }
+  function goLogin(){ window.location.replace(LOGIN_URL); }
+
+  async function adminGate(){
+    var { data:{ session } } = await sb.auth.getSession();
+    if(!session){ goLogin(); return null; }
+
+    var { data:{ user }, error:userErr } = await sb.auth.getUser();
+    if(userErr || !user){ try{ await sb.auth.signOut(); }catch(e){} goLogin(); return null; }
+
+    var { data:adminRow, error } = await sb.from('admin_users')
+      .select('id, username, email, role, access_level, status, allowed_pages, must_change_password, pin_hash, avatar_url')
+      .eq('user_id', user.id).maybeSingle();
+    if(error){
+      logErr('admin gate lookup', error);
+      gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Could not verify access',
+        text:'We could not check your admin account. Please try again.',
+        actions:'<button class="sd-btn" onclick="location.reload()">Retry</button><a class="sd-btn secondary" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    if(!adminRow){
+      try{ await sb.auth.signOut(); }catch(e){}
+      gateShow({ deny:true, icon:'bi-shield-x', title:'Not an admin account',
+        text:'This account is not registered as a SoundsCare admin.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    if(adminRow.status !== 'Active'){
+      try{ await sb.auth.signOut(); }catch(e){}
+      gateShow({ deny:true, icon:'bi-shield-x', title:'Account not active',
+        text:'This admin account is not active. Contact the Super Admin.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to sign in</a>' });
+      return null;
+    }
+    if(adminRow.must_change_password || !adminRow.pin_hash){ goLogin(); return null; }
+
+    if(!canAccessSupport(adminRow)){
+      gateShow({ deny:true, icon:'bi-lock', title:'No access to Support Settings',
+        text:'Your role ('+(adminRow.role||'Admin')+') is not permitted to open this page.',
+        actions:'<a class="sd-btn" href="'+LOGIN_URL+'">Back to my dashboards</a>' });
+      return null;
+    }
+    me.authUser = user;
+    me.admin = adminRow;
+    return adminRow;
+  }
+
+  // ------------------------------------------------------------------ tabs
+  function wireTabs(){
+    document.querySelectorAll('#settingsTabs .sd-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('#settingsTabs .sd-chip').forEach(function(c){ c.classList.remove('active'); });
+        chip.classList.add('active');
+        var tab = chip.dataset.tab;
+        document.querySelectorAll('.sd-view').forEach(function(v){ v.classList.remove('active'); });
+        if(tab==='departments'){ $('viewDepartments').classList.add('active'); loadDepartments(); }
+        if(tab==='macros'){ $('viewMacros').classList.add('active'); loadMacros(); }
+        if(tab==='kb'){ $('viewKb').classList.add('active'); loadKb(); }
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------ DEPARTMENTS
+  function wireDepartments(){
+    $('deptAddBtn').addEventListener('click', function(){
+      openModal(
+        '<h3 style="margin-top:0;">Add department</h3>'+
+        '<div class="sd-field"><label>Name</label><input class="sd-input" id="deptName"></div>'+
+        '<div style="display:flex; gap:.5rem; justify-content:flex-end;">'+
+          '<button class="sd-btn secondary" onclick="document.getElementById(\'sdModalBackdrop\').style.display=\'none\'">Cancel</button>'+
+          '<button class="sd-btn" id="deptSubmit"><i class="bi bi-check-lg"></i> Save</button></div>'
+      );
+      $('deptSubmit').addEventListener('click', async function(){
+        var name = $('deptName').value.trim();
+        if(!name){ toast('Name is required', 'error'); return; }
+        var slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+        this.disabled = true;
+        try{
+          var { error } = await sb.from('support_departments').insert({ name:name, slug:slug });
+          if(error) throw error;
+          toast('Department added'); closeModal(); loadDepartments();
+        }catch(err){ logErr('add department', err); toast('Could not add department', 'error'); this.disabled=false; }
+      });
+    });
+  }
+  async function loadDepartments(){
+    var wrap = $('deptTableWrap');
+    wrap.innerHTML = '<div class="sd-loading">Loading…</div>';
+    try{
+      var { data, error } = await sb.from('support_departments').select('*').order('name');
+      if(error) throw error;
+      if(!data || !data.length){ wrap.innerHTML = '<div class="sd-empty">No departments yet.</div>'; return; }
+      wrap.innerHTML = '<table class="sd-table"><thead><tr><th>Department</th><th>Routing</th><th>Status</th><th></th></tr></thead><tbody>'+
+        data.map(function(d){
+          return '<tr><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.routing_mode||'—')+'</td>'+
+            '<td>'+(d.is_active?'<span class="sd-pill online">Active</span>':'<span class="sd-pill offline">Inactive</span>')+'</td>'+
+            '<td><button class="sd-btn secondary sd-toggle-dept" data-id="'+d.id+'" data-active="'+d.is_active+'">'+(d.is_active?'Deactivate':'Activate')+'</button></td></tr>';
+        }).join('')+'</tbody></table>';
+      wrap.querySelectorAll('.sd-toggle-dept').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+          var id = btn.dataset.id, nowActive = btn.dataset.active==='true';
+          btn.disabled = true;
+          try{
+            var { error } = await sb.from('support_departments').update({ is_active: !nowActive }).eq('id', id);
+            if(error) throw error;
+            toast('Department updated'); loadDepartments();
+          }catch(err){ logErr('toggle department', err); toast('Could not update department', 'error'); btn.disabled=false; }
+        });
+      });
+    }catch(err){
+      logErr('loadDepartments', err);
+      wrap.innerHTML = '<div class="sd-empty">Could not load departments.</div>';
+    }
+  }
+
+  // ------------------------------------------------------------------ CANNED REPLIES (ticket_macros)
+  // Schema: id, title, shortcut, body, created_at — consumed today only as a
+  // read-only "Quick Reply" dropdown inside a ticket (admin-dashboard.html);
+  // this is the first place macros can actually be created/edited/removed.
+  function wireMacros(){
+    $('macroAddBtn').addEventListener('click', function(){ openMacroModal(null); });
+  }
+  function openMacroModal(macro){
+    var isEdit = !!macro;
+    openModal(
+      '<h3 style="margin-top:0;">'+(isEdit?'Edit canned reply':'New canned reply')+'</h3>'+
+      '<div class="sd-field"><label>Title</label><input class="sd-input" id="macroTitle" value="'+(macro?esc(macro.title):'')+'" placeholder="e.g. Refund policy"></div>'+
+      '<div class="sd-field"><label>Shortcut <span style="font-weight:400;color:var(--ink-soft)">(optional — shown next to the title in the picker)</span></label><input class="sd-input" id="macroShortcut" value="'+(macro?esc(macro.shortcut||''):'')+'" placeholder="e.g. /refund"></div>'+
+      '<div class="sd-field"><label>Reply text</label><textarea class="sd-input" id="macroBody" rows="5" placeholder="What gets inserted into the reply box…">'+(macro?esc(macro.body):'')+'</textarea></div>'+
+      '<div style="display:flex; gap:.5rem; justify-content:'+(isEdit?'space-between':'flex-end')+';">'+
+        (isEdit?'<button class="sd-btn danger" id="macroDeleteBtn"><i class="bi bi-trash3"></i> Delete</button>':'')+
+        '<div style="display:flex;gap:.5rem;">'+
+        '<button class="sd-btn secondary" onclick="document.getElementById(\'sdModalBackdrop\').style.display=\'none\'">Cancel</button>'+
+        '<button class="sd-btn" id="macroSaveBtn"><i class="bi bi-check-lg"></i> Save</button></div></div>'
+    );
+    $('macroSaveBtn').addEventListener('click', async function(){
+      var title = $('macroTitle').value.trim();
+      var shortcut = $('macroShortcut').value.trim();
+      var body = $('macroBody').value.trim();
+      if(!title || !body){ toast('Title and reply text are required', 'error'); return; }
+      this.disabled = true;
+      try{
+        if(isEdit){
+          var { error } = await sb.from('ticket_macros').update({ title:title, shortcut:shortcut||null, body:body }).eq('id', macro.id);
+          if(error) throw error;
+          toast('Canned reply updated');
+        } else {
+          var { error:err2 } = await sb.from('ticket_macros').insert({ title:title, shortcut:shortcut||null, body:body });
+          if(err2) throw err2;
+          toast('Canned reply added');
+        }
+        closeModal(); loadMacros();
+      }catch(err){ logErr('save macro', err); toast('Could not save canned reply', 'error'); this.disabled=false; }
+    });
+    if(isEdit){
+      $('macroDeleteBtn').addEventListener('click', async function(){
+        if(!confirm('Delete this canned reply? Agents will no longer see it in the Quick Reply list.')) return;
+        this.disabled = true;
+        try{
+          var { error } = await sb.from('ticket_macros').delete().eq('id', macro.id);
+          if(error) throw error;
+          toast('Canned reply deleted'); closeModal(); loadMacros();
+        }catch(err){ logErr('delete macro', err); toast('Could not delete canned reply', 'error'); this.disabled=false; }
+      });
+    }
+  }
+  async function loadMacros(){
+    var wrap = $('macroTableWrap');
+    wrap.innerHTML = '<div class="sd-loading">Loading…</div>';
+    try{
+      var { data, error } = await sb.from('ticket_macros').select('*').order('created_at', { ascending:false });
+      if(error) throw error;
+      if(!data || !data.length){ wrap.innerHTML = '<div class="sd-empty">No canned replies yet — click "New canned reply" to add one.</div>'; return; }
+      wrap.innerHTML = '<table class="sd-table"><thead><tr><th>Title</th><th>Shortcut</th><th>Preview</th><th></th></tr></thead><tbody>'+
+        data.map(function(m){
+          var preview = (m.body||'').length>90 ? esc(m.body.slice(0,90))+'…' : esc(m.body||'');
+          return '<tr class="sd-macro-row" data-id="'+m.id+'" style="cursor:pointer">'+
+            '<td><strong>'+esc(m.title)+'</strong></td>'+
+            '<td>'+(m.shortcut?'<span class="sd-macro-shortcut">'+esc(m.shortcut)+'</span>':'—')+'</td>'+
+            '<td style="color:var(--ink-soft)">'+preview+'</td>'+
+            '<td><button class="sd-btn secondary sd-edit-macro" data-id="'+m.id+'"><i class="bi bi-pencil"></i> Edit</button></td></tr>';
+        }).join('')+'</tbody></table>';
+      wrap.querySelectorAll('.sd-edit-macro').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var m = data.find(function(x){ return x.id===btn.dataset.id; });
+          if(m) openMacroModal(m);
+        });
+      });
+    }catch(err){
+      logErr('loadMacros', err);
+      wrap.innerHTML = '<div class="sd-empty">Could not load canned replies.</div>';
+    }
+  }
+
+  // ------------------------------------------------------------------ KNOWLEDGE BASE (kb_articles / faq_items)
+  function wireKb(){
+    document.querySelectorAll('.sd-chip[data-kb]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        document.querySelectorAll('.sd-chip[data-kb]').forEach(function(c){ c.classList.remove('active'); });
+        chip.classList.add('active');
+        state.kbTab = chip.dataset.kb;
+        $('kbTitle').innerHTML = (state.kbTab==='articles' ? 'Knowledge base articles' : 'FAQ items') +
+          ' <button class="sd-btn" id="kbAddBtn"><i class="bi bi-plus-lg"></i> New '+(state.kbTab==='articles'?'article':'FAQ')+'</button>';
+        wireKbAdd();
+        loadKb();
+      });
+    });
+    wireKbAdd();
+  }
+  function wireKbAdd(){
+    var btn = $('kbAddBtn'); if(!btn) return;
+    btn.addEventListener('click', function(){
+      if(state.kbTab==='articles'){
+        openModal(
+          '<h3 style="margin-top:0;">New article</h3>'+
+          '<div class="sd-field"><label>Title</label><input class="sd-input" id="kbTitleInput"></div>'+
+          '<div class="sd-field"><label>Summary</label><textarea class="sd-input" id="kbSummaryInput" rows="3"></textarea></div>'+
+          '<div style="display:flex; gap:.5rem; justify-content:flex-end;">'+
+            '<button class="sd-btn secondary" onclick="document.getElementById(\'sdModalBackdrop\').style.display=\'none\'">Cancel</button>'+
+            '<button class="sd-btn" id="kbSaveBtn"><i class="bi bi-check-lg"></i> Save draft</button></div>'
+        );
+        $('kbSaveBtn').addEventListener('click', async function(){
+          var title = $('kbTitleInput').value.trim(), summary = $('kbSummaryInput').value.trim();
+          if(!title){ toast('Title is required', 'error'); return; }
+          var slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+          this.disabled = true;
+          try{
+            var { error } = await sb.from('kb_articles').insert({ title:title, slug:slug, summary:summary, is_active:false });
+            if(error) throw error;
+            toast('Draft saved'); closeModal(); loadKb();
+          }catch(err){ logErr('add kb article', err); toast('Could not save article', 'error'); this.disabled=false; }
+        });
+      } else {
+        openModal(
+          '<h3 style="margin-top:0;">New FAQ item</h3>'+
+          '<div class="sd-field"><label>Question</label><input class="sd-input" id="faqQ"></div>'+
+          '<div class="sd-field"><label>Answer</label><textarea class="sd-input" id="faqA" rows="3"></textarea></div>'+
+          '<div style="display:flex; gap:.5rem; justify-content:flex-end;">'+
+            '<button class="sd-btn secondary" onclick="document.getElementById(\'sdModalBackdrop\').style.display=\'none\'">Cancel</button>'+
+            '<button class="sd-btn" id="faqSaveBtn"><i class="bi bi-check-lg"></i> Save</button></div>'
+        );
+        $('faqSaveBtn').addEventListener('click', async function(){
+          var q = $('faqQ').value.trim(), a = $('faqA').value.trim();
+          if(!q || !a){ toast('Question and answer are required', 'error'); return; }
+          this.disabled = true;
+          try{
+            var { error } = await sb.from('faq_items').insert({ question:q, answer:a, is_active:true });
+            if(error) throw error;
+            toast('FAQ added'); closeModal(); loadKb();
+          }catch(err){ logErr('add faq', err); toast('Could not save FAQ', 'error'); this.disabled=false; }
+        });
+      }
+    });
+  }
+  async function loadKb(){
+    var wrap = $('kbTableWrap');
+    wrap.innerHTML = '<div class="sd-loading">Loading…</div>';
+    try{
+      if(state.kbTab==='articles'){
+        var { data, error } = await sb.from('kb_articles').select('id, title, slug, is_active, created_at').order('created_at', { ascending:false });
+        if(error) throw error;
+        if(!data || !data.length){ wrap.innerHTML = '<div class="sd-empty">No articles yet.</div>'; return; }
+        wrap.innerHTML = '<table class="sd-table"><thead><tr><th>Title</th><th>Status</th><th></th></tr></thead><tbody>'+
+          data.map(function(a){
+            return '<tr><td><strong>'+esc(a.title)+'</strong><div style="font-size:.72rem;color:var(--ink-soft);">/'+esc(a.slug)+'</div></td>'+
+              '<td>'+(a.is_active?'<span class="sd-pill online">Published</span>':'<span class="sd-pill offline">Draft</span>')+'</td>'+
+              '<td><button class="sd-btn secondary sd-toggle-kb" data-id="'+a.id+'" data-active="'+a.is_active+'">'+(a.is_active?'Unpublish':'Publish')+'</button></td></tr>';
+          }).join('')+'</tbody></table>';
+        wrap.querySelectorAll('.sd-toggle-kb').forEach(function(btn){
+          btn.addEventListener('click', async function(){
+            var id=btn.dataset.id, nowActive = btn.dataset.active==='true';
+            btn.disabled = true;
+            try{ var { error } = await sb.from('kb_articles').update({ is_active: !nowActive }).eq('id', id); if(error) throw error; toast('Article updated'); loadKb(); }
+            catch(err){ logErr('toggle kb article', err); toast('Could not update article', 'error'); btn.disabled=false; }
+          });
+        });
+      } else {
+        var r2 = await sb.from('faq_items').select('id, question, is_active, created_at').order('created_at', { ascending:false });
+        if(r2.error) throw r2.error;
+        if(!r2.data || !r2.data.length){ wrap.innerHTML = '<div class="sd-empty">No FAQ items yet.</div>'; return; }
+        wrap.innerHTML = '<table class="sd-table"><thead><tr><th>Question</th><th>Status</th><th></th></tr></thead><tbody>'+
+          r2.data.map(function(f){
+            return '<tr><td>'+esc(f.question)+'</td>'+
+              '<td>'+(f.is_active?'<span class="sd-pill online">Active</span>':'<span class="sd-pill offline">Hidden</span>')+'</td>'+
+              '<td><button class="sd-btn secondary sd-toggle-faq" data-id="'+f.id+'" data-active="'+f.is_active+'">'+(f.is_active?'Hide':'Show')+'</button></td></tr>';
+          }).join('')+'</tbody></table>';
+        wrap.querySelectorAll('.sd-toggle-faq').forEach(function(btn){
+          btn.addEventListener('click', async function(){
+            var id=btn.dataset.id, nowActive = btn.dataset.active==='true';
+            btn.disabled = true;
+            try{ var { error } = await sb.from('faq_items').update({ is_active: !nowActive }).eq('id', id); if(error) throw error; toast('FAQ updated'); loadKb(); }
+            catch(err){ logErr('toggle faq', err); toast('Could not update FAQ', 'error'); btn.disabled=false; }
+          });
+        });
+      }
+    }catch(err){
+      logErr('loadKb', err);
+      wrap.innerHTML = '<div class="sd-empty">Could not load knowledge base.</div>';
+    }
+  }
+
+  // ------------------------------------------------------------------ bootstrap
+  async function init(){
+    try{
+      var adminRow = await adminGate();
+      if(!adminRow) return;
+      gateOpen();
+      $('sdMyName').textContent = adminRow.username || adminRow.email || 'Admin';
+      if(adminRow.avatar_url){ $('sdMyAvatar').src = adminRow.avatar_url; $('sdMyAvatar').style.display='block'; }
+      wireTabs();
+      wireDepartments();
+      wireMacros();
+      wireKb();
+      loadDepartments();
+    }catch(err){
+      logErr('init', err);
+      gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Something went wrong',
+        text:'Could not load Settings. Please try again.',
+        actions:'<button class="sd-btn" onclick="location.reload()">Retry</button>' });
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>

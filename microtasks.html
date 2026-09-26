@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Micro Tasks | SoundsCare Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --ink: #0f1923;
+  --brand: #1B6B45;
+  --brand-dark: #134f33;
+  --brand-soft: rgba(27,107,69,0.10);
+  --accent: #E8A040;
+  --accent-soft: rgba(232,160,64,0.12);
+  --accent-ink: #a15a1f;
+  --sky: #0ea5e9;
+  --rose: #f43f5e;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --bg: #f9fafb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; min-height: 100vh; }
+a { color: inherit; }
+
+/* GATE */
+#gate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.gate-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 2.2rem 2rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(15,25,35,.10); }
+.gate-card .gi { font-size: 2rem; color: var(--brand); margin-bottom: .6rem; }
+.gate-card.deny .gi { color: var(--rose); }
+.gate-card h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+.gate-card p { margin: 0 0 1.1rem; font-size: .86rem; line-height: 1.5; color: var(--muted); }
+.gate-actions { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+.spinner { display: inline-block; width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* TOPBAR */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.brand-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); }
+.brand-link:hover { color: var(--brand); border-color: var(--brand); }
+.topbar h1 { font-size: 1rem; font-weight: 800; }
+.topbar-right { font-size: 12.5px; color: var(--muted); display:flex; align-items:center; gap:10px; }
+
+/* LAYOUT */
+.content { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 1.3rem; flex-wrap: wrap; }
+.page-head h1 { font-size: 1.3rem; font-weight: 800; }
+.page-head p { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.page-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem; box-shadow: 0 2px 8px rgba(15,25,35,.04); }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.stat-value { font-size: 2rem; font-weight: 800; color: var(--brand); }
+.stat-value.amber { color: var(--amber); }
+.stat-value.sky { color: var(--sky); }
+.stat-value.green { color: var(--green); }
+
+.section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(15,25,35,.04); }
+.sub-tabs { display: flex; border-bottom: 1px solid var(--border); gap: 0; overflow-x: auto; background: var(--surface); border-radius: 14px 14px 0 0; }
+.tab-btn { padding: 10px 16px; border: none; background: none; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; transition: .18s; font-family: inherit; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.tab-btn:hover { color: var(--brand); }
+.tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.search-bar { display: flex; gap: 8px; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+.search-input { flex: 1; min-width: 200px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; outline: none; }
+.search-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(27,107,69,.1); }
+.filter-select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; color: var(--ink); background: var(--surface); cursor: pointer; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--bg); }
+th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(27,107,69,.02); }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.badge-green { background: rgba(34,197,94,.15); color: #15803d; }
+.badge-amber { background: rgba(245,158,11,.15); color: #b45309; }
+.badge-rose { background: rgba(244,63,94,.15); color: #be123c; }
+.badge-sky { background: rgba(14,165,233,.15); color: #0369a1; }
+.badge-muted { background: var(--bg); color: var(--muted); }
+
+.btn { padding: 9px 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; transition: .18s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); }
+.btn-secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-danger { background: rgba(244,63,94,.1); color: var(--rose); border: 1px solid rgba(244,63,94,.2); }
+.btn-danger:hover { background: rgba(244,63,94,.2); }
+.actions-cell { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 600; font-size: 11px; margin-bottom: 5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; color: var(--ink); background: var(--surface); }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(27,107,69,.1); }
+.form-group textarea { resize: vertical; min-height: 90px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(15,25,35,.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(15,25,35,.28); display: flex; flex-direction: column; }
+.modal.wide { max-width: 780px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modal-header h2 { font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.modal-close:hover { background: var(--bg); color: var(--ink); }
+.modal-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+
+.profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.profile-field label { display: block; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
+.profile-field span { font-size: 13px; font-weight: 500; }
+.profile-section { margin: 1.2rem 0; }
+.profile-section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.proof-preview { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; }
+
+#toast-stack { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; max-width: 360px; }
+.toast { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; font-size: 13px; box-shadow: 0 4px 16px rgba(15,25,35,.15); min-width: 280px; }
+.toast.ok { border-left: 3px solid var(--green); } .toast.ok i { color: var(--green); }
+.toast.err { border-left: 3px solid var(--rose); } .toast.err i { color: var(--rose); }
+.toast.info { border-left: 3px solid var(--sky); } .toast.info i { color: var(--sky); }
+.toast-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; margin-left: auto; flex-shrink: 0; }
+
+#lightbox-overlay { position: fixed; inset: 0; background: rgba(10,15,20,.92); z-index: 9000; display: flex; align-items: center; justify-content: center; }
+#lightbox-overlay.hidden { display: none; }
+.lightbox-stage img { max-width: 92vw; max-height: 80vh; object-fit: contain; border-radius: 8px; background: #111; }
+.lightbox-close { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,.12); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+
+@media (max-width: 700px) {
+  .content { padding: 1rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .page-head-actions .btn { flex:1; justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card"><div class="spinner"></div><h2>Checking access…</h2><p>Verifying your admin account.</p></div>
+</div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="brand-link" href="admin-dashboard.html"><i class="bi bi-arrow-left"></i> Admin Dashboard</a>
+    <h1>🎙️ Micro Tasks</h1>
+  </div>
+  <div class="topbar-right"><span id="whoami"></span></div>
+</header>
+
+<div class="content">
+  <div class="page-head">
+    <div><h1>Micro Tasks</h1><p>Social &amp; app-testing gigs — create tasks, review submissions, settle tasker withdrawals</p></div>
+    <div class="page-head-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openGeneralPaymentModal()"><i class="bi bi-cash-stack"></i> General Payment</button>
+      <button class="btn btn-secondary btn-sm" onclick="openTopUpModal()"><i class="bi bi-wallet2"></i> Top Up Wallet</button>
+      <button class="btn btn-primary btn-sm" onclick="openTaskModal()"><i class="bi bi-plus-lg"></i> Create Task</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label"><i class="bi bi-list-check"></i> Active Tasks</div><div class="stat-value" id="mt-stat-active">0</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="bi bi-hourglass-split"></i> Pending Review</div><div class="stat-value amber" id="mt-stat-pending">0</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="bi bi-wallet2"></i> Your Wallet (Ksh)</div><div class="stat-value sky" id="mt-stat-wallet">0</div></div>
+    <div class="stat-card"><div class="stat-label"><i class="bi bi-cash-coin"></i> Pending Withdrawals (Ksh)</div><div class="stat-value green" id="mt-stat-withdrawals">0</div></div>
+  </div>
+
+  <div class="sub-tabs">
+    <button class="tab-btn active" onclick="switchMicroTasksTab(event,'tasks')"><i class="bi bi-list-check"></i> Tasks</button>
+    <button class="tab-btn" onclick="switchMicroTasksTab(event,'submissions')"><i class="bi bi-card-checklist"></i> Submissions <span class="badge badge-amber" id="badge-mt-submissions-sub" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchMicroTasksTab(event,'payments')"><i class="bi bi-cash-coin"></i> Pay Taskers <span class="badge badge-amber" id="badge-mt-withdrawals-sub" style="display:none"></span></button>
+    <button class="tab-btn" onclick="switchMicroTasksTab(event,'insights')"><i class="bi bi-graph-up-arrow"></i> Insights</button>
+  </div>
+
+  <!-- TASKS -->
+  <div id="microtasks-tab-tasks" class="tab-content active">
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="mt-search" placeholder="🔍 Search task title…" oninput="renderMicroTasks()">
+        <select class="filter-select" id="mt-type-filter" onchange="renderMicroTasks()"><option value="">All Categories</option></select>
+        <select class="filter-select" id="mt-status-filter" onchange="renderMicroTasks()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Closed / Cancelled</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Task</th><th>Category</th><th>Payment</th><th>Slots</th><th>Budget</th><th>Status</th><th>Expires</th><th>Created</th><th>Actions</th></tr></thead><tbody id="mt-tasks-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- SUBMISSIONS -->
+  <div id="microtasks-tab-submissions" class="tab-content">
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="mt-sub-search" placeholder="🔍 Search tasker, task…" oninput="renderMicroTaskSubmissions()">
+        <select class="filter-select" id="mt-sub-task-filter" onchange="renderMicroTaskSubmissions()"><option value="">All Tasks</option></select>
+        <select class="filter-select" id="mt-sub-status-filter" onchange="renderMicroTaskSubmissions()">
+          <option value="pending">Pending Review</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="">All Status</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Tasker</th><th>Task</th><th>Proof</th><th>Submitted</th><th>Status</th><th>Reward</th><th>Actions</th></tr></thead><tbody id="mt-subs-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- PAY TASKERS -->
+  <div id="microtasks-tab-payments" class="tab-content">
+    <div class="section">
+      <div class="search-bar">
+        <input class="search-input" id="mt-pay-search" placeholder="🔍 Search tasker, destination…" oninput="renderMicroTaskPayments()">
+        <select class="filter-select" id="mt-pay-status-filter" onchange="renderMicroTaskPayments()">
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="completed">Completed</option>
+          <option value="rejected">Rejected</option>
+          <option value="">All Status</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Tasker</th><th>Amount</th><th>Method</th><th>Destination</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody id="mt-pay-tbody"><tr><td colspan="7" style="text-align:center">Loading…</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div id="microtasks-tab-insights" class="tab-content">
+    <div class="section">
+      <div class="table-wrap"><table><thead><tr><th>Task</th><th>Status</th><th>Slots Filled</th><th>Submissions</th><th>Approved</th><th>Rejected</th><th>Approval Rate</th><th>Budget (Ksh)</th><th>Cost / Approved</th></tr></thead><tbody id="mt-insights-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE / DUPLICATE TASK -->
+<div id="task-modal" class="modal-overlay">
+  <div class="modal wide">
+    <div class="modal-header"><h2><i class="bi bi-list-check"></i> <span id="task-modal-title">Create Micro Task</span></h2><button class="modal-close" onclick="closeModal('task-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="background:var(--brand-soft);border:1px solid rgba(27,107,69,.25);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12.5px">
+        <i class="bi bi-wallet2"></i> Your admin task wallet balance: <strong id="mt-wallet-balance">Ksh 0</strong> — creating a task charges the full budget plus the <span id="mt-fee-pct">10</span>% platform fee immediately.
+        <button class="btn btn-sm btn-secondary" style="margin-left:8px" onclick="openTopUpModal()">Top Up Wallet</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Task Title *</label><input id="mt-title" placeholder="e.g. Test our new checkout flow"></div>
+        <div class="form-group"><label>Category *</label><select id="mt-category"></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Platform</label><input id="mt-platform" placeholder="e.g. Facebook, Instagram, TikTok, App"></div>
+        <div class="form-group"><label>Target Link</label><input id="mt-target-url" placeholder="https://facebook.com/yourpage or app link"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Payment per Task (Ksh) *</label><input id="mt-payment" type="number" min="0" placeholder="e.g. 50"></div>
+        <div class="form-group"><label>Number of Slots *</label><input id="mt-slots" type="number" min="1" value="10" placeholder="How many taskers can complete this"></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:-8px" id="mt-reward-hint"></p>
+      <div class="form-group"><label>Period (Expiry Date)</label><input id="mt-deadline" type="date"></div>
+      <div class="form-group"><label>Requirements</label><textarea id="mt-requirements" placeholder="Who can do this task — device, location, followers required, etc." style="min-height:60px"></textarea></div>
+      <div class="form-group"><label>Instructions *</label><textarea id="mt-instructions" placeholder="Step-by-step instructions the tasker must follow…" style="min-height:90px"></textarea></div>
+      <p style="font-size:11.5px;color:var(--muted)"><i class="bi bi-info-circle"></i> Proof of completion is set by the category (shown next to it below) — taskers submit that when they mark the task done. Saving charges your wallet and makes the task <strong>Active</strong> immediately.</p>
+      <p style="font-size:12px;background:var(--bg);border-radius:8px;padding:8px 10px" id="mt-budget-preview"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('task-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMicroTask()"><i class="bi bi-save"></i> Create &amp; Fund Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP UP ADMIN WALLET -->
+<div id="topup-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-wallet2"></i> Top Up Task Wallet</h2><button class="modal-close" onclick="closeModal('topup-modal')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Credits your own admin task wallet (id: <span id="topup-target-label">you</span>) so you can fund new tasks. Record this against however you actually received the funds (M-Pesa, bank, etc.) — this only updates the ledger here.</p>
+      <div class="form-group"><label>Amount (Ksh) *</label><input id="topup-amount" type="number" min="0" placeholder="e.g. 5000"></div>
+      <div class="form-group"><label>Note</label><input id="topup-note" placeholder="e.g. Float top-up from company M-Pesa"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('topup-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTopUp()"><i class="bi bi-wallet2"></i> Credit Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMISSION REVIEW -->
+<div id="submission-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-card-checklist"></i> Review Submission</h2><button class="modal-close" onclick="closeModal('submission-modal')">×</button></div>
+    <div class="modal-body" id="submission-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="submission-reject-btn"><i class="bi bi-x-lg"></i> Reject</button>
+      <button class="btn btn-primary" id="submission-approve-btn"><i class="bi bi-check-lg"></i> Approve &amp; Credit Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERAL PAYMENT -->
+<div id="general-payment-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2><i class="bi bi-cash-stack"></i> Make General Payment</h2><button class="modal-close" onclick="closeModal('general-payment-modal')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:11.5px;color:var(--muted);margin-bottom:10px"><i class="bi bi-info-circle"></i> Credits a tasker's task wallet directly — for bonuses or adjustments outside a specific task submission. It becomes withdrawable like any other earning.</p>
+      <div class="form-group"><label>Tasker (name, phone or email) *</label><input id="gp-tasker-search" placeholder="Start typing to search users…" oninput="searchGeneralPaymentTasker()" autocomplete="off"></div>
+      <div id="gp-tasker-results" style="display:none;border:1px solid var(--border);border-radius:8px;max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+      <input type="hidden" id="gp-tasker-id">
+      <div id="gp-tasker-selected" style="display:none;background:var(--brand-soft);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:10px"></div>
+      <div class="form-group"><label>Amount (Ksh) *</label><input id="gp-amount" type="number" min="0" placeholder="e.g. 200"></div>
+      <div class="form-group"><label>Note / Reference</label><input id="gp-note" placeholder="e.g. Bonus for top performer, October"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('general-payment-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitGeneralPayment()"><i class="bi bi-cash-stack"></i> Credit Tasker</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox-overlay" class="hidden">
+  <div class="lightbox-stage"><img id="lightbox-img" src="" alt=""><button class="lightbox-close" onclick="closeLightbox()"><i class="bi bi-x-lg"></i></button></div>
+</div>
+
+<div id="toast-stack"></div>
+
+<script>
+const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
+});
+const LOGIN_URL = 'admin-login.html';
+const ADMIN_PAGE = 'admin-dashboard'; // this workspace opens to anyone who can reach the Admin Dashboard, plus a dedicated 'microtasks' grant
+const MICROTASKS_PAGE = 'microtasks';
+
+let currentUser = null, adminRecord = null;
+let allUsers = [], allTaskCategories = [], allMicroTasks = [], allMicroTaskSubmissions = [];
+let allTaskWallets = [], allTaskWithdrawals = [], taskSettings = null;
+let myTaskWallet = null;
+
+function esc(t){ if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function setEl(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-KE',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function showToast(type,msg){
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<i class="bi bi-${type==='ok'?'check-circle-fill':type==='err'?'exclamation-circle-fill':'info-circle-fill'}"></i><div style="flex:1">${esc(msg)}</div><button class="toast-close" onclick="this.closest('.toast').remove()">×</button>`;
+  document.getElementById('toast-stack').appendChild(t);
+  setTimeout(()=>{ if(t.parentNode) t.remove(); },5000);
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); }));
+function openLightbox(images,startIndex){ const item=(images||[])[startIndex||0]; if(!item) return; document.getElementById('lightbox-img').src=item.url; document.getElementById('lightbox-overlay').classList.remove('hidden'); }
+function closeLightbox(){ document.getElementById('lightbox-overlay').classList.add('hidden'); document.getElementById('lightbox-img').src=''; }
+function userLabel(userId){
+  const u = allUsers.find(u=>u.id===userId);
+  return u ? (u.full_name || u.email || u.phone || (userId||'').slice(0,8)) : (userId ? userId.slice(0,8) : 'Unknown User');
+}
+function mtWalletBalance(userId){ const w=allTaskWallets.find(w=>w.user_id===userId); return w?Number(w.balance||0):0; }
+
+// ============================================================
+// ACCESS GATE — same admin_users policy as the rest of the suite.
+// Anyone who can reach admin-dashboard.html (or has 'microtasks' /
+// is a super_admin) can open this standalone workspace directly.
+// ============================================================
+function isSuperAdmin(row){ return row.access_level==='super_admin' || row.role==='Super Admin'; }
+function canAccessMicroTasks(row){
+  if(isSuperAdmin(row)) return true;
+  return Array.isArray(row.allowed_pages) && (row.allowed_pages.indexOf(ADMIN_PAGE)!==-1 || row.allowed_pages.indexOf(MICROTASKS_PAGE)!==-1);
+}
+function gateShow(opts){
+  const g=document.getElementById('gate');
+  g.style.display='flex';
+  g.innerHTML = `<div class="gate-card${opts.deny?' deny':''}">
+    <div class="gi"><i class="bi ${opts.icon}"></i></div>
+    <h2>${esc(opts.title)}</h2><p>${esc(opts.text)}</p>
+    <div class="gate-actions">${opts.actions||''}</div></div>`;
+}
+function goLogin(){ window.location.replace(LOGIN_URL); }
+
+async function adminGate(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ goLogin(); return null; }
+  const { data:{ user }, error:userErr } = await sb.auth.getUser();
+  if(userErr || !user){ try{ await sb.auth.signOut(); }catch(e){} goLogin(); return null; }
+  const { data:adminRow, error } = await sb.from('admin_users')
+    .select('id, username, email, role, access_level, status, allowed_pages, must_change_password, pin_hash')
+    .eq('user_id', user.id).maybeSingle();
+  if(error){
+    gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Could not verify access', text:'We could not check your admin account. Please try again.',
+      actions:'<button class="btn btn-secondary" onclick="location.reload()">Retry</button><a class="btn btn-primary" href="'+LOGIN_URL+'">Back to sign in</a>' });
+    return null;
+  }
+  if(!adminRow){
+    try{ await sb.auth.signOut(); }catch(e){}
+    gateShow({ deny:true, icon:'bi-shield-x', title:'Not an admin account', text:'This account is not registered as a SoundsCare admin.',
+      actions:'<a class="btn btn-primary" href="'+LOGIN_URL+'">Back to sign in</a>' });
+    return null;
+  }
+  if(adminRow.status !== 'Active'){
+    try{ await sb.auth.signOut(); }catch(e){}
+    gateShow({ deny:true, icon:'bi-shield-x', title:'Account not active', text:'This admin account is not active. Contact the Super Admin.',
+      actions:'<a class="btn btn-primary" href="'+LOGIN_URL+'">Back to sign in</a>' });
+    return null;
+  }
+  if(adminRow.must_change_password || !adminRow.pin_hash){ goLogin(); return null; }
+  if(!canAccessMicroTasks(adminRow)){
+    gateShow({ deny:true, icon:'bi-lock', title:'No access to Micro Tasks', text:'Your role ('+(adminRow.role||'Admin')+') is not permitted to open this workspace.',
+      actions:'<a class="btn btn-primary" href="'+LOGIN_URL+'">Back to my dashboards</a>' });
+    return null;
+  }
+  return adminRow;
+}
+
+// ============================================================
+// DATA LOADING — mirrors the Micro Tasks tab in admin-dashboard.html,
+// reusing the same tables and RPCs so both surfaces stay in sync.
+// ============================================================
+async function loadAll(){
+  const [u, mt, mtsub, mtcat, mtwal, mtwd, mtset] = await Promise.all([
+    sb.from('users').select('id, full_name, email, phone'),
+    sb.from('tasks').select('*').order('created_at',{ascending:false}),
+    sb.from('task_submissions').select('*').order('submitted_at',{ascending:false}),
+    sb.from('task_categories').select('*').order('sort_order',{ascending:true}),
+    sb.from('task_wallets').select('*'),
+    sb.from('task_withdrawal_requests').select('*').order('requested_at',{ascending:false}),
+    sb.from('task_settings').select('*').eq('id',1).maybeSingle(),
+  ]);
+  allUsers = u.data || [];
+  allMicroTasks = mt.data || [];
+  allMicroTaskSubmissions = mtsub.data || [];
+  allTaskCategories = mtcat.data || [];
+  allTaskWallets = mtwal.data || [];
+  allTaskWithdrawals = mtwd.data || [];
+  taskSettings = mtset.data || { platform_fee_pct:10, min_withdrawal_amount:100, min_task_reward:5, max_task_reward:5000 };
+  myTaskWallet = allTaskWallets.find(w=>w.user_id===currentUser?.id) || null;
+
+  renderMicroTasks();
+  renderMicroTaskSubmissions();
+  renderMicroTaskPayments();
+  renderMicroTaskInsights();
+  updateBadges();
+}
+function updateBadges(){
+  const subPending = allMicroTaskSubmissions.filter(s=>s.status==='pending').length;
+  const wdPending = allTaskWithdrawals.filter(w=>w.status==='pending').length;
+  const b1=document.getElementById('badge-mt-submissions-sub'); if(b1){ b1.style.display=subPending?'inline-block':'none'; b1.textContent=subPending; }
+  const b2=document.getElementById('badge-mt-withdrawals-sub'); if(b2){ b2.style.display=wdPending?'inline-block':'none'; b2.textContent=wdPending; }
+}
+
+// ============================================================
+// LABELS
+// ============================================================
+function mtCategoryById(id){ return allTaskCategories.find(c=>c.id===id); }
+function mtCategoryLabel(t){ const c=mtCategoryById(t.category_id); return c?c.name:'—'; }
+function mtProofTypeLabel(t){ const c=mtCategoryById(t.category_id); const map={screenshot:'Screenshot',link:'Link',text:'Text'}; return c?(map[c.proof_type]||c.proof_type):'—'; }
+function mtTaskStatusBadge(status){
+  const map={active:'badge-green',paused:'badge-amber',completed:'badge-sky',cancelled:'badge-muted',rejected:'badge-rose'};
+  const label={active:'Active',paused:'Paused',completed:'Completed',cancelled:'Closed',rejected:'Rejected'}[status]||status;
+  return `<span class="badge ${map[status]||'badge-muted'}">${label}</span>`;
+}
+function mtSubmissionStatusBadge(status){
+  const map={pending:'badge-amber',approved:'badge-green',rejected:'badge-rose'};
+  return `<span class="badge ${map[status]||'badge-muted'}">${status}</span>`;
+}
+function mtWithdrawalStatusBadge(status){
+  const map={pending:'badge-amber',processing:'badge-sky',completed:'badge-green',rejected:'badge-rose'};
+  return `<span class="badge ${map[status]||'badge-muted'}">${status}</span>`;
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+function renderMicroTaskStats(){
+  const activeCount=allMicroTasks.filter(t=>t.status==='active').length;
+  const pendingCount=allMicroTaskSubmissions.filter(s=>s.status==='pending').length;
+  const walletBal=myTaskWallet?Number(myTaskWallet.balance||0):0;
+  const pendingWd=allTaskWithdrawals.filter(w=>w.status==='pending').reduce((s,w)=>s+Number(w.amount||0),0);
+  setEl('mt-stat-active',activeCount);
+  setEl('mt-stat-pending',pendingCount);
+  setEl('mt-stat-wallet','Ksh '+walletBal.toLocaleString());
+  setEl('mt-stat-withdrawals','Ksh '+pendingWd.toLocaleString());
+}
+function renderMicroTasks(){
+  const typeFilter=document.getElementById('mt-type-filter');
+  if(typeFilter && typeFilter.options.length<=1){
+    typeFilter.innerHTML='<option value="">All Categories</option>'+allTaskCategories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  }
+  const q=(document.getElementById('mt-search')?.value||'').toLowerCase();
+  const tf=document.getElementById('mt-type-filter')?.value||'';
+  const sf=document.getElementById('mt-status-filter')?.value||'';
+  let data=allMicroTasks.filter(t=>{
+    if(tf && t.category_id!==tf) return false;
+    if(sf && t.status!==sf) return false;
+    if(q && !(t.title||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('mt-tasks-tbody').innerHTML=data.map(t=>{
+    const canPause=t.status==='active';
+    const canResume=t.status==='paused';
+    const canClose=t.status==='active'||t.status==='paused';
+    const canRepublish=t.status==='cancelled'||t.status==='completed'||t.status==='rejected';
+    return `<tr>
+      <td><strong>${esc(t.title)}</strong>${t.platform?`<div style="font-size:11px;color:var(--muted)">${esc(t.platform)}</div>`:''}</td>
+      <td><span class="badge badge-muted">${esc(mtCategoryLabel(t))}</span><div style="font-size:10.5px;color:var(--muted)">Proof: ${mtProofTypeLabel(t)}</div></td>
+      <td>Ksh ${Number(t.reward_per_task||0).toLocaleString()}</td>
+      <td>${t.slots_filled||0}/${t.slots_total||0}</td>
+      <td>Ksh ${Number(t.budget_total||0).toLocaleString()}</td>
+      <td>${mtTaskStatusBadge(t.status)}</td>
+      <td>${t.expires_at?fmtDate(t.expires_at):'—'}</td>
+      <td>${fmtDate(t.created_at)}</td>
+      <td class="actions-cell">
+        ${canPause?`<button class="btn btn-sm btn-secondary" onclick="pauseMicroTask('${t.id}')">Pause</button>`:''}
+        ${canResume?`<button class="btn btn-sm btn-primary" onclick="resumeMicroTask('${t.id}')">Resume</button>`:''}
+        ${canClose?`<button class="btn btn-sm btn-danger" onclick="closeMicroTask('${t.id}')">Close</button>`:''}
+        ${canRepublish?`<button class="btn btn-sm btn-primary" onclick="republishMicroTask('${t.id}')">Republish</button>`:''}
+      </td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No micro tasks yet — click Create Task to add one</td></tr>';
+
+  const subFilter=document.getElementById('mt-sub-task-filter');
+  if(subFilter){
+    const current=subFilter.value;
+    subFilter.innerHTML='<option value="">All Tasks</option>'+allMicroTasks.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join('');
+    subFilter.value=current;
+  }
+  renderMicroTaskStats();
+}
+
+function openTaskModal(duplicateFromId){
+  const dup=duplicateFromId?allMicroTasks.find(t=>t.id===duplicateFromId):null;
+  document.getElementById('task-modal-title').textContent=dup?'Republish Task':'Create Micro Task';
+  document.getElementById('mt-title').value=dup?dup.title:'';
+  document.getElementById('mt-platform').value=dup?(dup.platform||''):'';
+  document.getElementById('mt-target-url').value=dup?(dup.target_url||''):'';
+  document.getElementById('mt-payment').value=dup?dup.reward_per_task:'';
+  document.getElementById('mt-slots').value=dup?dup.slots_total:10;
+  document.getElementById('mt-deadline').value='';
+  document.getElementById('mt-requirements').value=dup?(dup.description||''):'';
+  document.getElementById('mt-instructions').value=dup?(dup.instructions||''):'';
+  const catSelect=document.getElementById('mt-category');
+  catSelect.innerHTML=allTaskCategories.map(c=>`<option value="${c.id}">${esc(c.name)} — proof: ${c.proof_type}</option>`).join('');
+  if(dup) catSelect.value=dup.category_id;
+  const bal=myTaskWallet?Number(myTaskWallet.balance||0):0;
+  setEl('mt-wallet-balance','Ksh '+bal.toLocaleString());
+  setEl('mt-fee-pct',taskSettings?.platform_fee_pct??10);
+  updateTaskBudgetPreview();
+  openModal('task-modal');
+}
+function updateTaskBudgetPreview(){
+  const reward=parseFloat(document.getElementById('mt-payment').value)||0;
+  const slots=parseInt(document.getElementById('mt-slots').value)||0;
+  const feePct=Number(taskSettings?.platform_fee_pct??10);
+  const budget=reward*slots;
+  const fee=Math.round(budget*feePct/100*100)/100;
+  const total=budget+fee;
+  document.getElementById('mt-budget-preview').innerHTML=`Budget: Ksh ${budget.toLocaleString()} + ${feePct}% fee (Ksh ${fee.toLocaleString()}) = <strong>Ksh ${total.toLocaleString()}</strong> will be charged to your wallet on save.`;
+  const min=taskSettings?.min_task_reward, max=taskSettings?.max_task_reward;
+  document.getElementById('mt-reward-hint').textContent=(min!=null&&max!=null)?`Reward per task must be between Ksh ${min} and Ksh ${max}.`:'';
+}
+['mt-payment','mt-slots'].forEach(id=>document.addEventListener('input',e=>{ if(e.target?.id===id) updateTaskBudgetPreview(); }));
+
+async function saveMicroTask(){
+  const title=document.getElementById('mt-title').value.trim();
+  const instructions=document.getElementById('mt-instructions').value.trim();
+  const categoryId=document.getElementById('mt-category').value;
+  const reward=parseFloat(document.getElementById('mt-payment').value);
+  const slots=parseInt(document.getElementById('mt-slots').value);
+  if(!title){ showToast('err','Task title is required'); return; }
+  if(!categoryId){ showToast('err','Select a category'); return; }
+  if(!instructions){ showToast('err','Instructions are required so taskers know what to do'); return; }
+  if(!reward||reward<=0){ showToast('err','Enter a valid payment amount per task'); return; }
+  if(!slots||slots<=0){ showToast('err','Enter how many taskers can take this task'); return; }
+
+  if(!myTaskWallet){
+    const { error:enrollErr } = await sb.rpc('enable_task_mode');
+    if(enrollErr){ showToast('err','Could not set up your admin task wallet: '+enrollErr.message); return; }
+  }
+  const deadline=document.getElementById('mt-deadline').value;
+  const { data, error } = await sb.rpc('create_task',{
+    p_category_id:categoryId,
+    p_title:title,
+    p_description:document.getElementById('mt-requirements').value.trim()||null,
+    p_instructions:instructions,
+    p_target_url:document.getElementById('mt-target-url').value.trim()||null,
+    p_platform:document.getElementById('mt-platform').value.trim()||null,
+    p_reward_per_task:reward,
+    p_slots_total:slots,
+    p_expires_at:deadline?new Date(deadline+'T23:59:59').toISOString():null,
+  });
+  if(error){ showToast('err',error.message); return; }
+  if(data && data.success===false){
+    const msgs={insufficient_balance:`Not enough wallet balance — you have Ksh ${data.balance}, need Ksh ${data.required}. Top up first.`,reward_out_of_range:`Reward must be between Ksh ${data.min} and Ksh ${data.max}.`,no_wallet:'Your admin task wallet isn\'t set up yet — try again in a moment.',invalid_slots:'Enter a valid number of slots.'};
+    showToast('err',msgs[data.error]||data.error);
+    return;
+  }
+  closeModal('task-modal');
+  await loadAll();
+  showToast('ok','Task created and funded — now live to taskers');
+}
+
+function openTopUpModal(){
+  document.getElementById('topup-target-label').textContent=currentUser?.email||'you';
+  document.getElementById('topup-amount').value='';
+  document.getElementById('topup-note').value='';
+  openModal('topup-modal');
+}
+async function submitTopUp(){
+  const amount=parseFloat(document.getElementById('topup-amount').value);
+  if(!amount||amount<=0){ showToast('err','Enter a valid amount'); return; }
+  const note=document.getElementById('topup-note').value.trim()||null;
+  const { data, error } = await sb.rpc('admin_credit_task_wallet',{ p_user_id:currentUser.id, p_amount:amount, p_note:note });
+  if(error){ showToast('err',error.message); return; }
+  closeModal('topup-modal');
+  await loadAll();
+  showToast('ok','Wallet topped up — new balance Ksh '+Number(data?.balance||0).toLocaleString());
+}
+
+async function pauseMicroTask(id){
+  const { error } = await sb.from('tasks').update({status:'paused'}).eq('id',id);
+  if(error){ showToast('err',error.message); return; }
+  await loadAll(); showToast('ok','Task paused — no new submissions will be accepted until resumed');
+}
+async function resumeMicroTask(id){
+  const { error } = await sb.from('tasks').update({status:'active'}).eq('id',id);
+  if(error){ showToast('err',error.message); return; }
+  await loadAll(); showToast('ok','Task resumed');
+}
+async function closeMicroTask(id){
+  if(!confirm('Close this task? Unfilled slots will be refunded to your task wallet and it will stop accepting submissions.')) return;
+  const { data, error } = await sb.rpc('cancel_task',{ p_task_id:id });
+  if(error){ showToast('err',error.message); return; }
+  if(data && data.success===false){ showToast('err',data.error); return; }
+  await loadAll();
+  showToast('ok',`Task closed — Ksh ${Number(data?.refunded||0).toLocaleString()} refunded to your wallet`);
+}
+function republishMicroTask(id){ openTaskModal(id); }
+
+// ============================================================
+// SUBMISSIONS
+// ============================================================
+function renderMicroTaskSubmissions(){
+  const q=(document.getElementById('mt-sub-search')?.value||'').toLowerCase();
+  const taskFilter=document.getElementById('mt-sub-task-filter')?.value||'';
+  const sf=document.getElementById('mt-sub-status-filter');
+  const statusFilter=sf?sf.value:'pending';
+  let data=allMicroTaskSubmissions.filter(s=>{
+    if(taskFilter && s.task_id!==taskFilter) return false;
+    if(statusFilter && s.status!==statusFilter) return false;
+    if(q){
+      const task=allMicroTasks.find(t=>t.id===s.task_id);
+      const hay=[userLabel(s.user_id),task?.title,s.proof_text].filter(Boolean).join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  document.getElementById('mt-subs-tbody').innerHTML=data.map(s=>{
+    const task=allMicroTasks.find(t=>t.id===s.task_id);
+    const cat=task?mtCategoryById(task.category_id):null;
+    const isImage=s.proof_url && cat?.proof_type==='screenshot';
+    return `<tr>
+      <td>${esc(userLabel(s.user_id))}</td>
+      <td>${task?esc(task.title):'—'}</td>
+      <td>
+        ${isImage?`<img class="proof-preview" src="${s.proof_url}" onclick="openLightbox([{url:'${s.proof_url}'}],0)">`:''}
+        ${s.proof_url && !isImage?`<div style="font-size:11.5px"><a href="${esc(s.proof_url)}" target="_blank" rel="noopener">${esc(s.proof_url)}</a></div>`:''}
+        ${s.proof_text?`<div style="font-size:11.5px">${esc(s.proof_text)}</div>`:''}
+      </td>
+      <td>${fmtDate(s.submitted_at)}</td>
+      <td>${mtSubmissionStatusBadge(s.status)}</td>
+      <td>${s.reward_amount?'Ksh '+Number(s.reward_amount).toLocaleString():'—'}</td>
+      <td class="actions-cell"><button class="btn btn-sm btn-secondary" onclick="openSubmissionModal('${s.id}')"><i class="bi bi-eye"></i> Review</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No submissions match this filter</td></tr>';
+}
+function openSubmissionModal(id){
+  const s=allMicroTaskSubmissions.find(s=>s.id===id); if(!s) return;
+  const task=allMicroTasks.find(t=>t.id===s.task_id);
+  const cat=task?mtCategoryById(task.category_id):null;
+  const isImage=s.proof_url && cat?.proof_type==='screenshot';
+  document.getElementById('submission-modal-body').innerHTML=`
+    <div class="profile-grid">
+      <div class="profile-field"><label>Tasker</label><span>${esc(userLabel(s.user_id))}</span></div>
+      <div class="profile-field"><label>Task</label><span>${task?esc(task.title):'—'}</span></div>
+      <div class="profile-field"><label>Reward</label><span>Ksh ${Number(task?.reward_per_task||0).toLocaleString()}</span></div>
+      <div class="profile-field"><label>Submitted</label><span>${fmtDate(s.submitted_at)}</span></div>
+      <div class="profile-field"><label>Status</label><span>${mtSubmissionStatusBadge(s.status)}</span></div>
+    </div>
+    ${isImage?`<div class="profile-section"><h3>Screenshot</h3><img class="proof-preview" style="width:160px;height:160px" src="${s.proof_url}" onclick="openLightbox([{url:'${s.proof_url}'}],0)"></div>`:''}
+    ${s.proof_url && !isImage?`<div class="profile-section"><h3>Link Submitted</h3><p style="font-size:13px"><a href="${esc(s.proof_url)}" target="_blank" rel="noopener">${esc(s.proof_url)}</a></p></div>`:''}
+    ${s.proof_text?`<div class="profile-section"><h3>Text Submitted</h3><p style="font-size:13px">${esc(s.proof_text)}</p></div>`:''}
+    ${s.rejection_reason?`<div class="profile-section"><h3>Rejection Reason</h3><p style="font-size:13px;color:var(--rose)">${esc(s.rejection_reason)}</p></div>`:''}
+  `;
+  const approveBtn=document.getElementById('submission-approve-btn');
+  const rejectBtn=document.getElementById('submission-reject-btn');
+  const isPending=s.status==='pending';
+  approveBtn.style.display=isPending?'inline-flex':'none';
+  rejectBtn.style.display=isPending?'inline-flex':'none';
+  approveBtn.onclick=()=>reviewMicroTaskSubmission(id,true);
+  rejectBtn.onclick=()=>reviewMicroTaskSubmission(id,false);
+  openModal('submission-modal');
+}
+async function reviewMicroTaskSubmission(id,approve){
+  let reason=null;
+  if(!approve){
+    reason=prompt('Reason for rejecting this submission?');
+    if(reason===null) return;
+  }
+  const { data, error } = await sb.rpc('review_task_submission',{ p_submission_id:id, p_approve:approve, p_rejection_reason:reason });
+  if(error){ showToast('err',error.message); return; }
+  if(data && data.success===false){ showToast('err',data.error); return; }
+  closeModal('submission-modal');
+  await loadAll();
+  showToast('ok',approve?`Approved — Ksh ${Number(data.reward||0).toLocaleString()} credited to the tasker's wallet`:'Submission rejected');
+}
+
+// ============================================================
+// PAY TASKERS
+// ============================================================
+function renderMicroTaskPayments(){
+  const q=(document.getElementById('mt-pay-search')?.value||'').toLowerCase();
+  const sf=document.getElementById('mt-pay-status-filter');
+  const statusFilter=sf?sf.value:'pending';
+  let data=allTaskWithdrawals.filter(w=>{
+    if(statusFilter && w.status!==statusFilter) return false;
+    if(q){
+      const hay=[userLabel(w.user_id),w.destination].filter(Boolean).join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  document.getElementById('mt-pay-tbody').innerHTML=data.map(w=>{
+    const canSettle=w.status==='pending'||w.status==='processing';
+    return `<tr>
+      <td>${esc(userLabel(w.user_id))}</td>
+      <td>Ksh ${Number(w.amount||0).toLocaleString()}</td>
+      <td><span class="badge badge-muted">${(w.method||'').toUpperCase()}</span></td>
+      <td style="font-size:12px">${esc(w.destination||'—')}</td>
+      <td>${mtWithdrawalStatusBadge(w.status)}</td>
+      <td>${fmtDate(w.requested_at)}</td>
+      <td class="actions-cell">
+        ${w.status==='pending'?`<button class="btn btn-sm btn-secondary" onclick="settleWithdrawal('${w.id}','processing')">Mark Processing</button>`:''}
+        ${canSettle?`<button class="btn btn-sm btn-primary" onclick="settleWithdrawal('${w.id}','completed')">Mark Paid</button>`:''}
+        ${canSettle?`<button class="btn btn-sm btn-danger" onclick="settleWithdrawal('${w.id}','rejected')">Reject</button>`:''}
+      </td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted)">No withdrawal requests match this filter</td></tr>';
+}
+async function settleWithdrawal(id,status){
+  let note=null;
+  if(status==='completed') note=prompt('Payment reference / note (e.g. M-Pesa code)?')||null;
+  if(status==='rejected'){ note=prompt('Reason for rejecting this withdrawal (amount will be refunded to their wallet)?'); if(note===null) return; }
+  if(status==='completed' && !confirm('Confirm you have actually sent this payment to the tasker before marking it Paid.')) return;
+  const { data, error } = await sb.rpc('admin_settle_task_withdrawal',{ p_request_id:id, p_status:status, p_admin_note:note });
+  if(error){ showToast('err',error.message); return; }
+  if(data && data.success===false){ showToast('err',data.error); return; }
+  await loadAll();
+  showToast('ok','Withdrawal marked '+status);
+}
+
+// ============================================================
+// GENERAL PAYMENT
+// ============================================================
+function openGeneralPaymentModal(){
+  document.getElementById('gp-tasker-search').value='';
+  document.getElementById('gp-tasker-id').value='';
+  document.getElementById('gp-tasker-selected').style.display='none';
+  document.getElementById('gp-tasker-results').style.display='none';
+  document.getElementById('gp-amount').value='';
+  document.getElementById('gp-note').value='';
+  openModal('general-payment-modal');
+}
+function searchGeneralPaymentTasker(){
+  const q=document.getElementById('gp-tasker-search').value.trim().toLowerCase();
+  const box=document.getElementById('gp-tasker-results');
+  if(!q){ box.style.display='none'; box.innerHTML=''; return; }
+  const matches=allUsers.filter(u=>[u.full_name,u.phone,u.email].filter(Boolean).some(v=>v.toLowerCase().includes(q))).slice(0,8);
+  box.innerHTML=matches.map(u=>`<div style="padding:8px 12px;cursor:pointer;font-size:12.5px;border-bottom:1px solid var(--border)" onclick="selectGeneralPaymentTasker('${u.id}')">${esc(u.full_name||u.email)}<span style="color:var(--muted)"> — ${esc(u.phone||u.email||'')}</span></div>`).join('')||'<div style="padding:8px 12px;font-size:12.5px;color:var(--muted)">No matches</div>';
+  box.style.display='block';
+}
+function selectGeneralPaymentTasker(id){
+  const u=allUsers.find(u=>u.id===id); if(!u) return;
+  document.getElementById('gp-tasker-id').value=id;
+  document.getElementById('gp-tasker-search').value='';
+  document.getElementById('gp-tasker-results').style.display='none';
+  const sel=document.getElementById('gp-tasker-selected');
+  sel.style.display='block';
+  sel.innerHTML=`<i class="bi bi-person-check"></i> <strong>${esc(u.full_name||u.email)}</strong> — ${esc(u.phone||u.email||'')} — wallet Ksh ${mtWalletBalance(id).toLocaleString()} <button style="float:right;border:none;background:none;cursor:pointer" onclick="openGeneralPaymentModal()">×</button>`;
+}
+async function submitGeneralPayment(){
+  const taskerId=document.getElementById('gp-tasker-id').value;
+  const amount=parseFloat(document.getElementById('gp-amount').value);
+  if(!taskerId){ showToast('err','Search and select a tasker first'); return; }
+  if(!amount||amount<=0){ showToast('err','Enter a valid amount'); return; }
+  const note=document.getElementById('gp-note').value.trim()||null;
+  const { data, error } = await sb.rpc('admin_credit_task_wallet',{ p_user_id:taskerId, p_amount:amount, p_note:note });
+  if(error){ showToast('err',error.message); return; }
+  if(data && data.success===false){ showToast('err',data.error); return; }
+  closeModal('general-payment-modal');
+  await loadAll();
+  showToast('ok','Tasker wallet credited — new balance Ksh '+Number(data.balance||0).toLocaleString());
+}
+
+// ============================================================
+// INSIGHTS
+// ============================================================
+function renderMicroTaskInsights(){
+  document.getElementById('mt-insights-tbody').innerHTML=allMicroTasks.map(t=>{
+    const subs=allMicroTaskSubmissions.filter(s=>s.task_id===t.id);
+    const approved=subs.filter(s=>s.status==='approved').length;
+    const rejected=subs.filter(s=>s.status==='rejected').length;
+    const rate=subs.length?Math.round((approved/subs.length)*100):0;
+    const budget=Number(t.budget_total||0);
+    const costPer=approved?Math.round(budget/Math.max(t.slots_total,1)):0;
+    return `<tr>
+      <td><strong>${esc(t.title)}</strong></td>
+      <td>${mtTaskStatusBadge(t.status)}</td>
+      <td>${t.slots_filled||0}/${t.slots_total||0}</td>
+      <td>${subs.length}</td>
+      <td>${approved}</td>
+      <td>${rejected}</td>
+      <td>${rate}%</td>
+      <td>Ksh ${budget.toLocaleString()}</td>
+      <td>${costPer?'Ksh '+costPer.toLocaleString():'—'}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No tasks yet</td></tr>';
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchMicroTasksTab(e,tab){
+  document.querySelectorAll('.sub-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(e) e.target.closest('.tab-btn').classList.add('active');
+  document.querySelectorAll('.content > .tab-content, #microtasks-tab-tasks, #microtasks-tab-submissions, #microtasks-tab-payments, #microtasks-tab-insights').forEach(t=>t.classList.remove('active'));
+  document.getElementById('microtasks-tab-'+tab).classList.add('active');
+  if(tab==='submissions') renderMicroTaskSubmissions();
+  if(tab==='payments') renderMicroTaskPayments();
+  if(tab==='insights') renderMicroTaskInsights();
+}
+
+// ============================================================
+// BOOTSTRAP
+// ============================================================
+async function initSession(){
+  try{
+    const adminRow = await adminGate();
+    if(!adminRow) return;
+    adminRecord = adminRow;
+    currentUser = { id: (await sb.auth.getUser()).data.user.id, email: adminRow.email, username: adminRow.username };
+    document.getElementById('gate').style.display='none';
+    document.getElementById('whoami').textContent = (adminRow.username||adminRow.email||'Admin') + ' · ' + (adminRow.role||'Admin');
+    await loadAll();
+  }catch(err){
+    console.error(err);
+    gateShow({ deny:true, icon:'bi-exclamation-triangle', title:'Something went wrong', text:'Could not load the Micro Tasks workspace. Please try again.',
+      actions:'<button class="btn btn-secondary" onclick="location.reload()">Retry</button>' });
+  }
+}
+initSession();
+</script>
+</body>
+</html>
