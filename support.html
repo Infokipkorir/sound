@@ -1187,7 +1187,7 @@
   async function openTicket(ticketId){
     try{
       var { data: ticket, error } = await sb.from('support_tickets')
-        .select('id, subject, category, priority, status, assigned_admin_id, created_at, updated_at')
+        .select('id, subject, category, priority, status, assigned_admin_id, human_requested_at, created_at, updated_at')
         .eq('id', ticketId)
         .single();
       if (error) throw error;
@@ -1324,6 +1324,7 @@
     el.requestHumanBtn.disabled = true;
     try{
       var newPriority = (currentTicket.priority === 'urgent') ? 'urgent' : 'high';
+      var nowIso = new Date().toISOString();
       if (currentUser){
         await sb.from('support_ticket_messages').insert({
           ticket_id: currentTicket.id,
@@ -1331,7 +1332,12 @@
           sender_type: 'user',
           message: "🙋 I'd like to speak with a human team member, please."
         });
-        await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress', human_requested_at: new Date().toISOString() }).eq('id', currentTicket.id);
+        await sb.from('support_tickets').update({ priority: newPriority, status: 'in_progress', human_requested_at: nowIso }).eq('id', currentTicket.id);
+        var { data: ackRow } = await sb.from('support_ticket_messages').insert({
+          ticket_id: currentTicket.id, sender_id: null, sender_type: 'admin',
+          message: "Got it — I've flagged this for our team and stepped back so a real person can take over. They'll join shortly; feel free to add any more detail in the meantime."
+        }).select('id, sender_id, sender_type, message, created_at').single();
+        if (ackRow) renderMessage(ackRow, []);
         Tracker.log('support_requested', {}, currentTicket.id);
         Tracker.log('ai_handoff', {}, currentTicket.id);
       } else if (guestTicket) {
@@ -1339,12 +1345,18 @@
           p_ticket_id: guestTicket.id, p_token: guestTicket.token
         });
         if (gErr) throw gErr;
+        var { data: ackRow2 } = await sb.rpc('send_guest_bot_reply', {
+          p_ticket_id: guestTicket.id, p_token: guestTicket.token,
+          p_message: "Got it — I've flagged this for our team and stepped back so a real person can take over. They'll join shortly; feel free to add any more detail in the meantime."
+        });
+        if (ackRow2) renderMessage(ackRow2, []);
         Tracker.log('support_requested', {}, guestTicket.id);
         Tracker.log('ai_handoff', {}, guestTicket.id);
         await refreshGuestTicket(false);
       }
       currentTicket.priority = newPriority;
       currentTicket.status = 'in_progress';
+      currentTicket.human_requested_at = nowIso;
       updateThreadSub();
       updateHumanBanner();
     }catch(err){
@@ -1497,10 +1509,12 @@
           updateThreadSub(); updateResolveBtn();
         }
 
-        // Only send the local rule-based auto-reply while no human has taken
-        // the ticket yet — once assigned_admin_id is set, a real person is
-        // handling it and the bot should stay quiet.
-        if (!currentTicket.assigned_admin_id){
+        // Only send the local rule-based auto-reply while no human has been
+        // requested or has taken the ticket — once the visitor has tapped
+        // "Human" (human_requested_at) or an admin picked it up
+        // (assigned_admin_id), the bot should stay quiet instead of
+        // repeating generic replies while they're waiting.
+        if (!currentTicket.assigned_admin_id && !currentTicket.human_requested_at){
           sendAutoReply(currentTicket.id, text);
         }
       } else {
@@ -1511,7 +1525,7 @@
         renderMessage(gRow);
         Tracker.log('message_sent', { sender: 'guest' }, currentTicket.id);
 
-        if (!currentTicket.assigned_admin_id){
+        if (!currentTicket.assigned_admin_id && !currentTicket.human_requested_at){
           sendGuestAutoReply(text);
         }
       }
