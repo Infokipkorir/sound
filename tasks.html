@@ -316,7 +316,7 @@
           </div>
           <div style="flex:1;">
             <div style="font-size:11px;color:var(--muted);font-weight:600;">Tasks Wallet Balance</div>
-            <div style="font-size:19px;font-weight:800;" id="tw-balance">KES 0</div>
+            <div style="font-size:19px;font-weight:800;" id="tw-balance">$0.00</div>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="tasksSwitchTab('wallet')"><i class="bi bi-clock-history"></i> History</button>
           <button class="btn btn-primary btn-sm" onclick="tasksSwitchTab('wallet');setTimeout(()=>document.getElementById('tw-topup-amount')?.focus(),50);"><i class="bi bi-plus-lg"></i> Top Up</button>
@@ -361,10 +361,10 @@
             </select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label>Reward per task (KES)</label><input type="number" id="tp-reward" min="1" value="10" oninput="tasksUpdatePostSummary()"></div>
+            <div class="form-group"><label>Reward per task (USD)</label><input type="number" id="tp-reward" min="0.01" step="0.01" value="0.10" oninput="tasksUpdatePostSummary()"></div>
             <div class="form-group"><label>Number of slots</label><input type="number" id="tp-slots" min="1" value="10" oninput="tasksUpdatePostSummary()"></div>
           </div>
-          <div class="form-hint" id="tp-summary" style="margin-bottom:1rem;">Budget: KES 0 · Platform fee: KES 0 · Total: KES 0</div>
+          <div class="form-hint" id="tp-summary" style="margin-bottom:1rem;">Budget: $0.00 · Platform fee: $0.00 · Total: $0.00</div>
           <button class="btn btn-primary btn-full" onclick="tasksCreateTask()"><i class="bi bi-megaphone-fill"></i> Post Task</button>
         </div>
 
@@ -378,7 +378,7 @@
           <div class="form-group">
             <label>Top up wallet (manual — contact support to confirm M-Pesa payment)</label>
             <div style="display:flex;gap:8px;">
-              <input type="number" id="tw-topup-amount" min="1" placeholder="Amount (KES)" style="flex:1;">
+              <input type="number" id="tw-topup-amount" min="0.01" step="0.01" placeholder="Amount (USD)" style="flex:1;">
               <button class="btn btn-secondary" onclick="tasksRequestTopup()"><i class="bi bi-headset"></i> Request Top-Up</button>
             </div>
             <div class="form-hint">We'll confirm your payment and credit your balance shortly.</div>
@@ -387,7 +387,7 @@
           <div class="form-group">
             <label>Withdraw earnings</label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-              <input type="number" id="tw-withdraw-amount" min="1" placeholder="Amount (KES)">
+              <input type="number" id="tw-withdraw-amount" min="0.01" step="0.01" placeholder="Amount (USD)">
               <select id="tw-withdraw-method"><option value="mpesa">M-Pesa</option><option value="airtel">Airtel Money</option><option value="bank">Bank</option></select>
             </div>
             <input type="text" id="tw-withdraw-destination" placeholder="Phone number / account number" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;margin-bottom:8px;">
@@ -1621,9 +1621,20 @@
   let tCategories = [];
   let tSelectedCategory = null;
   let tEnrolled = false;
+  // The Tasks ledger (task_wallets, tasks.reward_per_task, withdrawal
+  // requests, etc.) stays in KES in the database — that's what M-Pesa/Airtel
+  // payouts and the admin dashboard use. This page displays and accepts
+  // amounts in USD only, converting at the boundary; USD_RATE (KES per 1
+  // USD) is loaded from task_settings so it can be updated without a
+  // redeploy. 129 is a fallback only used if that fetch fails.
+  let USD_RATE = 129;
 
   function tEsc(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-  function tMoney(n) { return 'KES ' + Number(n || 0).toLocaleString(); }
+  // Displays a raw KES ledger amount as USD.
+  function tMoney(kes) { return '$' + (Number(kes || 0) / USD_RATE).toFixed(2); }
+  // Converts a USD amount the visitor typed into the KES amount the backend
+  // (RPCs, min/max settings, ledger rows) actually expects.
+  function toKes(usd) { return Math.round(Number(usd || 0) * USD_RATE * 100) / 100; }
   function tAgo(d) {
     const diff = (Date.now() - new Date(d)) / 1000;
     if (diff < 60) return 'just now';
@@ -1644,6 +1655,9 @@
     const { data: { user } } = await tsb.auth.getUser();
     if (!user) return; // main.js's own auth guard handles redirecting to login
     tUser = user;
+
+    const { data: settings } = await tsb.from('task_settings').select('usd_rate').eq('id', 1).maybeSingle();
+    if (settings?.usd_rate) USD_RATE = Number(settings.usd_rate);
 
     const { data: profile } = await tsb.from('task_profiles').select('id').eq('user_id', tUser.id).maybeSingle();
     tEnrolled = !!profile;
@@ -1763,11 +1777,11 @@
   }
 
   function tasksUpdatePostSummaryInner() {
-    const reward = parseFloat(document.getElementById('tp-reward')?.value) || 0;
+    const rewardUsd = parseFloat(document.getElementById('tp-reward')?.value) || 0;
     const slots = parseInt(document.getElementById('tp-slots')?.value) || 0;
-    const budget = reward * slots;
-    const fee = Math.round(budget * 0.10 * 100) / 100; // matches task_settings default; server recalculates authoritatively
-    document.getElementById('tp-summary').textContent = `Budget: ${tMoney(budget)} · Platform fee (~10%): ${tMoney(fee)} · Total: ${tMoney(budget + fee)}`;
+    const budgetUsd = rewardUsd * slots;
+    const feeUsd = Math.round(budgetUsd * 0.10 * 100) / 100; // matches task_settings default; server recalculates authoritatively in KES
+    document.getElementById('tp-summary').textContent = `Budget: $${budgetUsd.toFixed(2)} · Platform fee (~10%): $${feeUsd.toFixed(2)} · Total: $${(budgetUsd + feeUsd).toFixed(2)}`;
   }
   window.tasksUpdatePostSummary = tasksUpdatePostSummaryInner;
 
@@ -1779,7 +1793,7 @@
       p_instructions: document.getElementById('tp-instructions').value.trim(),
       p_target_url: document.getElementById('tp-url').value.trim(),
       p_platform: document.getElementById('tp-platform').value,
-      p_reward_per_task: parseFloat(document.getElementById('tp-reward').value),
+      p_reward_per_task: toKes(parseFloat(document.getElementById('tp-reward').value)),
       p_slots_total: parseInt(document.getElementById('tp-slots').value),
     };
     if (!payload.p_title || !payload.p_category_id) { tToast('Title and category are required', false); return; }
@@ -1850,22 +1864,24 @@
   };
 
   window.tasksRequestTopup = function () {
-    const amount = document.getElementById('tw-topup-amount').value;
-    if (!amount || amount <= 0) { tToast('Enter an amount', false); return; }
+    const amountUsd = parseFloat(document.getElementById('tw-topup-amount').value);
+    if (!amountUsd || amountUsd <= 0) { tToast('Enter an amount', false); return; }
+    const amountKes = toKes(amountUsd);
+    const msg = `top up $${amountUsd.toFixed(2)} (≈ KES ${amountKes.toLocaleString()} via M-Pesa) to your Tasks wallet`;
     if (window.sscOpenSupportPanel) {
       window.sscOpenSupportPanel();
-      tToast(`Support opened — mention you'd like to top up KES ${amount} to your Tasks wallet.`, true);
+      tToast(`Support opened — mention you'd like to ${msg}.`, true);
     } else {
-      tToast(`Please contact support to top up KES ${amount} to your Tasks wallet.`, true);
+      tToast(`Please contact support to ${msg}.`, true);
     }
   };
 
   window.tasksRequestWithdrawal = async function () {
-    const amount = parseFloat(document.getElementById('tw-withdraw-amount').value);
+    const amountUsd = parseFloat(document.getElementById('tw-withdraw-amount').value);
     const method = document.getElementById('tw-withdraw-method').value;
     const destination = document.getElementById('tw-withdraw-destination').value.trim();
-    if (!amount || !destination) { tToast('Enter an amount and destination', false); return; }
-    const { data, error } = await tsb.rpc('request_task_withdrawal', { p_amount: amount, p_method: method, p_destination: destination });
+    if (!amountUsd || !destination) { tToast('Enter an amount and destination', false); return; }
+    const { data, error } = await tsb.rpc('request_task_withdrawal', { p_amount: toKes(amountUsd), p_method: method, p_destination: destination });
     if (error || !data?.success) {
       const msg = data?.error === 'below_minimum' ? `Minimum withdrawal is ${tMoney(data.minimum)}` : (data?.error === 'insufficient_balance' ? `Insufficient balance (${tMoney(data.balance)})` : (data?.error || error?.message || 'Could not request withdrawal'));
       tToast(msg, false); return;
