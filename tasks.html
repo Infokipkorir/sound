@@ -1906,30 +1906,7 @@
       </tr>`).join('') + `</tbody></table>`;
   }
 
-  // tasks.html reuses the dashboard layout and nothing else on this page opens
-  // the Tasks panel, so visitors land on Overview. Open it here once main.js has
-  // set up. main.js may re-render after its own auth check, so retry briefly
-  // (alternating goToSection / navTo) until the panel is actually showing.
-  function tasksPanelIsOpen() {
-    const el = document.getElementById('modal-tasks');
-    if (!el) return false;
-    const cs = getComputedStyle(el);
-    return cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0.5;
-  }
-  function tasksOpenPanel(attempt) {
-    attempt = attempt || 0;
-    if (tasksPanelIsOpen() || attempt >= 6) return;
-    try {
-      if (attempt % 2 === 0 && typeof window.goToSection === 'function') window.goToSection('tasks');
-      else if (typeof window.navTo === 'function') window.navTo('modal-tasks');
-    } catch (e) { console.warn('Could not open Tasks panel', e); }
-    setTimeout(() => tasksOpenPanel(attempt + 1), 600);
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    tasksInit();
-    if (window.PAGE_MODE === 'tasks') tasksOpenPanel();
-  });
+  document.addEventListener('DOMContentLoaded', tasksInit);
 })();
 </script>
 </body>

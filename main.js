@@ -66,8 +66,9 @@ const PAGE_ROUTES = {
   profile:   { modalId: 'modal-account',   title: 'My Profile',   linkMatch: 'modal-account' },
   findjobs:  { modalId: 'modal-jobs',      title: 'Find Jobs',    linkMatch: 'modal-jobs' },
   messages:  { modalId: 'modal-messages',  title: 'Messages',     linkMatch: 'modal-messages' },
+  tasks:     { modalId: 'modal-tasks',     title: 'Tasks',        linkMatch: 'modal-tasks' },
 };
-const PAGE_FILES = { overview: 'index.html', profile: 'profile.html', findjobs: 'findjobs.html', messages: 'messages.html' };
+const PAGE_FILES = { overview: 'index.html', profile: 'profile.html', findjobs: 'findjobs.html', messages: 'messages.html', tasks: 'tasks.html' };
 // Nav buttons/quick-nav cards call this instead of navTo() directly for the
 // three pages that now live in their own file: if we're already on that
 // page it just switches the panel in place, otherwise it does a real page
@@ -3979,12 +3980,12 @@ async function loadCallHistory() {
 // section is visible at a time.
 const SSC_PANEL_IDS = ['modal-notifications','modal-messages','modal-jobs','modal-saved-jobs',
   'modal-applications','modal-bids','modal-ongoing-jobs','modal-interviews','modal-wallet',
-  'modal-account','modal-calls'];
+  'modal-account','modal-calls','modal-tasks'];
 const SSC_PANEL_TITLES = {
   overview: 'Overview', 'modal-account': 'My Profile', 'modal-jobs': 'Find Jobs',
   'modal-applications': 'My Applications', 'modal-saved-jobs': 'Saved Jobs', 'modal-bids': 'My Bids',
   'modal-ongoing-jobs': 'My Jobs', 'modal-interviews': 'Interviews', 'modal-messages': 'Messages',
-  'modal-wallet': 'Wallet', 'modal-notifications': 'Notifications', 'modal-calls': 'Calls'
+  'modal-wallet': 'Wallet', 'modal-notifications': 'Notifications', 'modal-calls': 'Calls', 'modal-tasks': 'Tasks'
 };
 function navTo(id, btn) {
   SSC_PANEL_IDS.forEach(pid => { if (pid !== id) closeModal(pid); });
