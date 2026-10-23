@@ -174,8 +174,17 @@ h1,h2,h3{font-family:'Playfair Display',serif}
 .modal-close:hover{background:#fee2e2;color:var(--red)}
 .modal-body{padding:1.4rem 1.5rem}
 .modal-preview{display:flex;align-items:center;gap:.9rem;background:var(--green-light);border-radius:10px;padding:1rem;margin-bottom:1.2rem}
-.modal-preview .av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--green-mid));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.15rem;flex-shrink:0;overflow:hidden}
+.av-wrap{position:relative;flex-shrink:0;width:96px;height:96px}
+.modal-preview .av{width:96px;height:96px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.12);background:linear-gradient(135deg,var(--green),var(--green-mid));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.15rem;flex-shrink:0;overflow:hidden}
 .modal-preview .av img{width:100%;height:100%;object-fit:cover}
+.modal-preview .av.logo{background:#fff}
+.modal-preview .av.logo img{object-fit:contain;padding:12px}
+.vbadge{width:30px;height:30px;border-radius:50%;object-fit:cover;background:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.av-wrap .vbadge{position:absolute;right:-2px;bottom:-2px;display:none}
+.vbadge-fb{display:none;color:var(--green);font-size:20px;align-items:center}
+.vbadge-sm{width:19px;height:19px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-left:auto}
+.trust-chip .vbadge-sm{margin-left:0;width:16px;height:16px}
+.modal-preview .info .dist{display:inline-flex;align-items:center;gap:.3rem;margin-top:.35rem;font-size:12px;font-weight:600;color:var(--green-dark)}
 .modal-preview .info strong{display:block;font-size:14px;font-weight:700}
 .modal-preview .info span{font-size:12px;color:var(--text-muted)}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.1rem}
@@ -327,8 +336,11 @@ h1,h2,h3{font-family:'Playfair Display',serif}
     </div>
     <div class="modal-body">
       <div class="modal-preview">
-        <div class="av" id="wm-av"></div>
-        <div class="info"><strong id="wm-name"></strong><span id="wm-loc"></span></div>
+        <div class="av-wrap">
+          <div class="av" id="wm-av"></div>
+          <img src="verification_badge.jpeg" class="vbadge" id="wm-vbadge" alt="ID Verified" title="ID Verified" onerror="this.style.display='none'">
+        </div>
+        <div class="info"><strong id="wm-name"></strong><span id="wm-loc"></span><div class="dist" id="wm-dist" style="display:none"></div></div>
       </div>
       <div class="trust-chips" id="wm-trust"></div>
       <div class="detail-grid">
@@ -369,14 +381,6 @@ h1,h2,h3{font-family:'Playfair Display',serif}
     <button class="cookie-decline" onclick="declineCookies()">Decline</button>
   </div>
 </div>
-
-<!-- TAWK.TO -->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();
-(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;s1.src='https://embed.tawk.to/6a0adad3c744531c43732c65/1jot6ditn';
-s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
-</script>
 
 <script>
 /* ── SUPABASE (public, anon key — no auth required) ── */
@@ -521,7 +525,7 @@ function cardHtml(w){
         <div class="card-title">${esc(w.full_name||'Worker')}</div>
         <div class="card-subtitle"><i class="bi bi-geo-alt" style="font-size:10px"></i> ${esc(role)} &middot; ${esc(location)}</div>
       </div>
-      ${w.is_verified?'<div class="card-verified" title="ID Verified"><i class="bi bi-check"></i></div>':''}
+      ${w.is_verified?'<img src="verification_badge.jpeg" class="vbadge-sm" alt="ID Verified" title="ID Verified" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\'"><i class="bi bi-patch-check-fill vbadge-fb" style="margin-left:auto" title="ID Verified"></i>':''}
     </div>
     ${skills.length?'<div class="card-tags">'+skills.slice(0,3).map(s=>'<span class="tag">'+esc(s)+'</span>').join('')+'</div>':''}
     <div class="card-badges">
@@ -540,14 +544,21 @@ function cardHtml(w){
 function openWorkerModal(w){
   const role = w.job_title || w.preferred_role || 'Domestic Worker';
   const location = w.current_town ? w.current_town+(w.county?', '+w.county:'') : (w.county||'Kenya');
-  document.getElementById('wm-av').innerHTML = w.profile_photo_url ? `<img src="${esc(w.profile_photo_url)}" alt="${esc(w.full_name||'Worker')}">` : initials(w.full_name);
+  const av = document.getElementById('wm-av');
+  const logoHtml = '<img src="sound_logo.png" alt="SoundsCare">';
+  av.classList.toggle('logo', !w.profile_photo_url);
+  av.innerHTML = w.profile_photo_url ? `<img src="${esc(w.profile_photo_url)}" alt="${esc(w.full_name||'Worker')}">` : logoHtml;
+  if(w.profile_photo_url){ av.firstChild.onerror = ()=>{ av.classList.add('logo'); av.innerHTML = logoHtml; }; }
+  const vb = document.getElementById('wm-vbadge');
+  vb.style.display = w.is_verified ? 'block' : 'none';
+  showDistance(w);
   document.getElementById('wm-title').textContent = w.full_name || 'Worker Profile';
   document.getElementById('wm-subtitle').textContent = role;
   document.getElementById('wm-name').textContent = w.full_name || '—';
   document.getElementById('wm-loc').textContent = location;
 
   const trust = [];
-  if(w.is_verified) trust.push('<span class="trust-chip"><i class="bi bi-patch-check-fill"></i> ID Verified</span>');
+  if(w.is_verified) trust.push('<span class="trust-chip"><img src="verification_badge.jpeg" class="vbadge-sm" alt="" onerror="this.style.display=\'none\'"> ID Verified</span>');
   if(w.has_medical_cert) trust.push('<span class="trust-chip"><i class="bi bi-heart-pulse-fill"></i> Medical Certificate</span>');
   if(w.has_good_conduct) trust.push('<span class="trust-chip"><i class="bi bi-shield-check"></i> Certificate of Good Conduct</span>');
   if(w.avg_rating) trust.push(`<span class="trust-chip"><i class="bi bi-star-fill"></i> ${Number(w.avg_rating).toFixed(1)} (${w.rating_count||0} reviews)</span>`);
@@ -575,6 +586,42 @@ function openWorkerModal(w){
   else aboutWrap.style.display='none';
 
   openModal('worker-modal');
+}
+
+
+/* ── DISTANCE (KM) from the viewer's current location to the worker ── */
+const COUNTY_CENTRES = {'Baringo':[0.47,35.97],'Bomet':[-0.78,35.34],'Bungoma':[0.57,34.56],'Busia':[0.46,34.11],'Elgeyo-Marakwet':[0.97,35.51],'Embu':[-0.53,37.45],'Garissa':[-0.45,39.65],'Homa Bay':[-0.53,34.46],'Isiolo':[0.35,37.58],'Kajiado':[-1.85,36.78],'Kakamega':[0.28,34.75],'Kericho':[-0.37,35.28],'Kiambu':[-1.17,36.83],'Kilifi':[-3.63,39.85],'Kirinyaga':[-0.50,37.28],'Kisii':[-0.68,34.77],'Kisumu':[-0.09,34.77],'Kitui':[-1.37,38.01],'Kwale':[-4.17,39.45],'Laikipia':[0.36,36.78],'Lamu':[-2.27,40.90],'Machakos':[-1.52,37.26],'Makueni':[-1.80,37.62],'Mandera':[3.94,41.86],'Marsabit':[2.33,37.99],'Meru':[0.05,37.65],'Migori':[-1.06,34.47],'Mombasa':[-4.04,39.67],"Murang'a":[-0.72,37.15],'Nairobi':[-1.29,36.82],'Nakuru':[-0.30,36.07],'Nandi':[0.18,35.13],'Narok':[-1.08,35.87],'Nyamira':[-0.57,34.95],'Nyandarua':[-0.40,36.37],'Nyeri':[-0.42,36.95],'Samburu':[1.22,36.95],'Siaya':[0.06,34.29],'Taita-Taveta':[-3.40,38.36],'Tana River':[-1.65,40.07],'Tharaka-Nithi':[-0.30,37.97],'Trans Nzoia':[1.02,34.95],'Turkana':[3.12,35.60],'Uasin Gishu':[0.55,35.30],'Vihiga':[0.07,34.72],'Wajir':[1.75,40.06],'West Pokot':[1.62,35.12]};
+let userPos = null, userPosAsked = false;
+function haversineKm(a,b){
+  const R=6371, rad=d=>d*Math.PI/180;
+  const dLat=rad(b[0]-a[0]), dLon=rad(b[1]-a[1]);
+  const x=Math.sin(dLat/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function getUserPos(){
+  return new Promise(res=>{
+    if(userPos) return res(userPos);
+    if(userPosAsked || !navigator.geolocation) return res(null);
+    userPosAsked = true;
+    navigator.geolocation.getCurrentPosition(
+      p=>{ userPos=[p.coords.latitude,p.coords.longitude]; res(userPos); },
+      ()=>res(null),
+      {timeout:8000,maximumAge:600000}
+    );
+  });
+}
+async function showDistance(w){
+  const el = document.getElementById('wm-dist');
+  el.style.display='none';
+  const target = (w.latitude!=null && w.longitude!=null) ? [Number(w.latitude),Number(w.longitude)] : COUNTY_CENTRES[w.county];
+  if(!target) return;
+  const exact = (w.latitude!=null && w.longitude!=null);
+  const me = await getUserPos();
+  if(!me || document.getElementById('worker-modal').classList.contains('open')===false) return;
+  const km = haversineKm(me,target);
+  const txt = km<1 ? '< 1 km' : Math.round(km).toLocaleString()+' km';
+  el.innerHTML = '<i class="bi bi-geo-alt-fill"></i> '+(exact?'':'~')+txt+' from your location';
+  el.style.display='inline-flex';
 }
 
 /* ── SEO: dynamic ItemList JSON-LD for crawlers (no PII beyond what's shown on-page) ── */
