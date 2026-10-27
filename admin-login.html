@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#132038">
+<meta name="robots" content="noindex, nofollow">
+<title>SoundsCare Admin | Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--navy:#132038;--navy-deep:#0c1626;--navy-mid:#1c2f4f;--gold:#D9A441;--gold-soft:#f4e2b8;--green:#1F9D63;--green-soft:#e5f6ed;--red:#C24B3F;--red-soft:#fbe8e5;--paper:#F7F5F0;--card:#fff;--ink:#161B22;--ink-soft:#5C6470;--line:#E7E3DA;--sky:#3b82f6;--violet:#8b5cf6;
+--font-display:'Sora',sans-serif;--font-body:'Inter',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--paper);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(19,32,56,.08)}
+.brand{display:flex;flex-direction:column;align-items:center;margin-bottom:22px}
+.brand-mark{width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#b9822c);display:flex;align-items:center;justify-content:center;font:800 17px var(--font-display);color:var(--navy-deep);margin-bottom:12px}
+h1{font:700 21px var(--font-display);text-align:center;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--ink-soft);text-align:center;margin-top:4px;line-height:1.5}
+.tabs{display:flex;background:var(--paper);border-radius:11px;padding:4px;margin:20px 0 16px}
+.tab{flex:1;border:none;background:none;padding:9px;border-radius:8px;font:600 13px var(--font-body);color:var(--ink-soft);cursor:pointer}
+.tab.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(19,32,56,.1)}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin:12px 0 5px}
+input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:14px var(--font-body);background:#fff}
+input:focus{outline:none;border-color:var(--navy)}
+.pw{position:relative}.pw button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:16px}
+.btn{width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:var(--navy);color:#fff;font:600 14px var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{background:var(--navy-mid)}.btn:disabled{opacity:.6;cursor:default}
+.btn.sec{background:var(--green-soft);color:var(--green)}.btn.sec:hover{background:#d3efe0}
+.link{background:none;border:none;color:var(--navy);font:600 12.5px var(--font-body);cursor:pointer;text-decoration:underline}
+.center{text-align:center;margin-top:14px}
+.hint{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:10px;line-height:1.5}
+.err,.ok{font-size:12.5px;border-radius:9px;padding:9px 12px;margin-bottom:12px;display:none}
+.err{background:var(--red-soft);color:var(--red)}.ok{background:var(--green-soft);color:var(--green)}
+.err.show,.ok.show{display:block}
+.hidden{display:none!important}
+.who{display:flex;align-items:center;gap:10px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.av{width:36px;height:36px;border-radius:50%;background:var(--gold-soft);color:#a3771f;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.who h3{font-size:13.5px;font-weight:600}.who p{font-size:11.5px;color:var(--ink-soft)}
+.pill{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--green-soft);color:var(--green);margin-left:6px}
+.pill.super{background:var(--gold-soft);color:#a3771f}
+.so{margin-left:auto;font-size:12px;color:var(--ink-soft);background:none;border:none;text-decoration:underline;cursor:pointer}
+.dest{display:flex;align-items:center;gap:13px;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fff;cursor:pointer;margin-top:10px;font-family:inherit;transition:.15s}
+.dest:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:0 8px 20px rgba(19,32,56,.08)}
+.dest .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;flex-shrink:0}
+.dest h4{font-size:13.5px}.dest p{font-size:11.5px;color:var(--ink-soft)}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- SIGN IN -->
+<div class="card" id="login-step">
+  <div class="brand"><div class="brand-mark">SC</div><h1>SoundsCare Admin</h1><p class="sub">Control Centre. Authorised access only.</p></div>
+  <div class="tabs">
+    <button class="tab active" id="tab-pw" type="button" onclick="setTab('pw')"><i class="bi bi-envelope"></i> Email &amp; password</button>
+    <button class="tab" id="tab-pk" type="button" onclick="setTab('pk')"><i class="bi bi-fingerprint"></i> Passkey</button>
+  </div>
+  <div class="err" id="login-error"></div>
+
+  <form id="pw-form" onsubmit="passwordLogin(event)">
+    <label for="email">Admin email</label>
+    <input id="email" type="email" autocomplete="username" placeholder="you@soundscare.co.ke" required>
+    <label for="password">Password</label>
+    <div class="pw"><input id="password" type="password" autocomplete="current-password" required>
+      <button type="button" onclick="togglePw()" aria-label="Show password"><i class="bi bi-eye" id="pw-eye"></i></button></div>
+    <button class="btn" id="pw-btn" type="submit"><span class="spin hidden" id="pw-spin"></span><span id="pw-text">Sign in</span></button>
+  </form>
+
+  <div id="pk-panel" class="hidden">
+    <button class="btn" id="pk-btn" type="button" onclick="passkeyLogin()"><span class="spin hidden" id="pk-spin"></span><i class="bi bi-fingerprint" id="pk-icon" style="font-size:18px"></i><span id="pk-text">Sign in with fingerprint, pattern or password</span></button>
+    <p class="hint" id="pk-hint">Uses the lock you already use to unlock this device.</p>
+    <p class="hint hidden" id="pk-unsupported" style="color:var(--red)">This device or page can't use a screen lock. Open this page over https on a phone or computer with a fingerprint, pattern or password lock.</p>
+  </div>
+
+  <div class="center"><button class="link" type="button" onclick="showEnroll()">Forgot password, or set up a passkey</button></div>
+  <p class="hint"><i class="bi bi-shield-lock"></i> Secured connection. Admin only.</p>
+</div>
+
+<!-- EMAIL CODE: recovery / first passkey -->
+<div class="card hidden" id="enroll-step">
+  <h1 style="text-align:left;font-size:18px">Verify it's you</h1>
+  <div class="err" id="enroll-error" style="margin-top:12px"></div>
+  <div id="enroll-email-view">
+    <p class="sub" style="text-align:left;margin:6px 0 4px">We'll email a one-time code. Once verified you can create a passkey, or continue and set a new password in Profile settings.</p>
+    <form onsubmit="sendEnrollCode(event)">
+      <label for="enroll-email">Admin email</label>
+      <input id="enroll-email" type="email" autocomplete="username" required>
+      <button class="btn" type="submit" id="enroll-send-btn">Send code</button>
+    </form>
+  </div>
+  <div id="enroll-code-view" class="hidden">
+    <p class="sub" style="text-align:left;margin:6px 0 4px" id="enroll-code-sub"></p>
+    <form onsubmit="verifyEnrollCode(event)">
+      <label for="enroll-code">Verification code</label>
+      <input id="enroll-code" inputmode="numeric" autocomplete="one-time-code" required>
+      <button class="btn" type="submit" id="enroll-verify-btn">Verify</button>
+    </form>
+    <div class="center"><button class="link" type="button" onclick="sendEnrollCode()">Resend code</button></div>
+  </div>
+  <div id="enroll-device-view" class="hidden">
+    <div class="who" style="margin-top:12px"><div class="av" id="enroll-avatar">AD</div><div><h3 id="enroll-name">Admin</h3><p id="enroll-role"></p></div></div>
+    <p class="sub" style="text-align:left">Create a passkey with the fingerprint, pattern or password you use to unlock this device. It replaces any earlier passkey.</p>
+    <button class="btn" id="enroll-create-btn" type="button" onclick="createPasskey()"><i class="bi bi-shield-lock"></i> Create passkey on this device</button>
+    <button class="btn sec" type="button" onclick="afterSignIn(currentAdminRow)">Skip, set a password in Profile settings</button>
+  </div>
+  <div class="center"><button class="link" type="button" onclick="signOutAndReset()">Back to sign in</button></div>
+</div>
+
+<!-- SET A NEW PASSWORD (forced change / first sign-in) -->
+<div class="card hidden" id="pwchange-step">
+  <h1 style="text-align:left;font-size:18px">Set a new password</h1>
+  <p class="sub" style="text-align:left;margin:6px 0 4px">Your account needs a new password before you continue. You can also add a passkey later in Profile settings.</p>
+  <div class="err" id="pwchange-error" style="margin-top:12px"></div>
+  <form onsubmit="savePwChange(event)">
+    <label for="pwc-1">New password</label>
+    <input id="pwc-1" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+    <label for="pwc-2">Confirm password</label>
+    <input id="pwc-2" type="password" autocomplete="new-password" minlength="8" required>
+    <button class="btn" type="submit" id="pwc-btn"><i class="bi bi-key"></i> Save and continue</button>
+  </form>
+  <div class="center"><button class="link" type="button" onclick="signOutAndReset()">Cancel and sign out</button></div>
+</div>
+
+<!-- WAITING BAY -->
+<div class="card hidden" id="picker-step">
+  <div class="who">
+    <div class="av" id="who-avatar">AD</div>
+    <div><h3><span id="who-name">Admin</span><span class="pill" id="who-pill">Admin</span></h3><p id="who-email"></p></div>
+    <button class="so" type="button" onclick="signOutAndReset()">Sign out</button>
+  </div>
+  <h1 style="text-align:left;font-size:17px">Waiting Bay</h1>
+  <p class="sub" style="text-align:left">Choose where you'd like to go.</p>
+  <div id="dest-list"></div>
+  <p class="hint hidden" id="auto-note">Taking you there…</p>
+</div>
+
+<script>
+const CONFIG = window.SOUNDS_CONFIG;
+if (!CONFIG || !CONFIG.supabaseUrl || !CONFIG.supabaseKey) {
+  document.body.innerHTML = '<p style="padding:40px;text-align:center">Could not load <strong>config.js</strong>. Make sure it sits next to this page.</p>';
+  throw new Error('config.js missing or invalid');
+}
+const PASSKEY_FN = CONFIG.passkeyFunction || 'admin-passkey';
+// Session lives in sessionStorage so it ends when the tab closes (same as every admin page).
+const sb = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, {
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage }
+});
+
+const DESTINATIONS = {
+  'admin-dashboard':      { label: 'Admin Dashboard',      desc: 'Users, jobs, payments, and platform operations', icon: 'bi-speedometer2', color: 'var(--navy)',   href: 'admin-dashboard.html' },
+  'support-room':         { label: 'Support Dashboard',    desc: 'Live chat interviews and support tickets',       icon: 'bi-headset',      color: 'var(--sky)',    href: 'support-dashboard.html' },
+  'accountant-dashboard': { label: 'Accountant Dashboard', desc: 'Invoices, payouts, and reconciliation',          icon: 'bi-cash-coin',    color: 'var(--gold)',   href: 'accountant-dashboard.html' },
+  'cashier':              { label: 'Accountant Dashboard', desc: 'Invoices, payouts, and reconciliation',          icon: 'bi-cash-coin',    color: 'var(--gold)',   href: 'accountant-dashboard.html' },
+  'microtasks':           { label: 'Micro Tasks',          desc: 'Create tasks, review submissions, pay taskers',  icon: 'bi-list-check',   color: 'var(--violet)', href: 'microtasks.html' }
+};
+let currentAdminRow = null, enrollEmail = '';
+
+const $ = (id) => document.getElementById(id);
+const initials = (n) => (n || 'AD').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'AD';
+const isSuper = (r) => r.access_level === 'super_admin' || r.role === 'Super Admin';
+const showErr = (id, m) => { const e = $(id); e.textContent = m; e.classList.add('show'); };
+const clearErr = (id) => $(id).classList.remove('show');
+const hideAll = () => ['login-step', 'enroll-step', 'pwchange-step', 'picker-step'].forEach(i => $(i).classList.add('hidden'));
+const b64u = {
+  enc: b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+};
+
+function setTab(t) {
+  $('tab-pw').classList.toggle('active', t === 'pw');
+  $('tab-pk').classList.toggle('active', t === 'pk');
+  $('pw-form').classList.toggle('hidden', t !== 'pw');
+  $('pk-panel').classList.toggle('hidden', t !== 'pk');
+  clearErr('login-error');
+}
+function togglePw() {
+  const i = $('password'), show = i.type === 'password';
+  i.type = show ? 'text' : 'password';
+  $('pw-eye').className = 'bi ' + (show ? 'bi-eye-slash' : 'bi-eye');
+}
+async function deviceLockSupported() {
+  try { return !!(window.PublicKeyCredential && window.isSecureContext && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }
+  catch (e) { return false; }
+}
+async function fnError(err, fallback) {
+  try { const j = await err.context.json(); if (j && j.error) return j.error; } catch (e) {}
+  return fallback;
+}
+// Only an Active admin_users row gets in; anyone else is signed out straight away.
+async function fetchActiveAdmin(userId) {
+  const { data: row, error } = await sb.from('admin_users').select('*').eq('user_id', userId).maybeSingle();
+  if (error) throw error;
+  if (!row || row.status !== 'Active') { await sb.auth.signOut(); throw new Error('This account is not an active admin.'); }
+  return row;
+}
+
+/* ---------- After any successful sign-in ---------- */
+// A forced password change must happen first: every other admin page sends
+// the user back here while must_change_password is set.
+function afterSignIn(row) {
+  if (row.must_change_password) showPwChange(); else showDestinationPicker(row);
+}
+function showPwChange() {
+  hideAll(); $('pwchange-step').classList.remove('hidden');
+  clearErr('pwchange-error'); $('pwc-1').value = ''; $('pwc-2').value = ''; $('pwc-1').focus();
+}
+async function savePwChange(e) {
+  e.preventDefault(); clearErr('pwchange-error');
+  const p1 = $('pwc-1').value, p2 = $('pwc-2').value;
+  if (p1.length < 8) return showErr('pwchange-error', 'Use at least 8 characters.');
+  if (p1 !== p2) return showErr('pwchange-error', 'The two passwords do not match.');
+  const btn = $('pwc-btn'); btn.disabled = true;
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) throw error;
+    const { error: fe } = await sb.from('admin_users').update({ must_change_password: false }).eq('user_id', currentAdminRow.user_id);
+    if (fe) throw new Error('Your password was saved, but the account could not be marked as updated. Ask the Super Admin to clear the "must change password" flag.');
+    currentAdminRow.must_change_password = false;
+    showDestinationPicker(currentAdminRow);
+  } catch (err) { showErr('pwchange-error', err.message || 'Could not save the password.'); }
+  btn.disabled = false;
+}
+
+/* ---------- Email + password ---------- */
+async function passwordLogin(e) {
+  e.preventDefault(); clearErr('login-error');
+  const btn = $('pw-btn'); btn.disabled = true; $('pw-spin').classList.remove('hidden'); $('pw-text').textContent = 'Signing in…';
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+    if (error) throw new Error('Wrong email or password.');
+    currentAdminRow = await fetchActiveAdmin(data.user.id);
+    $('password').value = '';
+    afterSignIn(currentAdminRow);
+  } catch (err) { showErr('login-error', err.message || 'Sign-in failed. Please try again.'); }
+  btn.disabled = false; $('pw-spin').classList.add('hidden'); $('pw-text').textContent = 'Sign in';
+}
+
+/* ---------- Passkey ---------- */
+async function passkeyLogin() {
+  const btn = $('pk-btn');
+  const busy = (on) => { btn.disabled = on; $('pk-spin').classList.toggle('hidden', !on); $('pk-icon').classList.toggle('hidden', on);
+    $('pk-text').textContent = on ? 'Waiting for your device…' : 'Sign in with fingerprint, pattern or password'; };
+  clearErr('login-error'); busy(true);
+  try {
+    const { data: ch, error: ce } = await sb.functions.invoke(PASSKEY_FN, { body: { action: 'challenge' } });
+    if (ce || !ch || !ch.challenge) throw new Error('Passkey sign-in is not available yet. Use email and password, or ask the Super Admin to finish the server setup.');
+    const cred = await navigator.credentials.get({ publicKey: {
+      challenge: new TextEncoder().encode(ch.challenge), rpId: location.hostname, userVerification: 'required', timeout: 60000 } });
+    const r = cred.response;
+    const { data: res, error: le } = await sb.functions.invoke(PASSKEY_FN, { body: {
+      action: 'login', id: b64u.enc(cred.rawId), authenticatorData: b64u.enc(r.authenticatorData),
+      clientDataJSON: b64u.enc(r.clientDataJSON), signature: b64u.enc(r.signature) } });
+    if (le || !res || !res.token_hash) throw new Error(le ? await fnError(le, 'This device is not registered. Sign in with email and password, then set a passkey in Profile settings.') : 'Could not sign in with this device.');
+    const { error: ve } = await sb.auth.verifyOtp({ token_hash: res.token_hash, type: 'magiclink' });
+    if (ve) throw ve;
+    const { data: { user } } = await sb.auth.getUser();
+    currentAdminRow = await fetchActiveAdmin(user.id);
+    afterSignIn(currentAdminRow);
+  } catch (err) {
+    showErr('login-error', err.name === 'NotAllowedError' ? 'Cancelled or timed out. Please try again.'
+      : err.name === 'SecurityError' ? 'Screen lock sign-in needs a secure (https) page.'
+      : (err.message || 'Passkey sign-in failed.'));
+  }
+  busy(false);
+}
+
+/* ---------- Email code: recovery + first passkey ---------- */
+function showEnroll() {
+  hideAll(); $('enroll-step').classList.remove('hidden');
+  $('enroll-email-view').classList.remove('hidden'); $('enroll-code-view').classList.add('hidden'); $('enroll-device-view').classList.add('hidden');
+  clearErr('enroll-error'); $('enroll-email').value = $('email').value; $('enroll-email').focus();
+}
+async function sendEnrollCode(e) {
+  if (e) e.preventDefault(); clearErr('enroll-error');
+  const email = (e ? $('enroll-email').value : enrollEmail).trim();
+  const btn = $('enroll-send-btn'); btn.disabled = true;
+  try {
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    if (error) throw error;
+    enrollEmail = email;
+    $('enroll-email-view').classList.add('hidden'); $('enroll-code-view').classList.remove('hidden');
+    $('enroll-code-sub').textContent = 'We sent a code to ' + email + '. Enter it below.';
+    $('enroll-code').value = ''; $('enroll-code').focus();
+  } catch (err) { showErr('enroll-error', 'Could not send a code to that email. Check it and try again.'); }
+  btn.disabled = false;
+}
+async function verifyEnrollCode(e) {
+  e.preventDefault(); clearErr('enroll-error');
+  const btn = $('enroll-verify-btn'); btn.disabled = true;
+  try {
+    const { error } = await sb.auth.verifyOtp({ email: enrollEmail, token: $('enroll-code').value.trim(), type: 'email' });
+    if (error) throw error;
+    const { data: { user } } = await sb.auth.getUser();
+    currentAdminRow = await fetchActiveAdmin(user.id);
+    $('enroll-avatar').textContent = initials(currentAdminRow.username);
+    $('enroll-name').textContent = currentAdminRow.username || currentAdminRow.email;
+    $('enroll-role').textContent = currentAdminRow.role || 'Admin';
+    $('enroll-code-view').classList.add('hidden'); $('enroll-device-view').classList.remove('hidden');
+  } catch (err) { showErr('enroll-error', err.message || 'That code did not work. Please try again.'); }
+  btn.disabled = false;
+}
+async function createPasskey() {
+  clearErr('enroll-error'); const btn = $('enroll-create-btn'); btn.disabled = true;
+  try {
+    if (!(await deviceLockSupported())) throw new Error("This device or page can't use a screen lock. Use https on a device with a fingerprint, pattern or password lock.");
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'SoundsCare Admin', id: location.hostname },
+      user: { id: new TextEncoder().encode(currentAdminRow.user_id), name: currentAdminRow.email, displayName: currentAdminRow.username || currentAdminRow.email },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' }, timeout: 60000 } });
+    const id = b64u.enc(cred.rawId);
+    const pub = cred.response.getPublicKey ? b64u.enc(cred.response.getPublicKey()) : '';
+    const { error } = await sb.rpc('replace_admin_passkey', { cred_id: id, pub_key: pub });
+    if (error) throw error;
+    currentAdminRow.passkey_id = id;
+    afterSignIn(currentAdminRow);
+  } catch (err) {
+    showErr('enroll-error', err.name === 'NotAllowedError' ? 'Cancelled or timed out. Please try again.' : (err.message || 'Could not create the passkey.'));
+  }
+  btn.disabled = false;
+}
+
+/* ---------- Waiting Bay ---------- */
+function showDestinationPicker(row) {
+  hideAll(); $('picker-step').classList.remove('hidden');
+  $('who-avatar').textContent = initials(row.username);
+  $('who-name').textContent = row.username || row.email;
+  $('who-email').textContent = row.email || '';
+  const pill = $('who-pill'); pill.textContent = row.role || 'Admin'; pill.classList.toggle('super', isSuper(row));
+  let pages;
+  if (isSuper(row)) pages = ['admin-dashboard', 'support-room', 'accountant-dashboard', 'microtasks'];
+  else {
+    // admin-dashboard stays Super Admin-only; everyone else sees only their allowed_pages.
+    pages = Array.isArray(row.allowed_pages) ? row.allowed_pages.filter(p => DESTINATIONS[p] && p !== 'admin-dashboard') : [];
+    if (!pages.length) pages.push('support-room');
+  }
+  if (pages.length === 1) {
+    $('dest-list').classList.add('hidden'); $('auto-note').classList.remove('hidden');
+    setTimeout(() => { window.location.href = DESTINATIONS[pages[0]].href; }, 500);
+    return;
+  }
+  $('dest-list').classList.remove('hidden'); $('auto-note').classList.add('hidden');
+  $('dest-list').innerHTML = pages.map(p => {
+    const d = DESTINATIONS[p];
+    return `<button class="dest" type="button" onclick="location.href='${d.href}'"><div class="ic" style="background:${d.color}"><i class="bi ${d.icon}"></i></div>
+      <div><h4>${d.label}</h4><p>${d.desc}</p></div><i class="bi bi-chevron-right" style="margin-left:auto;color:var(--ink-soft)"></i></button>`;
+  }).join('');
+}
+async function signOutAndReset() {
+  try { await sb.auth.signOut(); } catch (e) {}
+  currentAdminRow = null; enrollEmail = '';
+  hideAll(); $('login-step').classList.remove('hidden'); clearErr('login-error');
+}
+
+// Back/forward or a second tab: an Active admin with a live session goes straight to the Waiting Bay.
+(async function () {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const { data: row } = await sb.from('admin_users').select('*').eq('user_id', session.user.id).maybeSingle();
+    if (!row || row.status !== 'Active') { await sb.auth.signOut(); return; }
+    currentAdminRow = row; afterSignIn(row);
+  } catch (err) { /* stay on sign-in */ }
+})();
+
+deviceLockSupported().then(ok => {
+  if (!ok) { $('pk-btn').classList.add('hidden'); $('pk-hint').classList.add('hidden'); $('pk-unsupported').classList.remove('hidden'); }
+});
+</script>
+</body>
+</html>
