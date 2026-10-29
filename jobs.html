@@ -122,7 +122,9 @@
     --dark-bg:#0d2118;--dark-bg2:#142b1e;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;max-width:100%}
+  body{max-width:100%;overflow-x:clip}   /* clip (not hidden) keeps the sticky navbar working */
+  img,svg,video,iframe{max-width:100%}
   body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);font-size:14px;line-height:1.6}
   a{color:inherit;text-decoration:none;transition:all .2s}
 
@@ -171,7 +173,7 @@
   .jobs-header .crumbs a{color:#78d9b4}
 
   /* ── FILTER BAR ── */
-  .filter-bar{max-width:1100px;margin:-1.6rem auto 0;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:1.1rem;display:flex;flex-wrap:wrap;gap:.7rem;position:relative;z-index:5}
+  .filter-bar{width:calc(100% - 2rem);max-width:1100px;margin:-1.6rem auto 0;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:1.1rem;display:flex;flex-wrap:wrap;gap:.7rem;position:relative;z-index:5}
   .search-wrap{position:relative;flex:2;min-width:200px}
   .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;pointer-events:none}
   .search-wrap input{width:100%;padding-left:32px!important}
@@ -219,16 +221,19 @@
   .spot-hint{font-size:11.5px;color:var(--text-muted);line-height:1.5;margin-top:-.3rem;margin-bottom:.9rem}
 
   /* ── RESULTS BAR ── */
-  .container{max-width:1200px;margin:0 auto;padding:2.2rem 1.5rem}
+  .container{max-width:1200px;margin:0 auto;padding:1.4rem 1.5rem 2.2rem}
+  #my-spot-section,#recommended-section{margin-top:1.4rem;margin-bottom:1.6rem}
+  #my-spot-section{padding:0 1.5rem;max-width:1200px;margin-left:auto;margin-right:auto}
   .results-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.3rem}
   .results-count{font-size:13px;color:var(--text-muted)}
   .results-count strong{color:var(--text)}
   .sort-select{border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;background:#fff}
 
   /* ── JOB GRID ── */
-  .jobs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
-  @media(max-width:980px){.jobs-grid{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:640px){.jobs-grid{grid-template-columns:1fr}}
+  .jobs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem}
+  .jobs-grid>*{min-width:0}   /* stops long text from stretching a column past the screen */
+  @media(max-width:980px){.jobs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:640px){.jobs-grid{grid-template-columns:minmax(0,1fr)}}
 
   .job-card{position:relative;background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.2rem;transition:all .2s;cursor:pointer;display:flex;flex-direction:column}
   .job-card:hover{border-color:var(--green);box-shadow:0 8px 26px rgba(26,122,94,.12);transform:translateY(-2px)}
@@ -242,7 +247,7 @@
   .card-avatar{width:46px;height:46px;border-radius:9px;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
   .card-meta{flex:1;min-width:0}
   .card-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .card-subtitle{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:.3rem}
+  .card-subtitle{font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;flex-wrap:wrap;gap:.2rem .3rem;overflow-wrap:anywhere}
   .card-subtitle .verified-dot{width:14px;height:14px;background:var(--green);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
   .card-subtitle .verified-dot i{color:#fff;font-size:8px}
   .card-subtitle .verified-dot.blue{background:var(--blue)}
@@ -371,12 +376,43 @@
   .cookie-decline{background:transparent;color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.25);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 
   /* ── FOOTER ── */
-  .footer{background:var(--dark-bg);color:#fff;padding:2.5rem 1.5rem;text-align:center;margin-top:3rem}
-  .footer-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#78d9b4;margin-bottom:.5rem}
-  .footer p{font-size:13px;opacity:.7;max-width:480px;margin:0 auto;line-height:1.6}
-  .footer-links{display:flex;justify-content:center;gap:1.5rem;margin:1.2rem 0;flex-wrap:wrap}
-  .footer-links a{font-size:12.5px;opacity:.6;color:#fff;transition:opacity .18s}.footer-links a:hover{opacity:1}
-  .footer-copy{font-size:11.5px;opacity:.4;margin-top:1.5rem!important}
+  .footer{background:var(--dark-bg);color:#fff;padding:2.8rem 1.5rem 1.4rem;margin-top:0}
+  .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:2rem 3rem;align-items:start}
+  .footer-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#78d9b4;margin-bottom:.6rem}
+  .footer-brand p{font-size:13px;opacity:.7;line-height:1.65;max-width:360px;margin:0}
+  .footer-col{display:flex;flex-direction:column;gap:.6rem}
+  .footer-col h5{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#78d9b4;margin-bottom:.2rem}
+  .footer-col a{font-size:13px;opacity:.7;color:#fff;transition:opacity .18s}
+  .footer-col a:hover{opacity:1}
+  .footer-bottom{max-width:1100px;margin:2rem auto 0;padding-top:1.1rem;border-top:1px solid rgba(255,255,255,.12);text-align:center}
+  .footer-copy{font-size:11.5px;opacity:.5;margin:0}
+  @media(max-width:640px){
+    .footer{padding:2.2rem 1.2rem 1.2rem}
+    .footer-inner{grid-template-columns:1fr 1fr;gap:1.6rem 1.2rem}
+    .footer-brand{grid-column:1/-1}
+    .footer-bottom{margin-top:1.6rem}
+  }
+
+  /* ── MOBILE POLISH ── */
+  @media(max-width:640px){
+    .jobs-header{padding:2rem 1rem 2.6rem}
+    .jobs-header p{font-size:13px;margin-bottom:1rem}
+    .filter-bar{width:calc(100% - 1.5rem);padding:.8rem;gap:.55rem;border-radius:14px;margin-top:-1.4rem}
+    .search-wrap{flex:1 1 100%;min-width:0}
+    .filter-bar select{flex:1 1 calc(50% - .3rem);min-width:0;width:0}
+    .filter-bar button{flex:1 1 calc(50% - .3rem);justify-content:center;padding:10px 8px}
+    .filter-bar button:last-child{flex-basis:100%}
+    .category-strip,.loc-crumb{padding:0 .75rem}
+    .container,#my-spot-section{padding-left:.75rem;padding-right:.75rem}
+    .container{padding-top:1rem;padding-bottom:1.6rem}
+    .job-card{padding:1rem}
+    .card-avatar.logo{width:54px;height:54px}
+    .card-header{padding-right:4.4rem}
+    .modal-overlay{padding:.5rem}
+    .modal-header,.modal-body,.modal-footer{padding-left:1.1rem;padding-right:1.1rem}
+    #toast-container{left:.75rem;right:.75rem;bottom:.75rem}
+    .toast{min-width:0;max-width:none}
+  }
 </style>
 <body id="top">
 
@@ -449,7 +485,7 @@
 <!-- YOUR SPOT(S) — Mama Fua Mtaani only. Populated from the spot(s) the worker set on their
      dashboard (worker_profiles.spot_id, synced from the "Add My Spot" feature). Hidden entirely
      when the logged-in worker has no spot on file. -->
-<div class="container" style="padding-top:0">
+<div class="container" style="padding:0">
   <div class="external-section" id="my-spot-section" style="display:none">
     <h2><i class="bi bi-pin-map-fill" style="color:var(--amber)"></i> Recommended Near Your Spot</h2>
     <p class="sub">Jobs around <strong id="my-spot-names">your spot</strong> — closest ones tagged with how far you'd need to go.</p>
@@ -503,16 +539,26 @@
 
 <!-- FOOTER -->
 <footer class="footer">
-  <div class="footer-logo">SoundsCare</div>
-  <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda and Ethiopia.</p>
-  <div class="footer-links">
-    <a href="https://www.sounds.co.ke/legal.html">Privacy Policy</a>
-    <a href="legal.html">Terms of Service</a>
-    <a href="post-my-profile.html">List as Worker</a>
-    <a href="employer-login.html">Employer Portal</a>
-    <a href="support.html">Contact Us</a>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">SoundsCare</div>
+      <p>East Africa's trusted platform for verified domestic workers. Serving Kenya, Uganda, Tanzania, Rwanda and Ethiopia.</p>
+    </div>
+    <nav class="footer-col" aria-label="Platform">
+      <h5>Platform</h5>
+      <a href="post-my-profile.html">List as Worker</a>
+      <a href="employer-login.html">Employer Portal</a>
+      <a href="support.html">Contact Us</a>
+    </nav>
+    <nav class="footer-col" aria-label="Legal">
+      <h5>Legal</h5>
+      <a href="https://www.sounds.co.ke/legal.html">Privacy Policy</a>
+      <a href="legal.html">Terms of Service</a>
+    </nav>
   </div>
-  <p class="footer-copy">&copy; 2026 Sounds Care. All rights reserved.</p>
+  <div class="footer-bottom">
+    <p class="footer-copy">&copy; 2026 Sounds Care. All rights reserved.</p>
+  </div>
 </footer>
 
 <!-- JOB DETAIL MODAL -->
@@ -1754,7 +1800,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   try{
-    if(window.adsbygoogle) (window.adsbygoogle = window.adsbygoogle || []).push({});
+    const adSlot = document.querySelector('.adsense-slot');
+    const adIns = adSlot && adSlot.querySelector('ins.adsbygoogle');
+    if(adIns && /X{4,}/.test(adIns.getAttribute('data-ad-client')||'')){ adSlot.remove(); }   // placeholder ID: no ad will fill, so don't reserve blank space
+    else if(window.adsbygoogle && adIns) (window.adsbygoogle = window.adsbygoogle || []).push({});
   }catch(e){ /* AdSense not yet configured — no-op until a real publisher ID is set */ }
 });
 </script>
