@@ -1085,6 +1085,18 @@ function profileMatchPct(job, worker){
   return Math.min(98, score);
 }
 
+/* ── SAFE WRAPPERS: a failure in job-poster.js must never blank the job grid ── */
+async function safePosters(list){
+  try{
+    if(typeof SoundsPoster === 'undefined'){ console.error('SoundsPoster is undefined - job-poster.js did not load (check path / 404 in Network tab)'); return {}; }
+    return (await SoundsPoster.load(list)) || {};
+  }catch(e){ console.error('SoundsPoster.load failed:', e); return {}; }
+}
+function safePosterHtml(p){
+  try{ return (typeof SoundsPoster !== 'undefined' && p) ? SoundsPoster.html(p) : ''; }
+  catch(e){ console.error('SoundsPoster.html failed:', e); return ''; }
+}
+
 /* ── DB FETCH + RENDER: JOBS ── */
 async function loadJobs(){
   const grid = document.getElementById('jobs-grid');
@@ -1151,21 +1163,21 @@ async function loadJobs(){
     sb.from('job_loves').select('job_id').in('job_id', jobIds),
     sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
     getWorkerProfile(),
-    SoundsPoster.load(jobs)   // who posted each job: agent / agency / client, with verification flags
+    safePosters(jobs)   // who posted each job: agent / agency / client, with verification flags
   ]);
   const appCounts = {}; (appsRes.data||[]).forEach(a=>{ appCounts[a.job_id]=(appCounts[a.job_id]||0)+1; });
   const ivCounts = {}; (interviewsRes.data||[]).forEach(i=>{ ivCounts[i.job_id]=(ivCounts[i.job_id]||0)+1; });
   const lovedSet = new Set(getLovedJobIds());
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
 
-  const cards = jobs.map(j=>jobCardHTML(j, {
+  const cards = jobs.map(j=>{ try{ return jobCardHTML(j, {
     poster: posters[j.id],
     applicationCount: appCounts[j.id]||0,
     interviewCount: ivCounts[j.id]||0,
     loved: lovedSet.has(j.id),
     paymentVerified: paidMap[j.id]==='held' || paidMap[j.id]==='released',
     matchPct: profileMatchPct(j, worker)
-  }));
+  }); }catch(e){ console.error('Card render failed for job', j.id, e); return ''; } });
 
   grid.innerHTML = interleaveAds(cards).join('');
   logVisibleAdImpressions(grid);
@@ -1268,7 +1280,7 @@ function jobCardHTML(j, opts){
         ${!poster && j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified">':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
         ${deadlineTag(j.deadline)}
       </div>
-      ${SoundsPoster.html(poster)}
+      ${safePosterHtml(poster)}
       <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range,j.country_code)}${paymentVerified?' <span class="payment-badge"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>':''}<span style="margin-left:auto;opacity:.6">${timeAgo(j.created_at)}</span></div>
       ${(j.is_mama_fua || j.payment_mode==='escrow') && !paymentVerified ? '<div class="escrow-note"><i class="bi bi-shield-lock-fill"></i> Payment held in escrow until job is marked done</div>' : ''}
       <div class="card-jobstats">
@@ -1309,7 +1321,7 @@ async function loadRecommended(){
   const [escrowRes, lovesRes, posters] = await Promise.all([
     sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
     Promise.resolve({data: null}), // placeholder for symmetry, loves read via localStorage below
-    SoundsPoster.load(ranked.map(r=>r.j))
+    safePosters(ranked.map(r=>r.j))
   ]);
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
   const lovedSet = new Set(getLovedJobIds());
@@ -1354,7 +1366,7 @@ async function loadMySpotSection(){
   const jobIds = jobsRaw.map(j=>j.id);
   const [escrowRes, posters] = await Promise.all([
     sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
-    SoundsPoster.load(jobsRaw)
+    safePosters(jobsRaw)
   ]);
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
   const lovedSet = new Set(getLovedJobIds());
