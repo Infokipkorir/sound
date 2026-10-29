@@ -43,6 +43,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Database keys live in config.js (window.SOUNDS_CONFIG) — same as employees.html -->
+  <script src="config.js"></script>
+  <script src="job-poster.js"></script>
 
   <!-- Google AdSense — replace ca-pub-XXXXXXXXXXXXXXXX with the real publisher ID before going live -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
@@ -663,8 +666,8 @@
 
 <script>
 /* ── SUPABASE ── */
-const SUPABASE_URL = 'https://phoahudvrcelfrykoeuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_s4Wljr3TEtjLRxNJ9DzRSw_17gtvoAb';
+const SUPABASE_URL = window.SOUNDS_CONFIG.supabaseUrl;
+const SUPABASE_KEY = window.SOUNDS_CONFIG.supabaseKey;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ── KENYA COUNTIES (used as the "City" level for Kenya, since KE jobs use counties) ── */
@@ -703,11 +706,14 @@ function toggleSpotVisibility(){
 renderCategoryStrip();
 
 /* ── COUNTRY → CITY/COUNTY → SPOT CASCADE ── */
-(function fillCountries(){
+/* Runs from the DOMContentLoaded handler below: COUNTRIES is declared further down the file
+   (const), so calling this while the script is still parsing threw a ReferenceError that
+   stopped the whole script — and with it the jobs from ever loading. */
+function fillCountries(){
   const sel = document.getElementById('f-country');
   sel.innerHTML = `<option value="">All Countries</option>` +
     COUNTRIES.map(c=>`<option value="${c.code}">${c.flag} ${esc(c.name)}</option>`).join('');
-})();
+}
 
 async function onCountryChange(){
   const country = document.getElementById('f-country').value;
@@ -1139,12 +1145,13 @@ async function loadJobs(){
   }
 
   const jobIds = jobs.map(j=>j.id);
-  const [appsRes, interviewsRes, lovesRes, escrowRes, worker] = await Promise.all([
+  const [appsRes, interviewsRes, lovesRes, escrowRes, worker, posters] = await Promise.all([
     sb.from('job_applications').select('job_id').in('job_id', jobIds),
     sb.from('interviews').select('job_id').in('job_id', jobIds),
     sb.from('job_loves').select('job_id').in('job_id', jobIds),
     sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
-    getWorkerProfile()
+    getWorkerProfile(),
+    SoundsPoster.load(jobs)   // who posted each job: agent / agency / client, with verification flags
   ]);
   const appCounts = {}; (appsRes.data||[]).forEach(a=>{ appCounts[a.job_id]=(appCounts[a.job_id]||0)+1; });
   const ivCounts = {}; (interviewsRes.data||[]).forEach(i=>{ ivCounts[i.job_id]=(ivCounts[i.job_id]||0)+1; });
@@ -1152,6 +1159,7 @@ async function loadJobs(){
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
 
   const cards = jobs.map(j=>jobCardHTML(j, {
+    poster: posters[j.id],
     applicationCount: appCounts[j.id]||0,
     interviewCount: ivCounts[j.id]||0,
     loved: lovedSet.has(j.id),
@@ -1211,7 +1219,8 @@ function clickAd(adId, url){
 /* ── SHARED JOB CARD TEMPLATE (used by main grid + Recommended Near You) ── */
 function jobCardHTML(j, opts){
   opts = opts || {};
-  const company = j.company_name || 'Employer';
+  const poster = opts.poster || null;
+  const company = j.company_name || (poster && poster.poster_name) || 'Employer';
   const applicationCount = opts.applicationCount||0;
   const interviewCount = opts.interviewCount||0;
   const loved = !!opts.loved;
@@ -1256,9 +1265,10 @@ function jobCardHTML(j, opts){
         ${j.work_type?`<span class="tag">${esc(j.work_type)}</span>`:''}
         ${j.is_urgent?'<span class="tag urgent"><i class="bi bi-lightning-charge-fill"></i> Urgent</span>':''}
         ${matchPct!==null?`<span class="tag match"><i class="bi bi-person-check-fill"></i> ${matchPct}% match</span>`:''}
-        ${j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified">':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
+        ${!poster && j.posted_by_agent_id?`<span class="agent-tag">${j.agent&&j.agent.status==='active'?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified">':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}</span>`:''}
         ${deadlineTag(j.deadline)}
       </div>
+      ${SoundsPoster.html(poster)}
       <div class="card-salary"><i class="bi bi-cash-stack"></i> ${salary(j.salary_min,j.salary_max,j.salary_range,j.country_code)}${paymentVerified?' <span class="payment-badge"><i class="bi bi-patch-check-fill"></i> Payment Verified</span>':''}<span style="margin-left:auto;opacity:.6">${timeAgo(j.created_at)}</span></div>
       ${(j.is_mama_fua || j.payment_mode==='escrow') && !paymentVerified ? '<div class="escrow-note"><i class="bi bi-shield-lock-fill"></i> Payment held in escrow until job is marked done</div>' : ''}
       <div class="card-jobstats">
@@ -1296,14 +1306,16 @@ async function loadRecommended(){
   if(!ranked.length){ section.style.display='none'; return; }
 
   const jobIds = ranked.map(r=>r.j.id);
-  const [escrowRes, lovesRes] = await Promise.all([
+  const [escrowRes, lovesRes, posters] = await Promise.all([
     sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
-    Promise.resolve({data: null}) // placeholder for symmetry, loves read via localStorage below
+    Promise.resolve({data: null}), // placeholder for symmetry, loves read via localStorage below
+    SoundsPoster.load(ranked.map(r=>r.j))
   ]);
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
   const lovedSet = new Set(getLovedJobIds());
 
   grid.innerHTML = ranked.map(r=>jobCardHTML(r.j, {
+    poster: posters[r.j.id],
     loved: lovedSet.has(r.j.id),
     paymentVerified: paidMap[r.j.id]==='held' || paidMap[r.j.id]==='released',
     matchPct: r.match
@@ -1340,8 +1352,9 @@ async function loadMySpotSection(){
   if(error || !jobsRaw || !jobsRaw.length){ section.style.display='none'; return; }
 
   const jobIds = jobsRaw.map(j=>j.id);
-  const [escrowRes] = await Promise.all([
-    sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds)
+  const [escrowRes, posters] = await Promise.all([
+    sb.from('job_payment_status').select('job_id, status').in('job_id', jobIds),
+    SoundsPoster.load(jobsRaw)
   ]);
   const paidMap = {}; (escrowRes.data||[]).forEach(p=>{ paidMap[p.job_id]=p.status; });
   const lovedSet = new Set(getLovedJobIds());
@@ -1358,6 +1371,7 @@ async function loadMySpotSection(){
       dKm = distanceKm(USER_LAT, USER_LNG, j.latitude, j.longitude);
     }
     return jobCardHTML(j, {
+      poster: posters[j.id],
       loved: lovedSet.has(j.id),
       paymentVerified: paidMap[j.id]==='held' || paidMap[j.id]==='released',
       distanceKm: dKm
@@ -1388,18 +1402,20 @@ function mapEmbed(lat, lon){
 
 /* ── JOB DETAIL MODAL + DEEP LINK (?job=ID from index.html card clicks) ── */
 async function openJobDetail(id){
-  const [{ data: j, error }, { data: escrowRow }] = await Promise.all([
+  const [{ data: j, error }, { data: escrowRow }, posters] = await Promise.all([
     sb.from('job_postings').select('*, agent:posted_by_agent_id(id,full_name,status), spot:spot_id(id,name)').eq('id', id).single(),
-    sb.from('job_payment_status').select('status').eq('job_id', id).maybeSingle()
+    sb.from('job_payment_status').select('status').eq('job_id', id).maybeSingle(),
+    SoundsPoster.load([{ id }])
   ]);
   if(error || !j){ showToast('Could not load that job.', 'error'); return; }
+  const poster = posters[id] || null;
   document.getElementById('jd-title').textContent = j.title||'Job';
   document.getElementById('jd-logo').src = companyLogo(j);
   const days = daysUntil(j.deadline);
   const km = USER_LOCATION_READY ? distanceKm(USER_LAT,USER_LNG,j.latitude,j.longitude) : null;
   document.getElementById('jd-subtitle').innerHTML =
     (j.company_verified?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified"> ':'') +
-    esc(j.company_name||'Employer')+' · '+esc(getCountry(j.country_code).name)+' · '+esc(j.county||j.city||j.location||'East Africa') +
+    esc(j.company_name||(poster&&poster.poster_name)||'Employer')+' · '+esc(getCountry(j.country_code).name)+' · '+esc(j.county||j.city||j.location||'East Africa') +
     (km!==null?' · <span class="card-distance"><i class="bi bi-geo-alt-fill"></i> '+fmtDistance(km)+'</span>':'');
   const paymentVerified = escrowRow && (escrowRow.status==='held' || escrowRow.status==='released');
   const postedDate = j.created_at ? new Date(j.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'long',year:'numeric'}) : '—';
@@ -1411,7 +1427,8 @@ async function openJobDetail(id){
     : '';
   document.getElementById('jd-body').innerHTML = `
     ${isExternal?`<h4>Source</h4><p style="display:inline-flex">${sourceBadge}</p>`:''}
-    ${j.posted_by_agent_id?`<h4>Posted Via</h4><p class="agent-tag" style="display:inline-flex">${j.agent&&j.agent.status==='active'?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified">':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}${j.agent&&j.agent.status==='active'?' · Verified Agent':''}</p>`:''}
+    ${poster?`<h4>Posted By</h4>${SoundsPoster.detailHtml(poster)}`:''}
+    ${!poster && j.posted_by_agent_id?`<h4>Posted Via</h4><p class="agent-tag" style="display:inline-flex">${j.agent&&j.agent.status==='active'?'<img class="vbadge" src="verification_badge.jpeg" alt="Verified" title="Verified">':'<i class="bi bi-person-badge-fill"></i>'} ${j.agent&&j.agent.full_name?esc(j.agent.full_name):'Agent'}${j.agent&&j.agent.status==='active'?' · Verified Agent':''}</p>`:''}
     <h4>Location</h4>
     <p><i class="bi bi-geo-alt-fill"></i> ${esc(getCountry(j.country_code).name)} &middot; ${esc(j.county||j.city||j.location||'East Africa')}${j.spot?` &middot; <i class="bi bi-pin-map-fill"></i> ${esc(j.spot.name)}`:''}${km!==null?` &middot; <span class="card-distance">${fmtDistance(km)} from you</span>`:''}</p>
     ${mapEmbed(j.latitude, j.longitude)}
@@ -1707,6 +1724,7 @@ async function autoLocate(){
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', async ()=>{
+  fillCountries();
   initCookieBanner();
   autoLocate();   // fills in "X km away" on every card once the browser shares the location
   await loadJobs();
