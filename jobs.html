@@ -3,129 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jobs — SoundsCare Admin</title>
+<title>Jobs — SoundsCare</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="stylesheet" href="css/dashboard.css">
-<link rel="stylesheet" href="css/sidebar.css">
 <link rel="stylesheet" href="css/buttons.css">
 <link rel="stylesheet" href="css/modal.css">
 <link rel="stylesheet" href="css/tables.css">
 <link rel="stylesheet" href="css/cards.css">
 <link rel="stylesheet" href="css/forms.css">
 <link rel="stylesheet" href="css/responsive.css">
+<style>
+  /* public page: no sidebar, full width */
+  body { margin: 0; }
+  .pub-wrap { max-width: 1150px; margin: 0 auto; padding: 24px 16px 48px; }
+  .pub-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .pub-head h1 { margin:0; font-size:26px; }
+  .pub-head p { margin:4px 0 0; opacity:.7; font-size:14px; }
+  .pub-brand { font-weight:800; font-size:18px; text-decoration:none; color:inherit; }
+</style>
 </head>
-<body data-page="jobs">
+<body data-page="jobs" data-mode="public">
 
-<div id="maintenance-banner"><i class="bi bi-exclamation-triangle-fill"></i> Maintenance mode is ON.</div>
-<div data-include="sidebar"></div>
-
-<div class="main" id="main">
-  <div data-include="topbar"></div>
-
-  <div class="content">
-    <div class="page-head">
-      <div><h1>Job Postings</h1><p>All active and draft job listings</p></div>
-      <button class="btn btn-primary btn-sm" onclick="openModal('post-job-modal')"><i class="bi bi-plus-lg"></i> Post Job</button>
+<div class="pub-wrap">
+  <div class="pub-head">
+    <div>
+      <a class="pub-brand" href="/"><i class="bi bi-heart-fill"></i> SoundsCare</a>
+      <h1>Job Openings</h1>
+      <p>Browse available jobs and apply directly on WhatsApp.</p>
     </div>
-    <div class="section">
-      <div class="search-bar">
-        <input class="search-input" id="jobs-search" placeholder="🔍 Search job title, location…" oninput="filterJobs()">
-        <select class="filter-select" id="jobs-status-filter" onchange="filterJobs()">
-          <option value="">All</option>
-          <option value="active">Active</option>
-          <option value="closed">Closed</option>
-          <option value="draft">Draft</option>
-          <option value="expired">Expired</option>
-        </select>
-        <select class="filter-select" id="jobs-featured-filter" onchange="filterJobs()">
-          <option value="">All Jobs</option>
-          <option value="featured">Featured Only</option>
-        </select>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>Title</th><th>Employer</th><th>Location</th><th>Type</th><th>Salary</th><th>Status</th><th>Posted</th><th>Applications</th><th>Actions</th></tr></thead><tbody id="jobs-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
-      <div class="pagination" id="jobs-pagination"></div>
+  </div>
+
+  <div class="section">
+    <div class="search-bar">
+      <input class="search-input" id="jobs-search" placeholder="🔍 Search job title, location…" oninput="filterJobs()">
+      <select class="filter-select" id="jobs-featured-filter" onchange="filterJobs()">
+        <option value="">All Jobs</option>
+        <option value="featured">Featured Only</option>
+      </select>
     </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Employer</th><th>Location</th><th>Type</th><th>Salary</th><th>Status</th><th>Posted</th><th>Actions</th></tr></thead>
+        <tbody id="jobs-tbody"><tr><td colspan="8" style="text-align:center">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="jobs-pagination"></div>
   </div>
 </div>
 
-<!-- POST JOB MODAL -->
-<div id="post-job-modal" class="modal-overlay">
-  <div class="modal wide">
-    <div class="modal-header"><h2 id="post-job-title"><i class="bi bi-briefcase-fill"></i> Post Job (Admin)</h2><button class="modal-close" onclick="closeModal('post-job-modal')">×</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-job-id">
-      <div style="background:var(--accent-soft);border:1px solid rgba(232,160,64,.3);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--amber)">
-        <i class="bi bi-info-circle"></i> Posting as admin — no employer details required. This job will appear publicly as a SoundsCare listing.
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Job Title *</label><input id="job-title" placeholder="e.g. House Manager"></div>
-        <div class="form-group"><label>Job Role</label><input id="job-role" placeholder="e.g. Housekeeper, Cook"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Location</label><input id="job-location" placeholder="e.g. Nairobi, Karen"></div>
-        <div class="form-group"><label>County</label><input id="job-county" placeholder="e.g. Nairobi County"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Job Type</label>
-          <select id="job-type"><option value="full-time">Full-Time</option><option value="part-time">Part-Time</option><option value="contract">Contract</option><option value="temporary">Temporary</option></select>
-        </div>
-        <div class="form-group"><label>Work Type</label>
-          <select id="job-work-type"><option value="Live-In">Live-In</option><option value="Live-Out">Live-Out</option><option value="Flexible">Flexible</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Salary Min (Ksh)</label><input id="job-sal-min" type="number" placeholder="15000"></div>
-        <div class="form-group"><label>Salary Max (Ksh)</label><input id="job-sal-max" type="number" placeholder="25000"></div>
-      </div>
-      <div class="form-group"><label>Description</label><textarea id="job-description" placeholder="Job description and responsibilities…" style="min-height:110px"></textarea></div>
-      <div class="form-group"><label>Requirements</label><textarea id="job-requirements" placeholder="Skills, experience, certifications…" style="min-height:70px"></textarea></div>
-      <div class="form-row">
-        <div class="form-group"><label>Deadline</label><input id="job-deadline" type="date"></div>
-        <div class="form-group"><label>Slots</label><input id="job-slots" type="number" value="1"></div>
-      </div>
-      <div class="form-group" style="display:flex;align-items:center;gap:10px">
-        <input type="checkbox" id="job-featured"> <label style="text-transform:none;letter-spacing:0;margin:0">Mark as Featured</label>
-        <input type="checkbox" id="job-urgent" style="margin-left:16px"> <label style="text-transform:none;letter-spacing:0;margin:0">Urgent</label>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('post-job-modal')">Cancel</button>
-      <button class="btn btn-primary" id="post-job-save-btn" onclick="postJobAsAdmin()"><i class="bi bi-briefcase"></i> Post Job</button>
-    </div>
-  </div>
-</div>
-
-<!-- JOB DETAILS MODAL (description, requirements, Apply on WhatsApp) -->
-<div id="job-view-modal" class="modal-overlay">
-  <div class="modal wide">
-    <div class="modal-header"><h2 id="jv-title"><i class="bi bi-briefcase-fill"></i> Job</h2><button class="modal-close" onclick="closeModal('job-view-modal')">×</button></div>
-    <div class="modal-body" id="jv-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('job-view-modal')">Close</button>
-      <button class="btn btn-primary" id="jv-apply"><i class="bi bi-whatsapp"></i> Apply on WhatsApp</button>
-    </div>
-  </div>
-</div>
-
-<div data-include="modal"></div>
-<div data-include="toast"></div>
-
+<script src="/config.js"></script>
 <script src="js/supabase.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/layout.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/api.js"></script>
-<script src="js/delete-engine.js"></script>
 <script src="js/jobs.js"></script>
 <script>
-(async function(){
-  await initLayout();
-  const admin = await requireAuth();
-  if(!admin) return;
-  await initJobsPage();
-})();
+  // No login required: just load the jobs
+  initJobsPage();
 </script>
 </body>
 </html>

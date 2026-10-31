@@ -33,6 +33,10 @@
     applications: 'applications_count'
   };
 
+  // data-mode="public" on <body> = no login, read-only, active jobs only
+  const PUBLIC = document.body.getAttribute('data-mode') === 'public';
+  const COLS = PUBLIC ? 8 : 9;
+
   let ALL = [];
   let FILTERED = [];
   let page = 1;
@@ -112,10 +116,12 @@
   /* ---------- load + render ---------- */
   async function loadJobs() {
     const tbody = $('jobs-tbody');
-    const { data, error } = await db().from(TABLE).select('*').order(COL.created, { ascending: false });
+    let q = db().from(TABLE).select('*').order(COL.created, { ascending: false });
+    if (PUBLIC) q = q.eq(COL.status, 'active');
+    const { data, error } = await q;
     if (error) {
       console.error(error);
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#dc2626">Could not load jobs: ' + esc(error.message) + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + COLS + '" style="text-align:center;color:#dc2626">Could not load jobs: ' + esc(error.message) + '</td></tr>';
       return;
     }
     ALL = (data || []).map(normalise);
@@ -124,8 +130,8 @@
 
   function filterJobs() {
     const q = ($('jobs-search').value || '').trim().toLowerCase();
-    const st = $('jobs-status-filter').value;
-    const ft = $('jobs-featured-filter').value;
+    const st = $('jobs-status-filter') ? $('jobs-status-filter').value : '';
+    const ft = $('jobs-featured-filter') ? $('jobs-featured-filter').value : '';
     FILTERED = ALL.filter((j) => {
       if (st && j.status !== st) return false;
       if (ft === 'featured' && !j.featured) return false;
@@ -142,7 +148,7 @@
   function render() {
     const tbody = $('jobs-tbody');
     if (!FILTERED.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">No jobs found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + COLS + '" style="text-align:center;padding:24px">No jobs found.</td></tr>';
       $('jobs-pagination').innerHTML = '';
       return;
     }
@@ -161,12 +167,13 @@
         '<td>' + esc(salary(j)) + '</td>' +
         '<td>' + statusBadge(j.status) + '</td>' +
         '<td>' + esc(fmtDate(j.created)) + '</td>' +
-        '<td>' + esc(j.applications) + '</td>' +
+        (PUBLIC ? '' : '<td>' + esc(j.applications) + '</td>') +
         '<td style="white-space:nowrap">' +
           '<button class="btn btn-secondary btn-sm" data-act="view" data-id="' + esc(j.id) + '" title="View description &amp; requirements"><i class="bi bi-eye"></i> View</button> ' +
           '<button class="btn btn-primary btn-sm" data-act="apply" data-id="' + esc(j.id) + '" title="Apply on WhatsApp"><i class="bi bi-whatsapp"></i> Apply</button> ' +
-          '<button class="btn btn-secondary btn-sm" data-act="edit" data-id="' + esc(j.id) + '" title="Edit"><i class="bi bi-pencil"></i></button> ' +
-          '<button class="btn btn-secondary btn-sm" data-act="delete" data-id="' + esc(j.id) + '" title="Delete"><i class="bi bi-trash"></i></button>' +
+          (PUBLIC ? '' :
+            '<button class="btn btn-secondary btn-sm" data-act="edit" data-id="' + esc(j.id) + '" title="Edit"><i class="bi bi-pencil"></i></button> ' +
+            '<button class="btn btn-secondary btn-sm" data-act="delete" data-id="' + esc(j.id) + '" title="Delete"><i class="bi bi-trash"></i></button>') +
         '</td></tr>';
     }).join('');
 
@@ -207,14 +214,16 @@
   }
 
   function doOpen(id) {
-    if (typeof window.openModal === 'function') return window.openModal(id);
-    $(id).classList.add('open', 'active', 'show');
-    $(id).style.display = 'flex';
+    const el = $(id);
+    el.classList.add('open', 'active', 'show');
+    el.style.display = 'flex';
+    el.style.opacity = '1';
+    el.style.visibility = 'visible';
   }
   function doClose(id) {
-    if (typeof window.closeModal === 'function') return window.closeModal(id);
-    $(id).classList.remove('open', 'active', 'show');
-    $(id).style.display = 'none';
+    const el = $(id);
+    el.classList.remove('open', 'active', 'show');
+    el.style.display = 'none';
   }
 
   function row(label, value) {
@@ -362,12 +371,14 @@
       render();
     });
 
-    // make "Post Job" always open a clean form (not leftover edit data)
-    const origOpen = window.openModal;
-    window.openModal = function (id) {
-      if (id === 'post-job-modal' && !$('edit-job-id').dataset.keep) resetForm();
-      return typeof origOpen === 'function' ? origOpen.apply(this, arguments) : doOpen(id);
-    };
+    // admin only: make "Post Job" always open a clean form (not leftover edit data)
+    if ($('post-job-modal')) {
+      const origOpen = window.openModal;
+      window.openModal = function (id) {
+        if (id === 'post-job-modal' && !$('edit-job-id').dataset.keep) resetForm();
+        return typeof origOpen === 'function' ? origOpen.apply(this, arguments) : doOpen(id);
+      };
+    }
 
     await loadJobs();
   }
