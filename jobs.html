@@ -4,35 +4,85 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jobs — SoundsCare</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link rel="stylesheet" href="css/dashboard.css">
-<link rel="stylesheet" href="css/buttons.css">
-<link rel="stylesheet" href="css/modal.css">
-<link rel="stylesheet" href="css/tables.css">
-<link rel="stylesheet" href="css/cards.css">
-<link rel="stylesheet" href="css/forms.css">
-<link rel="stylesheet" href="css/responsive.css">
 <style>
-  /* public page: no sidebar, full width */
-  body { margin: 0; }
-  .pub-wrap { max-width: 1150px; margin: 0 auto; padding: 24px 16px 48px; }
-  .pub-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
-  .pub-head h1 { margin:0; font-size:26px; }
-  .pub-head p { margin:4px 0 0; opacity:.7; font-size:14px; }
-  .pub-brand { font-weight:800; font-size:18px; text-decoration:none; color:inherit; }
+  /* Self-contained styles: this page needs no other CSS files */
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --text: #1b1f2a; --muted: #6b7280;
+    --border: #e5e7eb; --accent: #e8a040; --accent-dark: #c98322; --accent-soft: rgba(232,160,64,.14);
+    --row-hover: #fafafa; --shadow: 0 1px 3px rgba(16,24,40,.08), 0 4px 14px rgba(16,24,40,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141a; --card: #1b1e27; --text: #eceef3; --muted: #9aa1b0;
+      --border: #2b303c; --row-hover: #20242e; --shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  .pub-wrap { max-width: 1150px; margin: 0 auto; padding: 22px 16px 56px; }
+  .pub-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; text-decoration: none; color: var(--accent-dark); }
+  .pub-head { margin-bottom: 20px; }
+  .pub-head h1 { margin: 10px 0 4px; font-size: 28px; font-weight: 800; letter-spacing: -.01em; }
+  .pub-head p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; }
+
+  .search-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .search-input, .filter-select { font: inherit; font-size: 14px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); outline: none; }
+  .search-input { flex: 1 1 240px; min-width: 0; }
+  .search-input:focus, .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 12px 14px; background: var(--bg); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--row-hover); }
+
+  .btn { font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; padding: 10px 16px; font-size: 14px; transition: .15s; }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-secondary { background: var(--card); color: var(--text); border-color: var(--border); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  .pagination { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+
+  /* Details modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(10,12,18,.55); align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: var(--card); color: var(--text); border-radius: 16px; width: 100%; max-width: 560px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .modal.wide { max-width: 680px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .modal-close { background: none; border: none; font-size: 26px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .modal-body { padding: 18px 20px; overflow-y: auto; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+  /* Phones: keep only the important columns */
+  @media (max-width: 720px) {
+    .pub-head h1 { font-size: 23px; }
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(7), td:nth-child(7) { display: none; }
+    td, th { padding: 10px 10px; }
+    .modal-footer .btn { flex: 1 1 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body data-page="jobs" data-mode="public">
 
 <div class="pub-wrap">
   <div class="pub-head">
-    <div>
-      <a class="pub-brand" href="/"><i class="bi bi-heart-fill"></i> SoundsCare</a>
-      <h1>Job Openings</h1>
-      <p>Browse available jobs and apply directly on WhatsApp.</p>
-    </div>
+    <a class="pub-brand" href="/"><i class="bi bi-heart-fill"></i> SoundsCare</a>
+    <h1>Job Openings</h1>
+    <p>Browse available jobs and apply directly on WhatsApp.</p>
   </div>
 
   <div class="section">
@@ -56,9 +106,6 @@
 <script src="/config.js"></script>
 <script src="js/supabase.js"></script>
 <script src="js/jobs.js"></script>
-<script>
-  // No login required: just load the jobs
-  initJobsPage();
-</script>
+<script>initJobsPage();</script>
 </body>
 </html>
