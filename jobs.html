@@ -133,22 +133,22 @@
 
 /* ---------- settings ---------- */
 var WHATSAPP = '254738123425';   // international format, no +
-var TABLE = 'jobs';
+var TABLE = 'job_postings';
 var PAGE_SIZE = 15;
 
 /* The page tries each column name in order, so it works with most table layouts */
 var F = {
-  id:['id','job_id','uuid'], title:['title','job_title','name'], role:['role','job_role','category'],
+  id:['id','job_id','uuid'], title:['title','job_title','name'], role:['job_role','role','category'],
   location:['location','city','town','area'], county:['county','region'],
   jobType:['job_type','type','employment_type'], workType:['work_type','arrangement'],
-  salMin:['salary_min','min_salary','salary_from'], salMax:['salary_max','max_salary','salary_to'], salary:['salary'],
+  salMin:['salary_min','min_salary','salary_from'], salMax:['salary_max','max_salary','salary_to'], salary:['salary_range','salary'], shortCode:['short_code'],
   description:['description','job_description','details'], requirements:['requirements','qualifications'],
   deadline:['deadline','closing_date','expires_at','expiry_date'], slots:['slots','vacancies','positions'],
   featured:['is_featured','featured'], urgent:['is_urgent','urgent'],
   status:['status','state'], employer:['employer_name','company_name','company','employer'],
   created:['created_at','posted_at','inserted_at']
 };
-var LIVE = ['active','open','published','live'];
+var LIVE = ['active'];
 
 var ALL = [], VIEW = [], page = 1, current = null;
 var $ = function(id){ return document.getElementById(id); };
@@ -168,6 +168,7 @@ function normalise(r){
   j.featured = truthy(j.featured);
   j.urgent = truthy(j.urgent);
   j.status = j.status ? String(j.status).toLowerCase() : 'active';
+  j.hidden = truthy(r.is_paused) || truthy(r.is_closed);
   return j;
 }
 function salaryText(j){
@@ -179,7 +180,7 @@ function salaryText(j){
 /* ---------- WhatsApp apply ---------- */
 function waLink(j){
   var where = j.location ? ' (' + j.location + ')' : '';
-  var msg = 'Hi SoundsCare, I would like to apply for the job: ' + (j.title||'') + where + '.' + (j.id!=null ? ' Job ID: ' + j.id : '');
+  var msg = 'Hi SoundsCare, I would like to apply for the job: ' + (j.title||'') + where + '.' + ((j.shortCode||j.id)!=null ? ' Job ID: ' + (j.shortCode||j.id) : '');
   return 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
 }
 function find(id){ for (var i=0;i<ALL.length;i++) if (String(ALL[i].id)===String(id)) return ALL[i]; return null; }
@@ -201,7 +202,7 @@ async function load(){
   var res = await db.from(TABLE).select('*').order('created_at', { ascending:false });
   if (res.error) res = await db.from(TABLE).select('*');   // retry if the order column differs
   if (res.error){ console.error(res.error); showMsg('Could not load jobs: ' + res.error.message, true); return; }
-  ALL = (res.data||[]).map(normalise).filter(function(j){ return LIVE.indexOf(j.status) !== -1; });
+  ALL = (res.data||[]).map(normalise).filter(function(j){ return LIVE.indexOf(j.status) !== -1 && !j.hidden; });
   filter();
 }
 
