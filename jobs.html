@@ -133,6 +133,44 @@
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:2000}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+
+  /* apply flow */
+  .btn-block{width:100%;justify-content:center}
+  .btn-icon{flex:0 0 46px!important;padding-left:0;padding-right:0}
+  .linkbtn{background:none;border:none;color:var(--blue);font-weight:600;font-size:13.5px;cursor:pointer;padding:4px 0;display:inline-flex;align-items:center;gap:6px}
+  .linkbtn:hover{text-decoration:underline}
+  .a-title{margin:10px 0 12px;font-size:18px;font-weight:800}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--surface-2);padding:5px;border-radius:14px;margin-bottom:14px}
+  .seg button{border:none;background:transparent;border-radius:10px;padding:10px 6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .seg button i{font-size:17px}
+  .seg button.on{background:var(--surface);color:var(--blue);box-shadow:0 1px 4px rgba(16,24,40,.12)}
+  .hint{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+  .lab{display:block;font-size:12.5px;font-weight:700;margin:12px 0 5px}
+  .inp{position:relative}
+  .inp i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .inp input,#a_msg{width:100%;padding:11px 13px 11px 38px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:15px;outline:none}
+  #a_msg{padding-left:13px;resize:vertical;min-height:84px}
+  .inp input:focus,#a_msg:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,108,240,.18)}
+  form[data-form] .btn-primary{margin-top:16px}
+  .chk{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;font-size:13.5px;color:var(--muted);cursor:pointer}
+  .chk input{margin-top:3px;width:17px;height:17px;accent-color:var(--blue)}
+  .note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--teal-bg);border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:6px}
+  .note i{color:var(--teal-d);font-size:18px}
+  .note .linkbtn{margin-left:auto}
+  .amsg:empty{display:none}
+  .amsg{margin:12px 0 0;padding:10px 14px;border-radius:12px;font-size:13.5px;font-weight:500;display:flex;gap:10px;align-items:flex-start}
+  .amsg.err{background:var(--bad-bg);color:var(--bad)}
+  .amsg.ok{background:var(--teal-bg);color:var(--teal-d)}
+  .amsg.info{background:var(--blue-bg);color:var(--blue)}
+  .or{display:flex;align-items:center;gap:12px;margin:18px 0 12px;color:var(--muted);font-size:12.5px;font-weight:600}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+  .done{text-align:center;padding:14px 4px}
+  .done .big{font-size:56px;color:var(--ok)}
+  .done h3{margin:8px 0 6px;font-size:21px;font-weight:800}
+  .done p{margin:0 auto 18px;color:var(--muted);max-width:420px}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
   footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:13px;text-align:center}
 
   @media (max-width:640px){
@@ -186,9 +224,10 @@
       <button class="m-x" id="mClose" aria-label="Close"><i class="bi bi-x-lg"></i></button>
     </div>
     <div class="m-body" id="mBody"></div>
-    <div class="m-foot">
+    <div class="m-foot" id="mFoot">
       <button class="btn btn-ghost" id="mClose2"><i class="bi bi-x-circle"></i> Close</button>
-      <button class="btn btn-wa" id="mApply"><i class="bi bi-whatsapp"></i> Apply on WhatsApp</button>
+      <button class="btn btn-wa" id="mApply"><i class="bi bi-whatsapp"></i> WhatsApp</button>
+      <button class="btn btn-primary" id="mOnline"><i class="bi bi-send-fill"></i> Apply online</button>
     </div>
   </div>
 </div>
@@ -271,6 +310,8 @@ function record(j, evt){
 }
 async function load(){
   try { connect(); } catch(e){ fail(e.message); return; }
+  await readSession();
+  try { db.auth.onAuthStateChange(function(ev, sess){ setTimeout(function(){ setUser(sess && sess.user); }, 0); }); } catch(e){}
   var res = await db.from('job_postings').select('*').eq('status','active').order('created_at',{ascending:false});
   if (res.error){ console.error(res.error); fail('Could not load jobs: ' + res.error.message); return; }
   ALL = (res.data||[]).filter(function(j){ return !j.is_paused && !j.is_closed; });
@@ -309,7 +350,7 @@ function filter(){
 
 /* ---------- list ---------- */
 function card(j){
-  var s = st(j), sal = salaryText(j), where = j.location || j.city || '', cl = closes(j.deadline);
+  var applied = isApplied(j.id), s = st(j), sal = salaryText(j), where = j.location || j.city || '', cl = closes(j.deadline);
   var badges = (j.is_featured ? '<span class="badge b-feat"><i class="bi bi-star-fill"></i> Featured</span>' : '') +
                (j.is_urgent ? '<span class="badge b-urg"><i class="bi bi-lightning-charge-fill"></i> Urgent</span>' : '');
   var meta = '';
@@ -332,8 +373,11 @@ function card(j){
       (cl ? '<span><i class="bi bi-calendar-event"></i>' + esc(cl) + '</span>' : '') +
       (j.created_at ? '<span><i class="bi bi-clock-history"></i>' + esc(ago(j.created_at)) + '</span>' : '') + '</div>' +
     '<div class="actions">' +
-      '<button class="btn btn-ghost" data-act="view" data-id="' + esc(j.id) + '"><i class="bi bi-eye"></i> View details</button>' +
-      '<button class="btn btn-wa" data-act="apply" data-id="' + esc(j.id) + '"><i class="bi bi-whatsapp"></i> Apply</button>' +
+      '<button class="btn btn-ghost" data-act="view" data-id="' + esc(j.id) + '"><i class="bi bi-eye"></i> Details</button>' +
+      (applied
+        ? '<button class="btn btn-ghost" disabled><i class="bi bi-check-circle-fill" style="color:var(--ok)"></i> Applied</button>'
+        : '<button class="btn btn-primary" data-act="apply" data-id="' + esc(j.id) + '"><i class="bi bi-send-fill"></i> Apply</button>') +
+      '<button class="btn btn-wa btn-icon" data-act="wa" data-id="' + esc(j.id) + '" title="Apply on WhatsApp" aria-label="Apply on WhatsApp"><i class="bi bi-whatsapp"></i></button>' +
     '</div></article>';
 }
 function render(){
@@ -353,7 +397,7 @@ function waLink(j){
   var msg = 'Hi SoundsCare, I would like to apply for the job: ' + (j.title||'') + where + '.' + ((j.short_code||j.id) ? ' Job ID: ' + (j.short_code||j.id) : '');
   return 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
 }
-function apply(j){
+function whatsapp(j){
   if (!j) return;
   record(j, 'apply_click');
   window.open(waLink(j), '_blank', 'noopener');
@@ -368,12 +412,18 @@ function fillKpis(j){
     '<div class="kpi"><i class="bi bi-people-fill"></i><b>' + s.applications + '</b><small>Applications</small></div>' +
     '<div class="kpi"><i class="bi bi-whatsapp"></i><b>' + s.apply_clicks + '</b><small>WhatsApp enquiries</small></div>';
 }
-function view(id){
-  var j = find(id); if (!j) return;
+function shell(j){
   current = j;
   $('mTitle').textContent = j.title || 'Job';
   $('mEmp').innerHTML = '<i class="bi bi-building"></i>' + esc(j.company_name||'SoundsCare') + (j.company_verified?' <i class="bi bi-patch-check-fill" title="Verified"></i>':'');
   $('mAvatar').innerHTML = '<i class="bi bi-' + (j.is_featured?'star-fill':'briefcase-fill') + '"></i>';
+  $('overlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function setMode(m){ $('mFoot').style.display = (m === 'details') ? 'flex' : 'none'; }
+function view(id, noRecord){
+  var j = find(id); if (!j) return;
+  shell(j); setMode('details');
   var cl = closes(j.deadline);
   $('mBody').innerHTML =
     '<div class="kpis" id="kpis"></div>' +
@@ -392,12 +442,176 @@ function view(id){
     '<div class="sec"><h3><i class="bi bi-check2-square"></i> Requirements</h3>' +
       (j.requirements ? '<p>' + nl2br(j.requirements) + '</p>' : '<p class="none">No requirements added.</p>') + '</div>';
   fillKpis(j);
-  $('overlay').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
   $('mBody').scrollTop = 0;
-  record(j, 'view');
+  $('mOnline').style.display = isApplied(j.id) ? 'none' : '';
+  if (!noRecord) record(j, 'view');
 }
-function closeModal(){ $('overlay').style.display = 'none'; document.body.style.overflow = ''; current = null; }
+function closeModal(){ $('overlay').style.display = 'none'; document.body.style.overflow = ''; current = null; setMode('details'); }
+
+/* ---------- online apply (with or without an account) ---------- */
+var TERMS_URL = '';                   // optional: link to your terms page, e.g. '/terms.html'
+var auth = { user:null, email:'' };   // signed-in user (if any)
+var pref = { name:'', phone:'', email:'' };   // values used to pre-fill the forms
+var tab = 'guest';
+var APPLIED = [];
+try { APPLIED = JSON.parse(localStorage.getItem('sc_applied') || '[]'); } catch(e){}
+function isApplied(id){ return APPLIED.indexOf(String(id)) !== -1; }
+function markApplied(id){
+  id = String(id); if (APPLIED.indexOf(id) === -1) APPLIED.push(id);
+  try { localStorage.setItem('sc_applied', JSON.stringify(APPLIED)); } catch(e){}
+}
+
+async function readSession(){
+  try { var r = await db.auth.getSession(); await setUser(r && r.data && r.data.session && r.data.session.user); } catch(e){}
+}
+async function setUser(u){
+  if (u && !u.is_anonymous){
+    var m = u.user_metadata || {};
+    auth = { user:u, email:u.email || '' };
+    pref = { name:m.full_name || '', phone:m.phone || '', email:u.email || '' };
+    try {
+      var r = await db.from('users').select('full_name,phone').eq('id', u.id).maybeSingle();
+      if (r && r.data){ if (r.data.full_name) pref.name = r.data.full_name; if (r.data.phone) pref.phone = r.data.phone; }
+    } catch(e){}
+  } else {
+    auth = { user:null, email:'' };
+  }
+}
+
+function fld(id, label, type, icon, val, ac, ph){
+  return '<label class="lab" for="' + id + '">' + label + '</label><div class="inp"><i class="bi bi-' + icon + '"></i>' +
+    '<input id="' + id + '" type="' + type + '" value="' + esc(val || '') + '" autocomplete="' + (ac || 'off') + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + '></div>';
+}
+function applyForm(){
+  return '<form data-form="apply" novalidate>' +
+    fld('a_name', 'Full name *', 'text', 'person', pref.name, 'name') +
+    fld('a_phone', 'Phone / WhatsApp number *', 'tel', 'telephone', pref.phone, 'tel', 'e.g. 0712 345 678') +
+    fld('a_email', 'Email (optional)', 'email', 'envelope', pref.email, 'email') +
+    '<label class="lab" for="a_msg">Message (optional)</label><textarea id="a_msg" maxlength="1000" placeholder="Tell the employer a little about yourself and your experience…"></textarea>' +
+    '<input type="text" id="a_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0">' +
+    '<button class="btn btn-primary btn-block" type="submit" id="aBtn"><i class="bi bi-send-fill"></i> Submit application</button></form>';
+}
+function signinForm(){
+  return '<form data-form="signin" novalidate>' +
+    fld('s_email', 'Email', 'email', 'envelope', pref.email, 'email') +
+    fld('s_pass', 'Password', 'password', 'lock', '', 'current-password') +
+    '<button class="btn btn-primary btn-block" type="submit" id="aBtn"><i class="bi bi-box-arrow-in-right"></i> Sign in &amp; continue</button>' +
+    '<div style="text-align:center;margin-top:10px"><button type="button" class="linkbtn" data-do="forgot">Forgot password?</button></div></form>';
+}
+function signupForm(){
+  return '<form data-form="signup" novalidate>' +
+    fld('u_name', 'Full name', 'text', 'person', pref.name, 'name') +
+    fld('u_phone', 'Phone number', 'tel', 'telephone', pref.phone, 'tel', 'e.g. 0712 345 678') +
+    fld('u_email', 'Email', 'email', 'envelope', pref.email, 'email') +
+    fld('u_pass', 'Password (at least 8 characters)', 'password', 'lock', '', 'new-password') +
+    '<label class="chk"><input type="checkbox" id="u_terms"><span>I agree to the SoundsCare terms and privacy policy' +
+      (TERMS_URL ? ' (<a href="' + esc(TERMS_URL) + '" target="_blank" rel="noopener">read</a>)' : '') + '.</span></label>' +
+    '<button class="btn btn-primary btn-block" type="submit" id="aBtn"><i class="bi bi-person-plus-fill"></i> Create account &amp; continue</button></form>';
+}
+function segBtn(t, icon, label){ return '<button type="button" data-tab="' + t + '" class="' + (tab === t ? 'on' : '') + '"><i class="bi bi-' + icon + '"></i>' + label + '</button>'; }
+
+function showApply(msg, type){
+  var j = current; if (!j) return;
+  shell(j); setMode('apply');
+  var h = '<button class="linkbtn" data-do="back"><i class="bi bi-arrow-left"></i> Job details</button>' +
+          '<h3 class="a-title">Apply for this job</h3>';
+  if (auth.user){
+    h += '<div class="note"><i class="bi bi-person-check-fill"></i><span>Signed in as <b>' + esc(auth.email) + '</b></span>' +
+         '<button class="linkbtn" data-do="signout">Sign out</button></div><div id="aMsg" class="amsg"></div>' + applyForm();
+  } else {
+    h += '<div class="seg">' + segBtn('guest', 'person-fill', 'Without account') + segBtn('signin', 'box-arrow-in-right', 'Sign in') + segBtn('signup', 'person-plus-fill', 'Create account') + '</div>' +
+         '<div id="aMsg" class="amsg"></div>';
+    if (tab === 'guest') h += '<p class="hint">No account needed. We will contact you on the number you give.</p>' + applyForm();
+    else if (tab === 'signin') h += signinForm();
+    else h += signupForm();
+  }
+  h += '<div class="or"><span>or</span></div>' +
+       '<button class="btn btn-wa btn-block" data-do="wa"><i class="bi bi-whatsapp"></i> Apply on WhatsApp instead</button>';
+  $('mBody').innerHTML = h;
+  $('mBody').scrollTop = 0;
+  if (msg) amsg(msg, type);
+}
+function amsg(text, type){
+  var el = $('aMsg'); if (!el) return;
+  var icon = type === 'ok' ? 'check-circle-fill' : type === 'info' ? 'info-circle-fill' : 'exclamation-circle-fill';
+  el.className = 'amsg ' + (type || 'err');
+  el.innerHTML = text ? '<i class="bi bi-' + icon + '"></i><span>' + esc(text) + '</span>' : '';
+}
+function busy(on, label){
+  var b = $('aBtn'); if (!b) return;
+  if (on){ b.disabled = true; b._h = b.innerHTML; b.innerHTML = '<span class="spin"></span> ' + (label || 'Please wait…'); }
+  else { b.disabled = false; if (b._h) b.innerHTML = b._h; }
+}
+var emailOk = function(v){ return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); };
+var digits = function(v){ return String(v||'').replace(/\D/g,''); };
+
+async function doSignin(){
+  var email = $('s_email').value.trim(), pass = $('s_pass').value;
+  if (!emailOk(email) || !pass) return amsg('Enter your email and password.', 'err');
+  busy(true, 'Signing in…');
+  var r = await db.auth.signInWithPassword({ email:email, password:pass });
+  if (r.error){ busy(false); return amsg(r.error.message, 'err'); }
+  await setUser(r.data.user);
+  showApply('Signed in. Check your details and submit.', 'ok');
+}
+async function doSignup(){
+  var name = $('u_name').value.trim(), phone = $('u_phone').value.trim(), email = $('u_email').value.trim(), pass = $('u_pass').value;
+  if (name.length < 2) return amsg('Please enter your full name.', 'err');
+  if (digits(phone).length < 9) return amsg('Enter a valid phone number.', 'err');
+  if (!emailOk(email)) return amsg('Enter a valid email address.', 'err');
+  if (pass.length < 8) return amsg('Password must be at least 8 characters.', 'err');
+  if (!$('u_terms').checked) return amsg('Please accept the terms to create an account.', 'err');
+  pref = { name:name, phone:phone, email:email };
+  busy(true, 'Creating account…');
+  var r = await db.auth.signUp({ email:email, password:pass, options:{
+    data:{ full_name:name, phone:phone, terms_accepted:true, receive_updates:false },
+    emailRedirectTo: location.origin + location.pathname } });
+  if (r.error){ busy(false); return amsg(r.error.message, 'err'); }
+  if (r.data && r.data.user && r.data.user.identities && r.data.user.identities.length === 0){
+    tab = 'signin'; showApply('This email already has an account. Please sign in.', 'info'); return;
+  }
+  if (r.data && r.data.session){
+    await setUser(r.data.session.user);
+    showApply('Account created. Check your details and submit.', 'ok');
+  } else {
+    tab = 'guest';
+    showApply('Account created. We sent a confirmation link to ' + email + '. Confirm it later, and apply now without waiting.', 'ok');
+  }
+}
+var REASONS = {
+  invalid_name: 'Please enter your full name.',
+  invalid_phone: 'Enter a valid phone number, for example 0712 345 678.',
+  invalid_email: 'That email address does not look right.',
+  duplicate: 'You have already applied for this job.',
+  job_unavailable: 'Sorry, this job is no longer open.',
+  too_many: 'You have sent too many applications today. Please try again tomorrow.',
+  busy: 'We are receiving a lot of applications right now. Please try again shortly or use WhatsApp.'
+};
+async function submitApply(){
+  if ($('a_hp') && $('a_hp').value){ return showDone(''); }      // bots fill the hidden field
+  var name = $('a_name').value.trim(), phone = $('a_phone').value.trim(), email = $('a_email').value.trim(), msg = $('a_msg').value.trim();
+  if (name.length < 2) return amsg('Please enter your full name.', 'err');
+  if (digits(phone).length < 9) return amsg('Enter a valid phone number, for example 0712 345 678.', 'err');
+  if (email && !emailOk(email)) return amsg('That email address does not look right.', 'err');
+  busy(true, 'Sending…');
+  var r = await db.rpc('submit_job_application', { p_job_id:current.id, p_name:name, p_phone:phone, p_email:email || null, p_message:msg || null });
+  if (r.error){ busy(false); console.error(r.error); return amsg('We could not send your application. Please try again or apply on WhatsApp.', 'err'); }
+  var res = r.data || {};
+  if (!res.ok){
+    busy(false);
+    if (res.reason === 'duplicate'){ markApplied(current.id); render(); }
+    return amsg(REASONS[res.reason] || 'We could not send your application. Please try again.', 'err');
+  }
+  markApplied(current.id);
+  await loadStats(); render();
+  showDone(phone);
+}
+function showDone(phone){
+  setMode('done');
+  $('mBody').innerHTML = '<div class="done"><i class="bi bi-check-circle-fill big"></i><h3>Application sent!</h3>' +
+    '<p>Thank you. ' + (phone ? 'We will contact you on <b>' + esc(phone) + '</b> if you are shortlisted.' : 'We will be in touch soon.') + '</p>' +
+    '<button class="btn btn-primary" data-do="close"><i class="bi bi-check2"></i> Done</button></div>';
+}
 
 /* ---------- events ---------- */
 $('q').addEventListener('input', filter);
@@ -410,13 +624,37 @@ $('chips').addEventListener('click', function(e){
 $('grid').addEventListener('click', function(e){
   var el = e.target.closest('[data-act]'); if (!el) return;
   var j = find(el.getAttribute('data-id')); if (!j) return;
-  if (el.getAttribute('data-act') === 'view') view(j.id); else apply(j);
+  var a = el.getAttribute('data-act');
+  if (a === 'view') view(j.id);
+  else if (a === 'apply'){ shell(j); showApply(); }
+  else if (a === 'wa') whatsapp(j);
+});
+$('mBody').addEventListener('click', async function(e){
+  var t = e.target.closest('[data-tab],[data-do]'); if (!t) return;
+  if (t.hasAttribute('data-tab')){ tab = t.getAttribute('data-tab'); showApply(); return; }
+  var d = t.getAttribute('data-do');
+  if (d === 'back') view(current.id, true);
+  else if (d === 'close') closeModal();
+  else if (d === 'wa') whatsapp(current);
+  else if (d === 'signout'){ try { await db.auth.signOut(); } catch(err){} await setUser(null); showApply('You have signed out.', 'info'); }
+  else if (d === 'forgot'){
+    var em = ($('s_email').value || '').trim();
+    if (!emailOk(em)) return amsg('Type your email above first, then tap "Forgot password?".', 'err');
+    var r = await db.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname });
+    amsg(r.error ? r.error.message : 'If that email has an account, a password reset link is on its way.', r.error ? 'err' : 'ok');
+  }
+});
+$('mBody').addEventListener('submit', function(e){
+  e.preventDefault();
+  var f = e.target.getAttribute('data-form');
+  if (f === 'apply') submitApply(); else if (f === 'signin') doSignin(); else if (f === 'signup') doSignup();
 });
 $('moreBtn').addEventListener('click', function(){ shown += PAGE; render(); });
 $('mClose').addEventListener('click', closeModal);
 $('mClose2').addEventListener('click', closeModal);
 $('overlay').addEventListener('click', function(e){ if (e.target === this) closeModal(); });
-$('mApply').addEventListener('click', function(){ apply(current); });
+$('mApply').addEventListener('click', function(){ whatsapp(current); });
+$('mOnline').addEventListener('click', function(){ showApply(); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
 
 load();
