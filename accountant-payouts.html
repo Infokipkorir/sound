@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Payouts Desk | SoundsCare</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--navy:#132038;--navy-mid:#1c2f4f;--gold:#D9A441;--gold-soft:#f4e2b8;--green:#1F9D63;--green-soft:#e5f6ed;--red:#C24B3F;--red-soft:#fbe8e5;--sky:#0369a1;--sky-soft:#e0f2fe;--paper:#F7F5F0;--card:#fff;--ink:#161B22;--soft:#5C6470;--line:#E7E3DA}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;min-height:100vh}
+h1,h2,h3,.sora{font-family:Sora,sans-serif}
+button{font-family:inherit;cursor:pointer}
+.topbar{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:30;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:Sora;font-weight:700}
+.mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#b9822c);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:800}
+.topbar .sp{flex:1}
+.who{font-size:12.5px;opacity:.85}
+.tb-btn{background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:600;display:inline-flex;gap:6px;align-items:center;text-decoration:none}
+.tb-btn:hover{background:rgba(255,255,255,.2)}
+.tabs{display:flex;gap:4px;padding:0 20px;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:none;background:none;padding:14px 16px;font-weight:600;color:var(--soft);border-bottom:2px solid transparent;white-space:nowrap;display:flex;gap:7px;align-items:center}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.pill{background:var(--red);color:#fff;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px}
+main{max-width:1250px;margin:0 auto;padding:20px}
+.view{display:none}.view.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:14px;padding:14px 16px}
+.stat label{font-size:11px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+.stat div{font-family:Sora;font-size:22px;font-weight:700;margin-top:6px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:18px}
+.bar{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.bar input,.bar select{padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.bar input{flex:1;min-width:180px}
+.seg{display:flex;background:var(--paper);border-radius:10px;padding:3px}
+.seg button{border:none;background:none;padding:7px 14px;border-radius:8px;font-weight:600;font-size:13px;color:var(--soft)}
+.seg button.on{background:var(--card);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);background:var(--paper);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.sub{font-size:11.5px;color:var(--soft);margin-top:2px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:capitalize}
+.c-pending{background:var(--gold-soft);color:#8a6417}.c-approved,.c-processing{background:var(--sky-soft);color:var(--sky)}
+.c-paid,.c-completed,.c-success{background:var(--green-soft);color:var(--green)}.c-rejected,.c-failed{background:var(--red-soft);color:var(--red)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:none;border-radius:9px;padding:8px 12px;font-weight:600;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.b-pay{background:var(--green);color:#fff}.b-pay:hover{background:#17804f}
+.b-ok{background:var(--navy);color:#fff}.b-no{background:var(--red-soft);color:var(--red);border:1px solid #e8b6ae}
+.b-ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.empty{text-align:center;padding:36px;color:var(--soft)}
+/* chat */
+.chat{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 210px);min-height:420px}
+.people{border-right:1px solid var(--line);overflow-y:auto}
+.person{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:10px;align-items:center}
+.person:hover,.person.on{background:var(--green-soft)}
+.av{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:#8a6417;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pn{font-weight:600;font-size:13px}.pr{font-size:11px;color:var(--soft)}
+.thread{display:flex;flex-direction:column;min-width:0}
+.th-head{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:700}
+.msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.m{max-width:75%;padding:9px 13px;border-radius:12px;background:#fff;border:1px solid var(--line);align-self:flex-start;word-break:break-word}
+.m.me{align-self:flex-end;background:var(--navy);color:#fff;border-color:var(--navy)}
+.m small{display:block;font-size:10.5px;opacity:.65;margin-top:3px}
+.m .who2{font-size:11px;font-weight:700;margin-bottom:2px;opacity:.8}
+.compose{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.compose input{flex:1;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font:inherit}
+@media(max-width:760px){.chat{grid-template-columns:1fr;height:auto}.people{max-height:150px;border-right:none;border-bottom:1px solid var(--line)}.thread{height:60vh}}
+/* modal + toast + gate */
+.mback{position:fixed;inset:0;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;z-index:90;padding:16px}.mback.on{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:430px;width:100%}
+.modal h3{margin-bottom:8px}.modal p{color:var(--soft);line-height:1.5;margin-bottom:14px}
+.modal textarea,.modal input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font:inherit;margin-bottom:14px}
+.big{font-family:Sora;font-size:26px;font-weight:800;text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:6px}
+.mrow{display:flex;gap:8px;justify-content:flex-end}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;transition:.2s;z-index:100;max-width:90%;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#gate{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.gc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px;max-width:380px;text-align:center}
+.gc p{color:var(--soft);margin:8px 0 16px;line-height:1.5}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:s .7s linear infinite;margin:0 auto 10px}
+@keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="gate"><div class="gc"><div class="spin"></div><h3>Checking access…</h3></div></div>
+
+<div class="topbar">
+  <div class="brand"><div class="mark">SC</div> Payouts Desk</div>
+  <div class="sp"></div>
+  <span class="who" id="who">—</span>
+  <button class="tb-btn" onclick="loadAll()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+  <a class="tb-btn" href="accountant-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <button class="tb-btn" onclick="logout()"><i class="bi bi-box-arrow-right"></i></button>
+</div>
+<div class="tabs">
+  <button class="tab on" data-t="queue"><i class="bi bi-send-check"></i> Payout queue <span class="pill" id="pQ" style="display:none">0</span></button>
+  <button class="tab" data-t="history"><i class="bi bi-receipt"></i> M-Pesa history</button>
+  <button class="tab" data-t="chat"><i class="bi bi-chat-dots"></i> Staff messages <span class="pill" id="pM" style="display:none">0</span></button>
+</div>
+
+<main>
+<!-- QUEUE -->
+<section class="view on" id="v-queue">
+  <div class="stats">
+    <div class="stat"><label>Awaiting action</label><div id="sPend">0</div></div>
+    <div class="stat"><label>Ready to pay</label><div id="sReady">KES 0</div></div>
+    <div class="stat"><label>Paid today</label><div id="sToday">KES 0</div></div>
+    <div class="stat"><label>Failed M-Pesa</label><div id="sFail">0</div></div>
+  </div>
+  <div class="panel">
+    <div class="bar">
+      <div class="seg" id="kindSeg">
+        <button data-k="agent" class="on">Agents</button><button data-k="worker">Workers</button><button data-k="tasker">Taskers</button>
+      </div>
+      <select id="stF"><option value="open">Needs action</option><option value="all">All</option><option value="paid">Paid</option><option value="rejected">Rejected</option></select>
+      <input id="q" placeholder="Search name, phone, reference…">
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Recipient</th><th>Amount</th><th>M-Pesa number</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
+      <tbody id="qBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- HISTORY -->
+<section class="view" id="v-history">
+  <div class="panel"><div class="tw"><table>
+    <thead><tr><th>When</th><th>Type</th><th>Recipient</th><th>Amount</th><th>Phone</th><th>Status</th><th>M-Pesa receipt</th><th>Result</th></tr></thead>
+    <tbody id="hBody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+  </table></div></div>
+</section>
+
+<!-- CHAT -->
+<section class="view" id="v-chat">
+  <div class="panel"><div class="chat">
+    <div class="people" id="people"></div>
+    <div class="thread">
+      <div class="th-head" id="thHead">All staff</div>
+      <div class="msgs" id="msgs"></div>
+      <div class="compose"><input id="msgIn" placeholder="Write a message…" maxlength="2000"><button class="btn b-ok" id="sendBtn"><i class="bi bi-send"></i></button></div>
+    </div>
+  </div></div>
+</section>
+</main>
+
+<!-- confirm pay -->
+<div class="mback" id="payM"><div class="modal">
+  <h3 class="sora">Send real M-Pesa payment?</h3>
+  <p id="payTxt"></p>
+  <div class="big" id="payAmt"></div>
+  <p style="text-align:center;font-weight:600" id="payTo"></p>
+  <div class="mrow"><button class="btn b-ghost" onclick="closeM('payM')">Cancel</button><button class="btn b-pay" id="payGo"><i class="bi bi-phone"></i> Send money</button></div>
+</div></div>
+<!-- reject -->
+<div class="mback" id="rejM"><div class="modal">
+  <h3 class="sora">Reject withdrawal</h3>
+  <p>The recipient will see this reason, and the amount is returned to their wallet.</p>
+  <textarea id="rejWhy" rows="3" placeholder="Reason…"></textarea>
+  <div class="mrow"><button class="btn b-ghost" onclick="closeM('rejM')">Cancel</button><button class="btn b-no" id="rejGo">Reject</button></div>
+</div></div>
+<!-- manual paid -->
+<div class="mback" id="manM"><div class="modal">
+  <h3 class="sora">Mark paid manually</h3>
+  <p>Use only if you already sent this outside the system. Enter the M-Pesa receipt code (8–12 letters/numbers).</p>
+  <input id="manCode" placeholder="e.g. SGH7K2L9QX" style="text-transform:uppercase">
+  <div class="mrow"><button class="btn b-ghost" onclick="closeM('manM')">Cancel</button><button class="btn b-ok" id="manGo">Mark paid</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script>
+const C=window.SOUNDS_CONFIG;
+if(!C||!C.supabaseUrl){document.body.innerHTML='<p style="padding:40px;text-align:center">config.js not found next to this page.</p>';throw 0}
+const sb=supabase.createClient(C.supabaseUrl,C.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,storage:window.sessionStorage}});
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes=n=>'KES '+Number(n||0).toLocaleString('en-KE',{maximumFractionDigits:0});
+const fdt=d=>d?new Date(d).toLocaleString('en-KE',{timeZone:'Africa/Nairobi',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false}):'—';
+const ini=n=>(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),3500)}
+function openM(id){$(id).classList.add('on')}function closeM(id){$(id).classList.remove('on')}
+
+let me=null,kind='agent',DATA={agent:[],worker:[],tasker:[]},agents=[],users=[],b2c=[],staff=[],msgs=[],chatWith=null,unread=0;
+// per-kind field mapping
+const K={
+  agent:{table:'agent_withdrawals',phone:w=>w.phone_number,amt:w=>w.net_amount??w.amount,name:w=>(agents.find(a=>a.id===w.agent_id)||{}).full_name||'Agent',ref:w=>w.system_reference,
+    st:{approve:'approved',paid:'paid',reject:'rejected',open:['pending','approved']},noteCol:'admin_notes'},
+  worker:{table:'worker_withdrawals',phone:w=>w.phone_number,amt:w=>w.net_amount??w.amount,name:w=>{const u=users.find(u=>u.id===w.worker_id);return u?(u.full_name||u.email):'Worker'},ref:w=>'',
+    st:{approve:'approved',paid:'paid',reject:'rejected',open:['pending','approved']},noteCol:'admin_notes'},
+  tasker:{table:'task_withdrawal_requests',phone:w=>w.destination,amt:w=>w.amount,name:w=>{const u=users.find(u=>u.id===w.user_id);return u?(u.full_name||u.email):'Tasker'},ref:w=>'',
+    st:{approve:'processing',paid:'completed',reject:'rejected',open:['pending','processing']},noteCol:'admin_note'}
+};
+const isPaidSt=s=>s==='paid'||s==='completed';
+
+/* ---------- access gate (same rules as accountant-dashboard) ---------- */
+async function gate(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return deny('Sign in required','Please sign in from the admin login page.');
+  const {data:a,error}=await sb.from('admin_users').select('id,user_id,username,email,role,access_level,status,allowed_pages,must_change_password,pin_hash').eq('user_id',session.user.id).maybeSingle();
+  if(error)return deny('Could not verify access','Please refresh and try again.');
+  if(!a||a.status!=='Active')return deny('Not an active admin','Contact the Super Admin.');
+  if(a.must_change_password||!a.pin_hash)return location.replace('admin-login.html');
+  const ok=a.access_level==='super_admin'||a.role==='Super Admin'||(a.allowed_pages||[]).some(p=>['accountant-dashboard','cashier'].includes(p));
+  if(!ok)return deny('No access','Your role is not permitted to open the Payouts Desk.');
+  return a;
+}
+function deny(t,p){$('gate').innerHTML=`<div class="gc"><h3>${esc(t)}</h3><p>${esc(p)}</p><a class="btn b-ok" href="admin-login.html" style="text-decoration:none">Back to sign in</a></div>`;return null}
+async function logout(){try{await sb.auth.signOut()}catch(e){}location.href='admin-login.html'}
+
+/* ---------- data ---------- */
+async function loadAll(){
+  const [ag,wk,tk,a,u,b,s]=await Promise.all([
+    sb.from('agent_withdrawals').select('*').order('requested_at',{ascending:false}).limit(300),
+    sb.from('worker_withdrawals').select('*').order('requested_at',{ascending:false}).limit(300),
+    sb.from('task_withdrawal_requests').select('*').order('requested_at',{ascending:false}).limit(300),
+    sb.from('agents').select('id,full_name'),
+    sb.from('users').select('id,full_name,email'),
+    sb.from('mpesa_b2c_requests').select('*').order('created_at',{ascending:false}).limit(300),
+    sb.from('admin_users').select('id,username,role,status').eq('status','Active')]);
+  DATA.agent=ag.data||[];DATA.worker=wk.data||[];DATA.tasker=tk.data||[];
+  agents=a.data||[];users=u.data||[];b2c=b.data||[];staff=s.data||[];
+  [ag,wk,tk,b].forEach(r=>{if(r.error)console.error(r.error)});
+  if(b.error)toast('Run migration_mpesa_payouts.sql first (M-Pesa log table missing)');
+  renderQueue();renderHistory();renderPeople();
+}
+function b2cFor(k,id){return b2c.filter(r=>r.kind===k&&r.withdrawal_id===id)[0]}
+
+/* ---------- queue ---------- */
+function renderQueue(){
+  const cfg=K[kind],q=$('q').value.toLowerCase(),sf=$('stF').value;
+  let list=DATA[kind].filter(w=>{
+    if(sf==='open'&&!cfg.st.open.includes(w.status))return false;
+    if(sf==='paid'&&!isPaidSt(w.status))return false;
+    if(sf==='rejected'&&w.status!=='rejected')return false;
+    return !q||[cfg.name(w),cfg.phone(w),cfg.ref(w)].join(' ').toLowerCase().includes(q)});
+  $('qBody').innerHTML=list.map(w=>{
+    const r=b2cFor(kind,w.id),inflight=r&&r.status==='pending',amt=cfg.amt(w);
+    let a='';
+    if(w.status==='pending'&&kind!=='tasker'||w.status==='pending'&&kind==='tasker')a+=`<button class="btn b-ok" onclick="approve('${w.id}')"><i class="bi bi-check-lg"></i> Approve</button>`;
+    if(cfg.st.open.includes(w.status)){
+      a+=`<button class="btn b-pay" ${inflight?'disabled':''} onclick="askPay('${w.id}')"><i class="bi bi-phone"></i> ${inflight?'Awaiting M-Pesa…':'Pay via M-Pesa'}</button>`;
+      a+=`<button class="btn b-no" ${inflight?'disabled':''} onclick="askReject('${w.id}')"><i class="bi bi-x-lg"></i> Reject</button>`;
+      a+=`<button class="btn b-ghost" ${inflight?'disabled':''} onclick="askManual('${w.id}')" title="Already paid outside the system">Manual</button>`;
+    }
+    const failed=r&&r.status==='failed'&&cfg.st.open.includes(w.status)?`<div class="sub" style="color:var(--red)">Last M-Pesa try failed: ${esc(r.result_desc||'')}</div>`:'';
+    return `<tr><td><b>${esc(cfg.name(w))}</b><div class="sub">${esc(cfg.ref(w)||'')}</div></td>
+      <td><b>${kes(amt)}</b>${Number(w.amount)!==Number(amt)?`<div class="sub">requested ${kes(w.amount)}</div>`:''}</td>
+      <td>${esc(cfg.phone(w)||'—')}</td>
+      <td><span class="chip c-${w.status}">${w.status}</span>${failed}</td>
+      <td>${fdt(w.requested_at)}</td><td><div class="acts">${a||'—'}</div></td></tr>`}).join('')
+    ||'<tr><td colspan="6" class="empty">Nothing here.</td></tr>';
+  // stats (all kinds)
+  let pend=0,ready=0,today=0,fail=0;const t0=new Date().toDateString();
+  for(const k of ['agent','worker','tasker'])for(const w of DATA[k]){
+    if(K[k].st.open.includes(w.status)){pend++;ready+=Number(K[k].amt(w))}
+    if(isPaidSt(w.status)&&w.processed_at&&new Date(w.processed_at).toDateString()===t0)today+=Number(K[k].amt(w))}
+  fail=b2c.filter(r=>r.status==='failed'&&new Date(r.created_at).toDateString()===t0).length;
+  $('sPend').textContent=pend;$('sReady').textContent=kes(ready);$('sToday').textContent=kes(today);$('sFail').textContent=fail;
+  const p=$('pQ');p.style.display=pend?'inline':'none';p.textContent=pend;
+}
+$('q').oninput=renderQueue;$('stF').onchange=renderQueue;
+$('kindSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;kind=b.dataset.k;[...$('kindSeg').children].forEach(x=>x.classList.toggle('on',x===b));renderQueue()};
+
+let cur=null;
+const find=id=>DATA[kind].find(w=>w.id===id);
+async function setStatus(w,status,note){
+  const cfg=K[kind],upd={status,processed_at:new Date().toISOString(),processed_by:me.user_id};
+  if(note)upd[cfg.noteCol]=note;
+  if(kind==='tasker'){ // uses the same RPC the admin dashboard uses (handles wallet refunds)
+    const map={processing:'processing',rejected:'rejected',completed:'completed'};
+    const {data,error}=await sb.rpc('admin_settle_task_withdrawal',{p_request_id:w.id,p_status:map[status],p_admin_note:note||null});
+    if(error)return error.message; if(data&&data.success===false)return data.error; return null}
+  const {data,error}=await sb.from(cfg.table).update(upd).eq('id',w.id).select('id');
+  if(error)return error.message;
+  if(!data||!data.length)return 'Database refused the change (row-level security).';
+  return null}
+async function notifyRecipient(w,title,message){
+  let uid=null;
+  if(kind==='agent')uid=(await sb.from('agents').select('user_id').eq('id',w.agent_id).maybeSingle()).data?.user_id;
+  else uid=kind==='worker'?w.worker_id:w.user_id;
+  if(uid)await sb.from('notifications').insert({user_id:uid,type:'info',title,message,source_type:'admin'}).then(()=>{},()=>{})}
+
+async function approve(id){
+  const w=find(id),err=await setStatus(w,K[kind].st.approve);
+  if(err)return toast(err);toast('Approved');await loadAll()}
+function askPay(id){
+  cur=find(id);const cfg=K[kind];
+  $('payTxt').textContent=`This sends real money from the business M-Pesa account to ${cfg.name(cur)}. It cannot be reversed from here.`;
+  $('payAmt').textContent=kes(cfg.amt(cur));$('payTo').textContent='to '+cfg.phone(cur);openM('payM')}
+$('payGo').onclick=async()=>{
+  const b=$('payGo');b.disabled=true;b.innerHTML='<i class="bi bi-hourglass-split"></i> Sending…';
+  try{
+    const {data,error}=await sb.functions.invoke('mpesa-b2c',{body:{kind,id:cur.id}});
+    if(error){let m=error.message;try{m=(await error.context.json()).error||m}catch(e){}toast(m)}
+    else if(data&&data.error)toast(data.error);
+    else{toast('Sent to M-Pesa. Waiting for confirmation…');notifyRecipient(cur,'Withdrawal on its way','Your withdrawal has been sent to M-Pesa.')}
+  }catch(e){toast(e.message)}
+  b.disabled=false;b.innerHTML='<i class="bi bi-phone"></i> Send money';closeM('payM');await loadAll()};
+function askReject(id){cur=find(id);$('rejWhy').value='';openM('rejM')}
+$('rejGo').onclick=async()=>{
+  const why=$('rejWhy').value.trim();if(!why)return toast('A reason is required');
+  const err=await setStatus(cur,'rejected',why);if(err)return toast(err);
+  notifyRecipient(cur,'Withdrawal rejected','Your withdrawal was rejected: '+why+'. The amount has been returned to your wallet.');
+  closeM('rejM');toast('Rejected');await loadAll()};
+function askManual(id){cur=find(id);$('manCode').value='';openM('manM')}
+$('manGo').onclick=async()=>{
+  const code=$('manCode').value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{8,12}$/.test(code))return toast('Enter a valid M-Pesa receipt code');
+  if(b2cFor(kind,cur.id)?.status==='pending')return toast('An M-Pesa payment is still in progress');
+  let err;
+  if(kind==='agent'){const {data,error}=await sb.from('agent_withdrawals').update({status:'paid',mpesa_receipt_number:code,admin_notes:'Paid manually',processed_at:new Date().toISOString(),processed_by:me.user_id}).eq('id',cur.id).select('id');err=error?error.message:(!data||!data.length?'Blocked by row-level security':null)}
+  else err=await setStatus(cur,K[kind].st.paid,'Manual M-Pesa '+code);
+  if(err)return toast(err);notifyRecipient(cur,'Withdrawal paid','Your withdrawal has been paid. M-Pesa receipt: '+code);
+  closeM('manM');toast('Marked as paid');await loadAll()};
+
+/* ---------- history ---------- */
+function renderHistory(){
+  $('hBody').innerHTML=b2c.map(r=>{
+    const arr=DATA[r.kind==='tasker'?'tasker':r.kind],w=arr.find(x=>x.id===r.withdrawal_id);
+    const nm=w?K[r.kind].name(w):'—';
+    return `<tr><td>${fdt(r.created_at)}</td><td style="text-transform:capitalize">${r.kind}</td><td>${esc(nm)}</td><td><b>${kes(r.amount)}</b></td><td>${esc(r.phone)}</td>
+    <td><span class="chip c-${r.status}">${r.status}</span></td><td style="font-family:monospace">${esc(r.mpesa_receipt||'—')}</td><td class="sub">${esc(r.result_desc||'')}</td></tr>`}).join('')
+    ||'<tr><td colspan="8" class="empty">No M-Pesa payments sent yet.</td></tr>'}
+
+/* ---------- staff messaging ---------- */
+function renderPeople(){
+  const rows=[{id:null,name:'All staff',role:'Everyone on the team'}].concat(staff.filter(s=>s.id!==me.id).map(s=>({id:s.id,name:s.username,role:s.role})));
+  $('people').innerHTML=rows.map(p=>`<div class="person ${chatWith===p.id?'on':''}" data-id="${p.id||''}"><div class="av">${p.id?ini(p.name):'<i class="bi bi-people-fill"></i>'}</div><div><div class="pn">${esc(p.name)}</div><div class="pr">${esc(p.role||'')}</div></div></div>`).join('');
+  [...$('people').children].forEach(el=>el.onclick=()=>{chatWith=el.dataset.id||null;unread=0;badge();renderPeople();loadMsgs()})}
+async function loadMsgs(){
+  $('thHead').textContent=chatWith?(staff.find(s=>s.id===chatWith)||{}).username||'Direct':'All staff';
+  const {data,error}=await sb.from('staff_messages').select('*').order('created_at',{ascending:true}).limit(300);
+  if(error){$('msgs').innerHTML='<div class="empty">Run migration_mpesa_payouts.sql to enable messaging.</div>';return}
+  msgs=data||[];drawMsgs()}
+function inThread(m){
+  if(!chatWith)return m.recipient_admin_id==null;
+  return (m.sender_admin_id===me.id&&m.recipient_admin_id===chatWith)||(m.sender_admin_id===chatWith&&m.recipient_admin_id===me.id)}
+function drawMsgs(){
+  const l=msgs.filter(inThread);
+  $('msgs').innerHTML=l.map(m=>{const mine=m.sender_admin_id===me.id;
+    return `<div class="m ${mine?'me':''}">${!mine?`<div class="who2">${esc(m.sender_name||'Staff')}</div>`:''}${esc(m.body)}<small>${fdt(m.created_at)}</small></div>`}).join('')||'<div class="empty">No messages yet. Say hello.</div>';
+  $('msgs').scrollTop=1e9}
+async function send(){
+  const body=$('msgIn').value.trim();if(!body)return;
+  $('sendBtn').disabled=true;
+  const {error}=await sb.from('staff_messages').insert({sender_admin_id:me.id,sender_name:me.username,recipient_admin_id:chatWith,body});
+  $('sendBtn').disabled=false;
+  if(error)return toast(error.message);$('msgIn').value='';}
+$('sendBtn').onclick=send;$('msgIn').onkeydown=e=>{if(e.key==='Enter')send()};
+function badge(){const p=$('pM');p.style.display=unread?'inline':'none';p.textContent=unread}
+
+/* ---------- tabs + realtime ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t.dataset.t));
+  if(t.dataset.t==='chat'){unread=0;badge();loadMsgs()}});
+function realtime(){
+  sb.channel('payouts-desk')
+   .on('postgres_changes',{event:'*',schema:'public',table:'mpesa_b2c_requests'},p=>{
+      loadAll();const r=p.new;
+      if(p.eventType==='UPDATE'&&r.status==='success')toast('M-Pesa confirmed: '+kes(r.amount)+' · '+r.mpesa_receipt);
+      if(p.eventType==='UPDATE'&&r.status==='failed')toast('M-Pesa failed: '+(r.result_desc||'unknown reason'))})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'staff_messages'},p=>{
+      const m=p.new;if(m.sender_admin_id!==me.id&&(m.recipient_admin_id==null||m.recipient_admin_id===me.id)){
+        if(!$('v-chat').classList.contains('on')||!inThread(m)){unread++;badge()}}
+      msgs.push(m);if($('v-chat').classList.contains('on'))drawMsgs()})
+   .on('postgres_changes',{event:'*',schema:'public',table:'agent_withdrawals'},loadAll)
+   .on('postgres_changes',{event:'*',schema:'public',table:'worker_withdrawals'},loadAll)
+   .on('postgres_changes',{event:'*',schema:'public',table:'task_withdrawal_requests'},loadAll)
+   .subscribe()}
+
+(async()=>{
+  me=await gate();if(!me)return;
+  $('gate').style.display='none';$('who').textContent=me.username+' · '+(me.role||'');
+  await loadAll();realtime();
+})();
+</script>
+</body>
+</html>
