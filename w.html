@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/"><!-- required: page is served from /w/<slug>, so relative assets must resolve from root -->
+<title>Worker Profile – SoundsCare</title>
+<meta name="description" content="View this worker's profile on SoundsCare – trusted domestic workers in East Africa.">
+<meta property="og:site_name" content="SoundsCare">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="Worker Profile – SoundsCare">
+<meta property="og:description" content="View this worker's profile on SoundsCare.">
+<meta property="og:image" content="https://www.sounds.co.ke/logo.png">
+<meta property="og:url" content="https://www.sounds.co.ke/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://www.sounds.co.ke/">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--brand:#1a6cf0;--brand2:#0b4fd0;--soft:#eef4ff;--accent:#14b8a6;--ink:#101828;--muted:#5b6678;--line:#e2e7f0;--page:#f5f7fb;--ok:#0b4fd0;--okbg:#e4eefe;--danger:#b42318}
+body{font-family:'DM Sans',sans-serif;background:var(--page);color:var(--ink)}
+.wrap{max-width:860px;margin:0 auto;padding:0 12px 80px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 4px}
+.topbar a{color:var(--ink);text-decoration:none;font-weight:700;display:flex;align-items:center;gap:8px}
+.topbar img{height:30px}
+.hero{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(16,24,40,.07)}
+.cover{height:170px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center}
+.cover img{height:84px;max-width:70%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.25))}
+.cover .fallback{color:#fff;font-weight:800;font-size:30px}
+.avatar{width:128px;height:128px;margin:-64px 0 0 24px;border-radius:50%;border:5px solid #fff;background:var(--soft);object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;color:var(--brand);overflow:hidden;position:relative}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.hero-body{padding:12px 24px 22px}
+.name{font-size:1.6rem;font-weight:800;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.title{color:var(--brand2);font-weight:600;margin-top:2px}
+.meta{color:var(--muted);font-size:14px;display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.flag{width:22px;height:15px;object-fit:cover;border-radius:3px;box-shadow:0 0 0 1px var(--line);vertical-align:-2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.stat{background:var(--soft);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.15rem;color:var(--brand2)}.stat small{color:var(--muted)}
+.card-x{background:#fff;border-radius:16px;padding:18px;height:100%;box-shadow:0 2px 12px rgba(16,24,40,.05)}
+.card-x h6{font-weight:800;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center}
+.row-i{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.row-i:last-child{border:0}.row-i b{text-align:right}.row-i span{color:var(--muted)}
+.chip{display:inline-block;background:var(--soft);color:var(--brand2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:600;margin:0 6px 8px 0}
+.btn-brand{background:var(--brand);color:#fff;border:0;font-weight:600}.btn-brand:hover{background:var(--brand2);color:#fff}
+.btn-wa{background:#25d366;color:#fff;border:0;font-weight:600}.btn-wa:hover{background:#1ebe5a;color:#fff}
+.cta{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 12px;z-index:50}
+.cta .in{max-width:860px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.cta .in .t{flex:1;font-size:13px;color:var(--muted);line-height:1.3}.cta .in .t b{color:var(--ink)}
+.sk{background:linear-gradient(90deg,#f0f3f9,#f8f9fc,#f0f3f9);background-size:200%;animation:sh 1.2s infinite;border-radius:12px;height:120px}@keyframes sh{to{background-position:-200%}}
+.nf{background:#fff;border-radius:20px;padding:48px 20px;text-align:center;box-shadow:0 4px 24px rgba(16,24,40,.07)}
+.nf i{font-size:48px;color:var(--brand)}
+#toasts{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:2000}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html"><img id="tlogo" src="logo.png" alt="" onerror="this.remove()"> SoundsCare</a>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" onclick="copyLink()"><i class="bi bi-clipboard"></i> Copy link</button>
+      <button class="btn btn-sm btn-brand" onclick="shareLink()"><i class="bi bi-share"></i> Share</button>
+    </div>
+  </div>
+  <div id="app"><div class="sk mb-3" style="height:300px"></div><div class="sk"></div></div>
+</div>
+<div id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script><!-- window.SOUNDS_CONFIG = {supabaseUrl, supabaseKey, siteUrl?, logo?} -->
+<script>
+const CFG = window.SOUNDS_CONFIG || {};
+const sb = supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
+const SITE = (CFG.siteUrl || 'https://www.sounds.co.ke').replace(/\/$/, '');
+const LOGO = CFG.logo || 'logo.png';
+const COUNTRIES = {KE:'Kenya',UG:'Uganda',TZ:'Tanzania',RW:'Rwanda',BI:'Burundi',SS:'South Sudan',ET:'Ethiopia',SO:'Somalia',ZM:'Zambia',MW:'Malawi',NG:'Nigeria',GH:'Ghana',ZA:'South Africa'};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const abs = u => !u ? '' : /^https?:/i.test(u) ? u : SITE + '/' + u.replace(/^\//, '');
+let W, URL_;
+
+// slug from /w/<slug>, or ?s=<slug> (fallback when the pretty-URL rewrite isn't configured)
+function getSlug() {
+  const m = location.pathname.match(/\/w\/([^/?#]+)/);
+  return decodeURIComponent(m ? m[1] : new URLSearchParams(location.search).get('s') || '').trim();
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'alert alert-primary shadow py-2 px-3 mb-0'; t.textContent = msg;
+  $('toasts').appendChild(t); setTimeout(() => t.remove(), 2500);
+}
+function setMeta(sel, attr, v) { let e = document.querySelector(sel); if (e) e.setAttribute(attr, v); }
+
+function seo() {
+  const first = (W.name || 'Worker').split(' ')[0];
+  const t = `${W.name || 'Worker'}${W.title ? ' – ' + W.title : ''} | SoundsCare`;
+  const d = (W.bio || `${first} is available for hire on SoundsCare${W.location ? ' in ' + W.location : ''}.`).slice(0, 200);
+  const img = abs(W.photo) || abs(LOGO);
+  document.title = t;
+  setMeta('meta[name=description]', 'content', d);
+  setMeta('meta[property="og:title"]', 'content', t);
+  setMeta('meta[property="og:description"]', 'content', d);
+  setMeta('meta[property="og:image"]', 'content', img);
+  setMeta('meta[property="og:url"]', 'content', URL_);
+  setMeta('link[rel=canonical]', 'href', URL_);
+  setMeta('meta[name="twitter:card"]', 'content', W.photo ? 'summary' : 'summary_large_image');
+}
+
+const flagImg = cc => `<img class="flag" src="https://flagcdn.com/w40/${esc(cc.toLowerCase())}.png" alt="" onerror="this.outerHTML='<i class=&quot;bi bi-flag-fill&quot;></i>'">`;
+const row = (k, v) => v ? `<div class="row-i"><span>${k}</span><b>${esc(v)}</b></div>` : '';
+const chips = s => String(s || '').split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).map(x => `<span class="chip">${esc(x)}</span>`).join('');
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+function render() {
+  const name = W.name || 'Worker', first = name.split(' ')[0], cc = W.country_code || 'KE';
+  const rating = Number(W.rating) || 0, rc = W.rating_count || 0;
+  const since = W.member_since ? new Date(W.member_since).toLocaleDateString(undefined, {year:'numeric', month:'short'}) : '';
+  const hire = `employer-login.html?hire=${encodeURIComponent(W.slug)}`;
+  $('app').innerHTML = `
+  <div class="hero">
+    <div class="cover"><img src="${esc(LOGO)}" alt="SoundsCare" onerror="this.outerHTML='<div class=&quot;fallback&quot;>SoundsCare</div>'"></div>
+    <div class="avatar">${W.photo ? `<img src="${esc(W.photo)}" alt="${esc(name)}">` : esc(name[0].toUpperCase())}</div>
+    <div class="hero-body">
+      <h1 class="name">${esc(name)} ${W.verified ? '<i class="bi bi-patch-check-fill text-primary fs-5" title="Verified"></i>' : ''}
+        <span class="badge ${W.is_hired ? 'text-bg-secondary' : 'text-bg-primary'} fs-6 fw-semibold">${W.is_hired ? 'Currently hired' : 'Available'}</span></h1>
+      ${W.title ? `<div class="title">${esc(W.title)}</div>` : ''}
+      <div class="meta"><span>${flagImg(cc)} ${esc(COUNTRIES[cc] || cc)}</span>${W.location ? `<span><i class="bi bi-geo-alt-fill"></i> ${esc(W.location)}</span>` : ''}${since ? `<span><i class="bi bi-calendar3"></i> Member since ${esc(since)}</span>` : ''}</div>
+      <div class="stats">
+        <div class="stat"><b>${rc ? rating.toFixed(1) + ' ★' : '—'}</b><small>${rc ? rc + ' review' + (rc > 1 ? 's' : '') : 'No reviews yet'}</small></div>
+        <div class="stat"><b>${W.jobs_completed || 0}</b><small>Jobs completed</small></div>
+        <div class="stat"><b>${W.views || 0}</b><small>Profile views</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="row g-3 mt-0">
+    <div class="col-12"><div class="card-x"><h6><span class="ic"><i class="bi bi-person-lines-fill"></i></span>About</h6>
+      <p class="mb-0" style="font-size:14px;line-height:1.7;color:${W.bio ? 'inherit' : 'var(--muted)'}">${esc(W.bio || first + ' has not added a summary yet.')}</p></div></div>
+    ${W.skills ? `<div class="col-12"><div class="card-x"><h6><span class="ic"><i class="bi bi-stars"></i></span>Skills</h6>${chips(W.skills)}</div></div>` : ''}
+    <div class="col-md-6"><div class="card-x"><h6><span class="ic"><i class="bi bi-briefcase-fill"></i></span>Work details</h6>
+      ${row('Job type', cap(W.job_type))}${row('Experience', cap(W.experience_level))}${row('Languages', W.languages)}
+      ${row('Expected salary', W.expected_salary ? 'KES ' + Number(W.expected_salary).toLocaleString() : '')}
+      ${row('Status', W.is_hired ? 'Currently hired' : (cap(W.availability) || 'Available'))}</div></div>
+    <div class="col-md-6"><div class="card-x"><h6><span class="ic"><i class="bi bi-shield-check"></i></span>Trust</h6>
+      ${row('Identity', W.verified ? 'Verified by SoundsCare' : 'Not yet verified')}${row('Location', W.location)}
+      <p class="small text-muted mt-3 mb-0"><i class="bi bi-lock"></i> Phone and ID details stay private. Contact ${esc(first)} through SoundsCare.</p></div></div>
+  </div>
+  <div class="cta"><div class="in">
+    <div class="t"><b>Interested in ${esc(first)}?</b><br>Sign in as an employer to hire or message.</div>
+    <a class="btn btn-wa" href="https://wa.me/?text=${encodeURIComponent(name + ' on SoundsCare: ' + URL_)}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i></a>
+    <a class="btn btn-brand" href="${esc(hire)}"><i class="bi bi-person-check"></i> Hire ${esc(first)}</a>
+  </div></div>`;
+}
+
+function notFound() {
+  document.title = 'Profile not found | SoundsCare';
+  setMeta('meta[property="og:title"]', 'content', 'Profile not found | SoundsCare');
+  $('app').innerHTML = `<div class="nf"><i class="bi bi-person-x"></i><h4 class="fw-bold mt-3">Profile not available</h4>
+    <p class="text-muted">This link may be wrong, or the worker has hidden their profile.</p>
+    <a href="index.html" class="btn btn-brand">Go to SoundsCare</a></div>`;
+}
+async function copyLink() { try { await navigator.clipboard.writeText(URL_); toast('Profile link copied'); } catch { prompt('Copy link', URL_); } }
+function shareLink() { navigator.share ? navigator.share({title: (W && W.name || 'Worker') + ' on SoundsCare', url: URL_}).catch(() => {}) : copyLink(); }
+
+(async function init() {
+  const slug = getSlug();
+  if (!slug) return notFound();
+  const {data, error} = await sb.rpc('get_public_worker', {p_slug: slug});
+  if (error || !data) return notFound();
+  W = data; URL_ = `${SITE}/w/${W.slug}`;
+  seo(); render();
+  // count a view once per browser session per profile
+  const k = 'wv_' + W.slug;
+  if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); sb.rpc('register_worker_view', {p_slug: W.slug}); }
+})();
+</script>
+</body>
+</html>
