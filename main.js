@@ -4702,7 +4702,6 @@ async function toggleHiredStatus() {
   const update = {
     status: newStatus,
     profile_visible: newVisible,
-    hired_at: hired ? new Date().toISOString() : null,
     is_currently_hired: hired,
     job_seeking: !hired,
     looking_for_job: !hired,

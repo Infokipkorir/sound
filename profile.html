@@ -120,7 +120,7 @@ function toast(msg, type='success') {
   $('toasts').appendChild(t); setTimeout(() => t.remove(), 3800);
 }
 const val = k => C[k] ? P[C[k]] : undefined;
-const photo = () => P.avatar_url || P.profile_photo || P.photo_url || '';
+const photo = () => P.avatar_url || P.profile_photo_url || '';
 const link = () => `${SITE}/w/${P.public_slug || ''}`;
 
 // ── Profile completion: each item is a weighted check; photo is weighted highest ──
@@ -204,9 +204,9 @@ async function uploadAvatar(file) {
 
 // ── Visibility → DB. The trigger (profile_enhancements.sql) stamps the change and sends the notification ──
 async function setVisible(on) {
-  if (on && !photo()) { render(); return toast('Add a profile photo before making your profile visible.', 'warning'); }
-  const {error} = await sb.from('worker_profiles').update({is_visible: on}).eq('session_id', U.id);
-  if (error) { render(); return toast('Could not update visibility: ' + error.message, 'danger'); }
+  if (on && !photo()) { render(); return toast('Add a profile photo before making your profile visible (tap the camera on your avatar).', 'warning'); }
+  const {data: rows, error} = await sb.from('worker_profiles').update({is_visible: on}).eq('session_id', U.id).select('id');
+  if (error || !rows || !rows.length) { render(); return toast('Could not update visibility' + (error ? ': ' + error.message : ' (no profile row was updated)'), 'danger'); }
   P.is_visible = on; render();
   toast(on ? 'Profile is now visible to employers' : 'Profile is now hidden from employers');
 }
@@ -253,7 +253,7 @@ function shareLink() { navigator.share ? navigator.share({title: val('name') + '
   U = session.user;
   const {data, error} = await sb.from('worker_profiles').select('*').eq('session_id', U.id).maybeSingle();
   if (error || !data) { $('app').innerHTML = `<div class="alert alert-warning">Could not load your profile${error ? ': ' + esc(error.message) : ''}. If this is new, run <code>profile_enhancements.sql</code> first.</div>`; return; }
-  P = data; resolveCols(); if (P.is_visible == null) P.is_visible = true;
+  P = data; resolveCols();
   render();
 })();
 </script>
