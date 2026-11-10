@@ -66,9 +66,8 @@ const PAGE_ROUTES = {
   profile:   { modalId: 'modal-account',   title: 'My Profile',   linkMatch: 'modal-account' },
   findjobs:  { modalId: 'modal-jobs',      title: 'Find Jobs',    linkMatch: 'modal-jobs' },
   messages:  { modalId: 'modal-messages',  title: 'Messages',     linkMatch: 'modal-messages' },
-  tasks:     { modalId: 'modal-tasks',     title: 'Tasks',        linkMatch: 'modal-tasks' },
 };
-const PAGE_FILES = { overview: 'index.html', profile: 'profile.html', findjobs: 'findjobs.html', messages: 'messages.html', tasks: 'tasks.html' };
+const PAGE_FILES = { overview: 'index.html', profile: 'profile.html', findjobs: 'findjobs.html', messages: 'messages.html' };
 // Nav buttons/quick-nav cards call this instead of navTo() directly for the
 // three pages that now live in their own file: if we're already on that
 // page it just switches the panel in place, otherwise it does a real page
@@ -105,10 +104,10 @@ function isProfileComplete() { return getProfileCompletionGaps().length === 0; }
 
 // Canonical job categories — kept short and matched case-insensitively
 // against job_postings.category (which has messier free-text values like
-// "Domestic Work" / "Domestic worker" / "mama_fua_digital") so recommendations
+// "Domestic Work" / "Domestic worker") so recommendations
 // still work even where the wording doesn't match exactly.
 const WORKER_CATEGORIES = [
-  'Domestic Work', 'Nanny / Childcare', 'House Manager', 'Cleaning / Mama Fua',
+  'Domestic Work', 'Nanny / Childcare', 'House Manager', 'Cleaning',
   'Cooking / Chef', 'Gardening', 'Driving', 'Security', 'Elderly Care', 'Other',
 ];
 function categoriesLooselyMatch(a, b) {
@@ -148,16 +147,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Update presence
-  console.log('📍 Updating user_presence…');
+  console.log('Updating user_presence…');
   const { error: presenceErr } = await sb.from('user_presence').upsert(
     { user_id: currentUser.id, is_online: true, last_seen: new Date().toISOString() },
     { onConflict: 'user_id' }
   );
   if (presenceErr) {
-    console.warn('⚠️  user_presence upsert error:', presenceErr.message);
+    console.warn('user_presence upsert error:', presenceErr.message);
     console.warn('   (This table may not exist, but it\'s non-critical)');
   } else {
-    console.log('✅ user_presence updated');
+    console.log('user_presence updated');
   }
 
   try {
@@ -183,58 +182,58 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     subscribeToRealtime();
     subscribeIncomingCalls();
-    console.log('✅ Realtime subscriptions active');
+    console.log('Realtime subscriptions active');
   } catch (err) {
-    console.warn('⚠️  Realtime subscription error:', err.message);
+    console.warn('Realtime subscription error:', err.message);
   }
   requestNotifPermission();
-  try { initPageRouter(); } catch (err) { console.warn('⚠️  Page router error:', err.message); }
+  try { initPageRouter(); } catch (err) { console.warn('Page router error:', err.message); }
 });
 
 // ════════════════════════════════════════════════════════
 //  LOAD DASHBOARD
 // ════════════════════════════════════════════════════════
 async function loadDashboard() {
-  console.group("🚀 DASHBOARD LOAD TRACE");
+  console.group("DASHBOARD LOAD TRACE");
   try {
-    console.log('🚀 Dashboard loading…');
-    console.log('📌 currentUser.id:', currentUser.id);
-    console.log('📧 currentUser.email:', currentUser.email);
+    console.log('Dashboard loading…');
+    console.log('currentUser.id:', currentUser.id);
+    console.log('currentUser.email:', currentUser.email);
 
     // 1. worker_profiles — try session_id (= auth.uid()) first, then fall back to email
     // DB reality: no user_id column exists on worker_profiles; link is via session_id (uuid text) OR email
     let wp = null, wpErr = null;
 
     // Attempt 1: session_id match — use limit(2) so duplicate rows never cause a 406 crash
-    console.log('🔍 Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
+    console.log('Attempt 1: Querying worker_profiles.session_id =', currentUser.id);
     const { data: bySessionRows, error: e1 } = await sb.from('worker_profiles')
       .select('id, full_name, pending_full_name, identity_change_status, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
       .eq('session_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(2);
 
-    if (e1) console.warn('❌ Attempt 1 error:', e1.message);
+    if (e1) console.warn('Attempt 1 error:', e1.message);
     const bySession = bySessionRows?.[0] || null;
-    if (bySessionRows?.length > 1) console.warn('⚠️  Duplicate session_id rows detected — using most recent');
+    if (bySessionRows?.length > 1) console.warn('Duplicate session_id rows detected — using most recent');
     if (bySession) {
-      console.log('✅ Attempt 1 SUCCESS:', bySession);
+      console.log('Attempt 1 SUCCESS:', bySession);
       wp = bySession;
     } else {
-      console.log('⚠️  No session_id match. Trying email…');
+      console.log('No session_id match. Trying email…');
       // Attempt 2: email match (RLS policy: email = auth.jwt()->>'email')
-      console.log('🔍 Attempt 2: Querying worker_profiles.email =', currentUser.email);
+      console.log('Attempt 2: Querying worker_profiles.email =', currentUser.email);
       const { data: byEmailRows, error: e2 } = await sb.from('worker_profiles')
         .select('id, full_name, pending_full_name, identity_change_status, email, profile_visible, status, account_number, interview_fee_paid, first_salary_fee_paid, payment_status, account_deactivated, deactivation_reason, verification_stage, phone, phone_number, profile_setup_completed, created_at')
         .eq('email', currentUser.email)
         .order('created_at', { ascending: false })
         .limit(2);
 
-      if (e2) console.warn('❌ Attempt 2 error:', e2.message);
+      if (e2) console.warn('Attempt 2 error:', e2.message);
       const byEmail = byEmailRows?.[0] || null;
       if (byEmail) {
-        console.log('✅ Attempt 2 SUCCESS:', byEmail);
+        console.log('Attempt 2 SUCCESS:', byEmail);
       } else {
-        console.log('⚠️  No worker_profile found at all for', currentUser.email);
+        console.log('No worker_profile found at all for', currentUser.email);
       }
 
       wp = byEmail || null;
@@ -242,17 +241,17 @@ async function loadDashboard() {
 
       // If we found a profile by email but session_id is missing/wrong, backfill it
       if (wp && !bySession) {
-        console.log('🔧 Backfilling session_id on row', wp.id);
+        console.log('Backfilling session_id on row', wp.id);
         sb.from('worker_profiles')
           .update({ session_id: currentUser.id })
           .eq('id', wp.id)
-          .then(() => console.log('✅ Backfill done')).catch(e => console.warn('Backfill error:', e.message));
+          .then(() => console.log('Backfill done')).catch(e => console.warn('Backfill error:', e.message));
       }
     }
 
     if (wpErr) console.warn('worker_profiles final error:', wpErr?.message);
     workerProfile = wp || null;
-    console.log('📋 workerProfile now:', workerProfile);
+    console.log('workerProfile now:', workerProfile);
 
     // Gate: this dashboard is only for workers who've finished initial
     // profile setup. No row yet, or setup started but not finished —
@@ -295,6 +294,7 @@ async function loadDashboard() {
     const pct = Math.round((filled / fields.length) * 100);
     document.getElementById('profile-pct').textContent = pct + '%';
     document.getElementById('progress-fill').style.width = pct + '%';
+    refreshRoleGenderCheck();
 
     // Account status
     if (workerProfile?.account_deactivated) {
@@ -323,18 +323,18 @@ async function loadDashboard() {
     await loadRecentInterviews();
 
     // 3. job_postings (public read policy on status='active')
-    console.log('🔍 Loading active job_postings');
+    console.log('Loading active job_postings');
     const { data: jobs, error: jobErr } = await sb.from('job_postings')
-      .select('id, title, description, location, county, salary_range, salary_min, salary_max, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, employer_id, pricing_mode, is_mama_fua, category')
+      .select('id, title, description, location, county, salary_range, salary_min, salary_max, job_type, work_type, duration_type, duration_value, is_urgent, created_at, job_role, company_name, company_verified, employer_avg_rating, employer_rating_count, loves_count, employer_id, pricing_mode, category')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
 
     if (jobErr) {
-      console.error('❌ JOB_POSTINGS ERROR:', jobErr.message, '—', jobErr.code);
+      console.error('JOB_POSTINGS ERROR:', jobErr.message, '—', jobErr.code);
       console.error('   This blocks job listings. Check if job_postings table exists and is readable.');
     }
-    console.log('✅ jobs loaded:', jobs?.length || 0, 'postings');
+    console.log('jobs loaded:', jobs?.length || 0, 'postings');
     allJobs = jobs || [];
 
     // 3a. Payment-verified badge — has the employer already funded escrow for
@@ -358,7 +358,7 @@ async function loadDashboard() {
         });
       }
     } catch (escLoadErr) {
-      console.warn('⚠️ Could not load employer payment-verification status:', escLoadErr.message);
+      console.warn('Could not load employer payment-verification status:', escLoadErr.message);
     }
 
     // 3a-ii. Applicant counts per job — fetched separately (not selected as a
@@ -379,7 +379,7 @@ async function loadDashboard() {
         });
       }
     } catch (appCountLoadErr) {
-      console.warn('⚠️ Could not load applicant counts (RLS likely restricts this to the job owner):', appCountLoadErr.message);
+      console.warn('Could not load applicant counts (RLS likely restricts this to the job owner):', appCountLoadErr.message);
     }
 
     // 3b. saved_jobs + job_loves + applications + interviews for this worker
@@ -402,7 +402,7 @@ async function loadDashboard() {
         // Bided Jobs dashboard section preview
         renderBidedJobs();
       } catch (statErr) {
-        console.error('❌ Could not load saved/loved/applications/interview stats:', statErr.message);
+        console.error('Could not load saved/loved/applications/interview stats:', statErr.message);
       }
     } else {
       renderBidedJobs();
@@ -411,15 +411,15 @@ async function loadDashboard() {
     try {
       renderJobs(allJobs);
       populateCountyFilter(allJobs);
-      console.log('✅ Jobs rendered');
+      console.log('Jobs rendered');
       handleJobDeepLink();
     } catch (jobRenderErr) {
-      console.error('❌ renderJobs failed:', jobRenderErr.message);
+      console.error('renderJobs failed:', jobRenderErr.message);
       document.getElementById('jobs-list').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load jobs</p></div>';
     }
 
     // 4. wallets (RLS: user_id = auth.uid())
-    console.log('🔍 4️⃣ Loading wallet for user_id =', currentUser.id);
+    console.log('Loading wallet for user_id =', currentUser.id);
     const { data: walletData, error: wErr } = await sb.from('wallets')
       .select('balance, account_number, interview_fee_paid, first_salary_fee_paid, interview_fee_expires_at, first_salary_fee_expires_at, refund_balance, connects_balance, connects_reset_date')
       .eq('user_id', currentUser.id)
@@ -430,7 +430,7 @@ async function loadDashboard() {
     // user (not just admins), needed client-side to show the pre-flight
     // "you can't afford this call" check and to render costs in the UI.
     const { data: tariffData, error: tErr } = await sb.from('connects_tariffs').select('*').eq('id', 1).maybeSingle();
-    if (tErr) console.warn('⚠️ connects_tariffs load failed:', tErr.message);
+    if (tErr) console.warn('connects_tariffs load failed:', tErr.message);
     connectsTariffs = tariffData || null;
     if (wallet) {
       renderConnectsWidget(wallet);
@@ -445,9 +445,9 @@ async function loadDashboard() {
 
     console.log('WALLET DATA:', wallet);
     console.log('WALLET ERROR:', wErr);
-    if (wErr) console.warn('❌ wallets error:', wErr.message);
+    if (wErr) console.warn('wallets error:', wErr.message);
     if (!wallet) {
-      console.log('⚠️  No wallet record exists for this user yet');
+      console.log('No wallet record exists for this user yet');
     }
     if (wallet) {
       const bal = (wallet.balance || 0);
@@ -464,7 +464,7 @@ async function loadDashboard() {
     }
     document.getElementById('wd-avail-balance').textContent = 'KES ' + ((wallet?.balance || 0)).toLocaleString('en-KE');
 
-    // 4c. Ongoing jobs — hired applications + Mama Fua Mtaani escrow status.
+    // 4c. Ongoing jobs — hired applications + escrow status.
     // job_applications.worker_id references worker_profiles.id, but
     // job_escrow_payments.worker_id references auth.uid() directly — two
     // different identity spaces, so each query uses the right key.
@@ -475,7 +475,7 @@ async function loadDashboard() {
     // or application with no hire on record. employer_id/employer profile and
     // existing employer_ratings are fetched here so ongoingJobCardHtml can
     // show "Rate Employer" only where that's actually true.
-    console.log('🔍 4️⃣c Loading ongoing jobs…');
+    console.log('c Loading ongoing jobs…');
     try {
       const hiredApps = (myApplications || []).filter(a => a.status === 'hired' && a.hired_at);
       const jobIds = [...new Set(hiredApps.map(a => a.job_id))];
@@ -483,7 +483,7 @@ async function loadDashboard() {
       if (jobIds.length) {
         const [{ data: jobRows }, escRes, ratedRes] = await Promise.all([
           sb.from('job_postings')
-            .select('id,title,company_name,is_mama_fua,salary_min,salary_max,duration_type,is_closed,is_paused,county,employer_id')
+            .select('id,title,company_name,salary_min,salary_max,duration_type,is_closed,is_paused,county,employer_id')
             .in('id', jobIds),
           sb.from('job_escrow_payments')
             .select('id,job_id,amount,service_fee,tax_amount,net_amount,status,release_requested_at,created_at')
@@ -532,20 +532,20 @@ async function loadDashboard() {
       allOngoingJobs = ongoingJobsData;
       renderOngoingJobs();
     } catch (ogErr) {
-      console.error('❌ Ongoing jobs load failed:', ogErr.message);
+      console.error('Ongoing jobs load failed:', ogErr.message);
     }
 
     // 4d. withdrawal history (worker_withdrawals)
     try {
       await loadWithdrawalHistory();
-      console.log('✅ Withdrawal history loaded');
+      console.log('Withdrawal history loaded');
     } catch (wdErr) {
-      console.error('❌ loadWithdrawalHistory failed:', wdErr.message);
+      console.error('loadWithdrawalHistory failed:', wdErr.message);
       document.getElementById('withdrawal-history-list').innerHTML = '<div class="empty-state"><i class="bi bi-cash-coin"></i><p>Could not load withdrawals</p></div>';
     }
 
     // 5. payments (RLS: user_id = auth.uid())
-    console.log('🔍 5️⃣ Loading payments for user_id =', currentUser.id);
+    console.log('Loading payments for user_id =', currentUser.id);
     const { data: payments, error: pErr } = await sb.from('payments')
       .select('id, amount, fee_type, payment_method, status, created_at, transaction_id')
       .eq('user_id', currentUser.id)
@@ -553,29 +553,29 @@ async function loadDashboard() {
       .limit(20);
 
     if (pErr) {
-      console.error('❌ PAYMENTS ERROR:', pErr.message, '—', pErr.code);
+      console.error('PAYMENTS ERROR:', pErr.message, '—', pErr.code);
       console.warn('   Payments table may not exist. Using empty list.');
     }
     try {
       renderPaymentHistory(payments || []);
-      console.log('✅ Payment history rendered');
+      console.log('Payment history rendered');
     } catch (payErr) {
-      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      console.error('renderPaymentHistory failed:', payErr.message);
       document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
     }
 
     // 6. notifications
-    console.log('🔍 6️⃣ Loading notifications…');
+    console.log('Loading notifications…');
     try {
       await loadNotifications();
-      console.log('✅ Notifications loaded');
+      console.log('Notifications loaded');
     } catch (notifErr) {
-      console.error('❌ loadNotifications failed:', notifErr.message);
+      console.error('loadNotifications failed:', notifErr.message);
       document.getElementById('notif-list').innerHTML = '<div class="empty-state"><i class="bi bi-bell"></i><p>Could not load notifications</p></div>';
     }
 
   } catch (e) {
-    console.error('❌ loadDashboard CRASHED:', e.message);
+    console.error('loadDashboard CRASHED:', e.message);
     console.error('Stack:', e.stack);
     console.groupEnd();
     showToast('err', 'bi-exclamation-circle', 'Dashboard Error', e.message);
@@ -768,7 +768,7 @@ function renderRecentMessagesPreview() {
 
     return `
     <div class="msg-item ${unread ? 'unread' : ''}" onclick="navTo('modal-messages'); openConversation('${conv.id}');" style="cursor:pointer;">
-      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
+      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#14b8a6);">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
           <span class="msg-from">${esc(name)}</span>
@@ -815,7 +815,7 @@ async function loadRecentInterviews() {
     const avatarInner = emp.photo ? `<img src="${esc(emp.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : esc(init);
     return `
     <div class="msg-item" onclick="openConversation('${conv.id}'); navTo('overview'); navTo('modal-messages');" style="cursor:pointer;">
-      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#2a9961);">${avatarInner}</div>
+      <div class="msg-avatar is-employer" style="background:linear-gradient(135deg,var(--brand),#14b8a6);">${avatarInner}</div>
       <div class="msg-content">
         <div class="msg-header">
           <span class="msg-from">${esc(name)}</span>
@@ -1436,7 +1436,7 @@ async function startCall(type) {
     thread_id: activeConvId, sender_id: currentUser.id,
     sender_role: conv.is_admin_thread ? 'employee' : (conv.employer_id === currentUser.id ? 'employer' : 'employee'),
     msg_type: 'call', call_id: callRow.id,
-    body: `${type === 'video' ? '🎥' : '📞'} ${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
+    body: `${type === 'video' ? 'Video' : 'Voice'} call — tap to join`,
   });
 
   // Use the employer's own ringback tone if they've set one in the DB,
@@ -1521,13 +1521,13 @@ function notifyIncomingCallOutsidePage(callerName, callType) {
     __titleFlashOriginal = document.title;
     let on = false;
     __titleFlashTimer = setInterval(() => {
-      document.title = on ? __titleFlashOriginal : `📞 ${callerName} is calling…`;
+      document.title = on ? __titleFlashOriginal : `${callerName} is calling…`;
       on = !on;
     }, 1000);
   }
   if ('Notification' in window && Notification.permission === 'granted') {
     try {
-      const n = new Notification(`${callType === 'video' ? '🎥' : '📞'} Incoming ${callType} call`, {
+      const n = new Notification(`Incoming ${callType} call`, {
         body: `${callerName} · SoundsCare — tap to answer`,
         icon: '/favicon.ico',
         tag: 'soundscare-incoming-call',
@@ -1889,10 +1889,10 @@ function toggleKeypad() {
 const USER_STATUSES = {
   online:  { label: 'Online',           color: '#22c55e' },
   offline: { label: 'Offline',          color: '#9ca3af' },
-  away:    { label: 'Away',             color: '#E8A040' },
-  busy:    { label: 'Busy',             color: '#f43f5e' },
+  away:    { label: 'Away',             color: '#14b8a6' },
+  busy:    { label: 'Busy',             color: '#d92d20' },
   in_call: { label: 'In Call',          color: '#8b5cf6' },
-  dnd:     { label: 'Do Not Disturb',   color: '#fb7185' },
+  dnd:     { label: 'Do Not Disturb',   color: '#d92d20' },
 };
 
 let myStatus = 'online';
@@ -2038,7 +2038,7 @@ async function enablePushNotifications() {
   updatePushBanner();
   if (perm === 'granted') {
     showToast('ok', 'bi-bell-fill', 'Notifications Enabled', 'You\'ll now get push notifications for messages and updates.');
-    pushNotify('🔔 Notifications On', 'You will now receive push notifications from SoundsCare.', { tag: 'push-enabled' });
+    pushNotify('Notifications On', 'You will now receive push notifications from SoundsCare.', { tag: 'push-enabled' });
   } else if (perm === 'denied') {
     showToast('err', 'bi-exclamation-circle', 'Blocked', 'Notifications are blocked in your browser settings.');
   }
@@ -2473,7 +2473,7 @@ async function loadSavedJobs() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('❌ loadSavedJobs error:', error.message);
+    console.error('loadSavedJobs error:', error.message);
     el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load saved jobs</p></div>';
     return;
   }
@@ -2731,12 +2731,12 @@ async function loadApplications() {
   el.innerHTML = '<div class="empty-state"><i class="bi bi-send-check"></i><p>Loading applications…</p></div>';
 
   const { data, error } = await sb.from('job_applications')
-    .select('id, job_id, status, applied_at, updated_at, bid_amount, job_postings(id, title, company_name, county, salary_range, pricing_mode, is_mama_fua, employer_id)')
+    .select('id, job_id, status, applied_at, updated_at, bid_amount, job_postings(id, title, company_name, county, salary_range, pricing_mode, employer_id)')
     .eq('worker_id', workerProfile.id)
     .order('applied_at', { ascending: false });
 
   if (error) {
-    console.error('❌ loadApplications error:', error.message);
+    console.error('loadApplications error:', error.message);
     el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load applications</p></div>';
     return;
   }
@@ -2846,15 +2846,15 @@ function ongoingJobCardHtml(o) {
   const canRate = !!(a.status === 'hired' && a.hired_at && employerProfile?.id && !alreadyRated);
   const employerName = employerProfile?.company_name || employerProfile?.full_name || 'Employer';
   const rateBtn = canRate
-    ? `<button class="btn btn-sm" style="background:#f59e0b; color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${a.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})"><i class="bi bi-star-fill"></i> Rate Employer</button>`
-    : (alreadyRated ? `<span class="small" style="color:var(--muted);"><i class="bi bi-star-fill" style="color:#f59e0b;"></i> Rated</span>` : '');
+    ? `<button class="btn btn-sm" style="background:#b7791f; color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${a.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})"><i class="bi bi-star-fill"></i> Rate Employer</button>`
+    : (alreadyRated ? `<span class="small" style="color:var(--muted);"><i class="bi bi-star-fill" style="color:#f5a623;"></i> Rated</span>` : '');
 
   return `
     <div class="card mb-2">
       <div class="card-body py-2 px-3">
         <div class="d-flex justify-content-between align-items-start gap-2">
           <div>
-            <div class="fw-bold" style="font-size:14px;">${esc(job.title || 'Job')}${job.is_mama_fua ? ' <span class="badge text-bg-primary ms-1">Mama Fua Mtaani</span>' : ''}</div>
+            <div class="fw-bold" style="font-size:14px;">${esc(job.title || 'Job')}</div>
             <div class="small" style="color:var(--muted);">${esc(job.company_name || '')}${job.county ? ' · ' + esc(job.county) : ''}</div>
           </div>
           <span class="badge ${badge.cls}"><i class="bi ${badge.icon}"></i> ${badge.label}</span>
@@ -2974,7 +2974,7 @@ async function openApplicationMessages() {
 
   const { data: mapRows, error: mapErr } = await sb.rpc('get_employer_user_id_by_profile_id', { profile_ids: [employerProfileId] });
   if (mapErr) {
-    console.error('❌ get_employer_user_id_by_profile_id failed:', mapErr.message);
+    console.error('get_employer_user_id_by_profile_id failed:', mapErr.message);
     showToast('err', 'bi-exclamation-circle', 'Error', 'Could not look up this employer. Please try again.');
     return;
   }
@@ -3153,7 +3153,7 @@ async function payFromWallet() {
   }
 
   // Fetch live wallet balance first
-  console.log("📍 4️⃣ Fetching wallet for payFromWallet…");
+  console.log("Fetching wallet for payFromWallet…");
   const { data: wallet, error: wErr } = await sb.from('wallets')
     .select('balance, account_number')
     .eq('user_id', currentUser.id)
@@ -3249,9 +3249,9 @@ async function payFromWallet() {
       .limit(20);
     try {
       renderPaymentHistory(payments || []);
-      console.log('✅ Payment history rendered');
+      console.log('Payment history rendered');
     } catch (payErr) {
-      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      console.error('renderPaymentHistory failed:', payErr.message);
       document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
     }
 
@@ -3339,7 +3339,7 @@ async function requestWithdrawal() {
   try {
     // Fetch a live balance right before withdrawing — the balance shown on
     // screen may be stale if it changed since the dashboard last loaded.
-    console.log('📍 Fetching wallet for requestWithdrawal…');
+    console.log('Fetching wallet for requestWithdrawal…');
     const { data: walletRows, error: wErr } = await sb.from('wallets')
       .select('balance')
       .eq('user_id', currentUser.id)
@@ -3347,7 +3347,7 @@ async function requestWithdrawal() {
     const walletRow = walletRows?.[0] || null;
 
     if (wErr || !walletRow) {
-      console.error('❌ requestWithdrawal: could not read wallet:', wErr?.message);
+      console.error('requestWithdrawal: could not read wallet:', wErr?.message);
       showWithdrawError('Could not read your wallet balance. Please try again.');
       return;
     }
@@ -3366,7 +3366,7 @@ async function requestWithdrawal() {
       .update({ balance: newBalance, updated_at: new Date().toISOString() })
       .eq('user_id', currentUser.id);
     if (balErr) {
-      console.error('❌ requestWithdrawal: wallet deduction failed:', balErr.message);
+      console.error('requestWithdrawal: wallet deduction failed:', balErr.message);
       showWithdrawError('Could not process your request. Please try again.');
       return;
     }
@@ -3388,7 +3388,7 @@ async function requestWithdrawal() {
 
     if (wdErr) {
       // Rollback the wallet deduction if the request couldn't be recorded.
-      console.error('❌ requestWithdrawal: insert failed, rolling back wallet deduction:', wdErr.message);
+      console.error('requestWithdrawal: insert failed, rolling back wallet deduction:', wdErr.message);
       await sb.from('wallets').update({ balance }).eq('user_id', currentUser.id);
       showWithdrawError('Could not submit your withdrawal request. Please try again.');
       return;
@@ -3404,7 +3404,7 @@ async function requestWithdrawal() {
     showToast('ok', 'bi-check-circle', 'Withdrawal Requested', `KES ${amount.toLocaleString('en-KE')} · Ref: ${txnRef}`);
     await loadWithdrawalHistory();
   } catch (e) {
-    console.error('❌ requestWithdrawal crashed:', e.message);
+    console.error('requestWithdrawal crashed:', e.message);
     showWithdrawError('Something went wrong. Please try again.');
   } finally {
     btn.disabled = false;
@@ -3414,7 +3414,7 @@ async function requestWithdrawal() {
 
 async function loadWithdrawalHistory() {
   const el = document.getElementById('withdrawal-history-list');
-  console.log('📍 Loading withdrawal history for user_id =', currentUser.id);
+  console.log('Loading withdrawal history for user_id =', currentUser.id);
   const { data: withdrawals, error } = await sb.from('worker_withdrawals')
     .select('id, amount, method, phone_number, status, system_reference, requested_at')
     .eq('worker_id', currentUser.id)
@@ -3422,7 +3422,7 @@ async function loadWithdrawalHistory() {
     .limit(20);
 
   if (error) {
-    console.error('❌ WITHDRAWALS ERROR:', error.message, '—', error.code);
+    console.error('WITHDRAWALS ERROR:', error.message, '—', error.code);
     console.error('   worker_withdrawals table may not exist or RLS blocks access.');
     el.innerHTML = '<div class="empty-state"><i class="bi bi-cash-coin"></i><p>Could not load withdrawals</p></div>';
     return;
@@ -3624,9 +3624,9 @@ async function createPayment(amount, method, feeType, extra = {}) {
       .limit(20);
     try {
       renderPaymentHistory(payments || []);
-      console.log('✅ Payment history rendered');
+      console.log('Payment history rendered');
     } catch (payErr) {
-      console.error('❌ renderPaymentHistory failed:', payErr.message);
+      console.error('renderPaymentHistory failed:', payErr.message);
       document.getElementById('payment-list').innerHTML = '<div class="empty-state"><i class="bi bi-receipt"></i><p>Could not load payment history</p></div>';
     }
     return txnRef;
@@ -3663,7 +3663,7 @@ function renderPaymentHistory(payments) {
 // ════════════════════════════════════════════════════════
 async function loadNotifications() {
   // notifications SELECT: user_id = auth.uid()
-  console.log('📍 Loading notifications…');
+  console.log('Loading notifications…');
   const { data: notifs, error } = await sb.from('notifications')
     .select('id, type, title, message, is_read, created_at')
     .eq('user_id', currentUser.id)
@@ -3673,7 +3673,7 @@ async function loadNotifications() {
   console.log('NOTIFICATIONS DATA:', notifs);
   console.log('NOTIFICATIONS ERROR:', error);
   if (error) { 
-    console.error('❌ NOTIFICATIONS ERROR:', error.message, '—', error.code);
+    console.error('NOTIFICATIONS ERROR:', error.message, '—', error.code);
     console.error('   Notifications table may not exist or RLS blocks access.');
     return; 
   }
@@ -3721,7 +3721,7 @@ function subscribeToRealtime() {
         await renderConversationList();
         renderRecentMessagesPreview();
       } catch (renderErr) {
-        console.error('❌ renderConversationList failed (new conversation):', renderErr.message);
+        console.error('renderConversationList failed (new conversation):', renderErr.message);
       }
     })
     .subscribe();
@@ -3756,7 +3756,7 @@ function subscribeToRealtime() {
         document.getElementById('msg-badge').classList.add('show');
         showToast('info', 'bi-chat-dots', 'New Message', (msg.body || '').substring(0, 60));
         const senderName = (conv.is_admin_thread ? 'Support' : (employerCache[conv.employer_id]?.name || 'Employer'));
-        pushNotify(`💬 ${senderName}`, (msg.body || 'Sent you a message').substring(0, 100), {
+        pushNotify(`${senderName}`, (msg.body || 'Sent you a message').substring(0, 100), {
           tag: 'msg-' + conv.id, skipIfFocused: true,
           onClick: () => { openConversation(conv.id); navTo('modal-messages'); },
         });
@@ -3794,10 +3794,10 @@ function subscribeToRealtime() {
 
       try {
       await renderConversationList();
-      console.log('✅ Conversation list rendered');
+      console.log('Conversation list rendered');
       renderRecentMessagesPreview();
     } catch (renderErr) {
-      console.error('❌ renderConversationList failed:', renderErr.message);
+      console.error('renderConversationList failed:', renderErr.message);
       document.getElementById('messages-inbox').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>Could not load messages</p></div>';
     }
     })
@@ -3822,7 +3822,7 @@ function subscribeToRealtime() {
       const cur = parseInt(document.getElementById('notif-badge').textContent || '0');
       document.getElementById('notif-badge').textContent = cur + 1;
       document.getElementById('notif-badge').classList.add('show');
-      pushNotify(n.title || '🔔 Notification', n.message || '', {
+      pushNotify(n.title || 'Notification', n.message || '', {
         tag: 'notif-' + n.id, skipIfFocused: true,
         onClick: () => navTo('modal-notifications'),
       });
@@ -3844,7 +3844,7 @@ function subscribeToRealtime() {
       }
       const jobTitle = myApplications[idx]?.job_postings?.title || 'your application';
       showToast('info', 'bi-briefcase', 'Application Updated', `${jobTitle}: ${app.status}`);
-      pushNotify('📋 Application Update', `${jobTitle} — status changed to ${app.status}`, {
+      pushNotify('Application Update', `${jobTitle} — status changed to ${app.status}`, {
         tag: 'app-' + app.id, skipIfFocused: true,
         onClick: () => { navTo('modal-applications'); openApplicationDetail(app.id); },
       });
@@ -3980,12 +3980,12 @@ async function loadCallHistory() {
 // section is visible at a time.
 const SSC_PANEL_IDS = ['modal-notifications','modal-messages','modal-jobs','modal-saved-jobs',
   'modal-applications','modal-bids','modal-ongoing-jobs','modal-interviews','modal-wallet',
-  'modal-account','modal-calls','modal-tasks'];
+  'modal-account','modal-calls'];
 const SSC_PANEL_TITLES = {
   overview: 'Overview', 'modal-account': 'My Profile', 'modal-jobs': 'Find Jobs',
   'modal-applications': 'My Applications', 'modal-saved-jobs': 'Saved Jobs', 'modal-bids': 'My Bids',
   'modal-ongoing-jobs': 'My Jobs', 'modal-interviews': 'Interviews', 'modal-messages': 'Messages',
-  'modal-wallet': 'Wallet', 'modal-notifications': 'Notifications', 'modal-calls': 'Calls', 'modal-tasks': 'Tasks'
+  'modal-wallet': 'Wallet', 'modal-notifications': 'Notifications', 'modal-calls': 'Calls'
 };
 function navTo(id, btn) {
   SSC_PANEL_IDS.forEach(pid => { if (pid !== id) closeModal(pid); });
@@ -4245,7 +4245,7 @@ async function sendMessageReply() {
   sendBtn.disabled = true;
 
   const fullText = replyToText
-    ? `↩ "${replyToText.substring(0,40)}${replyToText.length > 40 ? '…' : ''}" \n${text}`
+    ? `Replying to "${replyToText.substring(0,40)}${replyToText.length > 40 ? '…' : ''}" \n${text}`
     : text;
   const pendingReplyId = replyToId;
 
@@ -4313,7 +4313,7 @@ async function sendEmployeeFile() {
     const { error: ue } = await sb.storage.from('Media').upload(path, file);
     if (ue) throw ue;
     const { data: { publicUrl } } = sb.storage.from('Media').getPublicUrl(path);
-    const body = '📎 ' + file.name;
+    const body = 'Attachment: ' + file.name;
     // send_chat_message does the Connects debit + insert + thread update as
     // one transaction — if the insert fails, the debit rolls back with it.
     const { data: result, error } = await sb.rpc('send_chat_message', {
@@ -4334,6 +4334,70 @@ async function sendEmployeeFile() {
     showToast('ok', 'bi-paperclip', 'File Sent', '');
   } catch(err) { showToast('err', 'bi-exclamation-circle', 'Upload Failed', err.message); }
   finally { if (sendBtn) sendBtn.disabled = false; document.getElementById('emp-chat-file').value = ''; }
+}
+
+// ════════════════════════════════════════════════════════
+//  ROLE ↔ GENDER CHECK
+//  House Help, Nanny and House Keeper are women-only roles on SoundsCare;
+//  Care Giver is open to women and men. Reads the signed-in user's row from
+//  `users` (account role) and uses worker_profiles.gender / preferred_role
+//  (`users` has no gender column). Warns, never silently changes data.
+// ════════════════════════════════════════════════════════
+const FEMALE_ONLY_ROLES = ['house help', 'housekeeper', 'house keeper', 'nanny'];
+let usersRow = null;
+function normGender(g) {
+  g = String(g || '').trim().toLowerCase();
+  if (['m', 'male', 'man', 'boy'].includes(g)) return 'male';
+  if (['f', 'female', 'woman', 'girl'].includes(g)) return 'female';
+  return '';
+}
+function genderLabel(g) { const n = normGender(g); return n === 'male' ? 'Male' : n === 'female' ? 'Female' : ''; }
+function roleIsFemaleOnly(r) {
+  r = String(r || '').trim().toLowerCase();
+  return !!r && FEMALE_ONLY_ROLES.some(x => r.includes(x));
+}
+function evaluateRoleGender(role, gender) {
+  if (!roleIsFemaleOnly(role)) return null;
+  const g = normGender(gender);
+  if (g === 'male') return {
+    level: 'danger', icon: 'bi-exclamation-triangle-fill', title: 'Role and gender do not match',
+    text: role + ' is a women-only role on SoundsCare, and your profile shows male. Employers will see a warning on your profile. Choose Care Giver, which is open to men and women, or correct your gender if it was entered by mistake.'
+  };
+  if (!g) return {
+    level: 'warning', icon: 'bi-info-circle-fill', title: 'Add your gender',
+    text: 'You are set up as ' + role + ', which is a women-only role. Please add your gender so we can confirm your profile.'
+  };
+  return null;
+}
+function paintRoleGenderAlert(el, res) {
+  if (!el) return;
+  el.classList.remove('alert-danger', 'alert-warning');
+  if (!res) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.classList.add('alert-' + res.level);
+  el.style.display = 'flex';
+  el.innerHTML = '<i class="bi ' + res.icon + '" style="margin-top:2px;"></i><div><strong>' + esc(res.title) + '.</strong> ' + esc(res.text) + '</div>';
+}
+async function loadUsersRow() {
+  if (usersRow || !currentUser) return usersRow;
+  const { data, error } = await sb.from('users').select('id,role,full_name,is_active').eq('id', currentUser.id).maybeSingle();
+  if (error) console.warn('users row load failed:', error.message);
+  usersRow = data || null;
+  return usersRow;
+}
+// Overview banner — runs after the worker profile loads and again after each profile save.
+async function refreshRoleGenderCheck() {
+  try {
+    const u = await loadUsersRow();
+    const el = document.getElementById('role-gender-alert');
+    if (u?.role === 'employer') { paintRoleGenderAlert(el, null); return; }
+    paintRoleGenderAlert(el, evaluateRoleGender(workerProfile?.preferred_role, workerProfile?.gender));
+  } catch (e) { console.warn('role/gender check failed:', e); }
+}
+// Live warning inside Edit Profile as the worker changes the two dropdowns.
+function liveRoleGenderCheck() {
+  const role = document.getElementById('ep-role')?.value || '';
+  const gender = document.getElementById('ep-gender')?.value || '';
+  paintRoleGenderAlert(document.getElementById('ep-role-gender-warn'), evaluateRoleGender(role, gender));
 }
 
 // ════════════════════════════════════════════════════════
@@ -4359,6 +4423,16 @@ function openEditProfile() {
   document.getElementById('ep-phone').value = workerProfile.phone || workerProfile.phone_number || '';
   document.getElementById('ep-location').value = workerProfile.location || '';
   document.getElementById('ep-bio').value = workerProfile.bio || workerProfile.skills_summary || '';
+  const roleSel = document.getElementById('ep-role');
+  if (roleSel) {
+    const curRole = workerProfile.preferred_role || '';
+    // keep any role saved before this dropdown existed (e.g. "Gardener") instead of blanking it
+    if (curRole && ![...roleSel.options].some(o => o.value === curRole)) roleSel.add(new Option(curRole, curRole));
+    roleSel.value = curRole;
+  }
+  const genderSel = document.getElementById('ep-gender');
+  if (genderSel) genderSel.value = normGender(workerProfile.gender);
+  liveRoleGenderCheck();
   document.getElementById('ep-job-seeking').value = workerProfile.job_seeking !== false ? 'true' : 'false';
   document.getElementById('ep-visibility').value = workerProfile.profile_visible !== false ? 'true' : 'false';
   document.getElementById('ep-pref-county').value = workerProfile.preferred_county || '';
@@ -4408,6 +4482,10 @@ function confirmSavePersonalInfo() {
     ? 'Do you want to save these changes to your profile?<br><br><strong>Note:</strong> changing your name requires admin approval before it takes effect, and you can only request a name change once every 7 days.'
     : 'Do you want to save these changes to your profile?';
 
+  const rgNow = evaluateRoleGender(document.getElementById('ep-role')?.value, document.getElementById('ep-gender')?.value);
+  if (rgNow) {
+    document.getElementById('ep-save-confirm-body').innerHTML += '<br><br><strong style="color:var(--rose);"><i class="bi bi-exclamation-triangle-fill"></i> ' + esc(rgNow.title) + '.</strong> ' + esc(rgNow.text);
+  }
   document.getElementById('ep-save-confirm-overlay').style.display = 'flex';
 }
 
@@ -4442,6 +4520,10 @@ async function savePersonalInfo() {
   }
 
   const update = { full_name: fullName, phone, phone_number: phone, location, bio, skills_summary: bio, job_seeking: jobSeeking };
+  const roleChoice = document.getElementById('ep-role')?.value || '';
+  const genderChoice = document.getElementById('ep-gender')?.value || '';
+  if (roleChoice) update.preferred_role = roleChoice;
+  if (genderChoice) update.gender = genderLabel(genderChoice);
 
   console.log('Personal info save:', { profileId: workerProfile.id, update });
 
@@ -4538,6 +4620,9 @@ async function savePersonalInfo() {
     } else {
       showToast('ok', 'bi-check-circle', 'Saved', 'Personal info updated.');
     }
+    const rgAfter = evaluateRoleGender(workerProfile.preferred_role, workerProfile.gender);
+    refreshRoleGenderCheck();
+    if (rgAfter) showToast('err', 'bi-exclamation-triangle-fill', rgAfter.title, 'House Help, Nanny and House Keeper are women-only roles. Choose Care Giver or correct your gender.');
   } catch (err) {
     console.error('Personal info save — unexpected exception:', err);
     showToast('err', 'bi-exclamation-circle', 'Save Failed', err?.message || 'Unexpected error while saving.');
@@ -4828,7 +4913,7 @@ async function initEmployeeDetailsSection() {
     if (error) throw error;
     edFullProfile = full;
   } catch (e) {
-    console.warn('⚠️ Employee Details: full profile fetch failed:', e.message);
+    console.warn('Employee Details: full profile fetch failed:', e.message);
     edFullProfile = workerProfile; // fall back to the subset we already have
   }
 
@@ -4905,7 +4990,7 @@ function renderEdProfileTab() {
 
   el.innerHTML = `
     ${gaps.length ? `
-    <div class="ed-detail-item" style="margin-bottom:1rem;background:rgba(232,160,64,.08);border:1px solid rgba(232,160,64,.25);border-radius:12px;padding:12px;">
+    <div class="ed-detail-item" style="margin-bottom:1rem;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.25);border-radius:12px;padding:12px;">
       <div style="font-weight:700;font-size:12.5px;color:var(--accent);margin-bottom:4px;"><i class="bi bi-exclamation-circle"></i> Finish your profile to unlock messaging</div>
       <ul style="margin:4px 0 0 18px;padding:0;font-size:12px;color:var(--muted);line-height:1.7;">
         ${gaps.map(g => `<li>${esc(g)}</li>`).join('')}
@@ -4913,7 +4998,7 @@ function renderEdProfileTab() {
     </div>` : ''}
 
     <!-- Job Status & Category -->
-    <div class="ed-detail-item" style="margin-bottom:1rem;padding:12px;border:1px solid var(--border,#e5e7eb);border-radius:12px;">
+    <div class="ed-detail-item" style="margin-bottom:1rem;padding:12px;border:1px solid var(--border,#e2e7f0);border-radius:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
         <div>
           <div style="font-weight:700;font-size:13px;">${isHired ? 'Currently Hired' : 'Looking for Job'}</div>
@@ -4985,7 +5070,7 @@ async function setHiredLookingStatus(hired) {
     showToast('ok', 'bi-check-circle', hired ? 'Marked as Hired' : 'Now Looking for a Job', hired ? 'Your profile is now hidden from public listings.' : 'Your profile is visible again.');
     if (typeof renderJobs === 'function' && Array.isArray(allJobs)) renderJobs(allJobs);
   } catch (e) {
-    console.error('❌ setHiredLookingStatus failed:', e.message);
+    console.error('setHiredLookingStatus failed:', e.message);
     showToast('err', 'bi-exclamation-circle', 'Update Failed', 'Could not update your status. Try again.');
     const toggle = document.getElementById('ed-hired-toggle');
     if (toggle) toggle.checked = !hired;
@@ -5001,7 +5086,7 @@ async function saveWorkerCategory(category) {
     showToast('ok', 'bi-check-circle', 'Category Updated', 'Find Jobs will now recommend accordingly.');
     if (typeof renderJobs === 'function' && Array.isArray(allJobs)) renderJobs();
   } catch (e) {
-    console.error('❌ saveWorkerCategory failed:', e.message);
+    console.error('saveWorkerCategory failed:', e.message);
     showToast('err', 'bi-exclamation-circle', 'Update Failed', 'Could not save category. Try again.');
   }
 }
@@ -5016,7 +5101,7 @@ async function saveWhatsappNumber() {
     if (edFullProfile) edFullProfile.whatsapp_number = value || null;
     showToast('ok', 'bi-check-circle', 'Saved', 'WhatsApp number saved.');
   } catch (e) {
-    console.error('❌ saveWhatsappNumber failed:', e.message);
+    console.error('saveWhatsappNumber failed:', e.message);
     showToast('err', 'bi-exclamation-circle', 'Update Failed', 'Could not save WhatsApp number. Try again.');
   }
 }
@@ -5070,7 +5155,7 @@ async function loadEdActivity() {
         <span class="ed-pill ${edStatusPillClass(e.status)}">${esc((e.status || '').replace(/_/g, ' '))}</span>
       </div>`).join('');
   } catch (e) {
-    console.error('❌ loadEdActivity failed:', e.message);
+    console.error('loadEdActivity failed:', e.message);
     el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load activity</p></div>';
   }
 }
@@ -5105,7 +5190,7 @@ async function loadEdHiringHistory() {
       </div>`;
     }).join('');
   } catch (e) {
-    console.error('❌ loadEdHiringHistory failed:', e.message);
+    console.error('loadEdHiringHistory failed:', e.message);
     el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load hiring history</p></div>';
   }
 }
@@ -5152,7 +5237,7 @@ async function loadEdEarnings() {
         <span class="ed-pill ${edStatusPillClass(w.status)}">${esc(w.status || 'pending')}</span>
       </div>`).join('');
   } catch (e) {
-    console.error('❌ loadEdEarnings failed:', e.message);
+    console.error('loadEdEarnings failed:', e.message);
     el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load earnings</p></div>';
   }
 }
@@ -5205,7 +5290,7 @@ async function loadEdDocuments() {
   const docsHtml = docs.length ? docs.map(d => `
     <div class="ed-doc-row" style="flex-direction:column;align-items:stretch;">
       <a href="${esc(d.url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-        <div class="ed-doc-icon" style="background:${d.icon === 'bi-file-earmark-person-fill' ? '#DC2626' : '#2563EB'};"><i class="bi ${d.icon}"></i></div>
+        <div class="ed-doc-icon" style="background:${d.icon === 'bi-file-earmark-person-fill' ? '#d92d20' : '#2563EB'};"><i class="bi ${d.icon}"></i></div>
         <div class="ed-doc-info">
           <div class="ed-doc-name">${esc(d.label)}</div>
           <div class="ed-doc-meta">${esc(d.meta)}</div>
@@ -5387,7 +5472,7 @@ async function loadEdHiringHistoryDetailed() {
       sb.from('job_postings').select('id, title, company_name, county, employer_id').in('id', jobIds),
       sb.from('employer_ratings').select('job_id, rating, review_text, created_at').eq('worker_id', workerProfile.id).in('job_id', jobIds),
     ]);
-    if (ratingErr) console.error('❌ employer_ratings fetch failed:', ratingErr.message);
+    if (ratingErr) console.error('employer_ratings fetch failed:', ratingErr.message);
 
     const jobById = {}; (jobRows || []).forEach(j => { jobById[j.id] = j; });
     const interviewByJob = {}; (interviews || []).forEach(i => { interviewByJob[i.job_id] = i; });
@@ -5424,7 +5509,7 @@ async function loadEdHiringHistoryDetailed() {
       </div>`;
     }).join('');
   } catch (e) {
-    console.error('❌ loadEdHiringHistoryDetailed failed:', e.message);
+    console.error('loadEdHiringHistoryDetailed failed:', e.message);
     el.innerHTML = '<div class="ed-empty"><i class="bi bi-exclamation-circle"></i><p>Could not load hiring history</p></div>';
   }
 }
@@ -5436,7 +5521,7 @@ async function loadEdHiringHistoryDetailed() {
 function edHiringFeedbackHtml(app, employerProfile, employerName, existingRating) {
   if (existingRating) {
     const stars = [1,2,3,4,5].map(n =>
-      `<i class="bi ${n <= existingRating.rating ? 'bi-star-fill' : 'bi-star'}" style="color:#f59e0b;font-size:13px;"></i>`
+      `<i class="bi ${n <= existingRating.rating ? 'bi-star-fill' : 'bi-star'}" style="color:#f5a623;font-size:13px;"></i>`
     ).join('');
     return `
       <div style="margin-top:8px;padding:8px 10px;background:var(--ds-brand-soft);border:1px solid var(--ds-brand-border);border-radius:10px;">
@@ -5451,7 +5536,7 @@ function edHiringFeedbackHtml(app, employerProfile, employerName, existingRating
   if (!canRate) return '';
   return `
     <div style="margin-top:8px;">
-      <button class="btn btn-sm" style="background:#f59e0b;color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${app.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})">
+      <button class="btn btn-sm" style="background:#b7791f;color:#fff;" onclick="openRateEmployerModal('', '${employerProfile.id}', '${app.job_id}', ${JSON.stringify(employerName).replace(/"/g, '&quot;')})">
         <i class="bi bi-star-fill"></i> Rate &amp; Leave Feedback
       </button>
     </div>`;
