@@ -474,10 +474,7 @@ var emailCheckTimer = null;
 // ============================================================
 // INIT
 // ============================================================
-(function init() {
-  checkIp();
-  buildCS('');
-})();
+// init() is called at the very end of this script, after all vars are defined.
 
 // ============================================================
 // TOAST
@@ -828,6 +825,15 @@ function hideAlert(id) {
 // STEP 1 — REGISTER
 // ============================================================
 async function handleRegister() {
+  try { await _handleRegister(); }
+  catch (e) {
+    console.error('[SoundsCare] register error:', e);
+    hideChecking();
+    setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+    showAlert('alertMain','alertMainText','Something went wrong: ' + ((e && e.message) || e) + '. Please try again.');
+  }
+}
+async function _handleRegister() {
   hideAlert('alertMain');
 
   var firstName = document.getElementById('firstName').value.trim();
@@ -919,6 +925,7 @@ async function handleRegister() {
   if (signUpResult.error) {
     hideChecking();
     setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
+    console.error('[SoundsCare] signUp error:', signUpResult.error);
     showAlert('alertMain','alertMainText', friendlyAuthError(signUpResult.error.message));
     return;
   }
@@ -934,7 +941,11 @@ async function handleRegister() {
   setBtnLoading('regBtn','regSpinner','regBtnText', false, 'Continue to Verify Email');
 
   if (otpResult.error) {
-    showAlert('alertMain','alertMainText','Failed to send verification code. Please try again.');
+    console.error('[SoundsCare] signInWithOtp error:', otpResult.error);
+    var om = (otpResult.error.message || '').toLowerCase();
+    showAlert('alertMain','alertMainText', (om.indexOf('security purposes') > -1 || om.indexOf('rate limit') > -1 || om.indexOf('seconds') > -1)
+      ? 'Please wait about a minute, then press Continue again to get your code.'
+      : 'Failed to send verification code: ' + (otpResult.error.message || 'unknown error'));
     return;
   }
 
@@ -1072,6 +1083,14 @@ async function resendOtp() {
 // VERIFY OTP
 // ============================================================
 async function verifyOtp() {
+  try { await _verifyOtp(); }
+  catch (e) {
+    console.error('[SoundsCare] verify error:', e);
+    setBtnLoading('otpBtn','otpSpinner','otpBtnText', false, 'Verify & Create Account');
+    showAlert('alertOtp','alertOtpText','Something went wrong: ' + ((e && e.message) || e) + '. Please try again.');
+  }
+}
+async function _verifyOtp() {
   var email   = pendingUser ? pendingUser.email : document.getElementById('email').value.trim();
   var entered = getOtp();
 
@@ -1225,6 +1244,14 @@ function updateFooterDateTime() {
 }
 updateFooterDateTime();
 var _footerClockId = setInterval(updateFooterDateTime, 1000);
+
+// ============================================================
+// INIT (must stay last: needs COUNTRIES, EMAIL_REGEX, OTP_LEN etc. defined above)
+// ============================================================
+(function init() {
+  try { checkIp(); } catch(e) { console.warn('[SoundsCare] checkIp failed', e); }
+  try { buildCS(''); } catch(e) { console.error('[SoundsCare] buildCS failed', e); }
+})();
 
 // ============================================================
 // UTILS
