@@ -7,7 +7,14 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/buttons.css">
+<link rel="stylesheet" href="css/modal.css">
+<link rel="stylesheet" href="css/tables.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/responsive.css">
 </head>
 <body data-page="jobs">
 
@@ -39,47 +46,6 @@
       </div>
       <div class="table-wrap"><table><thead><tr><th>Title</th><th>Employer</th><th>Location</th><th>Type</th><th>Salary</th><th>Status</th><th>Posted</th><th>Applications</th><th>Actions</th></tr></thead><tbody id="jobs-tbody"><tr><td colspan="9" style="text-align:center">Loading…</td></tr></tbody></table></div>
       <div class="pagination" id="jobs-pagination"></div>
-    </div>
-
-    <!-- WHATSAPP APPLICATIONS -->
-    <div class="page-head" style="margin-top:2rem">
-      <div><h1 style="font-size:20px"><i class="bi bi-whatsapp" style="color:#25D366"></i> WhatsApp Applications</h1><p>Applicants who applied through WhatsApp. Each one has a support ticket number.</p></div>
-      <button class="btn btn-secondary btn-sm" onclick="waAdmin.openSettings()"><i class="bi bi-gear"></i> Receiving number</button>
-    </div>
-    <div class="section">
-      <div class="search-bar">
-        <input class="search-input" id="wa-search" placeholder="🔍 Search name, number, ticket, job…" oninput="waAdmin.render()">
-        <select class="filter-select" id="wa-status-filter" onchange="waAdmin.render()">
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="shortlisted">Shortlisted</option>
-          <option value="hired">Hired</option>
-          <option value="rejected">Rejected</option>
-        </select>
-        <select class="filter-select" id="wa-verified-filter" onchange="waAdmin.render()">
-          <option value="">All numbers</option>
-          <option value="yes">Confirmed on WhatsApp</option>
-          <option value="no">Needs manual check</option>
-        </select>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>Applicant</th><th>WhatsApp</th><th>Job</th><th>Ticket</th><th>Number</th><th>Status</th><th>Applied</th><th>Actions</th></tr></thead><tbody id="wa-tbody"><tr><td colspan="8" style="text-align:center">Loading…</td></tr></tbody></table></div>
-    </div>
-  </div>
-</div>
-
-<!-- WHATSAPP RECEIVING NUMBER MODAL -->
-<div id="wa-settings-modal" class="modal-overlay">
-  <div class="modal">
-    <div class="modal-header"><h2><i class="bi bi-whatsapp"></i> Receiving WhatsApp number</h2><button class="modal-close" onclick="closeModal('wa-settings-modal')">×</button></div>
-    <div class="modal-body">
-      <p style="font-size:13px;margin:0 0 12px">When an applicant taps <b>Share on WhatsApp</b>, their message (full name, ticket number and a follow-up note) opens addressed to this number. Leave empty to let applicants pick the contact themselves.</p>
-      <div class="form-group"><label>WhatsApp number (country code first, digits only)</label><input id="wa-settings-number" inputmode="tel" placeholder="e.g. 254712345678"></div>
-      <div id="wa-settings-msg" style="font-size:12px;min-height:16px"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('wa-settings-modal')">Cancel</button>
-      <button class="btn btn-primary" id="wa-settings-save" onclick="waAdmin.saveSettings()"><i class="bi bi-check-lg"></i> Save</button>
     </div>
   </div>
 </div>
@@ -142,131 +108,13 @@
 <script src="js/delete-engine.js"></script>
 <script src="js/jobs.js"></script>
 <script>
-/* WhatsApp applications panel (self-contained; uses the same Supabase client as the rest of the admin) */
-const waAdmin = (function(){
-  var rows = [], settingsId = null;
-  var STATUSES = ['pending','reviewed','shortlisted','rejected'];   // 'hired' stays in the normal hiring flow
-
-  function db(){
-    var c = window.dbClient || window.db || window.supabaseClient || window.sb;
-    if(c && typeof c.from === 'function') return c;
-    throw new Error('Supabase client not found (expected dbClient / db / supabaseClient / sb from js/supabase.js)');
-  }
-  function digits(s){ return String(s||'').replace(/\D/g,''); }
-  function td(text, style){ var c=document.createElement('td'); if(text!=null) c.textContent=text; if(style) c.style.cssText=style; return c; }
-  function badge(text, bg, fg){ var b=document.createElement('span'); b.textContent=text; b.style.cssText='display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:'+bg+';color:'+fg; return b; }
-  function say(msg){ if(typeof window.showToast==='function'){ try{ window.showToast(msg); return; }catch(e){} } console.log('[WhatsApp applications]', msg); }
-  function fmtDate(d){ try{ return new Date(d).toLocaleString('en-KE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return d||''; } }
-
-  async function load(){
-    var tb = document.getElementById('wa-tbody');
-    try{
-      var r = await db().from('job_applications')
-        .select('id,worker_name,whatsapp_number,whatsapp_verified,ticket_number,status,applied_at,job_postings(title)')
-        .eq('applied_via','whatsapp').order('applied_at',{ascending:false}).limit(300);
-      if(r.error) throw r.error;
-      rows = r.data || [];
-      render();
-    }catch(e){
-      console.error('[WhatsApp applications] load failed', e);
-      tb.innerHTML=''; var tr=document.createElement('tr'); var c=td('Could not load WhatsApp applications: '+(e.message||e),'text-align:center;color:#b3261e'); c.colSpan=8; tr.appendChild(c); tb.appendChild(tr);
-    }
-  }
-
-  function render(){
-    var tb = document.getElementById('wa-tbody'); tb.innerHTML='';
-    var q = (document.getElementById('wa-search').value||'').trim().toLowerCase();
-    var st = document.getElementById('wa-status-filter').value;
-    var vf = document.getElementById('wa-verified-filter').value;
-    var list = rows.filter(function(a){
-      var jt = (a.job_postings && a.job_postings.title) || '';
-      if(st && a.status!==st) return false;
-      if(vf==='yes' && !a.whatsapp_verified) return false;
-      if(vf==='no' && a.whatsapp_verified) return false;
-      return !q || (a.worker_name||'').toLowerCase().indexOf(q)>-1 || (a.whatsapp_number||'').indexOf(q.replace(/\D/g,'')||'\u0000')>-1 ||
-             (a.ticket_number||'').toLowerCase().indexOf(q)>-1 || jt.toLowerCase().indexOf(q)>-1;
-    });
-    if(!list.length){ var tr=document.createElement('tr'); var c=td(rows.length?'No applications match your filters.':'No WhatsApp applications yet.','text-align:center'); c.colSpan=8; tr.appendChild(c); tb.appendChild(tr); return; }
-
-    list.forEach(function(a){
-      var jt = (a.job_postings && a.job_postings.title) || '—';
-      var tr = document.createElement('tr');
-      tr.appendChild(td(a.worker_name||'—','font-weight:600'));
-      tr.appendChild(td(a.whatsapp_number?('+'+a.whatsapp_number):'—'));
-      tr.appendChild(td(jt));
-      tr.appendChild(td(a.ticket_number||'—','font-family:ui-monospace,Menlo,monospace;white-space:nowrap'));
-
-      var vcell = td(); vcell.appendChild(a.whatsapp_verified ? badge('✓ On WhatsApp','#e8f8ee','#12663a') : badge('Check manually','#fff6e0','#8a5a00')); tr.appendChild(vcell);
-
-      var scell = td(); var sel = document.createElement('select'); sel.className='filter-select'; sel.style.minWidth='120px';
-      var opts = STATUSES.slice(); if(opts.indexOf(a.status)<0) opts.unshift(a.status);
-      opts.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s.charAt(0).toUpperCase()+s.slice(1); if(s==='hired') o.disabled=true; if(s===a.status) o.selected=true; sel.appendChild(o); });
-      sel.addEventListener('change', function(){ setStatus(a, sel); });
-      scell.appendChild(sel); tr.appendChild(scell);
-
-      tr.appendChild(td(fmtDate(a.applied_at),'white-space:nowrap;font-size:12px'));
-
-      var acts = td('', 'white-space:nowrap');
-      if(a.whatsapp_number){
-        var chat = document.createElement('a'); chat.className='btn btn-secondary btn-sm'; chat.target='_blank'; chat.rel='noopener'; chat.title='Open WhatsApp chat';
-        var msg = 'Hello '+(a.worker_name||'')+', this is SoundsCare about your job application'+(jt!=='—'?(' for '+jt):'')+'. Ticket number: '+(a.ticket_number||'');
-        chat.href = 'https://wa.me/'+digits(a.whatsapp_number)+'?text='+encodeURIComponent(msg);
-        chat.innerHTML='<i class="bi bi-whatsapp"></i>'; acts.appendChild(chat); acts.appendChild(document.createTextNode(' '));
-      }
-      var cp = document.createElement('button'); cp.type='button'; cp.className='btn btn-secondary btn-sm'; cp.title='Copy ticket number'; cp.innerHTML='<i class="bi bi-clipboard"></i>';
-      cp.addEventListener('click', function(){ if(navigator.clipboard && a.ticket_number){ navigator.clipboard.writeText(a.ticket_number).then(function(){ say('Ticket '+a.ticket_number+' copied'); }); } });
-      acts.appendChild(cp); tr.appendChild(acts);
-      tb.appendChild(tr);
-    });
-  }
-
-  async function setStatus(a, sel){
-    var prev = a.status, next = sel.value; sel.disabled = true;
-    try{
-      var r = await db().from('job_applications').update({status: next}).eq('id', a.id);
-      if(r.error) throw r.error;
-      a.status = next; say('Status updated to '+next);
-    }catch(e){ console.error('[WhatsApp applications] status update failed', e); sel.value = prev; say('Could not update status: '+(e.message||e)); }
-    sel.disabled = false;
-  }
-
-  async function openSettings(){
-    var inp = document.getElementById('wa-settings-number'), msg = document.getElementById('wa-settings-msg');
-    msg.textContent=''; msg.style.color=''; inp.value=''; openModal('wa-settings-modal');
-    try{
-      var r = await db().from('settings').select('id,job_apply_whatsapp_number').limit(1).maybeSingle();
-      if(r.error) throw r.error;
-      if(r.data){ settingsId = r.data.id; inp.value = r.data.job_apply_whatsapp_number || ''; }
-    }catch(e){ console.error(e); msg.style.color='#b3261e'; msg.textContent='Could not load the current number: '+(e.message||e); }
-  }
-
-  async function saveSettings(){
-    var inp = document.getElementById('wa-settings-number'), msg = document.getElementById('wa-settings-msg'), btn = document.getElementById('wa-settings-save');
-    var val = digits(inp.value);
-    if(val && (val.length < 8 || val.length > 15)){ msg.style.color='#b3261e'; msg.textContent='Enter the number with country code, 8–15 digits (e.g. 254712345678).'; return; }
-    if(settingsId==null){ msg.style.color='#b3261e'; msg.textContent='Settings row not found.'; return; }
-    btn.disabled = true; msg.style.color=''; msg.textContent='Saving…';
-    try{
-      var r = await db().from('settings').update({job_apply_whatsapp_number: val || null}).eq('id', settingsId).select('id');
-      if(r.error) throw r.error;
-      if(!r.data || !r.data.length) throw new Error('Not allowed — only admins can change this setting.');
-      inp.value = val; msg.style.color='#12663a'; msg.textContent='Saved.'; say('Receiving WhatsApp number saved');
-      setTimeout(function(){ closeModal('wa-settings-modal'); }, 700);
-    }catch(e){ console.error(e); msg.style.color='#b3261e'; msg.textContent='Could not save: '+(e.message||e); }
-    btn.disabled = false;
-  }
-
-  return { init: load, render: render, openSettings: openSettings, saveSettings: saveSettings };
-})();
-</script>
-<script>
 (async function(){
   await initLayout();
   const admin = await requireAuth();
   if(!admin) return;
   await initJobsPage();
-  try { await waAdmin.init(); } catch(e) { console.error('[WhatsApp applications] init failed', e); }
 })();
 </script>
 </body>
 </html>
+    
