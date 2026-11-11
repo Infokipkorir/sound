@@ -13,8 +13,13 @@ const absUrl = (u) => !u ? '' : /^https?:/i.test(u) ? u : SITE + '/' + String(u)
 const jsonForScript = (v) => JSON.stringify(v).replace(/</g, '\\u003c').replace(/\u2028|\u2029/g, '');
 
 let TEMPLATE;
-function template() {
-  if (!TEMPLATE) TEMPLATE = fs.readFileSync(path.join(process.cwd(), 'w.html'), 'utf8');
+async function template(req) {
+  if (TEMPLATE) return TEMPLATE;
+  try { TEMPLATE = fs.readFileSync(path.join(process.cwd(), 'w.html'), 'utf8'); return TEMPLATE; } catch (e) { /* not bundled, load it from the site */ }
+  const host = (req.headers && (req.headers['x-forwarded-host'] || req.headers.host)) || new URL(SITE).host;
+  const r = await fetch('https://' + host + '/w');          // /w serves w.html (cleanUrls); only /w/<slug> is rewritten to this function
+  if (!r.ok) throw new Error('template fetch ' + r.status);
+  TEMPLATE = await r.text();
   return TEMPLATE;
 }
 
@@ -61,7 +66,8 @@ module.exports = async (req, res) => {
   const raw = (req.query && req.query.slug) || '';
   const slug = decodeURIComponent(Array.isArray(raw) ? raw[0] : raw).trim().slice(0, 120);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  let html = template();
+  let html;
+  try { html = await template(req); } catch (e) { console.error('w api template:', e.message); res.statusCode = 500; return res.end('Profile page is temporarily unavailable.'); }
   if (!slug || !/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
     res.statusCode = 404; res.setHeader('Cache-Control', 'no-store');
     return res.end(html.replace('</head>', '<script>window.__WORKER__=false;</script>\n</head>'));
