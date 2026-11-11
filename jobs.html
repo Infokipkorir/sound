@@ -217,6 +217,11 @@
   .note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--teal-bg);border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:6px}
   .note i{color:var(--teal-d);font-size:18px}
   .note .linkbtn{margin-left:auto}
+  select.sel{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:15px;outline:none}
+  select.sel:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,108,240,.18)}
+  .jobchip{display:flex;gap:10px;align-items:center;background:var(--blue-bg);border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:6px}
+  .jobchip i{color:var(--blue);font-size:18px}
+  .tkt{display:inline-block;background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;padding:6px 14px;font-weight:800;letter-spacing:.04em;margin:4px 0 12px}
   .amsg:empty{display:none}
   .amsg{margin:12px 0 0;padding:10px 14px;border-radius:12px;font-size:13.5px;font-weight:500;display:flex;gap:10px;align-items:flex-start}
   .amsg.err{background:var(--bad-bg);color:var(--bad)}
@@ -305,6 +310,7 @@
     <div class="m-foot" id="mFoot">
       <button class="btn btn-ghost" id="mClose2"><i class="bi bi-x-circle"></i> Close</button>
       <button class="btn btn-wa" id="mApply"><i class="bi bi-whatsapp"></i> WhatsApp</button>
+      <button class="btn btn-ghost" id="mSupport"><i class="bi bi-headset"></i> Support</button>
       <button class="btn btn-primary" id="mOnline"><i class="bi bi-send-fill"></i> Apply online</button>
     </div>
   </div>
@@ -757,6 +763,53 @@ function showDone(phone){
     '<button class="btn btn-primary" data-do="close"><i class="bi bi-check2"></i> Done</button></div>';
 }
 
+
+/* ---------- job support ticket -> admin dashboard (via create_job_support_ticket RPC) ---------- */
+var TOPICS = { question:'I have a question about this job', report:'Report this job (scam / wrong info)', problem:'I have a problem applying', other:'Something else' };
+function showSupport(msg, type){
+  var j = current; if (!j) return;
+  shell(j); setMode('support');
+  var opts = Object.keys(TOPICS).map(function(k){ return '<option value="' + k + '">' + esc(TOPICS[k]) + '</option>'; }).join('');
+  $('mBody').innerHTML =
+    '<button class="linkbtn" data-do="back"><i class="bi bi-arrow-left"></i> Job details</button>' +
+    '<h3 class="a-title">Contact support about this job</h3>' +
+    '<div class="jobchip"><i class="bi bi-briefcase-fill"></i><span><b>' + esc(j.title || 'Job') + '</b><br><small>' + esc([j.company_name, j.city || j.location, j.county].filter(Boolean).join(' · ')) + ' · ID ' + esc(j.short_code || j.id) + '</small></span></div>' +
+    '<p class="hint">The job details are attached to your ticket automatically. Our team replies on the number or email you give.</p>' +
+    '<div id="aMsg" class="amsg"></div>' +
+    '<form data-form="support" novalidate>' +
+      '<label class="lab" for="t_topic">Topic</label><select class="sel" id="t_topic">' + opts + '</select>' +
+      fld('t_name', 'Full name *', 'text', 'person', pref.name, 'name') +
+      fld('t_phone', 'Phone / WhatsApp number *', 'tel', 'telephone', pref.phone, 'tel', 'e.g. 0712 345 678') +
+      fld('t_email', 'Email (optional)', 'email', 'envelope', pref.email, 'email') +
+      '<label class="lab" for="t_msg">Your message *</label><textarea id="t_msg" maxlength="2000" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:15px;min-height:96px;resize:vertical;outline:none" placeholder="How can we help?"></textarea>' +
+      '<input type="text" id="a_hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0">' +
+      '<button class="btn btn-primary btn-block" type="submit" id="aBtn"><i class="bi bi-send-fill"></i> Send to support</button>' +
+    '</form>';
+  $('mBody').scrollTop = 0;
+  if (msg) amsg(msg, type);
+}
+async function submitSupport(){
+  if ($('a_hp') && $('a_hp').value) return showSupportDone('');
+  var name = $('t_name').value.trim(), phone = $('t_phone').value.trim(), email = $('t_email').value.trim(), msg = $('t_msg').value.trim();
+  if (name.length < 2) return amsg('Please enter your full name.', 'err');
+  if (digits(phone).length < 9 && !email) return amsg('Enter a valid phone number or an email so we can reply.', 'err');
+  if (email && !emailOk(email)) return amsg('That email address does not look right.', 'err');
+  if (msg.length < 5) return amsg('Please type your message.', 'err');
+  busy(true, 'Sending…');
+  var r = await db.rpc('create_job_support_ticket', { p_job_id: current.id, p_name: name, p_email: email || null, p_phone: phone || null, p_message: msg, p_topic: $('t_topic').value });
+  if (r.error){ busy(false); console.error(r.error); return amsg(/Too many/i.test(r.error.message) ? 'Too many requests. Please try again in a while.' : 'We could not send your message. Please try again or use WhatsApp.', 'err'); }
+  var row = Array.isArray(r.data) ? r.data[0] : r.data; row = row || {};
+  try { var T = JSON.parse(localStorage.getItem('sc_job_tickets') || '[]'); T.push({ id:row.ticket_id, no:row.ticket_number, token:row.guest_token, job:current.id, at:Date.now() }); localStorage.setItem('sc_job_tickets', JSON.stringify(T.slice(-20))); } catch(e){}
+  showSupportDone(row.ticket_number);
+}
+function showSupportDone(no){
+  setMode('done');
+  $('mBody').innerHTML = '<div class="done"><i class="bi bi-check-circle-fill big"></i><h3>Message sent to support</h3>' +
+    (no ? '<div class="tkt">' + esc(no) + '</div>' : '') +
+    '<p>Our team has your message together with the job details and will reply soon. Keep your ticket number for reference.</p>' +
+    '<button class="btn btn-primary" data-do="close"><i class="bi bi-check2"></i> Done</button></div>';
+}
+
 /* ---------- events ---------- */
 $('q').addEventListener('input', filter);
 $('chips').addEventListener('click', function(e){
@@ -791,7 +844,7 @@ $('mBody').addEventListener('click', async function(e){
 $('mBody').addEventListener('submit', function(e){
   e.preventDefault();
   var f = e.target.getAttribute('data-form');
-  if (f === 'apply') submitApply(); else if (f === 'signin') doSignin(); else if (f === 'signup') doSignup();
+  if (f === 'support') submitSupport(); else if (f === 'apply') submitApply(); else if (f === 'signin') doSignin(); else if (f === 'signup') doSignup();
 });
 $('moreBtn').addEventListener('click', function(){ shown += PAGE; render(); });
 $('mClose').addEventListener('click', closeModal);
@@ -799,6 +852,7 @@ $('mClose2').addEventListener('click', closeModal);
 $('overlay').addEventListener('click', function(e){ if (e.target === this) closeModal(); });
 $('mApply').addEventListener('click', function(){ whatsapp(current); });
 $('mOnline').addEventListener('click', function(){ showApply(); });
+$('mSupport').addEventListener('click', function(){ showSupport(); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
 
 /* ---------- top nav (same behaviour as index.html) ---------- */
