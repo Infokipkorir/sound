@@ -1555,3 +1555,138 @@
 /* Messaging-gated banner (Messages page) */
 .msg-gate-banner { background:rgba(217,45,32,.06); border:1px solid rgba(217,45,32,.22); border-radius:12px; padding:14px; margin:12px; font-size:12.5px; }
 .msg-gate-banner ul { margin:6px 0 8px 18px; padding:0; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN · JOBS PAGE  (jobs.html — <body data-page="jobs">)
+   Everything below is scoped to body[data-page="jobs"] so it cannot
+   change any other page that shares this stylesheet. To reuse these
+   styles on another admin page, add that page's selector, e.g.
+   replace `body[data-page="jobs"]` with `:is(body[data-page="jobs"], body[data-page="users"])`.
+   ═══════════════════════════════════════════════════════════════════ */
+:root { --amber: #B45309; }
+
+/* ── Page frame: content sits to the right of the fixed sidebar ── */
+body[data-page="jobs"] .main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+  transition: margin-left .28s cubic-bezier(.4,0,.2,1);
+}
+body[data-page="jobs"] .content {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+@media (min-width: 640px)  { body[data-page="jobs"] .content { padding: 1.75rem 1.5rem 5rem; } }
+@media (min-width: 1024px) { body[data-page="jobs"] .content { padding: 2rem 2rem 5rem; } }
+@media (max-width: 900px)  { body[data-page="jobs"] .main { margin-left: 0; } }
+
+/* ── Maintenance banner (hidden until JS shows it) ── */
+body[data-page="jobs"] #maintenance-banner {
+  display: none;
+  align-items: center; justify-content: center; gap: 8px;
+  background: var(--ds-status-warning-bg); color: var(--ds-status-warning-text);
+  border-bottom: 1px solid rgba(180,83,9,.25);
+  padding: 8px 16px; font-size: 13px; font-weight: 700; text-align: center;
+  position: sticky; top: 0; z-index: 400;
+}
+body[data-page="jobs"] #maintenance-banner.show { display: flex; }
+
+/* ── Page heading row ── */
+body[data-page="jobs"] .page-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem;
+}
+body[data-page="jobs"] .page-head h1 {
+  font-size: clamp(1.25rem, 1.1rem + .6vw, 1.6rem);
+  font-weight: 800; line-height: 1.25; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+body[data-page="jobs"] .page-head p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* ── Search + filters ── */
+body[data-page="jobs"] .search-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem;
+}
+body[data-page="jobs"] .search-input {
+  flex: 1 1 260px; min-width: 0; min-height: 40px;
+  padding: 9px 14px; font-size: 14px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card); color: var(--ink);
+}
+body[data-page="jobs"] .filter-select {
+  flex: 0 0 auto; min-height: 40px;
+  padding: 9px 32px 9px 12px; font-size: 13px; font-family: inherit; font-weight: 600;
+  border: 1px solid var(--border); border-radius: 10px;
+  background-color: var(--card); color: var(--ink); cursor: pointer;
+}
+body[data-page="jobs"] .search-input:focus,
+body[data-page="jobs"] .filter-select:focus {
+  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(26,108,240,.10);
+}
+
+/* ── Data table ── */
+body[data-page="jobs"] .table-wrap {
+  width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+}
+body[data-page="jobs"] .table-wrap table { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 13px; }
+body[data-page="jobs"] .table-wrap thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--surface); color: var(--muted);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  text-align: left; white-space: nowrap;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+}
+body[data-page="jobs"] .table-wrap tbody td {
+  padding: 12px 14px; vertical-align: middle; color: var(--ink);
+  border-bottom: 1px solid var(--border);
+}
+body[data-page="jobs"] .table-wrap tbody tr:last-child td { border-bottom: none; }
+body[data-page="jobs"] .table-wrap tbody tr:hover { background: var(--ds-brand-soft); }
+body[data-page="jobs"] .table-wrap td .btn + .btn { margin-left: 4px; }
+
+/* ── Status / label badges (job status, featured, urgent …) ── */
+body[data-page="jobs"] .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: var(--ds-radius-full);
+  font-size: 11px; font-weight: 700; line-height: 1.2; white-space: nowrap; text-transform: capitalize;
+  background: var(--ds-surface-subtle); color: var(--ds-text-secondary);
+}
+body[data-page="jobs"] .badge-green,  body[data-page="jobs"] .badge-active,  body[data-page="jobs"] .badge-success { background: var(--ds-status-success-bg); color: var(--ds-status-success-text); }
+body[data-page="jobs"] .badge-amber,  body[data-page="jobs"] .badge-draft,   body[data-page="jobs"] .badge-warning { background: var(--ds-status-warning-bg); color: var(--ds-status-warning-text); }
+body[data-page="jobs"] .badge-red,    body[data-page="jobs"] .badge-closed,  body[data-page="jobs"] .badge-danger,  body[data-page="jobs"] .badge-urgent { background: var(--ds-status-danger-bg); color: var(--ds-status-danger-text); }
+body[data-page="jobs"] .badge-blue,   body[data-page="jobs"] .badge-info,    body[data-page="jobs"] .badge-featured { background: var(--ds-status-info-bg); color: var(--ds-status-info-text); }
+body[data-page="jobs"] .badge-gray,   body[data-page="jobs"] .badge-expired { background: var(--ds-surface-subtle); color: var(--ds-text-secondary); }
+
+/* ── Pagination (buttons are generated by jobs.js) ── */
+body[data-page="jobs"] .pagination {
+  display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 1rem;
+}
+body[data-page="jobs"] .pagination button,
+body[data-page="jobs"] .pagination a {
+  min-width: 36px; height: 36px; padding: 0 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+  color: var(--ink); font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; text-decoration: none; transition: .15s;
+}
+body[data-page="jobs"] .pagination button:hover:not(:disabled),
+body[data-page="jobs"] .pagination a:hover { border-color: var(--brand); color: var(--brand); background: var(--ds-brand-soft); }
+body[data-page="jobs"] .pagination .active,
+body[data-page="jobs"] .pagination button.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+body[data-page="jobs"] .pagination button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Post-job modal: two-column rows, footer, taller text areas ── */
+body[data-page="jobs"] .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 600px) { body[data-page="jobs"] .form-row { grid-template-columns: 1fr; gap: 0; } }
+body[data-page="jobs"] .form-group textarea { min-height: 100px; resize: vertical; }
+body[data-page="jobs"] .form-group input[type="checkbox"] { width: auto; padding: 0; accent-color: var(--brand); }
+body[data-page="jobs"] .modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+  padding: 1rem 1.5rem; border-top: 1px solid var(--border); flex-shrink: 0;
+  background: var(--surface);
+}
+body[data-page="jobs"] .modal-footer .btn { min-height: 40px; }
