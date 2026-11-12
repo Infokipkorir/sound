@@ -1156,41 +1156,125 @@
     .newsletter-perks span{display:flex;align-items:center;gap:.3rem;font-size:11px;color:var(--text-muted);background:var(--surface-alt);padding:4px 9px;border-radius:20px}
     .newsletter-perks i{color:var(--blue);font-size:11px}
 
-    /* ================= APP SPLASH (fills the gap the native PWA splash
-       screen can't: Chrome/Android's OS-drawn launch splash is a static
-       icon with no animation API, so this custom overlay picks up the
-       instant index.html starts rendering and plays the fade-in + progress
-       bar, then dissolves into the real page. Same brand background_color
-       as site.webmanifest so the handoff from native splash is seamless. */
+    /* ================= APP SPLASH =================
+       Transparent logo on top, a progress bar tied to REAL checks
+       (internet -> database -> page load) and two live status rows.
+       Same white background as site.webmanifest so the handoff from the
+       OS-drawn native splash is seamless. */
     #app-splash{
       position:fixed;inset:0;z-index:99999;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6rem;
-      background:#ffffff;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;
+      background:#ffffff;padding:1.5rem;
       transition:opacity .45s ease;
     }
     #app-splash.hide{opacity:0;pointer-events:none}
     #app-splash .splash-logo{
-      width:132px;height:auto;
-      opacity:0;
+      width:132px;height:auto;background:transparent;
+      opacity:0;margin-bottom:.4rem;
       animation:splashLogoIn 1s ease forwards .05s;
     }
     #app-splash .splash-bar-track{
-      width:150px;height:4px;border-radius:4px;
-      background:var(--green-light);
-      overflow:hidden;
+      width:min(240px,70vw);height:5px;border-radius:5px;
+      background:var(--green-light);overflow:hidden;
     }
     #app-splash .splash-bar-fill{
-      width:0%;height:100%;border-radius:4px;
+      width:0%;height:100%;border-radius:5px;
       background:linear-gradient(90deg,var(--green-mid),var(--green));
-      transition:width .3s ease;
+      transition:width .35s ease;
     }
+    #app-splash .splash-bar-fill.err{background:#dc2626}
+    #app-splash .splash-status{
+      display:flex;flex-direction:column;gap:.45rem;margin-top:.2rem;
+      font-family:'DM Sans',sans-serif;font-size:12.5px;color:#475569;min-width:min(240px,70vw);
+    }
+    #app-splash .splash-row{display:flex;align-items:center;gap:.55rem}
+    #app-splash .splash-row .lbl{flex:1}
+    #app-splash .splash-row .st{font-weight:600;font-size:11.5px}
+    #app-splash .splash-row i.ic{font-size:14px;color:#94a3b8}
+    #app-splash .splash-row .dotspin{
+      width:12px;height:12px;border-radius:50%;
+      border:2px solid #cbd5e1;border-top-color:var(--green);
+      animation:splashSpin .7s linear infinite;flex-shrink:0;
+    }
+    #app-splash .splash-row.ok .st{color:#16a34a}
+    #app-splash .splash-row.ok i.ic{color:#16a34a}
+    #app-splash .splash-row.bad .st{color:#dc2626}
+    #app-splash .splash-row.bad i.ic{color:#dc2626}
+    #app-splash .splash-msg{font-size:12px;color:#64748b;text-align:center;max-width:260px;min-height:1.2em}
+    #app-splash .splash-actions{display:none;gap:.6rem;margin-top:.2rem}
+    #app-splash .splash-actions.show{display:flex}
+    #app-splash .splash-actions button{
+      font:600 13px 'DM Sans',sans-serif;border-radius:10px;padding:9px 16px;cursor:pointer;
+      border:1px solid var(--border);background:#fff;color:#334155;
+    }
+    #app-splash .splash-actions button.primary{background:var(--green);border-color:var(--green);color:#fff}
     @keyframes splashLogoIn{
       0%{opacity:0;transform:translateY(10px) scale(.94)}
       100%{opacity:1;transform:translateY(0) scale(1)}
     }
+    @keyframes splashSpin{to{transform:rotate(360deg)}}
     @media (prefers-reduced-motion: reduce){
       #app-splash .splash-logo{animation:none;opacity:1}
+      #app-splash .dotspin{animation:none}
     }
+
+    /* ================= FIRST-RUN WIZARD (new users only) ================= */
+    #sc-wizard{
+      position:fixed;inset:0;z-index:99990;display:none;
+      align-items:flex-end;justify-content:center;
+      background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
+    }
+    #sc-wizard.open{display:flex}
+    #sc-wizard .wz-card{
+      width:100%;max-width:520px;max-height:94vh;overflow-y:auto;
+      background:#fff;border-radius:22px 22px 0 0;padding:1.4rem 1.3rem calc(1.3rem + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -12px 40px rgba(0,0,0,.2);
+      animation:wzUp .35s ease;font-family:'DM Sans',sans-serif;color:var(--text);
+    }
+    @media (min-width:600px){
+      #sc-wizard{align-items:center}
+      #sc-wizard .wz-card{border-radius:22px}
+    }
+    @keyframes wzUp{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+    #sc-wizard .wz-top{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem}
+    #sc-wizard .wz-top img{width:40px;height:40px;object-fit:contain}
+    #sc-wizard .wz-dots{display:flex;gap:6px;margin-left:auto}
+    #sc-wizard .wz-dots span{width:22px;height:5px;border-radius:5px;background:#e2e8f0;transition:background .25s}
+    #sc-wizard .wz-dots span.on{background:var(--green)}
+    #sc-wizard h2{font-family:'Playfair Display',serif;font-size:1.45rem;margin:.2rem 0 .4rem;color:var(--text)}
+    #sc-wizard p.wz-sub{font-size:13.5px;color:var(--text-muted);line-height:1.6;margin:0 0 1rem}
+    #sc-wizard .wz-step{display:none}
+    #sc-wizard .wz-step.active{display:block}
+    #sc-wizard .wz-terms{
+      border:1px solid var(--border);border-radius:12px;background:var(--surface-alt);
+      padding:.85rem 1rem;font-size:12.5px;line-height:1.65;color:#475569;max-height:190px;overflow-y:auto;margin-bottom:.9rem;
+    }
+    #sc-wizard .wz-terms ul{margin:.3rem 0 0 1.1rem;padding:0}
+    #sc-wizard .wz-agree{display:flex;gap:.65rem;align-items:flex-start;font-size:13px;line-height:1.5;cursor:pointer;margin-bottom:1rem}
+    #sc-wizard .wz-agree input{width:20px;height:20px;margin-top:1px;accent-color:var(--green);flex-shrink:0}
+    #sc-wizard .wz-agree a{color:var(--green);font-weight:600}
+    #sc-wizard .wz-opts{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem}
+    #sc-wizard .wz-opt{
+      border:1.5px solid var(--border);border-radius:14px;background:#fff;cursor:pointer;
+      padding:.95rem .8rem;text-align:left;font-family:inherit;color:var(--text);
+      transition:border-color .2s,background .2s,transform .15s;
+    }
+    #sc-wizard .wz-opt:active{transform:scale(.98)}
+    #sc-wizard .wz-opt i{font-size:1.5rem;color:var(--green);display:block;margin-bottom:.35rem}
+    #sc-wizard .wz-opt strong{display:block;font-size:14px;margin-bottom:.15rem}
+    #sc-wizard .wz-opt span{display:block;font-size:11.5px;color:var(--text-muted);line-height:1.45}
+    #sc-wizard .wz-opt.sel{border-color:var(--green);background:var(--green-light)}
+    #sc-wizard .wz-btn{
+      width:100%;border:none;border-radius:12px;padding:13px 16px;font:600 14.5px 'DM Sans',sans-serif;
+      background:var(--green);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;
+    }
+    #sc-wizard .wz-btn:disabled{opacity:.45;cursor:not-allowed}
+    #sc-wizard .wz-back{
+      background:none;border:none;color:var(--text-muted);font:500 13px 'DM Sans',sans-serif;
+      margin-top:.7rem;width:100%;cursor:pointer;padding:6px;
+    }
+    #sc-wizard .wz-ready{text-align:center;padding:.4rem 0 .2rem}
+    #sc-wizard .wz-ready .big{font-size:2.6rem;color:var(--green)}
   
     /* ── Responsive navbar (hamburger + compact on scroll) ── */
     .brand-img{transition:width .25s ease,height .25s ease}
@@ -1218,43 +1302,181 @@
 <body id="top">
 <a class="skip-link" href="#main">Skip to main content</a>
 
-<!-- APP SPLASH — see #app-splash CSS for why this exists alongside
-     site.webmanifest's native splash. Dismissed by the script at the
-     bottom of the page once the window 'load' event fires (or a hard
-     timeout, in case something never finishes loading). -->
-<div id="app-splash" aria-hidden="true">
-  <img class="splash-logo" src="logo-transparent-splash.png" alt="" width="132" height="133">
+<!-- APP SPLASH: transparent logo on top, progress bar driven by real
+     checks (internet -> database -> page load). On failure it shows a
+     message with Retry / Continue anyway, so a dead network never traps
+     the user behind it. Hands over to the first-run wizard via
+     window.__sscSplashDone + the 'ssc:splash-done' event. -->
+<div id="app-splash" role="status" aria-live="polite">
+  <img class="splash-logo" src="logo-transparent-splash.png" alt="SoundsCare" width="132" height="133">
   <div class="splash-bar-track"><div class="splash-bar-fill" id="splash-bar-fill"></div></div>
+  <div class="splash-status">
+    <div class="splash-row" id="sp-net"><i class="bi bi-wifi ic"></i><span class="lbl">Internet connection</span><span class="dotspin"></span><span class="st"></span></div>
+    <div class="splash-row" id="sp-db"><i class="bi bi-database ic"></i><span class="lbl">Database</span><span class="dotspin"></span><span class="st"></span></div>
+  </div>
+  <div class="splash-msg" id="sp-msg">Starting up…</div>
+  <div class="splash-actions" id="sp-actions">
+    <button type="button" class="primary" id="sp-retry">Retry</button>
+    <button type="button" id="sp-skip">Continue anyway</button>
+  </div>
 </div>
 <script>
 (function(){
   var splash = document.getElementById('app-splash');
   var bar = document.getElementById('splash-bar-fill');
   if (!splash || !bar) return;
+  var rowNet = document.getElementById('sp-net'), rowDb = document.getElementById('sp-db');
+  var msg = document.getElementById('sp-msg'), actions = document.getElementById('sp-actions');
+  var settled = false, loaded = false, netOk = null, dbOk = null, hardTimer = null;
 
-  // Progress bar is tied to real page-load milestones (not a fake timer):
-  // an early bump so it isn't stuck at 0 while the first assets fetch, a
-  // step at DOMContentLoaded, then 100% at window 'load'.
-  bar.style.width = '8%';
-  document.addEventListener('DOMContentLoaded', function(){
-    bar.style.width = '55%';
-  });
+  function setRow(row, state, text){
+    var spin = row.querySelector('.dotspin'), st = row.querySelector('.st'), ic = row.querySelector('i.ic');
+    row.classList.remove('ok','bad');
+    if (state === 'run'){ if (spin) spin.style.display = ''; st.textContent = ''; return; }
+    if (spin) spin.style.display = 'none';
+    row.classList.add(state);
+    st.textContent = text;
+    if (state === 'ok') ic.className = ic.className.replace(/bi-[\w-]+/, row === rowNet ? 'bi-wifi' : 'bi-database-check');
+    if (state === 'bad') ic.className = ic.className.replace(/bi-[\w-]+/, row === rowNet ? 'bi-wifi-off' : 'bi-database-x');
+  }
+  function progress(p){ bar.style.width = p + '%'; }
 
-  var settled = false;
+  function timeoutFetch(url, opts, ms){
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var t = setTimeout(function(){ if (ctl) ctl.abort(); }, ms);
+    opts = opts || {}; if (ctl) opts.signal = ctl.signal;
+    return fetch(url, opts).finally(function(){ clearTimeout(t); });
+  }
+
+  // Internet: navigator.onLine is only a hint, so confirm with a real request.
+  function checkNet(){
+    if (navigator.onLine === false) return Promise.resolve(false);
+    return timeoutFetch('/site.webmanifest?ping=' + Date.now(), { cache:'no-store' }, 6000)
+      .then(function(r){ return true; }, function(){ return false; });
+  }
+  // Database: any HTTP answer from the Supabase REST endpoint means it is reachable
+  // (401/404 included); only a network error or timeout counts as down.
+  function checkDb(){
+    var cfg = window.SOUNDS_CONFIG || {};
+    if (!cfg.supabaseUrl || !cfg.supabaseKey) return Promise.resolve(false);
+    return timeoutFetch(cfg.supabaseUrl.replace(/\/$/, '') + '/rest/v1/', { headers:{ apikey: cfg.supabaseKey }, cache:'no-store' }, 7000)
+      .then(function(r){ return true; }, function(){ return false; });
+  }
+
   function dismiss(){
     if (settled) return;
-    settled = true;
-    bar.style.width = '100%';
+    settled = true; clearTimeout(hardTimer);
+    progress(100);
     setTimeout(function(){
       splash.classList.add('hide');
+      window.__sscSplashDone = true;
+      try { document.dispatchEvent(new Event('ssc:splash-done')); } catch(e){}
       setTimeout(function(){ splash.remove(); }, 500);
-    }, 220);
+    }, 260);
   }
-  window.addEventListener('load', dismiss);
-  // Hard fallback: never trap the user behind the splash if some resource stalls.
-  setTimeout(dismiss, 4500);
+  function maybeFinish(){
+    if (settled || netOk === null || dbOk === null) return;
+    if (netOk && dbOk){
+      msg.textContent = 'All set!';
+      if (loaded) dismiss();
+      else window.addEventListener('load', dismiss, { once:true });
+    } else {
+      bar.classList.add('err');
+      msg.textContent = !netOk
+        ? 'No internet connection. Check your data or Wi-Fi and try again.'
+        : 'Connected, but the database could not be reached right now.';
+      actions.classList.add('show');
+    }
+  }
+  function run(){
+    actions.classList.remove('show');
+    bar.classList.remove('err');
+    netOk = dbOk = null;
+    setRow(rowNet, 'run'); setRow(rowDb, 'run');
+    msg.textContent = 'Checking your connection…';
+    progress(10);
+    checkNet().then(function(ok){
+      netOk = ok;
+      setRow(rowNet, ok ? 'ok' : 'bad', ok ? 'Connected' : 'Offline');
+      progress(ok ? 40 : 40);
+      if (!ok){ setRow(rowDb, 'bad', 'Skipped'); dbOk = false; maybeFinish(); return; }
+      msg.textContent = 'Connecting to database…';
+      return checkDb().then(function(ok2){
+        dbOk = ok2;
+        setRow(rowDb, ok2 ? 'ok' : 'bad', ok2 ? 'Connected' : 'Unreachable');
+        progress(ok2 ? 75 : 60);
+        maybeFinish();
+      });
+    });
+  }
+
+  window.addEventListener('load', function(){ loaded = true; });
+  document.getElementById('sp-retry').addEventListener('click', run);
+  document.getElementById('sp-skip').addEventListener('click', dismiss);
+  window.addEventListener('online', function(){ if (!settled && actions.classList.contains('show')) run(); });
+  // Hard fallback: never trap the user behind the splash if a check hangs.
+  hardTimer = setTimeout(function(){
+    if (settled) return;
+    if (netOk === null || dbOk === null){ netOk = netOk === null ? false : netOk; dbOk = dbOk === null ? false : dbOk; maybeFinish(); }
+  }, 12000);
+  run();
 })();
 </script>
+
+<!-- FIRST-RUN WIZARD: shown once to new visitors after the splash -->
+<div id="sc-wizard" role="dialog" aria-modal="true" aria-labelledby="wz-title" aria-hidden="true">
+  <div class="wz-card">
+    <div class="wz-top">
+      <img src="logo-transparent-splash.png" alt="">
+      <div class="wz-dots"><span class="on"></span><span></span><span></span></div>
+    </div>
+
+    <!-- Step 1: terms -->
+    <div class="wz-step active" data-step="1">
+      <h2 id="wz-title">Welcome to SoundsCare</h2>
+      <p class="wz-sub">Before we start, please read and accept how we work.</p>
+      <div class="wz-terms">
+        By using SoundsCare you agree that:
+        <ul>
+          <li>You will provide true and accurate information about yourself.</li>
+          <li>Employers pay a one-time KES 300 connection fee to contact helpers.</li>
+          <li>We may verify profiles and documents to keep everyone safe.</li>
+          <li>Your data is handled under our privacy and cookie policy.</li>
+          <li>Fraud, harassment or fake listings lead to account removal.</li>
+        </ul>
+      </div>
+      <label class="wz-agree">
+        <input type="checkbox" id="wz-agree">
+        <span>I have read and agree to the <a href="/legal" target="_blank" rel="noopener">Terms &amp; Privacy Policy</a>.</span>
+      </label>
+      <button type="button" class="wz-btn" id="wz-next1" disabled>Agree &amp; continue <i class="bi bi-arrow-right"></i></button>
+    </div>
+
+    <!-- Step 2: intent -->
+    <div class="wz-step" data-step="2">
+      <h2>What brings you here?</h2>
+      <p class="wz-sub">Pick one. You can change your mind later.</p>
+      <div class="wz-opts">
+        <button type="button" class="wz-opt" data-intent="find"><i class="bi bi-search"></i><strong>Find a job</strong><span>Look for house help, nanny or care work</span></button>
+        <button type="button" class="wz-opt" data-intent="offer"><i class="bi bi-briefcase"></i><strong>Offer a job</strong><span>Hire verified help for your home</span></button>
+        <button type="button" class="wz-opt" data-intent="agent"><i class="bi bi-people"></i><strong>Become an agent</strong><span>Register workers and earn commission</span></button>
+        <button type="button" class="wz-opt" data-intent="abroad"><i class="bi bi-airplane"></i><strong>Work abroad</strong><span>Overseas job opportunities</span></button>
+      </div>
+      <button type="button" class="wz-btn" id="wz-next2" disabled>Continue <i class="bi bi-arrow-right"></i></button>
+      <button type="button" class="wz-back" id="wz-back2">Back</button>
+    </div>
+
+    <!-- Step 3: ready -->
+    <div class="wz-step" data-step="3">
+      <div class="wz-ready">
+        <i class="bi bi-check-circle-fill big"></i>
+        <h2>You're all set</h2>
+        <p class="wz-sub" id="wz-ready-text">Let's get you started.</p>
+      </div>
+      <button type="button" class="wz-btn" id="wz-go">Proceed <i class="bi bi-arrow-right-circle-fill"></i></button>
+    </div>
+  </div>
+</div>
 
 <div id="toast-container"></div>
 
@@ -2718,6 +2940,88 @@ document.addEventListener('DOMContentLoaded',async ()=>{
   loadAnnouncements();
   loadStats();
 });
+</script>
+<script>
+/* ── FIRST-RUN WIZARD ──
+   New = no `sc_onboarded` flag in this browser AND no signed-in Supabase session.
+   Stores: sc_onboarded (done), sc_terms_accepted (ISO time + version), sc_intent. */
+(function(){
+  var wz = document.getElementById('sc-wizard');
+  if (!wz) return;
+  var intent = null;
+  var LABELS = {
+    find:   'Next: create your free profile so employers can find you.',
+    offer:  'Next: tell us what help you need and start hiring.',
+    agent:  'Next: sign in to the agent portal.',
+    abroad: 'Next: create your profile so we can match you to overseas opportunities.'
+  };
+  function safeGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function safeSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+
+  function goStep(n){
+    wz.querySelectorAll('.wz-step').forEach(function(el){ el.classList.toggle('active', el.dataset.step === String(n)); });
+    wz.querySelectorAll('.wz-dots span').forEach(function(d,i){ d.classList.toggle('on', i < n); });
+    var card = wz.querySelector('.wz-card'); if (card) card.scrollTop = 0;
+  }
+  function openWizard(){
+    var wn = document.getElementById('welcome-notif'); if (wn) wn.remove();   // avoid stacking popups
+    var cb = document.getElementById('cookie-banner'); if (cb) cb.style.display = 'none';
+    wz.classList.add('open'); wz.setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeWizard(){
+    wz.classList.remove('open'); wz.setAttribute('aria-hidden','true');
+    document.body.style.overflow = '';
+    var cb = document.getElementById('cookie-banner'); if (cb) cb.style.display = '';
+  }
+
+  document.getElementById('wz-agree').addEventListener('change', function(){
+    document.getElementById('wz-next1').disabled = !this.checked;
+  });
+  document.getElementById('wz-next1').addEventListener('click', function(){
+    safeSet('sc_terms_accepted', new Date().toISOString() + '|v1');
+    goStep(2);
+  });
+  wz.querySelectorAll('.wz-opt').forEach(function(b){
+    b.addEventListener('click', function(){
+      intent = b.dataset.intent;
+      wz.querySelectorAll('.wz-opt').forEach(function(o){ o.classList.toggle('sel', o === b); });
+      document.getElementById('wz-next2').disabled = false;
+    });
+  });
+  document.getElementById('wz-back2').addEventListener('click', function(){ goStep(1); });
+  document.getElementById('wz-next2').addEventListener('click', function(){
+    if (!intent) return;
+    safeSet('sc_intent', intent);
+    document.getElementById('wz-ready-text').textContent = LABELS[intent];
+    goStep(3);
+  });
+  document.getElementById('wz-go').addEventListener('click', function(){
+    safeSet('sc_onboarded', '1');
+    closeWizard();
+    if (intent === 'agent'){ location.href = '/agent/login'; return; }
+    if (intent === 'offer'){ pickRole('employer'); return; }
+    // find + abroad both start as a worker profile; the choice is saved in sc_intent
+    pickRole('employee');
+  });
+
+  async function isReturning(){
+    if (safeGet('sc_onboarded')) return true;
+    try {
+      if (typeof sb !== 'undefined' && sb){
+        var r = await sb.auth.getSession();
+        if (r && r.data && r.data.session) { safeSet('sc_onboarded','1'); return true; }
+      }
+    } catch(e){}
+    return false;
+  }
+  async function start(){
+    if (await isReturning()) return;
+    openWizard();
+  }
+  if (window.__sscSplashDone) start();
+  else document.addEventListener('ssc:splash-done', start, { once:true });
+})();
 </script>
 <script src="https://sounds-support.vercel.app/widget.js" data-site-id="pk_b3aec2a05c684df4bf67" async></script>
 <script>
