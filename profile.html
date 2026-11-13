@@ -101,9 +101,33 @@ body{font-family:'DM Sans',sans-serif;background:var(--page);color:var(--ink)}
     <input type="password" id="s-pw" class="form-control mb-2" placeholder="New password (min 8)">
     <input type="password" id="s-pw2" class="form-control mb-2" placeholder="Confirm password">
     <button class="btn btn-outline-secondary w-100 mb-4" onclick="changePw()"><i class="bi bi-lock"></i> Update password</button>
-    <button class="btn btn-outline-danger w-100" onclick="signOut()"><i class="bi bi-box-arrow-left"></i> Sign out</button>
+    <button class="btn btn-outline-secondary w-100 mb-4" onclick="signOut()"><i class="bi bi-box-arrow-left"></i> Sign out</button>
+    <div class="border border-danger-subtle rounded-3 p-3">
+      <div class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Account</div>
+      <p class="small text-muted mb-2">Deactivate hides your profile and pauses your account. Contact support to reactivate it.</p>
+      <button class="btn btn-outline-warning w-100 mb-3" onclick="openAccountConfirm('deactivate')"><i class="bi bi-pause-circle"></i> Deactivate account</button>
+      <p class="small text-muted mb-2">Delete removes your profile and signs you out for good.</p>
+      <button class="btn btn-danger w-100" onclick="openAccountConfirm('delete')"><i class="bi bi-trash3"></i> Delete account</button>
+    </div>
   </div>
 </div>
+
+<!-- MODAL: confirm deactivate / delete -->
+<div class="modal fade" id="m-acct" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title fw-bold" id="acct-title"></h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <p class="small" id="acct-text"></p>
+    <div id="acct-deact" class="d-none">
+      <label class="form-label small fw-semibold">Reason <span class="text-muted fw-normal">(optional)</span></label>
+      <select id="acct-reason" class="form-select"><option value="">Select a reason…</option><option>Taking a break</option><option>Currently employed</option><option>Personal reasons</option><option>Other</option></select>
+    </div>
+    <div id="acct-del" class="d-none">
+      <label class="form-label small fw-semibold">Type <b>DELETE</b> to confirm</label>
+      <input id="acct-type" class="form-control" autocomplete="off" placeholder="DELETE">
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-danger" id="acct-go" onclick="runAccountAction()">Confirm</button></div>
+</div></div></div>
 
 <!-- MODAL: basic details -->
 <div class="modal fade" id="m-basic" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
@@ -114,12 +138,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--page);color:var(--ink)}
       <div class="col-6"><label class="form-label small fw-semibold">Phone</label><input id="e-phone" class="form-control" placeholder="+254 7XX XXX XXX"></div>
       <div class="col-6"><label class="form-label small fw-semibold">Country</label><select id="e-country" class="form-select"></select></div>
     </div>
+    <div class="mb-3 p-3 rounded-3" style="background:var(--soft)" id="phone-verify-box"></div>
     <div class="mb-3"><label class="form-label small fw-semibold">Location / County</label><input id="e-loc" class="form-control" placeholder="e.g. Nairobi" maxlength="100"></div>
     <div class="row g-2">
       <div class="col-6"><label class="form-label small fw-semibold">Job type</label><select id="e-job" class="form-select"><option value="">Any</option><option value="fulltime">Full-time</option><option value="parttime">Part-time</option><option value="live-in">Live-in</option><option value="live-out">Live-out</option></select></div>
       <div class="col-6"><label class="form-label small fw-semibold">Expected salary (KES)</label><input id="e-salary" type="number" min="0" step="500" class="form-control"></div>
     </div>
-    <div class="form-text mt-3"><i class="bi bi-info-circle"></i> Changing your name or phone number is sent to SoundsCare for approval before it shows on your profile.</div>
+    <div class="form-text mt-3"><i class="bi bi-info-circle"></i> Changing your name or phone number is sent to SoundsCare for approval before it shows on your profile. A new number has to be verified by SMS again once it is approved.</div>
   </div>
   <div class="modal-footer"><button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-brand" id="saveBasic" onclick="saveBasic()"><i class="bi bi-check-circle"></i> Save</button></div>
 </div></div></div>
@@ -365,7 +390,7 @@ function render() {
     <div class="col-md-6"><div class="card-x"><h6><span class="ic"><i class="bi bi-shield-check"></i></span>Visibility &amp; trust</h6>
       <div class="d-flex align-items-center gap-3 mb-2"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="visToggle" ${P.is_visible ? 'checked' : ''}></div>
         <div><b id="visLbl1">${P.is_visible ? 'Visible to employers' : 'Hidden from employers'}</b><br><small class="text-muted">A notification is sent whenever this changes.</small></div></div>
-      ${row('Verification', verified ? 'Verified' : 'Not verified')}${row('Member since', P.created_at ? new Date(P.created_at).toLocaleDateString(undefined,{year:'numeric',month:'short'}) : '')}</div></div>
+      ${row('Verification', verified ? 'Verified' : 'Not verified')}<div class="row-i"><span>Phone</span><b>${P.phone_verified ? '<span class="text-success"><i class="bi bi-patch-check-fill"></i> Verified</span>' : '<a href="#" onclick="openM(\'m-basic\');return false">Verify by SMS</a>'}</b></div>${row('Member since', P.created_at ? new Date(P.created_at).toLocaleDateString(undefined,{year:'numeric',month:'short'}) : '')}</div></div>
 
     <div class="col-12"><div class="card-x" id="docs-card"><h6><span class="ic"><i class="bi bi-card-image"></i></span>ID documents <span id="id-status" class="ms-auto"></span></h6>
       <div id="docs-body"></div></div></div>
@@ -460,6 +485,7 @@ async function resetCover() {
 function fillBasic() {
   $('e-name').value = val('name') || ''; $('e-phone').value = val('phone') || ''; $('e-loc').value = val('loc') || '';
   $('e-job').value = val('job') || ''; $('e-salary').value = val('salary') || ''; $('e-country').value = P.country_code || 'KE';
+  mountPhoneVerify();
 }
 async function saveBasic() {
   const name = $('e-name').value.trim();
@@ -688,6 +714,81 @@ async function changePw() {
 const signOut = async () => { await sb.auth.signOut(); location.href = 'index.html'; };
 async function copyLink() { try { await navigator.clipboard.writeText(link()); toast('Profile link copied'); } catch { toast(link(), 'info'); } }
 function shareLink() { navigator.share ? navigator.share({title: val('name') + ' on SoundsCare', url: link()}).catch(() => {}) : copyLink(); }
+
+/* ===== SMS phone verification (Twilio Verify via Edge Function "phone-verify") ===== */
+function pvMount(box, client, W, onDone) {
+  if (!box) return;
+  const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const ph = W && (W.phone || W.phone_number);
+  if (!ph) { box.innerHTML = '<div class="small text-muted"><i class="bi bi-telephone"></i> Add and save your phone number first, then verify it here by SMS.</div>'; return; }
+  if (W.phone_verified) { box.innerHTML = '<div class="d-flex align-items-center gap-2 small"><i class="bi bi-patch-check-fill text-success fs-5"></i><span><b>' + e(ph) + '</b> is verified</span></div>'; return; }
+  box.innerHTML =
+    '<div class="small mb-2"><i class="bi bi-shield-lock"></i> Verify <b>' + e(ph) + '</b> with an SMS code.' +
+    (W.pending_phone ? ' <span class="text-muted">(Your number change is waiting for approval; verify the number on your profile now, you will verify the new one after it is approved.)</span>' : '') + '</div>' +
+    '<button type="button" class="btn btn-sm btn-primary" data-pv="send">Send code</button>' +
+    '<div data-pv="step2" class="d-none mt-2">' +
+      '<div class="input-group input-group-sm"><input data-pv="code" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Code from SMS">' +
+      '<button type="button" class="btn btn-success" data-pv="check">Verify</button></div>' +
+      '<button type="button" class="btn btn-link btn-sm px-0" data-pv="resend">Resend code</button></div>' +
+    '<div data-pv="msg" class="small mt-2"></div>';
+  const q = k => box.querySelector('[data-pv="' + k + '"]');
+  const say = (t, ok) => { q('msg').textContent = t; q('msg').className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); };
+  const call = async body => {
+    const r = await client.functions.invoke('phone-verify', { body });
+    if (r.error) { let t = r.error.message; try { t = (await r.error.context.json()).error || t; } catch (_) {} throw new Error(t); }
+    return r.data;
+  };
+  const send = async () => {
+    const b = q('send'); b.disabled = true;
+    try { await call({ action: 'start' }); q('step2').classList.remove('d-none'); say('Code sent by SMS to ' + ph + '.', true); }
+    catch (err) { say(err.message); } finally { b.disabled = false; }
+  };
+  q('send').onclick = send; q('resend').onclick = send;
+  q('check').onclick = async () => {
+    const b = q('check'); b.disabled = true;
+    try { await call({ action: 'check', code: q('code').value.trim() }); say('Phone verified!', true); if (onDone) await onDone(); }
+    catch (err) { say(err.message); } finally { b.disabled = false; }
+  };
+}
+
+function mountPhoneVerify() {
+  pvMount($('phone-verify-box'), sb, P, async () => { await reloadProfile(); render(); mountPhoneVerify(); toast('Phone verified'); });
+}
+/* ───────────── account: deactivate / delete (Settings) ───────────── */
+let acctKind = null;
+function openAccountConfirm(kind) {
+  acctKind = kind;
+  const del = kind === 'delete';
+  $('acct-title').innerHTML = del ? '<i class="bi bi-trash3"></i> Delete account' : '<i class="bi bi-pause-circle"></i> Deactivate account';
+  $('acct-text').textContent = del
+    ? 'This removes your profile and signs you out. It cannot be undone from your side.'
+    : 'Your profile will be hidden from employers and you will be signed out. Contact support to reactivate it.';
+  $('acct-deact').classList.toggle('d-none', del); $('acct-del').classList.toggle('d-none', !del);
+  $('acct-type').value = ''; $('acct-reason').value = '';
+  $('acct-go').textContent = del ? 'Delete my account' : 'Deactivate my account';
+  const oc = bootstrap.Offcanvas.getInstance($('settings')); if (oc) oc.hide();
+  openM('m-acct');
+}
+async function runAccountAction() {
+  const btn = $('acct-go'), now = new Date().toISOString();
+  let upd;
+  if (acctKind === 'delete') {
+    if ($('acct-type').value.trim().toUpperCase() !== 'DELETE') return toast('Type DELETE to confirm.', 'danger');
+    upd = {account_deleted: true, is_deleted: true, deleted_at: now, is_visible: false};
+  } else {
+    upd = {account_deactivated: true, deactivated_at: now, deactivation_reason: $('acct-reason').value || null, is_visible: false};
+  }
+  btn.disabled = true;
+  try {
+    const {data, error} = await sb.from('worker_profiles').update(upd).eq('session_id', U.id).select('id');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('No profile row was updated');
+    const u = await sb.from('users').update({is_active: false}).eq('id', U.id);   // best effort: blocks the account everywhere users.is_active is checked
+    if (u.error) console.warn('users.is_active not updated:', u.error.message);
+    await sb.auth.signOut();
+    location.href = 'index.html';
+  } catch (e) { toast('Failed: ' + (e.message || e), 'danger'); btn.disabled = false; }
+}
 
 (async function init() {
   $('e-country').innerHTML = Object.entries(COUNTRIES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');

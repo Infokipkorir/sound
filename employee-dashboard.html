@@ -895,6 +895,10 @@
 
           <!-- VERIFICATION -->
           <div class="ed-tab-panel" id="ed-verification">
+            <div class="mb-3 p-3 rounded-3" style="border:1px solid var(--border);background:var(--brand-soft)">
+              <div class="fw-bold mb-2" style="font-size:14px"><i class="bi bi-phone"></i> Phone verification</div>
+              <div id="phone-verify-box"></div>
+            </div>
             <div id="ed-verification-content"><div class="ed-empty"><i class="bi bi-hourglass-split"></i><p>Loading verification status…</p></div></div>
           </div>
 
@@ -1566,6 +1570,60 @@ window.openEditProfile = function(){ location.href = 'profile.html'; };
   /* returning from profile.html (including back/forward cache) */
   window.addEventListener('pageshow', function(e){ if (e.persisted) refresh(); });
   document.addEventListener('visibilitychange', function(){ if (!document.hidden) refresh(); });
+})();
+</script>
+<script>
+/* ===== Phone verification box (Verification tab) ===== */
+/* ===== SMS phone verification (Twilio Verify via Edge Function "phone-verify") ===== */
+function pvMount(box, client, W, onDone) {
+  if (!box) return;
+  const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const ph = W && (W.phone || W.phone_number);
+  if (!ph) { box.innerHTML = '<div class="small text-muted"><i class="bi bi-telephone"></i> Add and save your phone number first, then verify it here by SMS.</div>'; return; }
+  if (W.phone_verified) { box.innerHTML = '<div class="d-flex align-items-center gap-2 small"><i class="bi bi-patch-check-fill text-success fs-5"></i><span><b>' + e(ph) + '</b> is verified</span></div>'; return; }
+  box.innerHTML =
+    '<div class="small mb-2"><i class="bi bi-shield-lock"></i> Verify <b>' + e(ph) + '</b> with an SMS code.' +
+    (W.pending_phone ? ' <span class="text-muted">(Your number change is waiting for approval; verify the number on your profile now, you will verify the new one after it is approved.)</span>' : '') + '</div>' +
+    '<button type="button" class="btn btn-sm btn-primary" data-pv="send">Send code</button>' +
+    '<div data-pv="step2" class="d-none mt-2">' +
+      '<div class="input-group input-group-sm"><input data-pv="code" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Code from SMS">' +
+      '<button type="button" class="btn btn-success" data-pv="check">Verify</button></div>' +
+      '<button type="button" class="btn btn-link btn-sm px-0" data-pv="resend">Resend code</button></div>' +
+    '<div data-pv="msg" class="small mt-2"></div>';
+  const q = k => box.querySelector('[data-pv="' + k + '"]');
+  const say = (t, ok) => { q('msg').textContent = t; q('msg').className = 'small mt-2 ' + (ok ? 'text-success' : 'text-danger'); };
+  const call = async body => {
+    const r = await client.functions.invoke('phone-verify', { body });
+    if (r.error) { let t = r.error.message; try { t = (await r.error.context.json()).error || t; } catch (_) {} throw new Error(t); }
+    return r.data;
+  };
+  const send = async () => {
+    const b = q('send'); b.disabled = true;
+    try { await call({ action: 'start' }); q('step2').classList.remove('d-none'); say('Code sent by SMS to ' + ph + '.', true); }
+    catch (err) { say(err.message); } finally { b.disabled = false; }
+  };
+  q('send').onclick = send; q('resend').onclick = send;
+  q('check').onclick = async () => {
+    const b = q('check'); b.disabled = true;
+    try { await call({ action: 'check', code: q('code').value.trim() }); say('Phone verified!', true); if (onDone) await onDone(); }
+    catch (err) { say(err.message); } finally { b.disabled = false; }
+  };
+}
+
+(function () {
+  var cli = null;
+  async function load() {
+    var box = document.getElementById('phone-verify-box'); if (!box) return;
+    var CFG = window.SOUNDS_CONFIG || {};
+    if (!window.supabase || !CFG.supabaseUrl || !CFG.supabaseKey) return;
+    if (!cli) cli = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { autoRefreshToken: true, detectSessionInUrl: false } });
+    var s = await cli.auth.getSession(); if (!s.data || !s.data.session) return;
+    var r = await cli.from('worker_profiles').select('phone, phone_number, pending_phone, phone_verified').eq('session_id', s.data.session.user.id).maybeSingle();
+    if (r.error || !r.data) { box.innerHTML = '<div class="small text-muted">Could not load phone status.</div>'; return; }
+    pvMount(box, cli, r.data, load);
+  }
+  window.addEventListener('load', function () { setTimeout(load, 600); });
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-ed-tab="ed-verification"]')) setTimeout(load, 100); });
 })();
 </script>
 </body>
