@@ -1,3 +1,88 @@
+// Supabase Edge Function: phone-verify  (Twilio Verify, SMS channel)
+// Deploy with verify_jwt = true. Secrets needed:
+//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_VERIFY_SERVICE_SID
+// (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are provided automatically.)
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+const json = (b: unknown, s = 200) =>
+  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
+
+// 0712345678 / 712345678 / 254712345678 / +254712345678 -> +254712345678
+function toE164(raw: string): string | null {
+  const d = (raw || "").replace(/[^\d+]/g, "");
+  if (d.startsWith("+")) return /^\+\d{9,15}$/.test(d) ? d : null;
+  if (d.startsWith("00")) return "+" + d.slice(2);
+  if (d.startsWith("254")) return "+" + d;
+  if (d.startsWith("0") && d.length === 10) return "+254" + d.slice(1);
+  if (/^[71]\d{8}$/.test(d)) return "+254" + d;
+  return null;
+}
+
+async function twilio(path: string, params: Record<string, string>) {
+  const sid = Deno.env.get("TWILIO_ACCOUNT_SID")!, token = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+  const svc = Deno.env.get("TWILIO_VERIFY_SERVICE_SID")!;
+  const r = await fetch(`https://verify.twilio.com/v2/Services/${svc}/${path}`, {
+    method: "POST",
+    headers: { Authorization: "Basic " + btoa(`${sid}:${token}`), "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params),
+  });
+  return { ok: r.ok, data: await r.json() };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  try {
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const userClient = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return json({ error: "Not signed in" }, 401);
+
+    const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: wp } = await admin.from("worker_profiles")
+      .select("id, phone, phone_number, phone_verified, phone_verification_requested_at")
+      .eq("session_id", user.id).maybeSingle();
+    if (!wp) return json({ error: "Worker profile not found" }, 404);
+
+    // Always verify the number saved on the profile (never a number sent by the browser).
+    const { action, code } = await req.json();
+    const to = toE164(wp.phone || wp.phone_number || "");
+    if (!to) return json({ error: "Enter a valid phone number" }, 400);
+
+    if (action === "start") {
+      const last = wp.phone_verification_requested_at ? Date.parse(wp.phone_verification_requested_at) : 0;
+      if (Date.now() - last < 30_000) return json({ error: "Please wait 30 seconds before requesting another code" }, 429);
+      const t = await twilio("Verifications", { To: to, Channel: "sms" });
+      if (!t.ok) return json({ error: t.data?.message || "Could not send SMS" }, 400);
+      await admin.from("worker_profiles").update({
+        phone_verification_status: "pending",
+        phone_verification_requested_at: new Date().toISOString(),
+        phone_verification_code: null, // old manual SUNSET-xxxx codes are no longer used
+      }).eq("id", wp.id);
+      return json({ ok: true, phone: to });
+    }
+
+    if (action === "check") {
+      if (!/^\d{4,10}$/.test(String(code || ""))) return json({ error: "Enter the code from the SMS" }, 400);
+      const t = await twilio("VerificationCheck", { To: to, Code: String(code) });
+      if (!t.ok || t.data?.status !== "approved") return json({ ok: false, error: "Wrong or expired code" }, 400);
+      await admin.from("worker_profiles").update({
+        phone_verified: true,
+        phone_verification_status: "verified",
+        phone_verification_code: null,
+      }).eq("id", wp.id);
+      return json({ ok: true, verified: true, phone: to });
+    }
+    return json({ error: "Unknown action" }, 400);
+  } catch (e) {
+    return json({ error: String(e) }, 500);
+  }
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
 // Checks whether a phone number has WhatsApp (Green API: checkWhatsapp) and records the
