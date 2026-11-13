@@ -1510,10 +1510,63 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="main.js"></script>
+<script src="config.js"></script>
 <script>
-/* One editing place: every "Edit Profile" entry point opens profile.html.
-   Loaded after main.js so it replaces main.js's openEditProfile(). */
+/* ===== Profile sync (loaded after main.js) =====
+   1) One editing place: every "Edit Profile" entry opens profile.html.
+   2) Coming back from profile.html (#overview) lands on Overview.
+   3) Completion % comes from the shared DB function public.profile_completion(),
+      the same weights profile.html uses, so both pages always show one number. */
 window.openEditProfile = function(){ location.href = 'profile.html'; };
+
+(function(){
+  /* 2) land on Overview */
+  function goOverview(){
+    if (location.hash !== '#overview') return;
+    try { if (typeof navTo === 'function') navTo('overview'); } catch(e){}
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  window.addEventListener('load', function(){ setTimeout(goOverview, 400); });
+
+  /* 3) shared completion */
+  var cli = null, last = null, busy = false;
+  function paint(pct){
+    var t = document.getElementById('profile-pct'), f = document.getElementById('progress-fill');
+    var txt = pct + '%';
+    if (t && t.textContent !== txt) t.textContent = txt;
+    if (f && f.style.width !== txt) f.style.width = txt;
+  }
+  async function refresh(){
+    if (busy) return; busy = true;
+    try {
+      var CFG = window.SOUNDS_CONFIG || {};
+      if (!cli){
+        if (!window.supabase || !CFG.supabaseUrl || !CFG.supabaseKey) return;
+        cli = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey,
+              { auth: { autoRefreshToken: false, detectSessionInUrl: false } });
+      }
+      var s = await cli.auth.getSession();
+      if (!s.data || !s.data.session) return;
+      var r = await cli.rpc('profile_completion');
+      if (r.error || !r.data || typeof r.data.pct !== 'number') return;
+      last = r.data.pct; paint(last);
+    } catch(e) { /* leave main.js value in place */ }
+    finally { busy = false; }
+  }
+  function boot(){
+    refresh(); setTimeout(refresh, 1500); setTimeout(refresh, 5000);
+    /* main.js re-renders the widget; put the shared value back if it changes it */
+    ['profile-pct','progress-fill'].forEach(function(id){
+      var el = document.getElementById(id); if (!el) return;
+      new MutationObserver(function(){ if (last !== null) paint(last); })
+        .observe(el, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:['style'] });
+    });
+  }
+  if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot);
+  /* returning from profile.html (including back/forward cache) */
+  window.addEventListener('pageshow', function(e){ if (e.persisted) refresh(); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) refresh(); });
+})();
 </script>
 </body>
 </html>
