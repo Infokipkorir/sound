@@ -20,203 +20,179 @@
 <meta name="twitter:description" content="Join East Africa's trusted domestic services platform.">
 <meta name="twitter:image" content="https://sounds.co.ke/sound_logo.png">
 
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box}
 :root{
-  --green:#1B6B45;--green-dark:#114B30;--green-light:#EEF7F2;--green-mid:#C8E6D6;
-  --accent:#E8A040;--accent-light:#FEF3E2;
-  --border:#E5E7EB;--text:#111827;--text-mid:#374151;--text-muted:#6B7280;
-  --surface:#FFFFFF;--bg:#F6F8F7;
-  --red:#DC2626;--red-bg:#FEF2F2;--red-border:#FECACA;
-  --amber:#D97706;--blue:#2563EB;--success:#10B981;
-  --shadow:0 4px 28px rgba(17,75,48,.09),0 1px 4px rgba(0,0,0,.04);
-  --shadow-lg:0 16px 50px rgba(17,75,48,.14);
-  --radius:12px;--radius-sm:8px;--radius-lg:22px;
-  --font:'DM Sans',system-ui,sans-serif;
-  --serif:'Playfair Display',serif;
+  --navy:#1a6cf0;--navy-deep:#0c111b;--navy-mid:#0b4fd0;
+  --gold:#14b8a6;--gold-soft:#dcf5f1;
+  --green:#1a6cf0;--green-soft:#e4eefe;
+  --red:#d92d20;--red-soft:#fef3f2;
+  --paper:#f5f7fb;--card:#FFFFFF;--ink:#101828;--ink-soft:#5b6678;--line:#e2e7f0;
+  --radius:14px;--font-display:'Sora',sans-serif;--font-body:'Inter',sans-serif;
+  /* aliases used by inline styles in the script */
+  --text:var(--ink);--text-mid:#344054;--text-muted:var(--ink-soft);--border:var(--line);--surface:#fff;
+  --green-dark:var(--navy-mid);--green-light:var(--green-soft);--success:#12b76a;--amber:#b54708;
 }
-body{
-  font-family:var(--font);color:var(--text);min-height:100vh;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(27,107,69,.07), transparent 38%),
-    radial-gradient(circle at 92% 92%, rgba(232,160,64,.08), transparent 42%),
-    var(--bg);
-}
-.page-wrap{width:100%;max-width:520px}
+body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+.wrap{min-height:100vh;display:flex}
 
-@keyframes slideInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* left brand panel */
+.brand-panel{flex:0 0 42%;background:linear-gradient(160deg,#141b29 0%,#0c111b 100%);color:#fff;padding:48px 44px;display:flex;flex-direction:column;justify-content:space-between;position:sticky;top:0;height:100vh;align-self:flex-start;overflow:hidden}
+.brand-panel::after{content:"";position:absolute;right:-120px;bottom:-120px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.16),transparent 70%)}
+.pitch h1{font-family:var(--font-display);font-size:30px;line-height:1.25;margin:0 0 14px;max-width:380px}
+.pitch p{color:#b7c3d9;font-size:14.5px;line-height:1.6;max-width:360px;margin:0 0 22px}
+.pitch-list{display:flex;flex-direction:column;gap:12px}
+.pitch-item{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#dbe3f0}
+.pitch-item .check{width:20px;height:20px;border-radius:50%;background:rgba(94,234,212,.2);color:#5eead4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.foot-note{font-size:12px;color:#7a8aa6}
+
+/* right form panel */
+.form-panel{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;position:relative}
+.form-card{width:100%;max-width:440px}
+.logo-only{display:flex;justify-content:center;margin-bottom:22px}
+.go-home-btn{position:absolute;top:20px;left:20px;z-index:50;display:inline-flex;align-items:center;gap:7px;background:var(--card);color:var(--ink-soft);border:1.5px solid var(--line);border-radius:20px;padding:8px 15px 8px 12px;font:700 13px var(--font-body);transition:all .15s}
+.go-home-btn i{font-size:15px;color:var(--navy)}
+.go-home-btn:hover{border-color:var(--navy);color:var(--navy);transform:translateY(-1px)}
+@media(max-width:840px){.brand-panel{display:none}}
+@media(max-width:480px){.form-panel{padding-top:72px}}
+
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-@keyframes checkmark{0%{transform:scale(0) rotate(-45deg);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1) rotate(0);opacity:1}}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-
+@keyframes slideInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .fade-in{animation:fadeIn .4s ease-out}
-.slide-in{animation:slideInUp .5s cubic-bezier(.34,.1,.64,.1)}
 
-/* BRAND */
-.brand{text-align:center;margin-bottom:1.6rem;animation:fadeIn .6s ease-out}
-.brand-logo{display:inline-flex;align-items:center;gap:10px;font-size:23px;font-weight:800;color:var(--text);letter-spacing:-.4px;text-decoration:none;font-family:var(--serif)}
-.brand-logo img{width:42px;height:42px;border-radius:13px;object-fit:contain}
-.brand-sub{font-size:13px;color:var(--text-muted);margin-top:5px;letter-spacing:.01em}
+.step-track{display:flex;align-items:center;gap:6px;margin-bottom:22px}
+.step-dot{flex:1;height:4px;border-radius:3px;background:var(--line)}
+.step-dot.active{background:var(--navy)}
+.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-soft);color:var(--navy-mid);border-radius:20px;padding:4px 13px;font-size:11px;font-weight:700;letter-spacing:.04em;margin-bottom:12px}
+.step-title{font-family:var(--font-display);font-size:21px;margin:0 0 6px;font-weight:700}
+.step-sub{margin:0 0 20px;color:var(--ink-soft);font-size:13.5px;line-height:1.5}
 
-/* CARD */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.1rem 2rem 1.9rem;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;animation:slideInUp .6s cubic-bezier(.34,.1,.64,.1)}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--green),var(--accent))}
+.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-soft);color:#0a7f74;border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;margin-bottom:14px}
+.location-badge.loading{background:#fff4e5;color:var(--amber)}
+.location-badge.restricted{background:var(--red-soft);color:var(--red)}
 
-/* LOCATION BADGE */
-.location-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:12px;animation:slideInUp .5s ease-out .1s both}
-.location-badge i{font-size:13px}
-.location-badge.loading{background:#FFF3E0;color:var(--amber)}
-.location-badge.restricted{background:var(--red-bg);color:var(--red)}
+.sec-lbl{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--navy);margin:22px 0 12px;padding-top:16px;border-top:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em}
+.sec-lbl.no-border{border-top:none;padding-top:0;margin-top:14px}
 
-/* STEP BADGE */
-.step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green-dark);border-radius:20px;padding:4px 13px;font-size:11.5px;font-weight:700;letter-spacing:.02em;margin-bottom:11px;animation:slideInUp .5s ease-out .2s both}
-.step-title{font-size:23px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px;font-family:var(--serif);animation:slideInUp .5s ease-out .3s both}
-.step-sub{font-size:13.5px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.5;animation:slideInUp .5s ease-out .4s both}
-
-/* SECTION LABELS */
-.sec-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.09em;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:2px}
-.sec-lbl.no-border{border-top:none;padding-top:0}
-
-/* FORM */
-.fg{margin-bottom:.95rem;animation:slideInUp .5s ease-out;animation-fill-mode:both}
-.fg:nth-child(1){animation-delay:.3s}
-.fg:nth-child(2){animation-delay:.35s}
-.fg:nth-child(3){animation-delay:.4s}
-.fg:nth-child(4){animation-delay:.45s}
-.fg:nth-child(5){animation-delay:.5s}
-.fg label{display:block;font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:5px}
+/* fields */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px}
 .iw{position:relative;display:flex;align-items:center}
-.iw .ico{position:absolute;left:12px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;font-size:15px}
-.iw .sfx{position:absolute;right:10px;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px;transition:all .2s}
-.iw .sfx:hover{color:var(--text)}
+.iw .ico{position:absolute;left:12px;color:var(--ink-soft);pointer-events:none;display:flex;align-items:center;font-size:15px}
+.iw .sfx{position:absolute;right:10px;background:none;border:none;color:var(--ink-soft);display:flex;align-items:center;padding:4px;border-radius:6px;font-size:15px}
+.iw .sfx:hover{color:var(--ink)}
 .iw .sfx.checking{animation:pulse 1s ease-in-out infinite;color:var(--amber)}
-.iw .sfx.available{color:var(--success);animation:checkmark .4s ease-out}
+.iw .sfx.available{color:var(--success)}
 .iw .sfx.unavailable{color:var(--red);animation:shake .4s ease-out}
-input[type=email],input[type=password],input[type=text],input[type=tel]{width:100%;padding:10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
-.iw.has-ico input{padding-left:38px}
+input[type=email],input[type=password],input[type=text],input[type=tel],input[type=date],select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
+input[readonly]{background:var(--paper);color:var(--ink-soft)}
+.iw.has-ico input,.iw.has-ico select{padding-left:38px}
 .iw.has-sfx input{padding-right:40px}
-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);animation:shake .3s ease-out}
-input.valid{border-color:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.08)}
+input:focus,select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,108,240,.12)}
+input.err,select.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(217,45,32,.08)}
+input.valid,select.valid{border-color:var(--success)}
+select{appearance:none;-webkit-appearance:none;padding-right:34px}
+.iw .sel-arrow{position:absolute;right:12px;color:var(--ink-soft);pointer-events:none;font-size:13px}
+.field-hint{font-size:12px;color:var(--ink-soft);margin-top:5px;line-height:1.4}
 
-/* ALERTS */
-.alert{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:13px;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
+/* alerts and status lines */
+.alert{border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:16px;display:none;align-items:flex-start;gap:8px;line-height:1.5}
 .alert i{font-size:15px;flex-shrink:0;margin-top:1px}
 .alert.show{display:flex}
-.alert.error{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
-.alert.success{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.alert.info{background:#EFF6FF;border:1px solid #BFDBFE;color:var(--blue)}
-.alert.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
+.alert.error{background:var(--red-soft);color:#b42318;border:1px solid #fecdca}
+.alert.success{background:var(--green-soft);color:var(--navy-mid);border:1px solid #bcd3fb}
+.alert.info{background:#eff6ff;color:#175cd3;border:1px solid #bfdbfe}
+.alert.warn,.note-box{background:#fffaeb;color:#93370d;border:1px solid #fedf89}
+.note-box{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;display:flex;gap:8px;align-items:flex-start;margin:6px 0 4px}
+.note-box i{font-size:15px;flex-shrink:0;margin-top:1px}
+.email-status-alert,.field-status{margin-top:7px;padding:9px 11px;border-radius:10px;font-size:12.5px;font-weight:500;display:none;align-items:flex-start;gap:7px;line-height:1.5}
+.email-status-alert.show,.field-status.show{display:flex}
+.email-status-alert i,.field-status i{font-size:14px;flex-shrink:0;margin-top:1px}
+.email-status-alert.available,.field-status.ok{background:var(--green-soft);border:1px solid #bcd3fb;color:var(--navy-mid)}
+.email-status-alert.taken-active,.field-status.bad{background:var(--red-soft);border:1px solid #fecdca;color:#b42318}
+.email-status-alert.taken-deleted,.field-status.warn{background:#fffaeb;border:1px solid #fedf89;color:#93370d}
+.action-link{color:var(--navy);font-weight:700;cursor:pointer;text-decoration:underline}
+.action-link.disabled{color:var(--ink-soft);cursor:default;pointer-events:none;text-decoration:none}
 
-/* EMAIL STATUS ALERT */
-.email-status-alert{margin-top:8px;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;display:none;align-items:flex-start;gap:8px;line-height:1.5;animation:slideInUp .3s ease-out}
-.email-status-alert.show{display:flex}
-.email-status-alert i{font-size:15px;flex-shrink:0;margin-top:1px}
-.email-status-alert.available{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.email-status-alert.taken-active{background:#FEE2E2;border:1px solid #FECACA;color:#991B1B}
-.email-status-alert.taken-deleted{background:#FEF3C7;border:1px solid #FDE68A;color:#92400E}
+/* checkboxes */
+.checkbox-group{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.checkbox-wrap{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+.checkbox-wrap input[type=checkbox]{width:16px;height:16px;accent-color:var(--navy);flex-shrink:0;margin:2px 0 0}
+.checkbox-wrap label{margin:0;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--ink-soft);flex:1}
+.checkbox-wrap a{color:var(--navy);font-weight:600;text-decoration:underline}
 
-/* ACTION LINK */
-.action-link{color:var(--green);text-decoration:none;font-weight:700;cursor:pointer}
-.action-link:hover{text-decoration:underline}
-
-/* CHECKBOX */
-.checkbox-group{display:flex;flex-direction:column;gap:10px;margin:1rem 0}
-.checkbox-wrap{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
-.checkbox-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0;margin:2px 0 0;border-radius:4px}
-.checkbox-wrap label{margin:0;cursor:pointer;font-size:13px;color:var(--text-mid);font-weight:500;flex:1}
-.checkbox-wrap a{color:var(--green);text-decoration:none;font-weight:600}
-.checkbox-wrap a:hover{text-decoration:underline}
-
-/* SELECT (country / role) */
-select{width:100%;padding:10.5px 34px 10.5px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none;cursor:pointer}
-.iw.has-ico select{padding-left:38px}
-select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
-select.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08)}
-select.valid{border-color:var(--success)}
-.iw .sel-arrow{position:absolute;right:12px;color:var(--text-muted);pointer-events:none;font-size:13px}
-.field-hint{font-size:12px;color:var(--text-muted);margin-top:5px;line-height:1.4}
-
-/* FIELD STATUS (generic — city, dob, role) */
-.field-status{margin-top:7px;padding:9px 11px;border-radius:var(--radius-sm);font-size:12.5px;font-weight:500;display:none;align-items:flex-start;gap:7px;line-height:1.5}
-.field-status.show{display:flex}
-.field-status i{font-size:14px;flex-shrink:0;margin-top:1px}
-.field-status.ok{background:var(--green-light);border:1px solid #86EFAC;color:var(--green-dark)}
-.field-status.warn{background:#FFFBEB;border:1px solid #FDE68A;color:var(--amber)}
-.field-status.bad{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)}
-
-/* PASSPORT PHOTO UPLOAD */
+/* passport photo */
 .photo-upload{display:flex;align-items:center;gap:14px}
-.photo-preview{width:76px;height:76px;border-radius:var(--radius-sm);border:1.5px dashed var(--border);background:var(--green-light);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--text-muted);font-size:24px}
+.photo-preview{width:76px;height:76px;border-radius:12px;border:1.5px dashed var(--line);background:var(--paper);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--ink-soft);font-size:28px}
 .photo-preview img{width:100%;height:100%;object-fit:cover}
 .photo-preview.has-img{border-style:solid;border-color:var(--success)}
 .photo-upload-btn{flex:1}
 .photo-upload-btn input[type=file]{display:none}
-.photo-upload-label{display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:13.5px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .15s}
-.photo-upload-label:hover{border-color:var(--green);background:var(--green-light);color:var(--green-dark)}
-.photo-filename{font-size:11.5px;color:var(--text-muted);margin-top:5px;word-break:break-all}
+.photo-upload-label{display:flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s;background:#fff}
+.photo-upload-label:hover{border-color:var(--navy);background:var(--green-soft);color:var(--navy)}
+.photo-filename{font-size:11.5px;color:var(--ink-soft);margin-top:5px;word-break:break-all}
 
-/* OTP STEP */
+/* OTP */
 #step-otp{display:none;text-align:center;padding:.5rem 0}
-.otp-icon{width:64px;height:64px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px;color:var(--green)}
-.otp-boxes{display:flex;gap:9px;justify-content:center;margin:1.3rem 0 .6rem}
-.otp-box{width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
-.otp-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,69,.10)}
+.otp-icon{width:60px;height:60px;background:var(--green-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:26px;color:var(--navy)}
+.otp-boxes{display:flex;gap:9px;justify-content:center;margin:1.2rem 0 .6rem}
+.otp-box{width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;border:1px solid var(--line);border-radius:10px;font-family:var(--font-display);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;padding:0}
+.otp-box:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,108,240,.12)}
 .otp-box.err{border-color:var(--red);animation:shake .3s ease-out}
-.otp-resend{font-size:13px;color:var(--text-muted);margin:.9rem 0 1.2rem}
-.otp-resend .action-link.disabled{color:var(--text-muted);cursor:default;pointer-events:none;text-decoration:none}
+.otp-resend{font-size:13px;color:var(--ink-soft);margin:.9rem 0 1.2rem}
+#step-otp .note-box{text-align:left}
 
-/* BUTTONS */
-.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:12px 18px;font-size:14.5px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.1px;animation:slideInUp .5s ease-out .6s both}
-.btn-primary{background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(27,107,69,.22)}
-.btn-primary:hover:not(:disabled){background:var(--green-dark)}
-.btn-primary:active:not(:disabled){transform:scale(.99)}
-.btn-primary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
-.btn-secondary{background:var(--surface);border:1.5px solid var(--border);color:var(--text);text-decoration:none;cursor:pointer}
-.btn-secondary:hover{border-color:var(--green);background:var(--green-light)}
-.btn-secondary:active{transform:scale(.99)}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;display:none;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* buttons */
+.btn{width:100%;border:none;border-radius:10px;padding:12.5px;font-size:14.5px;font-weight:700;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--navy-mid)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.btn-secondary{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;flex-shrink:0}
 
-/* DIVIDER */
-.divider{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;font-weight:600;margin:1.3rem 0 .9rem}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-foot{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px}
+.auth-foot a{color:var(--navy);font-weight:700;text-decoration:underline}
+.ip-status{font-size:11px;color:var(--ink-soft);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line);display:flex;align-items:center;gap:4px}
 
-/* FOOTER */
-.auth-foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:1rem;animation:slideInUp .5s ease-out .7s both}
-.auth-foot a{color:var(--green);text-decoration:none;font-weight:600}
-.auth-foot a:hover{text-decoration:underline}
-
-/* IP & LOCATION INFO */
-.ip-status{font-size:11px;color:var(--text-muted);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:4px;animation:fadeIn 1s ease-out}
-.ip-status i{font-size:13px}
-
-/* SUCCESS */
+/* success */
 #step-success{display:none;text-align:center;padding:.5rem 0}
-.success-icon{width:70px;height:70px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:33px;color:var(--green)}
-.success-title{font-size:23px;font-weight:800;margin-bottom:8px;font-family:var(--serif)}
-.success-body{font-size:14px;color:var(--text-muted);line-height:1.65;margin-bottom:1.5rem}
+.success-icon{width:56px;height:56px;border-radius:50%;background:var(--green-soft);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px}
+.success-title{font-family:var(--font-display);font-size:20px;font-weight:700;margin:0 0 8px}
+.success-body{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:1.4rem}
 </style>
 </head>
 <body>
 
-<div class="page-wrap">
+<div class="wrap">
+  <aside class="brand-panel">
+    <div></div>
+    <div class="pitch">
+      <h1>Find trusted domestic work across East Africa.</h1>
+      <p>Create your SoundsCare worker profile and get discovered by employers in Kenya, Uganda and Tanzania. Registration takes a few minutes.</p>
+      <div class="pitch-list">
+        <div class="pitch-item"><span class="check">✓</span>Free to register — just verify your email with a 6-digit code</div>
+        <div class="pitch-item"><span class="check">✓</span>Add your role, location and photo so employers can find you</div>
+        <div class="pitch-item"><span class="check">✓</span>Track your profile and job opportunities from one dashboard</div>
+      </div>
+    </div>
+    <div class="foot-note">© 2026 SoundsCare. All rights reserved.</div>
+  </aside>
 
-  <!-- BRAND -->
-  <div class="brand">
-    <a class="brand-logo" href="index.html">
-      <img src="sound_logo.jpg" alt="SoundsCare Logo">
-      SoundsCare
-    </a>
-    <div class="brand-sub">East Africa's Domestic Services Employment Agency</div>
-  </div>
+  <section class="form-panel">
+    <a class="go-home-btn" href="index.html"><i class="bi bi-arrow-left"></i>Back home</a>
+    <div class="form-card">
+      <div class="logo-only"><a href="index.html"><img src="/sound_logo.jpg" alt="SoundsCare" style="height:46px;width:auto;object-fit:contain" onerror="this.onerror=null;this.src='/sound_logo.png'"></a></div>
+      <div class="step-track"><div class="step-dot active" id="stepDot1"></div><div class="step-dot" id="stepDot2"></div></div>
 
-  <div class="card">
 
     <!-- MAIN PANEL -->
     <div id="register-panel">
@@ -249,8 +225,8 @@ select.valid{border-color:var(--success)}
         <i class="bi bi-person-fill-add"></i>
         EMPLOYEE REGISTRATION
       </div>
-      <h1 class="step-title">Create Your Account</h1>
-      <p class="step-sub">Join East Africa's trusted domestic services platform. Register as an employee and start finding work opportunities.</p>
+      <h2 class="step-title">Create your account</h2>
+      <p class="step-sub">Fill in your details below. We will email you a 6-digit code to verify your email before your account is created.</p>
 
       <!-- REGISTRATION FORM -->
       <form id="registerForm" onsubmit="handleRegister(event)">
@@ -431,6 +407,8 @@ select.valid{border-color:var(--success)}
           </div>
         </div>
 
+        <div class="note-box"><i class="bi bi-envelope-exclamation"></i><span>Nothing is saved until your email is verified. The code arrives by email &mdash; <strong>check your spam or junk folder</strong> if you do not see it.</span></div>
+
         <!-- SUBMIT BUTTON -->
         <button type="submit" class="btn btn-primary" id="registerBtn" disabled>
           <span id="registerBtnText">Checking availability…</span>
@@ -452,6 +430,8 @@ select.valid{border-color:var(--success)}
         <div class="success-body" style="margin-bottom:1.1rem;">
           Enter the 6-digit code we sent to<br><strong id="otpEmailDisplay"></strong>
         </div>
+
+        <div class="note-box" style="margin:0 0 14px"><i class="bi bi-envelope-exclamation"></i><span><strong>Can&rsquo;t find the code?</strong> Check your <strong>spam or junk</strong> folder. It can take up to a minute to arrive.</span></div>
 
         <div class="alert error" id="otpAlertError">
           <i class="bi bi-exclamation-circle-fill"></i>
@@ -490,7 +470,7 @@ select.valid{border-color:var(--success)}
           Your account (<strong id="successUsername"></strong>) is ready.<br>
           Taking you to your dashboard...
         </div>
-        <div class="spinner" id="redirectSpinner" style="display:inline-block;border-color:rgba(27,107,69,.2);border-top-color:var(--green);margin-bottom:.6rem"></div>
+        <div class="spinner" id="redirectSpinner" style="display:inline-block;border-color:rgba(26,108,240,.2);border-top-color:var(--navy);margin-bottom:.6rem"></div>
         <div>
           <a id="successLink" href="employee-dashboard.html" class="action-link" style="font-size:12.5px">
             Not redirecting? Click here
@@ -506,8 +486,8 @@ select.valid{border-color:var(--success)}
 
     </div>
 
-  </div>
-
+    </div>
+  </section>
 </div>
 
 <script>
@@ -959,16 +939,12 @@ async function checkEmailInDatabase(email) {
     btn.classList.remove('checking');
 
     // Check the real users table for an existing account with this email
-    const result = await dbClient
-      .from('users')
-      .select('id, is_active')
-      .eq('email', email)
-      .maybeSingle();
-
+    const result = await dbClient.rpc('check_signup_availability', { p_email: email });
     if (result.error) throw result.error;
+    const emailStatus = result.data && result.data.email_status;
 
-    if (result.data) {
-      if (result.data.is_active !== false) {
+    if (emailStatus === 'taken' || emailStatus === 'deactivated') {
+      if (emailStatus === 'taken') {
         // Email exists and account is ACTIVE
         emailCheckStatus = 'taken_active';
         btn.classList.add('unavailable');
@@ -1114,11 +1090,14 @@ function slugifyName(name) {
     .replace(/[^a-z0-9\s]/g, '')
     .trim()
     .split(/\s+/)
-    .join('.');
+    .join('_')                       // dots are not allowed by the database
+    .replace(/^[^a-z0-9]+/, '')
+    .slice(0, 18);                   // leaves room for a number suffix (max 24 chars)
 }
 
 async function generateUniqueUsername(name) {
-  const base = slugifyName(name);
+  let base = slugifyName(name);
+  if (base && base.length < 3) base = (base + 'user').slice(0, 18);
   const btn = document.getElementById('usernameCheckBtn');
   const usernameInput = document.getElementById('username');
 
@@ -1134,15 +1113,9 @@ async function generateUniqueUsername(name) {
 
     // Keep trying candidate.1, candidate.2, ... until an unused one is found
     while (true) {
-      const result = await dbClient
-        .from('users')
-        .select('id')
-        .eq('username', candidate)
-        .maybeSingle();
-
+      const result = await dbClient.rpc('check_signup_availability', { p_username: candidate });
       if (result.error) throw result.error;
-
-      if (!result.data) break; // candidate is free
+      if (!(result.data && result.data.username_taken)) break; // candidate is free
       suffix += 1;
       candidate = base + suffix;
     }
@@ -1313,20 +1286,24 @@ async function handleRegister(event) {
   
   setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', true, 'Confirming details…');
 
-  // Re-verify email availability against the live DB right before submitting
-  const dupCheck = await dbClient.from('users').select('id').eq('email', email).maybeSingle();
-  if (dupCheck.data) {
-    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    showAlert('alertError', 'alertErrorText', 'This email is already registered. Please sign in instead.');
-    return;
-  }
-
-  // Re-verify username uniqueness right before submitting (race-condition guard)
-  const usernameDupCheck = await dbClient.from('users').select('id').eq('username', username).maybeSingle();
-  if (usernameDupCheck.data) {
-    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
-    showAlert('alertError', 'alertErrorText', 'Your username was just taken — refresh your full name field to regenerate one.');
-    return;
+  // Re-verify email + username against the live database right before submitting
+  const avail = await dbClient.rpc('check_signup_availability', { p_email: email, p_username: username });
+  if (!avail.error && avail.data) {
+    if (avail.data.email_status === 'taken') {
+      setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+      showAlert('alertError', 'alertErrorText', 'This email is already registered. Please sign in instead.');
+      return;
+    }
+    if (avail.data.email_status === 'deactivated') {
+      setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+      showAlert('alertError', 'alertErrorText', 'This account is deactivated. Please contact support.');
+      return;
+    }
+    if (avail.data.username_taken) {
+      setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+      showAlert('alertError', 'alertErrorText', 'Your username was just taken — refresh your full name field to regenerate one.');
+      return;
+    }
   }
 
   // Store pending registration data — used right after account creation
@@ -1338,6 +1315,7 @@ async function handleRegister(event) {
     dob:          dob,
     role:         role,
     termsAccepted:  true,
+    dataConsent:    true,
     receiveUpdates: updatesCheck
   };
 
@@ -1367,8 +1345,63 @@ async function handleRegister(event) {
     return;
   }
 
+  const su = signUpResult.data || {};
+
+  // Email already belongs to a confirmed account (Supabase returns no error to avoid leaking it)
+  if (su.user && Array.isArray(su.user.identities) && su.user.identities.length === 0) {
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', 'This email is already registered. Please sign in instead.');
+    return;
+  }
+
+  // A session at this point means the server did NOT require the email code. We never continue
+  // without verification, so sign out and stop - nothing is saved for an unverified email.
+  if (su.session) {
+    try { await dbClient.auth.signOut(); } catch (e) {}
+    setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
+    showAlert('alertError', 'alertErrorText', 'Email verification is not enabled on our server yet, so we cannot create your account safely. Please contact support@soundscare.co.ke.');
+    return;
+  }
+
+  savePendingRegistration();
   setBtnLoading('registerBtn', 'registerSpinner', 'registerBtnText', false, 'Create Account');
   showOtpStep(email);
+}
+
+// Keep the form details (never the password) so a refresh on the code screen does not lose them
+const PENDING_KEY = 'sc_pending_employee';
+function savePendingRegistration() {
+  try {
+    const rec = { user: pendingUser, savedAt: Date.now(), photo: null, photoName: null, photoType: null };
+    const f = pendingPhotoFile;
+    if (f && f.size <= 1800000) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        rec.photo = reader.result; rec.photoName = f.name; rec.photoType = f.type;
+        try { sessionStorage.setItem(PENDING_KEY, JSON.stringify(rec)); } catch (e) {}
+      };
+      reader.readAsDataURL(f);
+    } else {
+      sessionStorage.setItem(PENDING_KEY, JSON.stringify(rec));
+    }
+  } catch (e) {}
+}
+function clearPendingRegistration() { try { sessionStorage.removeItem(PENDING_KEY); } catch (e) {} }
+function restorePendingRegistration() {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return false;
+    const rec = JSON.parse(raw);
+    if (!rec || !rec.user || !rec.user.email || Date.now() - rec.savedAt > 60 * 60 * 1000) { clearPendingRegistration(); return false; }
+    pendingUser = rec.user;
+    if (rec.photo) {
+      const arr = rec.photo.split(','), bin = atob(arr[1]), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      pendingPhotoFile = new File([u8], rec.photoName || 'passport.jpg', { type: rec.photoType || 'image/jpeg' });
+    }
+    showOtpStep(rec.user.email);
+    return true;
+  } catch (e) { return false; }
 }
 
 // ============================================================
@@ -1381,6 +1414,7 @@ function showOtpStep(email) {
   document.getElementById('step-otp').style.display = 'block';
   document.getElementById('otpEmailDisplay').textContent = email;
   document.getElementById('otpAlertError').classList.remove('show');
+  document.getElementById('stepDot2').classList.add('active');
 
   const boxes = document.querySelectorAll('.otp-box');
   boxes.forEach(b => { b.value = ''; b.classList.remove('err'); });
@@ -1390,6 +1424,8 @@ function showOtpStep(email) {
 }
 
 function backToRegisterForm() {
+  clearPendingRegistration();
+  document.getElementById('stepDot2').classList.remove('active');
   document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-form').style.display = 'block';
   clearInterval(otpResendTimer);
@@ -1452,11 +1488,15 @@ async function verifyOtpCode() {
 
   const email = pendingUser ? pendingUser.email : document.getElementById('otpEmailDisplay').textContent;
 
-  const result = await dbClient.auth.verifyOtp({
-    email: email,
-    token: code,
-    type: 'signup'
-  });
+  // If the code was already accepted (e.g. a retry after a save error) reuse that session
+  let result = null;
+  const existing = await dbClient.auth.getSession();
+  const eu = existing.data && existing.data.session && existing.data.session.user;
+  if (eu && eu.email && eu.email.toLowerCase() === String(email).toLowerCase() && eu.email_confirmed_at) {
+    result = { data: { user: eu, session: existing.data.session }, error: null };
+  } else {
+    result = await dbClient.auth.verifyOtp({ email: email, token: code, type: 'signup' });
+  }
 
   if (result.error) {
     btn.disabled = false;
@@ -1545,121 +1585,83 @@ function friendlyAuthError(msg) {
 
 
 // ============================================================
-// FINALIZE ACCOUNT — writes to users + worker_profiles tables,
-// including location, terms_accepted, and job-update preference
+// FINALIZE ACCOUNT - runs only after the email code is accepted.
+// One server call (register_employee) writes users + worker_profiles together:
+// name, username, email, phone, country, county, town, date of birth, age,
+// role, photo, terms and update preferences. The server re-checks that the
+// email is verified, so nothing can be saved for an unverified address.
 // ============================================================
 async function finalizeWorkerAccount(authData) {
   const user = authData.user || (authData.session && authData.session.user);
   const p = pendingUser || {};
+  const btn = document.getElementById('otpVerifyBtn');
+  const spinner = document.getElementById('otpVerifySpinner');
+  const btnText = document.getElementById('otpVerifyBtnText');
 
-  try {
-    // Sync the users table (covers anything the signup metadata trigger missed)
-    const usersResult = await dbClient.from('users').upsert({
-      id:              user ? user.id : undefined,
-      email:           p.email,
-      username:        p.username,
-      full_name:       p.fullName,
-      phone:           p.phone,
-      role:            'employee',
-      country:         p.country,
-      is_active:       true,
-      terms_accepted:  p.termsAccepted  || false,
-      receive_updates: p.receiveUpdates || false
-    }, { onConflict: 'id' });
-
-    if (usersResult.error) {
-      console.warn('[SoundsCare] users upsert error:', usersResult.error.message);
-    }
-
-    // Write the worker_profiles row so the worker dashboard can load,
-    // including location data captured during registration
-    if (user) {
-      // Passport photo upload needs an authenticated session, which only
-      // exists now that the OTP step has confirmed the account.
-      const photoUrl = await uploadPassportPhoto(user.id);
-
-      const wpResult = await dbClient.from('worker_profiles').upsert({
-        session_id:    user.id,
-        full_name:     p.fullName,
-        username:      p.username,
-        email:         p.email,
-        phone:         p.phone,
-        phone_number:  p.phone,
-        country:       p.country,
-        county:        p.county,
-        current_town:  p.town,
-        location:      p.town || p.county || p.country,
-        date_of_birth: p.dob || null,
-        dob:           p.dob || null,
-        preferred_role: p.role || null,
-        job_title:     p.role || null,
-        profile_photo_url: photoUrl,
-        email_verified: true,
-        verification_stage: 'submitted',
-        verification_requested_at: new Date().toISOString(),
-        profile_setup_completed: true,
-        notif_email:   p.receiveUpdates,
-        job_seeking:   true,
-        looking_for_job: true,
-        profile_visible: true
-      }, { onConflict: 'session_id' });
-
-      if (wpResult.error) {
-        console.warn('[SoundsCare] worker_profiles upsert error:', wpResult.error.message);
-      }
-    }
-
-    // Welcome notification
-    await dbClient.from('notifications').insert({
-      user_id:    user ? user.id : null,
-      user_email: p.email,
-      type:       'welcome',
-      title:      'Welcome to SoundsCare! 👋',
-      message:    'Welcome, ' + (p.fullName || '') + '! Your worker account is ready. Start browsing job opportunities today.',
-      is_read:    false
-    });
-
-    // Admin notification about new registration
-    await dbClient.from('notifications').insert({
-      user_id:     user ? user.id : null,
-      user_email:  p.email,
-      type:        'new_account',
-      title:       'New Worker Registered',
-      message:     'New worker account: ' + p.fullName + ' (' + p.email + ') from ' + (p.country || 'Unknown') + '. Terms accepted: ' + (p.termsAccepted ? 'Yes' : 'No') + '. Job updates: ' + (p.receiveUpdates ? 'Yes' : 'No') + '.',
-      is_read:     false,
-      target_role: 'admin'
-    });
-
-  } catch (e) {
-    // Non-fatal — show success anyway, data will be incomplete
-    console.warn('[SoundsCare] Post-verification DB error:', e);
+  function failBack(msg) {
+    btn.disabled = false; spinner.style.display = 'none'; btnText.textContent = 'Verify & Continue';
+    document.getElementById('otpAlertErrorText').textContent = msg;
+    document.getElementById('otpAlertError').classList.add('show');
   }
 
-  // Fire the branded welcome email via the send-welcome-email Edge
-  // Function. Best-effort — a failed email should never block the
-  // signup flow, so this is fire-and-forget with its own catch.
+  if (!user || !user.email_confirmed_at) {
+    failBack('Your email could not be verified. Please request a new code.');
+    return;
+  }
+  if (!p.fullName) {
+    failBack('Your form details were lost. Please go back and fill in the form again.');
+    return;
+  }
+
+  try {
+    // Photo upload needs the signed-in session, which exists only now that the code is confirmed
+    const photoUrl = await uploadPassportPhoto(user.id);
+
+    const reg = await dbClient.rpc('register_employee', { p: {
+      full_name:       p.fullName,
+      username:        p.username,
+      phone:           p.phone,
+      country:         p.country,
+      county:          p.county,
+      town:            p.town,
+      dob:             p.dob || null,
+      role:            p.role,
+      photo_url:       photoUrl,
+      terms_accepted:  p.termsAccepted === true,
+      data_consent:    p.dataConsent === true,
+      receive_updates: p.receiveUpdates === true
+    }});
+    if (reg.error) throw reg.error;
+    if (reg.data && reg.data.username) p.username = reg.data.username;
+  } catch (e) {
+    console.warn('[SoundsCare] Account setup failed:', e);
+    const m = (e && e.message) || '';
+    failBack(/18 or older|terms|consent|Full name/i.test(m) ? m : 'We could not finish setting up your account. Please tap Verify again; if it keeps failing, contact support.');
+    return;
+  }
+
+  clearPendingRegistration();
+
+  // Branded welcome email (best-effort). The welcome + admin notifications are created by the database.
   fetch(SUPABASE_URL + '/functions/v1/send-welcome-email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: p.fullName,
       email: p.email,
-      userId: user ? user.id : null,
+      userId: user.id,
       dashboardUrl: window.location.origin + '/employee-dashboard.html'
     })
   }).catch(function (e) {
     console.warn('[SoundsCare] Welcome email dispatch failed:', e);
   });
 
+  document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-form').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
   document.getElementById('successName').textContent     = p.fullName || '';
   document.getElementById('successUsername').textContent = p.username || '';
 
-  // Auto-redirect into the employee dashboard. The Supabase client persists
-  // the session (localStorage) by default, so employee-dashboard.html
-  // picks it up on load via dbClient.auth.getSession() — no token needs
-  // to be passed manually.
   setTimeout(function () {
     window.location.href = 'employee-dashboard.html';
   }, 2000);
@@ -1700,6 +1702,7 @@ document.addEventListener('DOMContentLoaded', function() {
   populateRoleSelect();
   detectUserLocation();
   updateRegisterButtonState();
+  restorePendingRegistration();   // back on the code screen if the page was refreshed mid-verification
 });
 
 </script>
