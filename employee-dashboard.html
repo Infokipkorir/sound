@@ -137,7 +137,7 @@
       <ol class="mb-0 small" style="padding-left:1.1rem;line-height:1.9;">
         <li><b>Complete your profile</b> with a clear photo and your experience as a House Help, Nanny, House Keeper or Care Giver.</li>
         <li><b>Apply to jobs</b> near you, or wait for employers to find you.</li>
-        <li><b>Reply to messages</b> and accept interviews. Employers contact you after paying a one-time KES 300 connection fee.</li>
+        <li><b>Reply to messages</b> and accept interviews. Employers can contact you directly. SoundsCare is free to use.</li>
       </ol>
     </div>
   </div>
@@ -554,6 +554,7 @@
       <h2><i class="bi bi-wallet2"></i> Wallet & Payments</h2>
       <button class="modal-close" onclick="navTo('overview')">×</button>
     </div>
+    <div style="padding:14px 18px 0"><div class="pay-paused-note" role="note" style="background:#fff7e6;border:1px solid #fcd9a0;color:#7a4b00;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.55;margin-bottom:12px"><strong><i class="bi bi-info-circle-fill"></i> Payments are switched off.</strong><br>We do not receive any payment at the moment. SoundsCare is free to use. If you would like to support us you may donate, but only if you are willing. There is no obligation.</div></div>
     <div class="modal-body">
       <div class="balance-box">
         <div class="balance-grid" style="grid-template-columns:1fr;">
@@ -578,8 +579,8 @@
             <div class="balance-sub" id="connects-pricing-hint" style="line-height:1.6;">—</div>
           </div>
         </div>
-        <button class="btn btn-secondary btn-full" style="margin-top:10px;" onclick="openBuyConnects()">
-          <i class="bi bi-plus-circle"></i> Buy More Connects
+        <button class="btn btn-secondary btn-full" style="margin-top:10px;opacity:.55;cursor:not-allowed" disabled title="Payments are switched off">
+          <i class="bi bi-slash-circle"></i> Buying Connects is switched off
         </button>
       </div>
 
@@ -598,7 +599,6 @@
 
       <div class="tabs">
         <button class="tab active" onclick="switchTab('payment-history', this)">History</button>
-        <button class="tab" onclick="switchTab('payment-make', this)">Make Payment</button>
         <button class="tab" onclick="switchTab('payment-withdraw', this); loadWithdrawalHistory()">Withdraw</button>
       </div>
 
@@ -644,7 +644,7 @@
         </div>
       </div>
 
-      <div id="payment-make" class="tab-content">
+      <div id="payment-make" class="tab-content" hidden style="display:none!important">
         <!-- FEE STATUS -->
         <div style="background:var(--surface); border-radius:12px; padding:14px; margin-bottom:1.5rem;">
           <div style="font-weight:700; margin-bottom:10px;"><i class="bi bi-receipt" style="color:var(--brand);"></i> Payment Requirements</div>
@@ -1319,6 +1319,7 @@
 <!-- TOAST -->
 <div id="toast-stack"></div>
 
+<div class="app-support-foot" style="text-align:center;font-size:12.5px;color:#6b7280;padding:1.4rem 1rem 2rem"><a href="/support" style="color:inherit;font-weight:600;text-decoration:none"><i class="bi bi-ticket-perforated"></i> Open a support ticket</a> &nbsp;&middot;&nbsp; <a href="tel:+254738123425" style="color:inherit;text-decoration:none"><i class="bi bi-telephone"></i> 0738 123 425</a> &nbsp;&middot;&nbsp; We do not receive payments at the moment.</div>
 </div><!-- /main-wrap -->
 
 <!-- ═══════════════════════ VOICE CALL OVERLAY ═══════════════════════ -->
@@ -1468,53 +1469,27 @@
   </div>
 </div>
 
-<!-- SUPPORT WIDGET (woman icon) -->
-<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
-  <span aria-hidden="true">&#128105;&#8205;&#128188;</span>
-  <span class="dot"></span>
-</button>
-<div id="ssc-support-panel">
-  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
-</div>
-
-
 <script>window.PAGE_MODE = 'overview';</script>
 <script>
-(function(){
-  var fab = document.getElementById('ssc-support-fab');
-  var panel = document.getElementById('ssc-support-panel');
-  var frame = document.getElementById('ssc-support-iframe');
-  var loaded = false;
-
-  function openPanel(){
-    if (!loaded){ frame.src = 'support.html'; loaded = true; }
-    panel.classList.add('open');
-    fab.setAttribute('aria-expanded', 'true');
-  }
-  function closePanel(){
-    panel.classList.remove('open');
-    fab.setAttribute('aria-expanded', 'false');
-  }
-  function togglePanel(){
-    panel.classList.contains('open') ? closePanel() : openPanel();
-  }
-
-  fab.addEventListener('click', togglePanel);
-
-  window.addEventListener('message', function(e){
-    if (e.data === 'soundscare-support:close') closePanel();
-  });
-  // Exposed so other flows on this page (e.g. sendApplicationToSupport())
-  // can open the support.html panel — this is the main support channel.
-  window.sscOpenSupportPanel = openPanel;
-})();
-  
+/* The floating support.html chat button was removed. Anything that still asks to open the support panel opens the support page (ticket form) instead. */
+window.sscOpenSupportPanel = function(){ window.location.href = '/support'; };
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="main.js"></script>
 <script src="config.js"></script>
+<script>
+/* Payments are switched off: even if main.js still defines these, they only show the note. */
+(function(){
+  function off(){
+    var m = 'We do not receive any payment at the moment. SoundsCare is free to use. You may donate only if you are willing.';
+    if (typeof window.showToast === 'function') { try { window.showToast('info', 'bi-info-circle', 'Payments are switched off', m); return false; } catch (e) {} }
+    alert(m); return false;
+  }
+  window.addEventListener('load', function(){ ['submitPayment','openBuyConnects','processPayment','makePayment','payFee'].forEach(function(n){ window[n] = off; }); });
+})();
+</script>
 <script>
 /* ===== Profile sync (loaded after main.js) =====
    1) One editing place: every "Edit Profile" entry opens profile.html.

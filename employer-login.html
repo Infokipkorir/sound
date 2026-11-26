@@ -140,30 +140,6 @@ input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(217,45,32,.08)}
 .restricted-banner{background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius-sm);padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px}
 .restricted-banner.show{display:flex}
 
-/* SUPPORT WIDGET — themed green/gold to match this page */
-#ssc-support-fab{
-  position:fixed;bottom:1.5rem;left:1.5rem;z-index:9995;
-  width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);
-  box-shadow:0 8px 26px rgba(11,79,208,.4);
-  display:flex;align-items:center;justify-content:center;color:#fff;
-  font-size:22px;transition:transform .25s ease,box-shadow .25s ease;
-}
-#ssc-support-fab:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 12px 32px rgba(11,79,208,.48)}
-#ssc-support-fab .dot{position:absolute;bottom:3px;right:3px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff}
-#ssc-support-panel{
-  position:fixed;bottom:5.6rem;left:1.5rem;z-index:9995;
-  width:380px;height:600px;max-height:calc(100vh - 8rem);
-  border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28);
-  display:none;background:#fff;border:1px solid var(--border);
-}
-#ssc-support-panel.open{display:block}
-#ssc-support-panel iframe{width:100%;height:100%;border:0;display:block}
-@media(max-width:480px){
-  #ssc-support-panel{width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;left:0;top:0;border-radius:0}
-  #ssc-support-fab{bottom:1.1rem;left:1.1rem}
-}
-
 /* FORGOT PANEL */
 #forgot-panel{display:none}
 .back-btn{background:none;border:none;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:0;margin-bottom:14px}
@@ -361,17 +337,11 @@ Back home
 
   <div style="text-align:center;font-size:12px;color:#9CA3AF;margin-top:1rem">
     &copy; 2026 SoundsCare. Secure &amp; encrypted.
+    <div style="margin-top:.5rem"><a href="/support" style="color:var(--green);font-weight:600;text-decoration:none"><i class="bi bi-ticket-perforated"></i> Open a support ticket</a> &nbsp;&middot;&nbsp; <a href="tel:+254738123425" style="color:var(--text-muted);text-decoration:none"><i class="bi bi-telephone"></i> 0738 123 425</a></div>
   </div>
 
 </div><!-- .page-wrap -->
 
-<!-- SUPPORT WIDGET — opens /support, main support channel on this page -->
-<button id="ssc-support-fab" aria-label="Chat with support" aria-expanded="false">
-  <i class="bi bi-headset"></i>
-  <span class="dot"></span>
-</button>
-<div id="ssc-support-panel">
-  <iframe id="ssc-support-iframe" title="SoundsCare Support" src="about:blank" loading="lazy"></iframe>
 </div>
 
 <script>
@@ -768,35 +738,6 @@ function clearSavedSession() {
   document.getElementById('email').focus();
 }
 
-// ============================================================
-// SUPPORT WIDGET — opens /support in an iframe panel.
-// ============================================================
-(function(){
-  var fab = document.getElementById('ssc-support-fab');
-  var panel = document.getElementById('ssc-support-panel');
-  var frame = document.getElementById('ssc-support-iframe');
-  var loaded = false;
-
-  function openPanel(){
-    if (!loaded){ frame.src = '/support'; loaded = true; }
-    panel.classList.add('open');
-    fab.setAttribute('aria-expanded', 'true');
-  }
-  function closePanel(){
-    panel.classList.remove('open');
-    fab.setAttribute('aria-expanded', 'false');
-  }
-  function togglePanel(){
-    panel.classList.contains('open') ? closePanel() : openPanel();
-  }
-
-  fab.addEventListener('click', togglePanel);
-  window.addEventListener('message', function(e){
-    if (e.data === 'soundscare-support:close') closePanel();
-  });
-})();
-
-// ============================================================
 // LOGIN — always requires submitting the form on this page
 // ============================================================
 async function handleLogin() {
